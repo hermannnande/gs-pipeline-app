@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon server.js",
-    "start": "npx prisma migrate deploy && node server.js",
+    "start": "DATABASE_URL='postgresql://postgres:glYSWKajbSnYigvOjpbSJFWnPFICIZHi@switchyard.proxy.rlwy.net:37551/railway' npx prisma migrate deploy && DATABASE_URL='postgresql://postgres:glYSWKajbSnYigvOjpbSJFWnPFICIZHi@switchyard.proxy.rlwy.net:37551/railway' node server.js",
     "build": "npx prisma generate",
     "postinstall": "npx prisma generate",
     "prisma:generate": "prisma generate",
