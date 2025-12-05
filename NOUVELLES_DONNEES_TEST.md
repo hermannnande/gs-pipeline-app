@@ -567,3 +567,4 @@ node prisma/add-more-test-data.js
 Vous avez maintenant **66 commandes** et **10 produits** pour tester toutes les fonctionnalités du système ! 📦✨
 
 **Rafraîchissez votre page et commencez à tester !** 🚀
+

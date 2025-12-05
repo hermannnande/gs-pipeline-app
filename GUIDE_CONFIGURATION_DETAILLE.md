@@ -1237,3 +1237,4 @@ curl -X POST "https://hook.eu2.make.com/xxxxxxxxxxxxxxxxxxxxx" `
 
 Consultez la section **"Problèmes fréquents"** dans `INTEGRATION_MAKE.md`
 
+

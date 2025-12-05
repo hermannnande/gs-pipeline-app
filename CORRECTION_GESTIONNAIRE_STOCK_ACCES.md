@@ -321,3 +321,4 @@ Le Gestionnaire de Stock a maintenant **exactement l'accès dont il a besoin** :
 
 **Le Gestionnaire de Stock ne voit plus les commandes VALIDÉE non assignées !** ✅
 
+

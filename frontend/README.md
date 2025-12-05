@@ -182,3 +182,4 @@ npm run lint      # Vérifier le code avec ESLint
 3. Utilisez les React Developer Tools
 4. Testez sur différentes tailles d'écran avec les DevTools
 
+

@@ -346,3 +346,4 @@ Le système de gestion de stock est maintenant **100% fonctionnel** et respecte 
 
 **Le système est prêt à être utilisé en production !** 🚀
 
+

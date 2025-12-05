@@ -368,3 +368,4 @@ Fin de journée :
 **Version :** 2.1
 **Impact :** Amélioration majeure - Accès aux détails depuis le mode compact
 
+

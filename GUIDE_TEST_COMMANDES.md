@@ -287,3 +287,4 @@ Ce script crée automatiquement 12 nouvelles commandes variées.
 
 Tout le système est maintenant prêt avec des données réalistes en Franc CFA.
 
+

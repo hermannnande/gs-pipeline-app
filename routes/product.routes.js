@@ -229,3 +229,4 @@ router.get('/alerts/low-stock', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), async 
 
 export default router;
 
+

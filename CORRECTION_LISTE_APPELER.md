@@ -254,3 +254,4 @@ Le système de gestion des appelants est maintenant **parfaitement organisé** :
 
 Connectez-vous comme appelant et vérifiez que les commandes validées **disparaissent immédiatement** de la liste "À appeler" !
 
+

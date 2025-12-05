@@ -187,3 +187,4 @@ npx prisma format
 - Les statistiques sont calculées automatiquement lors des changements de statut
 - L'historique complet des changements de statut est conservé
 
+
