@@ -1,0 +1,37 @@
+{
+  "name": "gs-pipeline-backend",
+  "version": "1.0.0",
+  "description": "Back-office pipeline gestion commandes e-commerce",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js",
+    "build": "npx prisma generate && npx prisma migrate deploy",
+    "postinstall": "npx prisma generate",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "prisma:seed": "node prisma/seed.js"
+  },
+  "keywords": ["ecommerce", "pipeline", "orders"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^5.7.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "express-validator": "^7.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "prisma": "^5.7.0"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  }
+}
+

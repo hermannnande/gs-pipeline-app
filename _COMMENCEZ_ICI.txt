@@ -1,0 +1,161 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║               🚀 INTÉGRATION MAKE → APP WEB                         ║
+║                                                                      ║
+║                    GUIDE SIMPLIFIÉ EN 5 ÉTAPES                      ║
+║                                                                      ║
+║                    ⏱️ TEMPS TOTAL : 25 MINUTES                      ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+
+✅ CE QUI A DÉJÀ ÉTÉ FAIT POUR VOUS :
+═══════════════════════════════════════════════════════════════════════
+
+✅ API Webhook créée et sécurisée (routes/webhook.routes.js)
+✅ Serveur backend lancé sur le port 5000
+✅ Serveur frontend lancé sur le port 3001
+✅ Documentation complète préparée
+
+
+🎯 CE QUE VOUS DEVEZ FAIRE :
+═══════════════════════════════════════════════════════════════════════
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                                                                     │
+│  📍 ÉTAPE 1 : Ajouter la clé API dans .env           ⏱️ 2 min     │
+│                                                                     │
+│  📂 Ouvrez : _ETAPE_1_CONFIGURATION_ENV.txt                        │
+│                                                                     │
+│  Actions :                                                         │
+│  • Générer une clé sur https://randomkeygen.com/                  │
+│  • Ajouter MAKE_WEBHOOK_API_KEY="votre_cle" dans .env            │
+│  • Redémarrer le serveur : npm run dev                            │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                                                                     │
+│  📍 ÉTAPE 2 : Créer les produits                     ⏱️ 5 min     │
+│                                                                     │
+│  📂 Ouvrez : _ETAPE_2_CREER_PRODUITS.txt                           │
+│                                                                     │
+│  Actions :                                                         │
+│  • Connexion : admin@gs-pipeline.com / admin123                   │
+│  • Aller dans "Gestion des Produits" 📦                           │
+│  • Créer vos produits avec des codes uniques                      │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                                                                     │
+│  📍 ÉTAPE 3 : Tester l'API                           ⏱️ 3 min     │
+│                                                                     │
+│  📂 Exécutez : _ETAPE_3_TESTER_API.ps1                             │
+│                                                                     │
+│  Actions :                                                         │
+│  • Ouvrir le fichier avec un éditeur                              │
+│  • Remplacer "VOTRE_CLE_API_ICI" par votre clé                    │
+│  • Exécuter : .\\_ETAPE_3_TESTER_API.ps1                           │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                                                                     │
+│  📍 ÉTAPE 4 : Configurer Make                        ⏱️ 10 min    │
+│                                                                     │
+│  📂 Ouvrez : _ETAPE_4_CONFIGURER_MAKE.txt                          │
+│                                                                     │
+│  Actions :                                                         │
+│  • Ajouter le module HTTP dans vos scénarios Make                 │
+│  • Configurer l'URL, headers et body JSON                         │
+│  • Mapper les champs du formulaire                                │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                                                                     │
+│  📍 ÉTAPE 5 : Test complet                           ⏱️ 3 min     │
+│                                                                     │
+│  📂 Ouvrez : _ETAPE_5_TESTER_COMPLET.txt                           │
+│                                                                     │
+│  Actions :                                                         │
+│  • Tester avec "Run once" dans Make                               │
+│  • Vérifier Google Sheets + App Web                               │
+│  • Valider le flux complet                                        │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════
+
+📋 ORDRE DES FICHIERS À SUIVRE :
+───────────────────────────────────────────────────────────────────────
+
+1. _ETAPE_1_CONFIGURATION_ENV.txt        (Vous êtes ici)
+2. _ETAPE_2_CREER_PRODUITS.txt
+3. _ETAPE_3_TESTER_API.ps1               (Script exécutable)
+4. _ETAPE_4_CONFIGURER_MAKE.txt
+5. _ETAPE_5_TESTER_COMPLET.txt
+
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 RÉSULTAT FINAL :
+───────────────────────────────────────────────────────────────────────
+
+Une fois terminé, voici ce qui se passe automatiquement :
+
+Client remplit formulaire
+         ↓
+    Make reçoit
+         ↓
+    ┌────┴────┐
+    │         │
+    ↓         ↓
+ Sheets    App Web
+    ✅        ✅
+
+Dans l'app, vous pourrez :
+• 📞 Traiter les appels
+• 🚚 Gérer les livraisons
+• 📦 Suivre le stock automatiquement
+• 📊 Voir les statistiques
+• 💰 Gérer la comptabilité
+
+TOUT SERA AUTOMATISÉ ! 🚀
+
+
+═══════════════════════════════════════════════════════════════════════
+
+📚 DOCUMENTATION COMPLÈTE DISPONIBLE :
+───────────────────────────────────────────────────────────────────────
+
+• GUIDE_CONFIGURATION_DETAILLE.md    - Guide pas à pas complet
+• INTEGRATION_MAKE.md                - Documentation technique
+• RESUME_INTEGRATION_MAKE.md         - Résumé et dépannage
+
+
+═══════════════════════════════════════════════════════════════════════
+
+🚀 COMMENCEZ MAINTENANT !
+───────────────────────────────────────────────────────────────────────
+
+Ouvrez le premier fichier :
+
+    _ETAPE_1_CONFIGURATION_ENV.txt
+
+Et suivez les instructions !
+
+
+═══════════════════════════════════════════════════════════════════════
+
+Bon courage ! Vous allez y arriver facilement ! 💪✨
+
+═══════════════════════════════════════════════════════════════════════
+

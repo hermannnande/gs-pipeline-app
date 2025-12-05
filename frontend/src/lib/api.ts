@@ -1,0 +1,216 @@
+import axios from 'axios';
+import type { AuthResponse, LoginCredentials, User, Order, DeliveryList } from '@/types';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+// Configuration axios
+export const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Intercepteur pour ajouter le token à chaque requête
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Intercepteur pour gérer les erreurs d'authentification
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Auth API
+export const authApi = {
+  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
+    const { data } = await api.post('/auth/login', credentials);
+    return data;
+  },
+
+  getCurrentUser: async (): Promise<{ user: User }> => {
+    const { data } = await api.get('/auth/me');
+    return data;
+  },
+};
+
+// Users API
+export const usersApi = {
+  getAll: async (params?: { role?: string; actif?: boolean }) => {
+    const { data } = await api.get('/users', { params });
+    return data;
+  },
+
+  create: async (userData: Partial<User> & { password: string }) => {
+    const { data } = await api.post('/users', userData);
+    return data;
+  },
+
+  update: async (id: number, userData: Partial<User>) => {
+    const { data } = await api.put(`/users/${id}`, userData);
+    return data;
+  },
+
+  delete: async (id: number) => {
+    const { data } = await api.delete(`/users/${id}`);
+    return data;
+  },
+};
+
+// Orders API
+export const ordersApi = {
+  getAll: async (params?: any) => {
+    const { data } = await api.get('/orders', { params });
+    return data;
+  },
+
+  getById: async (id: number) => {
+    const { data } = await api.get(`/orders/${id}`);
+    return data;
+  },
+
+  create: async (orderData: Partial<Order>) => {
+    const { data } = await api.post('/orders', orderData);
+    return data;
+  },
+
+  update: async (id: number, orderData: Partial<Order>) => {
+    const { data } = await api.put(`/orders/${id}`, orderData);
+    return data;
+  },
+
+  updateStatus: async (id: number, status: string, note?: string) => {
+    const { data } = await api.put(`/orders/${id}/status`, { status, note });
+    return data;
+  },
+};
+
+// Delivery API
+export const deliveryApi = {
+  getLists: async (params?: any) => {
+    const { data } = await api.get('/delivery/lists', { params });
+    return data;
+  },
+
+  getValidatedOrders: async (params?: any) => {
+    const { data } = await api.get('/delivery/validated-orders', { params });
+    return data;
+  },
+
+  assignOrders: async (assignData: {
+    orderIds: number[];
+    delivererId: number;
+    deliveryDate: string;
+    listName?: string;
+    zone?: string;
+  }) => {
+    const { data } = await api.post('/delivery/assign', assignData);
+    return data;
+  },
+
+  getMyOrders: async (params?: any) => {
+    const { data } = await api.get('/delivery/my-orders', { params });
+    return data;
+  },
+};
+
+// Stats API
+export const statsApi = {
+  getOverview: async (params?: { startDate?: string; endDate?: string }) => {
+    const { data } = await api.get('/stats/overview', { params });
+    return data;
+  },
+
+  getCallers: async (params?: any) => {
+    const { data } = await api.get('/stats/callers', { params });
+    return data;
+  },
+
+  getDeliverers: async (params?: any) => {
+    const { data } = await api.get('/stats/deliverers', { params });
+    return data;
+  },
+
+  getMyStats: async (params?: { period?: string }) => {
+    const { data } = await api.get('/stats/my-stats', { params });
+    return data;
+  },
+
+  export: async (params?: any) => {
+    const { data } = await api.get('/stats/export', { params });
+    return data;
+  },
+};
+
+// Products API
+export const productsApi = {
+  getAll: async (params?: any) => {
+    const { data } = await api.get('/products', { params });
+    return data;
+  },
+
+  getById: async (id: number) => {
+    const { data } = await api.get(`/products/${id}`);
+    return data;
+  },
+
+  create: async (productData: any) => {
+    const { data } = await api.post('/products', productData);
+    return data;
+  },
+
+  update: async (id: number, productData: any) => {
+    const { data } = await api.put(`/products/${id}`, productData);
+    return data;
+  },
+
+  adjustStock: async (id: number, adjustData: any) => {
+    const { data } = await api.post(`/products/${id}/stock/adjust`, adjustData);
+    return data;
+  },
+};
+
+// Stock API
+export const stockApi = {
+  getTournees: async (params?: any) => {
+    const { data } = await api.get('/stock/tournees', { params });
+    return data;
+  },
+
+  getTourneeDetail: async (id: number) => {
+    const { data } = await api.get(`/stock/tournees/${id}`);
+    return data;
+  },
+
+  confirmRemise: async (id: number, colisRemis: number) => {
+    const { data } = await api.post(`/stock/tournees/${id}/confirm-remise`, { colisRemis });
+    return data;
+  },
+
+  confirmRetour: async (id: number, colisRetour: number, ecartMotif?: string) => {
+    const { data } = await api.post(`/stock/tournees/${id}/confirm-retour`, { colisRetour, ecartMotif });
+    return data;
+  },
+
+  getMovements: async (params?: any) => {
+    const { data } = await api.get('/stock/movements', { params });
+    return data;
+  },
+
+  getStats: async (params?: any) => {
+    const { data } = await api.get('/stock/stats', { params });
+    return data;
+  },
+};
+

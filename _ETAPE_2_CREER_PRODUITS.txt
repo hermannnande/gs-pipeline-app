@@ -1,0 +1,204 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║           📍 ÉTAPE 2 : CRÉER LES PRODUITS DANS L'APP                ║
+║                                                                      ║
+║                    ⏱️ TEMPS : 5 MINUTES                             ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+
+🎯 CE QUE VOUS DEVEZ FAIRE :
+═══════════════════════════════════════════════════════════════════════
+
+1️⃣ OUVRIR L'APPLICATION WEB
+───────────────────────────────────────────────────────────────────────
+
+→ Ouvrez votre navigateur (Chrome, Firefox, Edge...)
+→ Allez sur : http://localhost:3001
+
+
+2️⃣ SE CONNECTER EN TANT QU'ADMIN
+───────────────────────────────────────────────────────────────────────
+
+Remplissez le formulaire de connexion :
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                                                                     │
+│  📧 Email    : admin@gs-pipeline.com                               │
+│                                                                     │
+│  🔒 Mot de passe : admin123                                        │
+│                                                                     │
+│  [ Se connecter ]                                                  │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+→ Cliquez sur "Se connecter"
+
+
+3️⃣ ALLER DANS "GESTION DES PRODUITS"
+───────────────────────────────────────────────────────────────────────
+
+Dans le menu de gauche, cliquez sur :
+
+    📦 Gestion des Produits
+
+
+4️⃣ CRÉER VOS PRODUITS
+───────────────────────────────────────────────────────────────────────
+
+→ Cliquez sur le bouton "Ajouter un produit"
+→ Remplissez le formulaire pour CHAQUE produit
+
+
+═══════════════════════════════════════════════════════════════════════
+
+📦 EXEMPLE 1 : GAINE TOURMALINE
+═══════════════════════════════════════════════════════════════════════
+
+Remplissez le formulaire comme ceci :
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                                                                     │
+│  Code (product_key) *          ⚠️ TRÈS IMPORTANT                   │
+│  ┌─────────────────────────────────────────────────────────────┐  │
+│  │ GAINE_TOURMALINE                                            │  │
+│  └─────────────────────────────────────────────────────────────┘  │
+│                                                                     │
+│  Nom *                                                             │
+│  ┌─────────────────────────────────────────────────────────────┐  │
+│  │ Gaine Tourmaline Amincissante                               │  │
+│  └─────────────────────────────────────────────────────────────┘  │
+│                                                                     │
+│  Description (optionnel)                                           │
+│  ┌─────────────────────────────────────────────────────────────┐  │
+│  │ Gaine minceur avec tourmaline, effet amincissant immédiat  │  │
+│  └─────────────────────────────────────────────────────────────┘  │
+│                                                                     │
+│  Prix unitaire (XOF) *                                             │
+│  ┌─────────────────────────────────────────────────────────────┐  │
+│  │ 45000                                                       │  │
+│  └─────────────────────────────────────────────────────────────┘  │
+│                                                                     │
+│  Stock actuel *                                                    │
+│  ┌─────────────────────────────────────────────────────────────┐  │
+│  │ 100                                                         │  │
+│  └─────────────────────────────────────────────────────────────┘  │
+│                                                                     │
+│  Seuil d'alerte *                                                  │
+│  ┌─────────────────────────────────────────────────────────────┐  │
+│  │ 10                                                          │  │
+│  └─────────────────────────────────────────────────────────────┘  │
+│                                                                     │
+│  [Annuler]  [Enregistrer]                                         │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+→ Cliquez sur "Enregistrer"
+
+✅ Message : "Produit créé avec succès"
+
+
+═══════════════════════════════════════════════════════════════════════
+
+📦 EXEMPLE 2 : PATCH ANTI-CICATRICE
+═══════════════════════════════════════════════════════════════════════
+
+Code : PATCH_CICATRICE
+Nom : Patch Anti-Cicatrice Professionnel
+Description : Patch pour réduire les cicatrices et marques
+Prix : 25000
+Stock : 150
+Seuil : 15
+
+
+═══════════════════════════════════════════════════════════════════════
+
+📦 EXEMPLE 3 : CRÈME VISAGE
+═══════════════════════════════════════════════════════════════════════
+
+Code : CREME_VISAGE
+Nom : Crème Visage Anti-Âge Premium
+Description : Crème anti-âge avec acide hyaluronique
+Prix : 35000
+Stock : 80
+Seuil : 10
+
+
+═══════════════════════════════════════════════════════════════════════
+
+📦 EXEMPLE 4 : SÉRUM CHEVEUX
+═══════════════════════════════════════════════════════════════════════
+
+Code : SERUM_CHEVEUX
+Nom : Sérum Pousse Cheveux Rapide
+Description : Sérum pour accélérer la pousse des cheveux
+Prix : 30000
+Stock : 120
+Seuil : 12
+
+
+═══════════════════════════════════════════════════════════════════════
+
+⚠️  ATTENTION AU CHAMP "CODE" :
+───────────────────────────────────────────────────────────────────────
+
+Le champ "Code" est CRUCIAL car :
+
+✅ Il doit être IDENTIQUE au "product_key" que vous mettrez dans Make
+✅ Pas d'espaces (utilisez _ si besoin)
+✅ Pas d'accents (é, è, à, etc.)
+✅ Majuscules recommandées pour la lisibilité
+✅ Underscore _ autorisé
+
+Exemples CORRECTS :
+• GAINE_TOURMALINE ✅
+• PATCH_CICATRICE ✅
+• CREME_VISAGE ✅
+• SERUM_CHEVEUX ✅
+
+Exemples INCORRECTS :
+• gaine tourmaline ❌ (espaces)
+• Gaine-Tourmaline ❌ (tirets, mélange casse)
+• crème_visage ❌ (accent)
+
+
+═══════════════════════════════════════════════════════════════════════
+
+📝 TEMPLATE VIERGE POUR VOS PROPRES PRODUITS
+───────────────────────────────────────────────────────────────────────
+
+Code : ___________________________
+Nom : ___________________________
+Description : ___________________________
+Prix : ___________________________
+Stock : ___________________________
+Seuil : ___________________________
+
+
+Code : ___________________________
+Nom : ___________________________
+Description : ___________________________
+Prix : ___________________________
+Stock : ___________________________
+Seuil : ___________________________
+
+
+Code : ___________________________
+Nom : ___________________________
+Description : ___________________________
+Prix : ___________________________
+Stock : ___________________________
+Seuil : ___________________________
+
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ ÉTAPE 2 TERMINÉE !
+
+→ Vos produits sont maintenant créés dans l'app
+→ Vous devez les voir dans la liste avec leurs codes
+
+Passez au fichier : _ETAPE_3_TESTER_API.txt
+
+═══════════════════════════════════════════════════════════════════════
+

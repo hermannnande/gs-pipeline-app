@@ -1,0 +1,286 @@
+// Schéma de base de données pour le pipeline de commandes
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Énumération des rôles utilisateurs
+enum UserRole {
+  ADMIN
+  GESTIONNAIRE
+  GESTIONNAIRE_STOCK
+  APPELANT
+  LIVREUR
+}
+
+// Énumération des statuts de commande
+enum OrderStatus {
+  NOUVELLE          // Reçue depuis le site
+  A_APPELER         // En attente d'appel
+  VALIDEE           // Client a validé la commande
+  ANNULEE           // Client a annulé
+  INJOIGNABLE       // Client non joignable
+  ASSIGNEE          // Assignée à un livreur
+  LIVREE            // Livrée avec succès
+  REFUSEE           // Refusée par le client à la livraison
+  ANNULEE_LIVRAISON // Annulée pendant la livraison
+}
+
+// Table des utilisateurs
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  nom       String
+  prenom    String
+  telephone String?
+  role      UserRole
+  actif     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  ordersAsCaller   Order[]          @relation("CallerOrders")
+  ordersAsDeliverer Order[]         @relation("DelivererOrders")
+  deliveryLists    DeliveryList[]
+  callStats        CallStatistic[]
+  deliveryStats    DeliveryStatistic[]
+
+  @@map("users")
+}
+
+// Table des commandes
+model Order {
+  id              Int         @id @default(autoincrement())
+  orderReference  String      @unique @default(uuid())
+  
+  // Informations client
+  clientNom       String
+  clientTelephone String
+  clientVille     String
+  clientCommune   String?
+  clientAdresse   String?
+  
+  // Informations produit
+  produitNom      String
+  produitPage     String?
+  productId       Int?        // Lien vers le produit (optionnel pour rétrocompatibilité)
+  product         Product?    @relation("ProductOrders", fields: [productId], references: [id])
+  quantite        Int         @default(1)
+  montant         Float
+  
+  // Informations marketing
+  sourceCampagne  String?
+  sourcePage      String?
+  
+  // Statut et pipeline
+  status          OrderStatus @default(NOUVELLE)
+  
+  // Assignations
+  callerId        Int?
+  caller          User?       @relation("CallerOrders", fields: [callerId], references: [id])
+  calledAt        DateTime?
+  
+  delivererId     Int?
+  deliverer       User?       @relation("DelivererOrders", fields: [delivererId], references: [id])
+  deliveryDate    DateTime?
+  deliveryListId  Int?
+  deliveryList    DeliveryList? @relation(fields: [deliveryListId], references: [id])
+  
+  // Notes internes
+  noteAppelant    String?
+  noteLivreur     String?
+  noteGestionnaire String?
+  
+  // Dates de suivi
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  validatedAt     DateTime?
+  deliveredAt     DateTime?
+  
+  // Historique des changements de statut
+  statusHistory   StatusHistory[]
+
+  @@map("orders")
+  @@index([status])
+  @@index([clientTelephone])
+  @@index([clientVille])
+  @@index([deliveryDate])
+  @@index([callerId])
+  @@index([delivererId])
+}
+
+// Historique des changements de statut
+model StatusHistory {
+  id        Int         @id @default(autoincrement())
+  orderId   Int
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  oldStatus OrderStatus?
+  newStatus OrderStatus
+  changedBy Int
+  comment   String?
+  createdAt DateTime    @default(now())
+
+  @@map("status_history")
+  @@index([orderId])
+}
+
+// Listes de livraison journalières
+model DeliveryList {
+  id           Int      @id @default(autoincrement())
+  nom          String
+  date         DateTime
+  delivererId  Int
+  deliverer    User     @relation(fields: [delivererId], references: [id])
+  zone         String?  // Zone géographique
+  orders       Order[]
+  tourneeStock TourneeStock? // Lien avec la gestion de stock
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("delivery_lists")
+  @@index([delivererId, date])
+}
+
+// Statistiques d'appels (pour les appelants)
+model CallStatistic {
+  id                Int      @id @default(autoincrement())
+  userId            Int
+  user              User     @relation(fields: [userId], references: [id])
+  date              DateTime @default(now())
+  
+  totalAppels       Int      @default(0)
+  totalValides      Int      @default(0)
+  totalAnnules      Int      @default(0)
+  totalInjoignables Int      @default(0)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("call_statistics")
+  @@index([userId, date])
+}
+
+// Statistiques de livraison (pour les livreurs)
+model DeliveryStatistic {
+  id               Int      @id @default(autoincrement())
+  userId           Int
+  user             User     @relation(fields: [userId], references: [id])
+  date             DateTime @default(now())
+  
+  totalLivraisons  Int      @default(0)
+  totalRefusees    Int      @default(0)
+  totalAnnulees    Int      @default(0)
+  montantLivre     Float    @default(0)
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("delivery_statistics")
+  @@index([userId, date])
+}
+
+// ========================================
+// NOUVEAU : GESTION DE STOCK
+// ========================================
+
+// Table des produits
+model Product {
+  id           Int      @id @default(autoincrement())
+  code         String   @unique  // Code/référence produit
+  nom          String
+  description  String?
+  prixUnitaire Float
+  stockActuel  Int      @default(0)  // Stock disponible
+  stockAlerte  Int      @default(10) // Seuil d'alerte
+  actif        Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  stockMovements StockMovement[]
+  orders         Order[]          @relation("ProductOrders")
+
+  @@map("products")
+  @@index([code])
+  @@index([actif])
+}
+
+// Types de mouvements de stock
+enum StockMovementType {
+  APPROVISIONNEMENT  // Ajout de stock manuel par admin
+  LIVRAISON          // Sortie de stock (commande livrée)
+  RETOUR             // Retour de colis non livré
+  CORRECTION         // Correction manuelle
+  PERTE              // Perte/casse
+}
+
+// Mouvements de stock (entrées/sorties)
+model StockMovement {
+  id          Int               @id @default(autoincrement())
+  productId   Int
+  product     Product           @relation(fields: [productId], references: [id])
+  
+  type        StockMovementType
+  quantite    Int               // Positif pour entrée, négatif pour sortie
+  stockAvant  Int               // Stock avant le mouvement
+  stockApres  Int               // Stock après le mouvement
+  
+  // Références optionnelles
+  orderId     Int?              // Si lié à une commande
+  tourneeId   Int?              // Si lié à une tournée
+  tournee     TourneeStock?     @relation(fields: [tourneeId], references: [id])
+  
+  effectuePar Int               // User qui a effectué le mouvement
+  motif       String?           // Raison du mouvement
+  
+  createdAt   DateTime          @default(now())
+
+  @@map("stock_movements")
+  @@index([productId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([tourneeId])
+}
+
+// Gestion des tournées côté stock (colis remis/retournés)
+model TourneeStock {
+  id                    Int      @id @default(autoincrement())
+  deliveryListId        Int      @unique
+  deliveryList          DeliveryList @relation(fields: [deliveryListId], references: [id])
+  
+  // Colis remis au départ
+  colisRemis            Int      @default(0)
+  colisRemisConfirme    Boolean  @default(false)
+  colisRemisAt          DateTime?
+  colisRemisBy          Int?     // Gestionnaire de stock qui a confirmé
+  
+  // Retour après tournée
+  colisLivres           Int      @default(0) // Calculé automatiquement depuis les commandes
+  colisRetour           Int      @default(0)
+  colisRetourConfirme   Boolean  @default(false)
+  colisRetourAt         DateTime?
+  colisRetourBy         Int?     // Gestionnaire de stock qui a enregistré
+  
+  // Vérification
+  ecart                 Int      @default(0) // colisRemis - (colisLivres + colisRetour)
+  ecartResolu           Boolean  @default(false)
+  ecartMotif            String?  // Explication si écart (perte, casse, etc.)
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  stockMovements        StockMovement[]
+
+  @@map("tournees_stock")
+  @@index([deliveryListId])
+  @@index([colisRemisConfirme])
+  @@index([colisRetourConfirme])
+}
+

@@ -1,0 +1,113 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║                📋 MÉMO RAPIDE - INTÉGRATION MAKE                    ║
+║                                                                      ║
+║                         EN 5 ÉTAPES                                 ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+
+1️⃣ AJOUTER CLÉ API (.env)
+═══════════════════════════════════════════════════════════════════════
+
+Fichier : .env (racine projet)
+
+Ajouter :
+MAKE_WEBHOOK_API_KEY="votre_cle_securisee"
+
+Clé à générer sur : https://randomkeygen.com/
+
+Puis : npm run dev (redémarrer)
+
+
+2️⃣ CRÉER PRODUITS (App Web)
+═══════════════════════════════════════════════════════════════════════
+
+URL : http://localhost:3001
+Login : admin@gs-pipeline.com / admin123
+Page : Gestion des Produits 📦
+
+Pour chaque produit :
+• Code : GAINE_TOURMALINE (⚠️ IMPORTANT - utilisé dans Make)
+• Nom : Gaine Tourmaline Amincissante
+• Prix : 45000
+• Stock : 100
+
+
+3️⃣ TESTER API
+═══════════════════════════════════════════════════════════════════════
+
+PowerShell :
+
+curl -X GET http://localhost:5000/api/webhook/test -H "X-API-KEY: votre_cle"
+
+✅ Résultat : {"success": true}
+
+
+4️⃣ CONFIGURER MAKE
+═══════════════════════════════════════════════════════════════════════
+
+Dans chaque scénario Make :
+
+→ Ajouter module HTTP après Google Sheets
+→ URL : http://localhost:5000/api/webhook/make
+→ Method : POST
+→ Headers :
+  • Content-Type: application/json
+  • X-API-KEY: votre_cle_du_.env
+→ Body type : Raw
+→ Content type : JSON
+→ Request content :
+
+{
+  "product_key": "GAINE_TOURMALINE",
+  "customer_name": "{{1.nom}}",
+  "customer_phone": "{{1.telephone}}",
+  "customer_city": "{{1.ville}}",
+  "quantity": "{{1.quantite}}",
+  "source": "PAGE_GAINE_TOURMALINE"
+}
+
+⚠️ Adapter les {{1.xxx}} selon vos champs formulaire
+
+
+5️⃣ TESTER
+═══════════════════════════════════════════════════════════════════════
+
+Make : Run once
+✅ Vérifier : Google Sheets + App Web (À appeler)
+
+
+═══════════════════════════════════════════════════════════════════════
+
+🔑 LES 2 POINTS CRITIQUES
+───────────────────────────────────────────────────────────────────────
+
+1. CLÉ API doit être IDENTIQUE :
+   .env : MAKE_WEBHOOK_API_KEY="abc123..."
+   Make : X-API-KEY: abc123...
+
+2. PRODUCT_KEY doit correspondre :
+   App : Code = GAINE_TOURMALINE
+   Make : "product_key": "GAINE_TOURMALINE"
+
+
+═══════════════════════════════════════════════════════════════════════
+
+📂 FICHIERS DÉTAILLÉS DISPONIBLES
+───────────────────────────────────────────────────────────────────────
+
+_COMMENCEZ_ICI.txt                     ← Vue d'ensemble
+_ETAPE_1_CONFIGURATION_ENV.txt         ← Détails étape 1
+_ETAPE_2_CREER_PRODUITS.txt            ← Détails étape 2
+_ETAPE_3_TESTER_API.ps1                ← Script de test
+_ETAPE_4_CONFIGURER_MAKE.txt           ← Détails étape 4
+_ETAPE_5_TESTER_COMPLET.txt            ← Détails étape 5
+
+
+═══════════════════════════════════════════════════════════════════════
+
+Suivez les fichiers dans l'ordre et tout fonctionnera ! 🎯✨
+
+═══════════════════════════════════════════════════════════════════════
+

@@ -1,0 +1,309 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║           📍 ÉTAPE 5 : TEST COMPLET - VÉRIFICATION FINALE           ║
+║                                                                      ║
+║                    ⏱️ TEMPS : 3 MINUTES                             ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+
+🎯 CE QUE VOUS DEVEZ FAIRE :
+═══════════════════════════════════════════════════════════════════════
+
+Nous allons tester le flux complet :
+
+Formulaire → Make → Google Sheets + App Web
+
+
+1️⃣ LANCER UN TEST DANS MAKE
+───────────────────────────────────────────────────────────────────────
+
+→ Dans Make, ouvrez votre scénario (celui que vous venez de configurer)
+→ En bas à gauche, cliquez sur "Run once"
+
+Vous voyez :
+┌─────────────────────────────────────────────────────────────────────┐
+│ ⏸ Listening for new data...                                        │
+└─────────────────────────────────────────────────────────────────────┘
+
+Le scénario attend maintenant qu'on déclenche le webhook
+
+
+2️⃣ DÉCLENCHER LE WEBHOOK
+───────────────────────────────────────────────────────────────────────
+
+Vous avez 2 options :
+
+
+OPTION A : Avec votre vraie page produit (RECOMMANDÉ)
+───────────────────────────────────────────────────────────────────────
+
+→ Ouvrez votre landing page (ex: https://monsite.com/gaine-tourmaline)
+→ Remplissez le formulaire avec des données de test
+→ Cliquez sur "Commander" ou "Envoyer"
+
+Make va automatiquement recevoir les données et traiter le scénario
+
+
+OPTION B : Avec curl (pour test rapide)
+───────────────────────────────────────────────────────────────────────
+
+Si vous connaissez l'URL du webhook Make :
+
+1. Dans Make, cliquez sur le module "Webhooks"
+2. Copiez l'URL du webhook (ex: https://hook.eu2.make.com/xxxxx)
+3. Ouvrez PowerShell et exécutez :
+
+curl -X POST "https://hook.eu2.make.com/xxxxx" `
+  -H "Content-Type: application/json" `
+  -d '{\"nom\":\"Test Client\",\"telephone\":\"+2250778123456\",\"ville\":\"Abidjan\",\"quantite\":\"2\"}'
+
+⚠️ Remplacez l'URL et adaptez les champs selon votre formulaire
+
+
+3️⃣ OBSERVER L'EXÉCUTION DANS MAKE
+───────────────────────────────────────────────────────────────────────
+
+Make traite automatiquement le scénario.
+
+Vous voyez les 3 modules s'exécuter :
+
+┌────────────────────────────────────────┐
+│  1️⃣ Webhooks ✅                       │
+│     Data received                       │
+└────────────────────────────────────────┘
+                ↓
+┌────────────────────────────────────────┐
+│  2️⃣ Google Sheets ✅                  │
+│     1 row added                         │
+└────────────────────────────────────────┘
+                ↓
+┌────────────────────────────────────────┐
+│  3️⃣ HTTP ✅                           │
+│     Status: 200 OK                      │
+└────────────────────────────────────────┘
+
+
+4️⃣ VÉRIFIER LA RÉPONSE HTTP
+───────────────────────────────────────────────────────────────────────
+
+→ Cliquez sur le module "3️⃣ HTTP"
+→ Regardez la section "Output"
+
+
+✅ SUCCÈS (Status Code: 200) :
+───────────────────────────────────────────────────────────────────────
+
+Vous devez voir :
+
+{
+  "success": true,
+  "order_id": 123,
+  "order_reference": "abc-123-def-456",
+  "product": {
+    "id": 1,
+    "name": "Gaine Tourmaline Amincissante",
+    "code": "GAINE_TOURMALINE"
+  },
+  "amount": 90000,
+  "message": "Commande créée avec succès"
+}
+
+🎉 PARFAIT ! La commande a été créée dans l'app !
+
+
+❌ ERREUR (Status Code: 400 ou 401) :
+───────────────────────────────────────────────────────────────────────
+
+Erreur 401 - API Key invalide :
+{
+  "success": false,
+  "error": "API Key invalide."
+}
+
+SOLUTION :
+• Vérifiez le header X-API-KEY dans Make
+• Vérifiez qu'il correspond à la clé dans .env
+• Redémarrez le serveur backend
+
+─────────────────────────────────────────────────────────────────────
+
+Erreur 400 - Produit inconnu :
+{
+  "success": false,
+  "error": "Produit inconnu avec product_key: GAINE_XXX"
+}
+
+SOLUTION :
+• Vérifiez que le product_key dans Make existe dans l'app
+• Vérifiez les majuscules/minuscules
+• Allez dans "Gestion des Produits" pour voir le code exact
+
+─────────────────────────────────────────────────────────────────────
+
+Erreur 400 - Données invalides :
+{
+  "success": false,
+  "error": "Données invalides",
+  "details": [...]
+}
+
+SOLUTION :
+• Vérifiez que les 4 champs obligatoires sont présents :
+  - product_key
+  - customer_name
+  - customer_phone
+  - customer_city
+
+
+5️⃣ VÉRIFIER DANS GOOGLE SHEETS
+───────────────────────────────────────────────────────────────────────
+
+→ Ouvrez votre fichier Google Sheets
+→ ✅ Une nouvelle ligne doit être ajoutée avec les données de la commande
+
+
+6️⃣ VÉRIFIER DANS L'APPLICATION WEB
+───────────────────────────────────────────────────────────────────────
+
+→ Retournez dans l'application web (http://localhost:3001)
+→ Cliquez sur "À appeler" 📞 dans le menu
+→ ✅ La commande doit apparaître en haut de la liste
+
+┌────────────────────────────────────────────────────────────────────┐
+│  Test Client                                               🆕      │
+│  +2250778123456 • Abidjan                                         │
+│  Gaine Tourmaline Amincissante x2                                 │
+│  90 000 F CFA                                                     │
+│  Status: NOUVELLE                                                 │
+│  Il y a quelques secondes                                         │
+└────────────────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ SI TOUT FONCTIONNE :
+───────────────────────────────────────────────────────────────────────
+
+🎉 FÉLICITATIONS ! Votre intégration Make → App Web fonctionne !
+
+Vous devez avoir :
+• ✅ Ligne ajoutée dans Google Sheets
+• ✅ HTTP retourne 200 OK dans Make
+• ✅ Commande visible dans l'app web
+
+
+7️⃣ TEST AVEC UNE VRAIE COMMANDE
+───────────────────────────────────────────────────────────────────────
+
+Maintenant, testez avec une vraie commande :
+
+1. Ouvrez votre landing page produit
+2. Remplissez le formulaire avec de vraies données
+3. Soumettez le formulaire
+4. Vérifiez :
+   - ✅ Google Sheets : Nouvelle ligne
+   - ✅ App Web : Nouvelle commande dans "À appeler"
+
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 CHECKLIST FINALE
+───────────────────────────────────────────────────────────────────────
+
+Cochez chaque élément :
+
+BACKEND :
+[ ] ✅ Clé API ajoutée dans .env
+[ ] ✅ Serveur backend redémarré
+[ ] ✅ Test API réussi (200 OK)
+
+APP WEB :
+[ ] ✅ Au moins 1 produit créé
+[ ] ✅ Code produit correct (sans espaces/accents)
+
+MAKE :
+[ ] ✅ Module HTTP ajouté après Google Sheets
+[ ] ✅ URL configurée
+[ ] ✅ Headers configurés (Content-Type + X-API-KEY)
+[ ] ✅ Body type = Raw
+[ ] ✅ Content type = JSON
+[ ] ✅ Request content configuré
+[ ] ✅ product_key correspond au code produit
+
+TESTS :
+[ ] ✅ Test "Run once" réussi
+[ ] ✅ Module HTTP retourne 200 OK
+[ ] ✅ Ligne ajoutée dans Google Sheets
+[ ] ✅ Commande visible dans l'app (À appeler)
+
+
+═══════════════════════════════════════════════════════════════════════
+
+📋 POUR LES AUTRES PRODUITS
+───────────────────────────────────────────────────────────────────────
+
+Pour configurer vos autres produits :
+
+1. Ouvrez le scénario Make du produit
+2. Dupliquez la configuration du module HTTP (ou ajoutez-en un nouveau)
+3. Changez UNIQUEMENT le "product_key" dans le Request content
+4. Exemple :
+   - Scénario "Gaine" → "product_key": "GAINE_TOURMALINE"
+   - Scénario "Patch" → "product_key": "PATCH_CICATRICE"
+   - Scénario "Crème" → "product_key": "CREME_VISAGE"
+5. Testez chaque scénario avec "Run once"
+
+
+═══════════════════════════════════════════════════════════════════════
+
+🎉 FÉLICITATIONS !
+───────────────────────────────────────────────────────────────────────
+
+Votre intégration Make → App Web est OPÉRATIONNELLE !
+
+
+MAINTENANT, CHAQUE COMMANDE :
+───────────────────────────────────────────────────────────────────────
+
+✅ Arrive dans Google Sheets (historique)
+✅ Arrive dans l'App Web (pipeline complet)
+✅ Est liée au bon produit (via product_key)
+✅ Peut être traitée par les appelants
+✅ Peut être assignée aux livreurs
+✅ Décrémente le stock automatiquement à la livraison
+✅ Génère des statistiques complètes
+✅ Permet le suivi comptable par produit
+
+TOUT EST AUTOMATISÉ ! 🚀
+
+
+═══════════════════════════════════════════════════════════════════════
+
+📚 DOCUMENTATION DE RÉFÉRENCE
+───────────────────────────────────────────────────────────────────────
+
+Si vous rencontrez des problèmes, consultez :
+
+• GUIDE_CONFIGURATION_DETAILLE.md - Guide complet
+• INTEGRATION_MAKE.md - Documentation technique
+• RESUME_INTEGRATION_MAKE.md - Dépannage et FAQ
+
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 PROCHAINES ÉTAPES
+───────────────────────────────────────────────────────────────────────
+
+1. Configurez les autres scénarios Make (autres produits)
+2. Testez chaque scénario
+3. Passez en production (changez l'URL HTTP en HTTPS)
+4. Profitez de votre système automatisé !
+
+
+═══════════════════════════════════════════════════════════════════════
+
+Profitez de votre pipeline automatisé ! 🎯✨
+
+═══════════════════════════════════════════════════════════════════════
+

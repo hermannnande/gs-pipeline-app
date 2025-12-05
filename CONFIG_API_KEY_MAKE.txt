@@ -1,0 +1,151 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║              🔑 CONFIGURATION CLÉ API MAKE - INSTRUCTIONS           ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+📝 ÉTAPE 1 : OUVRIR LE FICHIER .env
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Ouvrez le fichier .env à la racine de votre projet backend.
+
+
+📝 ÉTAPE 2 : AJOUTER LA CLÉ API
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Ajoutez cette ligne à la fin du fichier .env :
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                                                                     │
+│  # Configuration Make Webhook (pour intégration avec Make)         │
+│  MAKE_WEBHOOK_API_KEY="CHANGEZ_MOI_PAR_UNE_CLE_SECURISEE"         │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+
+📝 ÉTAPE 3 : GÉNÉRER UNE CLÉ SÉCURISÉE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Option A : En ligne (recommandé)
+═══════════════════════════════════
+
+1. Allez sur : https://randomkeygen.com/
+2. Copiez une "Fort Knox Password"
+3. Remplacez "CHANGEZ_MOI_PAR_UNE_CLE_SECURISEE" par cette clé
+
+
+Option B : Avec OpenSSL (si installé)
+══════════════════════════════════════
+
+Exécutez cette commande dans votre terminal :
+
+    openssl rand -hex 32
+
+Copiez le résultat et remplacez "CHANGEZ_MOI_PAR_UNE_CLE_SECURISEE"
+
+
+📝 ÉTAPE 4 : EXEMPLE FINAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Votre fichier .env devrait ressembler à ceci :
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                                                                     │
+│  # Configuration Base de données                                   │
+│  DATABASE_URL="postgresql://user:pass@localhost:5432/gs_pipeline"  │
+│                                                                     │
+│  # Configuration JWT                                               │
+│  JWT_SECRET="votre_secret_jwt"                                     │
+│                                                                     │
+│  # Configuration Serveur                                           │
+│  PORT=5000                                                         │
+│  NODE_ENV="development"                                            │
+│                                                                     │
+│  # Configuration Make Webhook                                      │
+│  MAKE_WEBHOOK_API_KEY="a3f5e8c9d2b7f4e1a8c6d9b2e5f8c1a4b7e9..."  │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+
+⚠️  IMPORTANT : Ne partagez JAMAIS cette clé !
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• Cette clé doit rester SECRÈTE
+• Ne la commitez JAMAIS dans Git
+• Ne la partagez avec PERSONNE
+• Gardez-la dans .env uniquement
+
+
+📝 ÉTAPE 5 : REDÉMARRER LE SERVEUR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Arrêtez le serveur backend (Ctrl+C)
+2. Redémarrez-le :
+
+    npm run dev
+
+3. Vérifiez qu'il démarre sans erreur
+
+
+📝 ÉTAPE 6 : TESTER L'API
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Testez que le webhook fonctionne :
+
+    curl -X GET \
+      http://localhost:5000/api/webhook/test \
+      -H "X-API-KEY: VOTRE_CLE_ICI"
+
+Remplacez VOTRE_CLE_ICI par la clé que vous avez mise dans .env
+
+✅ Résultat attendu :
+{
+  "success": true,
+  "message": "Webhook Make fonctionnel !",
+  "timestamp": "2025-12-05T12:00:00.000Z"
+}
+
+
+📝 ÉTAPE 7 : CONFIGURER MAKE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Dans chaque scénario Make, ajoutez un module HTTP avec :
+
+Headers:
+┌─────────────────────────────────────────────────────────────────┐
+│ Content-Type : application/json                                 │
+│ X-API-KEY    : [LA_MEME_CLE_QUE_DANS_.ENV]                     │
+└─────────────────────────────────────────────────────────────────┘
+
+⚠️  La clé dans Make doit être IDENTIQUE à celle dans .env
+
+
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║                       ✅ C'EST PRÊT !                                ║
+║                                                                      ║
+║  Votre API webhook est maintenant sécurisée et prête à recevoir     ║
+║  les commandes depuis Make !                                        ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+
+📚 DOCUMENTATION COMPLÈTE
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• GUIDE_DEMARRAGE_MAKE.md : Guide de démarrage rapide (10 min)
+• INTEGRATION_MAKE.md : Documentation technique complète
+
+
+❓ BESOIN D'AIDE ?
+━━━━━━━━━━━━━━━━━━━━
+
+Consultez le guide de démarrage pour résoudre les problèmes courants.
+
+
+═══════════════════════════════════════════════════════════════════════
+
+Fait avec ❤️ pour votre e-commerce
+
+═══════════════════════════════════════════════════════════════════════
+

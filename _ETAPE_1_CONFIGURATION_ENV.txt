@@ -1,0 +1,120 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║           📍 ÉTAPE 1 : AJOUTER LA CLÉ API DANS .env                 ║
+║                                                                      ║
+║                    ⏱️ TEMPS : 2 MINUTES                             ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+
+🎯 CE QUE VOUS DEVEZ FAIRE :
+═══════════════════════════════════════════════════════════════════════
+
+1️⃣ GÉNÉRER UNE CLÉ API SÉCURISÉE
+───────────────────────────────────────────────────────────────────────
+
+Option A (RECOMMANDÉ - Plus simple) :
+────────────────────────────────────────
+→ Allez sur : https://randomkeygen.com/
+→ Descendez jusqu'à "Fort Knox Passwords"
+→ Cliquez sur une clé pour la copier
+
+Exemple de clé générée :
+a3f5e8c9d2b7f4e1a8c6d9b2e5f8c1a4b7e9d2c5f8a1b4e7d0c3f6a9b2e5d8c1
+
+
+Option B (Si vous avez OpenSSL) :
+────────────────────────────────────────
+→ Ouvrez PowerShell
+→ Tapez : openssl rand -hex 32
+→ Copiez la clé générée
+
+
+2️⃣ OUVRIR LE FICHIER .env
+───────────────────────────────────────────────────────────────────────
+
+Le fichier se trouve ici :
+📁 GS cursor\.env
+
+Ouvrez-le avec :
+• Visual Studio Code
+• Notepad++
+• Ou n'importe quel éditeur de texte
+
+
+3️⃣ AJOUTER LA CLÉ À LA FIN DU FICHIER
+───────────────────────────────────────────────────────────────────────
+
+Ajoutez ces 2 lignes à la FIN du fichier .env :
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                                                                     │
+│  # Configuration Make Webhook (pour intégration avec Make)         │
+│  MAKE_WEBHOOK_API_KEY="COLLEZ_VOTRE_CLE_ICI"                      │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+⚠️ Remplacez COLLEZ_VOTRE_CLE_ICI par la clé que vous avez générée
+
+
+EXEMPLE COMPLET :
+───────────────────────────────────────────────────────────────────────
+
+Votre fichier .env devrait ressembler à ceci :
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                                                                     │
+│  # Configuration Base de données                                   │
+│  DATABASE_URL="postgresql://..."                                   │
+│                                                                     │
+│  # Configuration JWT                                               │
+│  JWT_SECRET="votre_secret_jwt"                                     │
+│                                                                     │
+│  # Configuration Serveur                                           │
+│  PORT=5000                                                         │
+│  NODE_ENV="development"                                            │
+│                                                                     │
+│  # Configuration Make Webhook                                      │
+│  MAKE_WEBHOOK_API_KEY="a3f5e8c9d2b7f4e1a8c6d9b2e5f8c1a4..."       │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+
+4️⃣ SAUVEGARDER LE FICHIER
+───────────────────────────────────────────────────────────────────────
+
+• Windows : Ctrl + S
+• Mac : Cmd + S
+
+
+5️⃣ REDÉMARRER LE SERVEUR BACKEND
+───────────────────────────────────────────────────────────────────────
+
+→ Allez dans le terminal où le backend tourne
+→ Appuyez sur Ctrl + C pour arrêter
+→ Relancez avec : npm run dev
+
+✅ Vous devez voir :
+   🚀 Serveur démarré sur le port 5000
+   📍 http://localhost:5000
+
+
+═══════════════════════════════════════════════════════════════════════
+
+⚠️  IMPORTANT :
+───────────────────────────────────────────────────────────────────────
+
+• Gardez cette clé SECRÈTE
+• Ne la partagez avec PERSONNE
+• Ne la commitez JAMAIS dans Git
+• Vous utiliserez la MÊME clé dans Make
+
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ ÉTAPE 1 TERMINÉE !
+
+Passez au fichier : _ETAPE_2_CREER_PRODUITS.txt
+
+═══════════════════════════════════════════════════════════════════════
+
