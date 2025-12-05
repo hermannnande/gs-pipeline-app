@@ -18,7 +18,16 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middlewares
-app.use(cors());
+const corsOptions = {
+  origin: [
+    'http://localhost:3000',
+    'https://gs-pipeline-app.vercel.app',
+    'https://gs-pipeline-app-production.up.railway.app',
+    /^https:\/\/gs-pipeline-.*\.vercel\.app$/
+  ],
+  credentials: true
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
