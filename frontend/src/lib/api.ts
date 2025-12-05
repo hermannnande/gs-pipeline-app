@@ -1,7 +1,8 @@
 import axios from 'axios';
 import type { AuthResponse, LoginCredentials, User, Order, DeliveryList } from '@/types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
 
 // Configuration axios
 export const api = axios.create({
