@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { 
   ShoppingCart, 
   CheckCircle, 
@@ -7,13 +8,16 @@ import {
   TrendingUp,
   Package,
   Users as UsersIcon,
-  Calendar
+  Calendar,
+  Download,
+  FileText
 } from 'lucide-react';
 import { statsApi, ordersApi, usersApi } from '@/lib/api';
 import { formatCurrency, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
 
 export default function Overview() {
   const [period, setPeriod] = useState<'today' | 'week' | 'month' | 'all'>('month');
+  const navigate = useNavigate();
 
   const getDateRange = () => {
     const end = new Date();
@@ -232,13 +236,25 @@ export default function Overview() {
         <div className="card">
           <h3 className="text-lg font-semibold mb-4">Actions rapides</h3>
           <div className="space-y-3">
-            <button className="w-full btn btn-primary text-left">
+            <button 
+              onClick={() => navigate('/admin/users')}
+              className="w-full btn btn-primary flex items-center justify-center gap-2"
+            >
+              <UsersIcon size={20} />
               Créer un nouveau compte
             </button>
-            <button className="w-full btn btn-secondary text-left">
+            <button 
+              onClick={() => navigate('/admin/orders')}
+              className="w-full btn btn-secondary flex items-center justify-center gap-2"
+            >
+              <Download size={20} />
               Exporter les données
             </button>
-            <button className="w-full btn btn-secondary text-left">
+            <button 
+              onClick={() => navigate('/admin/stats')}
+              className="w-full btn btn-secondary flex items-center justify-center gap-2"
+            >
+              <FileText size={20} />
               Voir les rapports détaillés
             </button>
           </div>
