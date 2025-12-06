@@ -19,8 +19,17 @@ const PORT = process.env.PORT || 5000;
 
 // Middlewares
 app.use(cors({
-  origin: '*', // ⚠️ TEMPORAIRE : Autoriser tout le monde pour déboguer
-  credentials: true
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:5000',
+    'https://gs-pipeline-app.vercel.app',
+    'https://obgestion.com',
+    'https://www.obgestion.com',
+    /https:\/\/gs-pipeline-app-.*\.vercel\.app$/
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-KEY'],
+  credentials: true,
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
