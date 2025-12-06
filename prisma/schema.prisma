@@ -29,6 +29,17 @@ enum OrderStatus {
   LIVREE            // Livrée avec succès
   REFUSEE           // Refusée par le client à la livraison
   ANNULEE_LIVRAISON // Annulée pendant la livraison
+  EXPEDITION        // Paiement total 100% - Envoi vers autre ville
+  EXPRESS           // Paiement partiel 10% - Retrait en agence
+  EXPRESS_ARRIVE    // Colis arrivé en agence - En attente paiement 90%
+  EXPRESS_LIVRE     // Express livré après paiement des 90%
+}
+
+// Type de livraison pour les villes éloignées
+enum DeliveryType {
+  LOCAL       // Livraison locale normale
+  EXPEDITION  // Paiement 100% avant envoi
+  EXPRESS     // Paiement 10% avant envoi, 90% à la réception
 }
 
 // Table des utilisateurs
@@ -74,6 +85,13 @@ model Order {
   quantite        Int         @default(1)
   montant         Float
   
+  // Gestion des paiements (pour EXPEDITION & EXPRESS)
+  deliveryType    DeliveryType @default(LOCAL)
+  montantPaye     Float?      // Montant déjà payé (10% pour EXPRESS, 100% pour EXPEDITION)
+  montantRestant  Float?      // Montant restant à payer (90% pour EXPRESS)
+  modePaiement    String?     // Mobile Money, Cash, etc.
+  referencePayment String?    // Référence de transaction Mobile Money
+  
   // Informations marketing
   sourceCampagne  String?
   sourcePage      String?
@@ -97,11 +115,19 @@ model Order {
   noteLivreur     String?
   noteGestionnaire String?
   
+  // Gestion EXPRESS - Notification d'arrivée
+  clientNotifie   Boolean?    @default(false) // Client notifié de l'arrivée du colis
+  notifieAt       DateTime?   // Date de notification du client
+  notifiePar      Int?        // Appelant qui a notifié
+  agenceRetrait   String?     // Nom de l'agence de retrait
+  
   // Dates de suivi
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   validatedAt     DateTime?
   deliveredAt     DateTime?
+  expedieAt       DateTime?   // Date d'expédition (pour EXPEDITION et EXPRESS)
+  arriveAt        DateTime?   // Date d'arrivée en agence (pour EXPRESS)
   
   // Historique des changements de statut
   statusHistory   StatusHistory[]
