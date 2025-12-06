@@ -369,3 +369,5 @@ Fin de journée :
 **Impact :** Amélioration majeure - Accès aux détails depuis le mode compact
 
 
+
+

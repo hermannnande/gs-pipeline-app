@@ -396,5 +396,72 @@ router.put('/:id', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
   }
 });
 
+// DELETE /api/orders/:id - Supprimer une commande (Admin uniquement)
+router.delete('/:id', authorize('ADMIN'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Récupérer la commande avec ses informations de produit
+    const order = await prisma.order.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        product: true
+      }
+    });
+
+    if (!order) {
+      return res.status(404).json({ error: 'Commande non trouvée.' });
+    }
+
+    // Transaction pour gérer la suppression et la restauration du stock
+    await prisma.$transaction(async (tx) => {
+      // Si la commande était LIVREE et liée à un produit, restaurer le stock
+      if (order.status === 'LIVREE' && order.productId && order.product) {
+        const stockAvant = order.product.stockActuel;
+        const stockApres = stockAvant + order.quantite;
+
+        // Restaurer le stock
+        await tx.product.update({
+          where: { id: order.productId },
+          data: { stockActuel: stockApres }
+        });
+
+        // Créer un mouvement de stock pour la restauration
+        await tx.stockMovement.create({
+          data: {
+            productId: order.productId,
+            type: 'CORRECTION',
+            quantite: order.quantite,
+            stockAvant,
+            stockApres,
+            effectuePar: req.user.id,
+            motif: `Restauration stock suite à suppression de la commande ${order.orderReference}`
+          }
+        });
+      }
+
+      // Supprimer les mouvements de stock liés à cette commande
+      await tx.stockMovement.deleteMany({
+        where: { orderId: parseInt(id) }
+      });
+
+      // Supprimer l'historique des statuts
+      await tx.statusHistory.deleteMany({
+        where: { orderId: parseInt(id) }
+      });
+
+      // Supprimer la commande
+      await tx.order.delete({
+        where: { id: parseInt(id) }
+      });
+    });
+
+    res.json({ message: 'Commande supprimée avec succès.' });
+  } catch (error) {
+    console.error('Erreur suppression commande:', error);
+    res.status(500).json({ error: 'Erreur lors de la suppression de la commande.' });
+  }
+});
+
 export default router;
 

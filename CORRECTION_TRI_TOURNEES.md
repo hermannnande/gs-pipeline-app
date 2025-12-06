@@ -262,3 +262,5 @@ Avant de considérer que le tri fonctionne correctement :
 Le Gestionnaire de Stock peut immédiatement voir et traiter les tournées les plus récentes sans avoir à scroller ! 🚀
 
 
+
+

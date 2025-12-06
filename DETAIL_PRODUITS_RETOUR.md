@@ -566,3 +566,5 @@ Gestionnaire de Stock voit immédiatement :
 Vous savez exactement quels produits remettre et quels produits récupérer ! 📦✨
 
 
+
+

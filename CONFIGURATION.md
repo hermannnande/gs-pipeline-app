@@ -248,3 +248,5 @@ volumes:
 ✅ Une fois la configuration terminée, suivez le guide `QUICK_START.md` pour démarrer l'application.
 
 
+
+

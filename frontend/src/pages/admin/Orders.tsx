@@ -1,19 +1,43 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Search, Filter } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Search, Filter, Trash2 } from 'lucide-react';
 import { ordersApi } from '@/lib/api';
 import { formatCurrency, formatDateTime, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
 import type { Order } from '@/types';
+import { toast } from 'react-hot-toast';
 
 export default function Orders() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  
+  const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-orders', page, statusFilter],
     queryFn: () => ordersApi.getAll({ page, limit: 20, status: statusFilter || undefined }),
   });
+
+  const deleteOrderMutation = useMutation({
+    mutationFn: (orderId: number) => ordersApi.delete(orderId),
+    onSuccess: () => {
+      toast.success('Commande supprimée avec succès');
+      queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
+      setShowDeleteModal(false);
+      setOrderToDelete(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Erreur lors de la suppression');
+    },
+  });
+
+  const handleDeleteOrder = () => {
+    if (orderToDelete) {
+      deleteOrderMutation.mutate(orderToDelete.id);
+    }
+  };
 
   const filteredOrders = data?.orders?.filter((order: Order) =>
     order.clientNom.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -78,6 +102,7 @@ export default function Orders() {
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Montant</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Statut</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Date</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -96,6 +121,18 @@ export default function Orders() {
                       </td>
                       <td className="py-3 px-4 text-sm text-gray-500">
                         {formatDateTime(order.createdAt)}
+                      </td>
+                      <td className="py-3 px-4">
+                        <button
+                          onClick={() => {
+                            setOrderToDelete(order);
+                            setShowDeleteModal(true);
+                          }}
+                          className="text-red-600 hover:text-red-800 transition-colors"
+                          title="Supprimer la commande"
+                        >
+                          <Trash2 size={18} />
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -131,8 +168,61 @@ export default function Orders() {
           </>
         )}
       </div>
+
+      {/* Modal de confirmation de suppression */}
+      {showDeleteModal && orderToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
+              Confirmer la suppression
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Êtes-vous sûr de vouloir supprimer la commande <strong>{orderToDelete.orderReference}</strong> ?
+              <br />
+              <br />
+              <span className="text-sm">
+                <strong>Client :</strong> {orderToDelete.clientNom}
+                <br />
+                <strong>Produit :</strong> {orderToDelete.produitNom}
+                <br />
+                <strong>Montant :</strong> {formatCurrency(orderToDelete.montant)}
+              </span>
+              {orderToDelete.status === 'LIVREE' && (
+                <>
+                  <br />
+                  <br />
+                  <span className="text-amber-600 text-sm">
+                    ⚠️ Cette commande est LIVRÉE. Le stock sera automatiquement restauré.
+                  </span>
+                </>
+              )}
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setOrderToDelete(null);
+                }}
+                className="btn btn-secondary"
+                disabled={deleteOrderMutation.isPending}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleDeleteOrder}
+                className="btn bg-red-600 text-white hover:bg-red-700"
+                disabled={deleteOrderMutation.isPending}
+              >
+                {deleteOrderMutation.isPending ? 'Suppression...' : 'Supprimer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+
 
 

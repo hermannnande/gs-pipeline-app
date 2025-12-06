@@ -95,6 +95,11 @@ export const ordersApi = {
     const { data } = await api.put(`/orders/${id}/status`, { status, note });
     return data;
   },
+
+  delete: async (id: number) => {
+    const { data } = await api.delete(`/orders/${id}`);
+    return data;
+  },
 };
 
 // Delivery API
@@ -178,6 +183,11 @@ export const productsApi = {
 
   adjustStock: async (id: number, adjustData: any) => {
     const { data } = await api.post(`/products/${id}/stock/adjust`, adjustData);
+    return data;
+  },
+
+  delete: async (id: number) => {
+    const { data } = await api.delete(`/products/${id}`);
     return data;
   },
 };
