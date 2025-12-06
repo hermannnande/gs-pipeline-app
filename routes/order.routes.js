@@ -425,35 +425,76 @@ router.post('/:id/expedition', authorize('APPELANT', 'ADMIN'), [
       });
     }
 
-    const updatedOrder = await prisma.order.update({
-      where: { id: parseInt(id) },
-      data: {
-        status: 'EXPEDITION',
-        deliveryType: 'EXPEDITION',
-        montantPaye: parseFloat(montantPaye),
-        montantRestant: 0,
-        modePaiement,
-        referencePayment,
-        noteAppelant: note || order.noteAppelant,
-        validatedAt: new Date(),
-        callerId: req.user.id,
-        calledAt: new Date(),
-      },
-    });
+    // Vérifier le stock disponible
+    if (!order.product) {
+      return res.status(400).json({ error: 'Produit non trouvé pour cette commande.' });
+    }
 
-    await prisma.statusHistory.create({
-      data: {
-        orderId: parseInt(id),
-        oldStatus: order.status,
-        newStatus: 'EXPEDITION',
-        changedBy: req.user.id,
-        comment: `EXPÉDITION - Paiement total: ${montantPaye} FCFA via ${modePaiement}${referencePayment ? ' - Réf: ' + referencePayment : ''}`,
-      },
+    if (order.product.stockActuel < order.quantite) {
+      return res.status(400).json({ 
+        error: `Stock insuffisant. Disponible: ${order.product.stockActuel}, Demandé: ${order.quantite}` 
+      });
+    }
+
+    // Transaction pour mettre à jour la commande ET réduire le stock immédiatement
+    const result = await prisma.$transaction(async (tx) => {
+      // Réduire le stock immédiatement
+      const stockAvant = order.product.stockActuel;
+      const stockApres = stockAvant - order.quantite;
+
+      await tx.product.update({
+        where: { id: order.productId },
+        data: { stockActuel: stockApres },
+      });
+
+      // Créer un mouvement de stock
+      await tx.stockMovement.create({
+        data: {
+          productId: order.productId,
+          type: 'RESERVATION',
+          quantite: -order.quantite,
+          stockAvant,
+          stockApres,
+          orderId: order.id,
+          effectuePar: req.user.id,
+          motif: `Réservation stock pour EXPÉDITION ${order.orderReference} - ${order.clientNom}`
+        }
+      });
+
+      // Mettre à jour la commande
+      const updatedOrder = await tx.order.update({
+        where: { id: parseInt(id) },
+        data: {
+          status: 'EXPEDITION',
+          deliveryType: 'EXPEDITION',
+          montantPaye: parseFloat(montantPaye),
+          montantRestant: 0,
+          modePaiement,
+          referencePayment,
+          noteAppelant: note || order.noteAppelant,
+          validatedAt: new Date(),
+          callerId: req.user.id,
+          calledAt: new Date(),
+        },
+      });
+
+      // Créer l'historique
+      await tx.statusHistory.create({
+        data: {
+          orderId: parseInt(id),
+          oldStatus: order.status,
+          newStatus: 'EXPEDITION',
+          changedBy: req.user.id,
+          comment: `EXPÉDITION - Paiement total: ${montantPaye} FCFA via ${modePaiement}${referencePayment ? ' - Réf: ' + referencePayment : ''} | Stock réduit: ${order.quantite}`,
+        },
+      });
+
+      return updatedOrder;
     });
 
     res.json({ 
-      order: updatedOrder, 
-      message: 'Commande transférée en EXPÉDITION avec succès.' 
+      order: result, 
+      message: 'Commande transférée en EXPÉDITION avec succès. Stock réduit immédiatement.' 
     });
   } catch (error) {
     console.error('Erreur création EXPÉDITION:', error);
@@ -682,58 +723,30 @@ router.post('/:id/expedition/livrer', authorize('LIVREUR', 'ADMIN'), async (req,
       return res.status(403).json({ error: 'Cette expédition ne vous est pas assignée.' });
     }
 
-    // Transaction pour gérer le stock
-    const updatedOrder = await prisma.$transaction(async (tx) => {
-      const updated = await tx.order.update({
-        where: { id: parseInt(id) },
-        data: {
-          status: 'LIVREE',
-          deliveredAt: new Date(),
-          delivererId: req.user.id,
-          noteLivreur: note || order.noteLivreur,
-        },
-      });
-
-      // Décrémenter le stock normal (pour EXPÉDITION, on réduit le stock à la livraison)
-      if (order.productId && order.product) {
-        const product = order.product;
-        const stockAvant = product.stockActuel;
-        const stockApres = stockAvant - order.quantite;
-
-        await tx.product.update({
-          where: { id: order.productId },
-          data: { stockActuel: stockApres },
-        });
-
-        await tx.stockMovement.create({
-          data: {
-            productId: order.productId,
-            type: 'LIVRAISON',
-            quantite: -order.quantite,
-            stockAvant,
-            stockApres,
-            effectuePar: req.user.id,
-            motif: `EXPÉDITION livrée - ${order.orderReference} - ${order.clientVille}`,
-          },
-        });
-      }
-
-      return updated;
+    // Mettre à jour la commande (PAS de réduction de stock car déjà réduit lors de la création EXPÉDITION)
+    const updatedOrder = await prisma.order.update({
+      where: { id: parseInt(id) },
+      data: {
+        status: 'LIVREE',
+        deliveredAt: new Date(),
+        delivererId: req.user.id || order.delivererId,
+        noteLivreur: note || order.noteLivreur,
+      },
     });
 
     await prisma.statusHistory.create({
       data: {
         orderId: parseInt(id),
-        oldStatus: 'EXPEDITION',
+        oldStatus: order.status,
         newStatus: 'LIVREE',
         changedBy: req.user.id,
-        comment: `EXPÉDITION livrée par ${req.user.prenom} ${req.user.nom}${note ? ' - ' + note : ''}`,
+        comment: `EXPÉDITION confirmée comme livrée/expédiée par ${req.user.prenom} ${req.user.nom}${note ? ' - ' + note : ''}`,
       },
     });
 
     res.json({ 
       order: updatedOrder, 
-      message: 'EXPÉDITION confirmée comme livrée. Stock réduit.' 
+      message: 'EXPÉDITION confirmée comme expédiée/livrée.' 
     });
   } catch (error) {
     console.error('Erreur:', error);
@@ -913,29 +926,52 @@ router.delete('/:id', authorize('ADMIN'), async (req, res) => {
 
     // Transaction pour gérer la suppression et la restauration du stock
     await prisma.$transaction(async (tx) => {
-      // Si la commande était LIVREE et liée à un produit, restaurer le stock
-      if (order.status === 'LIVREE' && order.productId && order.product) {
-        const stockAvant = order.product.stockActuel;
-        const stockApres = stockAvant + order.quantite;
+      // Restaurer le stock si nécessaire selon le type et statut
+      if (order.productId && order.product) {
+        let needsStockRestoration = false;
+        let stockField = 'stockActuel';
 
-        // Restaurer le stock
-        await tx.product.update({
-          where: { id: order.productId },
-          data: { stockActuel: stockApres }
-        });
+        // EXPÉDITION : stock réduit dès la création, restaurer si pas encore livrée
+        if (order.deliveryType === 'EXPEDITION' && ['EXPEDITION', 'ASSIGNEE'].includes(order.status)) {
+          needsStockRestoration = true;
+          stockField = 'stockActuel';
+        }
+        
+        // EXPRESS : stock EXPRESS réduit, restaurer si statuts EXPRESS ou EXPRESS_ARRIVE
+        else if (order.deliveryType === 'EXPRESS' && ['EXPRESS', 'EXPRESS_ARRIVE'].includes(order.status)) {
+          needsStockRestoration = true;
+          stockField = 'stockExpress';
+        }
 
-        // Créer un mouvement de stock pour la restauration
-        await tx.stockMovement.create({
-          data: {
-            productId: order.productId,
-            type: 'CORRECTION',
-            quantite: order.quantite,
-            stockAvant,
-            stockApres,
-            effectuePar: req.user.id,
-            motif: `Restauration stock suite à suppression de la commande ${order.orderReference}`
-          }
-        });
+        // Commandes livrées : stock déjà réduit, restaurer
+        else if (order.status === 'LIVREE' || order.status === 'EXPRESS_LIVRE') {
+          needsStockRestoration = true;
+          stockField = order.deliveryType === 'EXPRESS' ? 'stockExpress' : 'stockActuel';
+        }
+
+        if (needsStockRestoration) {
+          const currentStock = order.product[stockField];
+          const newStock = currentStock + order.quantite;
+
+          // Restaurer le stock
+          await tx.product.update({
+            where: { id: order.productId },
+            data: { [stockField]: newStock }
+          });
+
+          // Créer un mouvement de stock pour la restauration
+          await tx.stockMovement.create({
+            data: {
+              productId: order.productId,
+              type: 'CORRECTION',
+              quantite: order.quantite,
+              stockAvant: currentStock,
+              stockApres: newStock,
+              effectuePar: req.user.id,
+              motif: `Restauration ${stockField} suite à suppression de la commande ${order.orderReference} (${order.deliveryType || 'LOCALE'})`
+            }
+          });
+        }
       }
 
       // Supprimer les mouvements de stock liés à cette commande
