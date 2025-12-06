@@ -41,18 +41,6 @@ export default function Orders() {
     return () => clearInterval(interval);
   }, [lastUpdate]);
 
-  // Détecter les nouvelles commandes
-  useEffect(() => {
-    if (filteredOrders && previousCount > 0 && filteredOrders.length > previousCount) {
-      toast.success(`🔔 ${filteredOrders.length - previousCount} nouvelle(s) commande(s) !`, {
-        duration: 5000,
-      });
-    }
-    if (filteredOrders) {
-      setPreviousCount(filteredOrders.length);
-    }
-  }, [filteredOrders]);
-
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status, note }: { id: number; status: string; note?: string }) =>
       ordersApi.updateStatus(id, status, note),
@@ -94,6 +82,18 @@ export default function Orders() {
       // Trier par date de création, les plus récentes en premier
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
+
+  // Détecter les nouvelles commandes
+  useEffect(() => {
+    if (filteredOrders && previousCount > 0 && filteredOrders.length > previousCount) {
+      toast.success(`🔔 ${filteredOrders.length - previousCount} nouvelle(s) commande(s) !`, {
+        duration: 5000,
+      });
+    }
+    if (filteredOrders) {
+      setPreviousCount(filteredOrders.length);
+    }
+  }, [filteredOrders?.length]);
 
   return (
     <div className="space-y-6">
