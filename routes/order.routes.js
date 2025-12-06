@@ -19,10 +19,15 @@ router.get('/', async (req, res) => {
 
     // Filtres selon le rôle
     if (user.role === 'APPELANT') {
-      // L'appelant voit uniquement ses commandes assignées ou les commandes à appeler non assignées
+      // L'appelant voit :
+      // 1. Ses commandes assignées
+      // 2. Les commandes à appeler non assignées
+      // 3. TOUTES les EXPÉDITIONS et EXPRESS (pour gestion)
       where.OR = [
         { callerId: user.id },
-        { status: { in: ['NOUVELLE', 'A_APPELER'] }, callerId: null }
+        { status: { in: ['NOUVELLE', 'A_APPELER'] }, callerId: null },
+        { deliveryType: 'EXPEDITION' },
+        { deliveryType: 'EXPRESS' }
       ];
     } else if (user.role === 'LIVREUR') {
       // Le livreur voit uniquement ses commandes assignées
