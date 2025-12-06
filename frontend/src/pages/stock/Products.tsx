@@ -282,7 +282,7 @@ export default function Products() {
                 <div className="space-y-3">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-gray-600">Stock actuel</span>
+                      <span className="text-sm text-gray-600">Stock disponible</span>
                       <span className={`text-2xl font-bold ${
                         isLowStock ? 'text-red-600' : 'text-green-600'
                       }`}>
@@ -298,6 +298,20 @@ export default function Products() {
                         style={{ width: `${Math.min(stockPercentage, 100)}%` }}
                       />
                     </div>
+                    
+                    {/* Stock EXPRESS réservé */}
+                    {product.stockExpress > 0 && (
+                      <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-amber-700">Stock EXPRESS (réservé)</span>
+                          <span className="text-sm font-bold text-amber-900">{product.stockExpress}</span>
+                        </div>
+                        <p className="text-xs text-amber-600 mt-1">
+                          Clients ayant payé 10%, en attente retrait
+                        </p>
+                      </div>
+                    )}
+                    
                     <p className="text-xs text-gray-500 mt-1">
                       Seuil d'alerte: {product.stockAlerte}
                     </p>
