@@ -1,9 +1,14 @@
-import { useQuery } from '@tanstack/react-query';
-import { Package, CheckCircle, XCircle, TrendingUp } from 'lucide-react';
-import { statsApi, deliveryApi } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Package, CheckCircle, XCircle, TrendingUp, Truck } from 'lucide-react';
+import { statsApi, deliveryApi, ordersApi } from '@/lib/api';
 import { formatCurrency } from '@/utils/statusHelpers';
+import { useAuthStore } from '@/store/authStore';
+import toast from 'react-hot-toast';
 
 export default function Overview() {
+  const { user } = useAuthStore();
+  const queryClient = useQueryClient();
+
   const { data: stats } = useQuery({
     queryKey: ['livreur-my-stats'],
     queryFn: () => statsApi.getMyStats({ period: 'today' }),
@@ -15,6 +20,37 @@ export default function Overview() {
       date: new Date().toISOString().split('T')[0]
     }),
   });
+
+  // Récupérer les expéditions assignées au livreur
+  const { data: expeditionsData } = useQuery({
+    queryKey: ['livreur-expeditions'],
+    queryFn: () => ordersApi.getAll({ 
+      delivererId: user?.id,
+      deliveryType: 'EXPEDITION',
+      status: 'ASSIGNEE',
+      limit: 100
+    }),
+    refetchInterval: 30000,
+  });
+
+  // Mutation pour marquer une expédition comme livrée
+  const deliverExpeditionMutation = useMutation({
+    mutationFn: (orderId: number) => ordersApi.deliverExpedition(orderId),
+    onSuccess: () => {
+      toast.success('✅ Expédition confirmée comme livrée');
+      queryClient.invalidateQueries({ queryKey: ['livreur-expeditions'] });
+      queryClient.invalidateQueries({ queryKey: ['livreur-my-stats'] });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Erreur lors de la confirmation');
+    },
+  });
+
+  const handleDeliverExpedition = (order: any) => {
+    if (confirm(`Confirmer que vous avez bien expédié/livré cette commande pour ${order.clientNom} ?\n\nClient : ${order.clientNom}\nVille : ${order.clientVille}\nProduit : ${order.produitNom}`)) {
+      deliverExpeditionMutation.mutate(order.id);
+    }
+  };
 
   const cards = [
     {
@@ -45,6 +81,7 @@ export default function Overview() {
 
   const pendingOrders = todayOrders?.orders?.filter((o: any) => o.status === 'ASSIGNEE') || [];
   const completedToday = todayOrders?.orders?.filter((o: any) => o.status === 'LIVREE') || [];
+  const expeditions = expeditionsData?.orders || [];
 
   return (
     <div className="space-y-6">
@@ -87,11 +124,68 @@ export default function Overview() {
         </div>
       )}
 
+      {/* Expéditions assignées */}
+      {expeditions.length > 0 && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Truck className="text-blue-600" size={20} />
+              Mes EXPÉDITIONS à livrer
+            </h3>
+            <span className="badge bg-blue-100 text-blue-800">
+              {expeditions.length} expédition(s)
+            </span>
+          </div>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+            <p className="text-sm text-blue-800">
+              <strong>⚠️ Important :</strong> Client a déjà payé 100%. Pas de collecte d'argent.
+            </p>
+          </div>
+          <div className="space-y-3">
+            {expeditions.map((order: any) => (
+              <div key={order.id} className="p-4 bg-blue-50 border border-blue-300 rounded-lg">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900 text-lg">{order.clientNom}</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      📍 {order.clientAdresse}, {order.clientVille}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      📞 {order.clientTelephone}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-gray-500 mb-1">Réf: {order.orderReference}</p>
+                    <p className="font-bold text-green-600">{formatCurrency(order.montant)}</p>
+                    <p className="text-xs text-green-700">✓ Déjà payé</p>
+                  </div>
+                </div>
+                <div className="border-t border-blue-200 pt-2 mt-2">
+                  <p className="text-sm text-gray-700">
+                    <strong>Produit :</strong> {order.produitNom} (x{order.quantite})
+                  </p>
+                  <p className="text-xs text-gray-600 mt-1">
+                    <strong>Paiement :</strong> {order.modePaiement} - {order.referencePayment}
+                  </p>
+                </div>
+                <button 
+                  onClick={() => handleDeliverExpedition(order)}
+                  className="btn btn-primary w-full mt-3"
+                  disabled={deliverExpeditionMutation.isPending}
+                >
+                  {deliverExpeditionMutation.isPending ? 'Confirmation...' : '✓ Marquer comme expédié/livré'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Livraisons en attente */}
       {pendingOrders.length > 0 && (
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Livraisons en attente</h3>
+            <h3 className="text-lg font-semibold">Livraisons locales en attente</h3>
             <span className="badge bg-orange-100 text-orange-800">
               {pendingOrders.length} en attente
             </span>
