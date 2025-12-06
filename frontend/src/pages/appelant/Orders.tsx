@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Phone, Search } from 'lucide-react';
+import { Phone, Search, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ordersApi } from '@/lib/api';
 import { formatCurrency, formatDateTime, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
@@ -13,11 +13,45 @@ export default function Orders() {
   const [note, setNote] = useState('');
   const queryClient = useQueryClient();
 
-  const { data: ordersData, isLoading } = useQuery({
+  const { data: ordersData, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['appelant-orders'],
     queryFn: () => ordersApi.getAll({ limit: 100 }),
-    refetchInterval: 5000, // Actualisation automatique toutes les 5 secondes
+    refetchInterval: 30000, // Actualisation automatique toutes les 30 secondes
+    refetchIntervalInBackground: true, // Continue même si l'onglet n'est pas actif
   });
+
+  // Compteur pour afficher le temps écoulé depuis la dernière actualisation
+  const [lastUpdate, setLastUpdate] = useState(new Date());
+  const [secondsSinceUpdate, setSecondsSinceUpdate] = useState(0);
+  const [previousCount, setPreviousCount] = useState(0);
+
+  useEffect(() => {
+    if (!isFetching) {
+      setLastUpdate(new Date());
+      setSecondsSinceUpdate(0);
+    }
+  }, [isFetching]);
+
+  // Mise à jour du compteur toutes les secondes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSecondsSinceUpdate(Math.floor((new Date().getTime() - lastUpdate.getTime()) / 1000));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [lastUpdate]);
+
+  // Détecter les nouvelles commandes
+  useEffect(() => {
+    if (filteredOrders && previousCount > 0 && filteredOrders.length > previousCount) {
+      toast.success(`🔔 ${filteredOrders.length - previousCount} nouvelle(s) commande(s) !`, {
+        duration: 5000,
+      });
+    }
+    if (filteredOrders) {
+      setPreviousCount(filteredOrders.length);
+    }
+  }, [filteredOrders]);
 
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status, note }: { id: number; status: string; note?: string }) =>
@@ -68,12 +102,35 @@ export default function Orders() {
           <h1 className="text-3xl font-bold text-gray-900">Commandes à appeler</h1>
           <p className="text-gray-600 mt-1">Liste des commandes en attente de traitement</p>
         </div>
-        {filteredOrders && (
-          <div className="text-right">
-            <p className="text-2xl font-bold text-primary-600">{filteredOrders.length}</p>
-            <p className="text-sm text-gray-600">commande(s)</p>
+        <div className="flex items-center gap-4">
+          {filteredOrders && (
+            <div className="text-right">
+              <p className="text-2xl font-bold text-primary-600">{filteredOrders.length}</p>
+              <p className="text-sm text-gray-600">commande(s)</p>
+            </div>
+          )}
+          <div className="flex flex-col items-end gap-2">
+            {isFetching ? (
+              <span className="text-sm text-gray-500 flex items-center gap-2">
+                <RefreshCw size={16} className="animate-spin" />
+                Actualisation...
+              </span>
+            ) : (
+              <span className="text-xs text-gray-400">
+                Mis à jour il y a {secondsSinceUpdate}s
+              </span>
+            )}
+            <button
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className="btn btn-secondary flex items-center gap-2 text-sm py-2"
+              title="Actualiser les commandes"
+            >
+              <RefreshCw size={16} className={isFetching ? 'animate-spin' : ''} />
+              Actualiser
+            </button>
           </div>
-        )}
+        </div>
       </div>
 
       <div className="card">

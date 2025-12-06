@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Filter, Trash2, Calendar, Package, X } from 'lucide-react';
+import { Search, Filter, Trash2, Calendar, Package, X, RefreshCw } from 'lucide-react';
 import { ordersApi, productsApi } from '@/lib/api';
 import { formatCurrency, formatDateTime, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
 import type { Order } from '@/types';
@@ -25,7 +25,7 @@ export default function Orders() {
     queryFn: () => productsApi.getAll(),
   });
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['admin-orders', page, statusFilter, productFilter, startDate, endDate],
     queryFn: () => ordersApi.getAll({ 
       page, 
@@ -35,7 +35,29 @@ export default function Orders() {
       startDate: startDate || undefined,
       endDate: endDate || undefined
     }),
+    refetchInterval: 30000, // Actualisation automatique toutes les 30 secondes
+    refetchIntervalInBackground: true, // Continue même si l'onglet n'est pas actif
   });
+
+  // Compteur pour afficher le temps écoulé depuis la dernière actualisation
+  const [lastUpdate, setLastUpdate] = useState(new Date());
+  const [secondsSinceUpdate, setSecondsSinceUpdate] = useState(0);
+
+  useEffect(() => {
+    if (!isFetching) {
+      setLastUpdate(new Date());
+      setSecondsSinceUpdate(0);
+    }
+  }, [isFetching]);
+
+  // Mise à jour du compteur toutes les secondes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSecondsSinceUpdate(Math.floor((new Date().getTime() - lastUpdate.getTime()) / 1000));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [lastUpdate]);
 
   const deleteOrderMutation = useMutation({
     mutationFn: (orderId: number) => ordersApi.delete(orderId),
@@ -75,9 +97,33 @@ export default function Orders() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Toutes les commandes</h1>
-        <p className="text-gray-600 mt-1">Gestion complète des commandes</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Toutes les commandes</h1>
+          <p className="text-gray-600 mt-1">Gestion complète des commandes</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {isFetching && (
+            <span className="text-sm text-gray-500 flex items-center gap-2">
+              <RefreshCw size={16} className="animate-spin" />
+              Actualisation...
+            </span>
+          )}
+          {!isFetching && (
+            <span className="text-xs text-gray-400">
+              Mis à jour il y a {secondsSinceUpdate}s
+            </span>
+          )}
+          <button
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="btn btn-secondary flex items-center gap-2"
+            title="Actualiser les commandes"
+          >
+            <RefreshCw size={18} className={isFetching ? 'animate-spin' : ''} />
+            Actualiser
+          </button>
+        </div>
       </div>
 
       {/* Filtres et recherche */}
