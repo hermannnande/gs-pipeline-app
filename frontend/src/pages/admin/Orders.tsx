@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Filter, Trash2 } from 'lucide-react';
-import { ordersApi } from '@/lib/api';
+import { Search, Filter, Trash2, Calendar, Package, X } from 'lucide-react';
+import { ordersApi, productsApi } from '@/lib/api';
 import { formatCurrency, formatDateTime, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
 import type { Order } from '@/types';
 import { toast } from 'react-hot-toast';
@@ -9,15 +9,32 @@ import { toast } from 'react-hot-toast';
 export default function Orders() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [productFilter, setProductFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [page, setPage] = useState(1);
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   
   const queryClient = useQueryClient();
 
+  // Récupérer la liste des produits pour le filtre
+  const { data: productsData } = useQuery({
+    queryKey: ['products'],
+    queryFn: () => productsApi.getAll(),
+  });
+
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-orders', page, statusFilter],
-    queryFn: () => ordersApi.getAll({ page, limit: 20, status: statusFilter || undefined }),
+    queryKey: ['admin-orders', page, statusFilter, productFilter, startDate, endDate],
+    queryFn: () => ordersApi.getAll({ 
+      page, 
+      limit: 20, 
+      status: statusFilter || undefined,
+      produit: productFilter || undefined,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined
+    }),
   });
 
   const deleteOrderMutation = useMutation({
@@ -39,6 +56,17 @@ export default function Orders() {
     }
   };
 
+  const resetFilters = () => {
+    setStatusFilter('');
+    setProductFilter('');
+    setStartDate('');
+    setEndDate('');
+    setSearchTerm('');
+    setPage(1);
+  };
+
+  const hasActiveFilters = statusFilter || productFilter || startDate || endDate;
+
   const filteredOrders = data?.orders?.filter((order: Order) =>
     order.clientNom.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.clientTelephone.includes(searchTerm) ||
@@ -54,31 +82,134 @@ export default function Orders() {
 
       {/* Filtres et recherche */}
       <div className="card">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Rechercher par nom, téléphone ou référence..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="input pl-10"
-            />
+        <div className="space-y-4">
+          {/* Ligne 1 : Recherche et bouton filtres */}
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <input
+                type="text"
+                placeholder="Rechercher par nom, téléphone ou référence..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="input pl-10"
+              />
+            </div>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`btn ${showFilters || hasActiveFilters ? 'btn-primary' : 'btn-secondary'} flex items-center gap-2`}
+            >
+              <Filter size={20} />
+              Filtres avancés
+              {hasActiveFilters && (
+                <span className="bg-white text-primary-600 rounded-full px-2 py-0.5 text-xs font-bold">
+                  {[statusFilter, productFilter, startDate, endDate].filter(Boolean).length}
+                </span>
+              )}
+            </button>
           </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="input md:w-48"
-          >
-            <option value="">Tous les statuts</option>
-            <option value="NOUVELLE">Nouvelle</option>
-            <option value="A_APPELER">À appeler</option>
-            <option value="VALIDEE">Validée</option>
-            <option value="ASSIGNEE">Assignée</option>
-            <option value="LIVREE">Livrée</option>
-            <option value="ANNULEE">Annulée</option>
-            <option value="REFUSEE">Refusée</option>
-          </select>
+
+          {/* Ligne 2 : Filtres avancés (affichés si showFilters est true) */}
+          {showFilters && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
+              {/* Filtre par statut */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Statut
+                </label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setPage(1);
+                  }}
+                  className="input"
+                >
+                  <option value="">Tous les statuts</option>
+                  <option value="NOUVELLE">Nouvelle</option>
+                  <option value="A_APPELER">À appeler</option>
+                  <option value="VALIDEE">Validée</option>
+                  <option value="ASSIGNEE">Assignée</option>
+                  <option value="LIVREE">Livrée</option>
+                  <option value="ANNULEE">Annulée</option>
+                  <option value="REFUSEE">Refusée</option>
+                </select>
+              </div>
+
+              {/* Filtre par produit */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <Package size={16} className="inline mr-1" />
+                  Produit
+                </label>
+                <select
+                  value={productFilter}
+                  onChange={(e) => {
+                    setProductFilter(e.target.value);
+                    setPage(1);
+                  }}
+                  className="input"
+                >
+                  <option value="">Tous les produits</option>
+                  {productsData?.products?.map((product: any) => (
+                    <option key={product.id} value={product.nom}>
+                      {product.nom}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filtre par date de début */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <Calendar size={16} className="inline mr-1" />
+                  Date début
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    setPage(1);
+                  }}
+                  className="input"
+                />
+              </div>
+
+              {/* Filtre par date de fin */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <Calendar size={16} className="inline mr-1" />
+                  Date fin
+                </label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => {
+                    setEndDate(e.target.value);
+                    setPage(1);
+                  }}
+                  className="input"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Ligne 3 : Bouton réinitialiser (affiché si filtres actifs) */}
+          {hasActiveFilters && (
+            <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+              <div className="text-sm text-gray-600">
+                {[statusFilter, productFilter, startDate, endDate].filter(Boolean).length} filtre(s) actif(s)
+              </div>
+              <button
+                onClick={resetFilters}
+                className="text-sm text-red-600 hover:text-red-800 flex items-center gap-1"
+              >
+                <X size={16} />
+                Réinitialiser tous les filtres
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
