@@ -4,6 +4,7 @@ import { ordersApi } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { Zap, X } from 'lucide-react';
 import type { Order, ExpressData } from '@/types';
+import { VILLES_AGENCES_EXPRESS } from '@/constants/cities';
 
 interface ExpressModalProps {
   order: Order;
@@ -171,30 +172,9 @@ export default function ExpressModal({ order, onClose }: ExpressModalProps) {
               required
             >
               <option value="">Sélectionnez...</option>
-              <option value="Beoumi">Beoumi</option>
-              <option value="Bocanda">Bocanda</option>
-              <option value="Bonon">Bonon</option>
-              <option value="Bouaflé">Bouaflé</option>
-              <option value="Bouaké">Bouaké</option>
-              <option value="Daloa">Daloa</option>
-              <option value="Dimbokro">Dimbokro</option>
-              <option value="Divo">Divo</option>
-              <option value="Duékoué">Duékoué</option>
-              <option value="Gabiadji">Gabiadji</option>
-              <option value="Gagnoa">Gagnoa</option>
-              <option value="Gonaté">Gonaté</option>
-              <option value="Guibéroua">Guibéroua</option>
-              <option value="Hiré">Hiré</option>
-              <option value="Issia">Issia</option>
-              <option value="Man">Man</option>
-              <option value="Méagui">Méagui</option>
-              <option value="San Pedro">San Pedro</option>
-              <option value="Sinfra">Sinfra</option>
-              <option value="Soubré">Soubré</option>
-              <option value="Tiébissou">Tiébissou</option>
-              <option value="Toumodi">Toumodi</option>
-              <option value="Yabayo">Yabayo</option>
-              <option value="Yamoussoukro">Yamoussoukro</option>
+              {VILLES_AGENCES_EXPRESS.map((ville) => (
+                <option key={ville} value={ville}>{ville}</option>
+              ))}
             </select>
           </div>
           

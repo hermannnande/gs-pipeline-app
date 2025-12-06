@@ -6,6 +6,7 @@ import { formatCurrency, formatDateTime } from '@/utils/statusHelpers';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/store/authStore';
 import type { Order } from '@/types';
+import { VILLES_AGENCES_EXPRESS } from '@/constants/cities';
 
 export default function ExpeditionsExpress() {
   const [activeTab, setActiveTab] = useState<'expeditions' | 'express-pending' | 'express-arrived' | 'history'>('expeditions');
@@ -224,16 +225,9 @@ export default function ExpeditionsExpress() {
   const filteredExpressArrived = useMemo(() => filterOrders(expressArrivedData?.orders || []), [expressArrivedData, searchTerm, filterVille, filterProduit, filterAgence, filterPaiement, filterStartDate, filterEndDate]);
   const filteredHistory = useMemo(() => filterOrders(historyData?.orders || []), [historyData, searchTerm, filterVille, filterProduit, filterAgence, filterLivreur, filterPaiement, filterStartDate, filterEndDate]);
 
-  // Extraire les valeurs uniques pour les filtres
-  const uniqueVilles = useMemo(() => {
-    const allOrders = [...allExpeditions, ...(expressData?.orders || []), ...(expressArrivedData?.orders || []), ...(historyData?.orders || [])];
-    return Array.from(new Set(allOrders.map(o => o.clientVille).filter(Boolean))).sort();
-  }, [allExpeditions, expressData, expressArrivedData, historyData]);
-
-  const uniqueAgences = useMemo(() => {
-    const allOrders = [...(expressData?.orders || []), ...(expressArrivedData?.orders || []), ...(historyData?.orders || [])];
-    return Array.from(new Set(allOrders.map(o => o.agenceRetrait).filter(Boolean))).sort();
-  }, [expressData, expressArrivedData, historyData]);
+  // Utiliser la liste fixe des villes et agences EXPRESS (Côte d'Ivoire)
+  const uniqueVilles = [...VILLES_AGENCES_EXPRESS];
+  const uniqueAgences = [...VILLES_AGENCES_EXPRESS];
 
   const uniquePaiements = useMemo(() => {
     const allOrders = [...allExpeditions, ...(expressData?.orders || []), ...(expressArrivedData?.orders || []), ...(historyData?.orders || [])];
