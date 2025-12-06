@@ -419,27 +419,38 @@ router.post('/:id/expedition', authorize('APPELANT', 'ADMIN'), [
       return res.status(404).json({ error: 'Commande non trouvée.' });
     }
 
+    // Vérifier que la commande a un produit lié
+    if (!order.productId) {
+      return res.status(400).json({ error: 'Cette commande n\'a pas de produit associé.' });
+    }
+
+    if (!order.product) {
+      return res.status(400).json({ error: 'Produit non trouvé pour cette commande.' });
+    }
+
     if (parseFloat(montantPaye) < order.montant) {
       return res.status(400).json({ 
         error: 'Le montant payé doit être égal au montant total pour une EXPÉDITION.' 
       });
     }
 
-    // Vérifier le stock disponible
-    if (!order.product) {
-      return res.status(400).json({ error: 'Produit non trouvé pour cette commande.' });
-    }
-
-    if (order.product.stockActuel < order.quantite) {
-      return res.status(400).json({ 
-        error: `Stock insuffisant. Disponible: ${order.product.stockActuel}, Demandé: ${order.quantite}` 
-      });
-    }
-
     // Transaction pour mettre à jour la commande ET réduire le stock immédiatement
     const result = await prisma.$transaction(async (tx) => {
+      // Récupérer le stock actuel dans la transaction pour éviter les problèmes de concurrence
+      const product = await tx.product.findUnique({
+        where: { id: order.productId }
+      });
+
+      if (!product) {
+        throw new Error('Produit introuvable');
+      }
+
+      if (product.stockActuel < order.quantite) {
+        throw new Error(`Stock insuffisant. Disponible: ${product.stockActuel}, Demandé: ${order.quantite}`);
+      }
+
       // Réduire le stock immédiatement
-      const stockAvant = order.product.stockActuel;
+      const stockAvant = product.stockActuel;
       const stockApres = stockAvant - order.quantite;
 
       await tx.product.update({
@@ -498,6 +509,10 @@ router.post('/:id/expedition', authorize('APPELANT', 'ADMIN'), [
     });
   } catch (error) {
     console.error('Erreur création EXPÉDITION:', error);
+    // Si l'erreur vient de la transaction (throw new Error), renvoyer le message
+    if (error.message) {
+      return res.status(400).json({ error: error.message });
+    }
     res.status(500).json({ error: 'Erreur lors de la création de l\'expédition.' });
   }
 });
