@@ -189,8 +189,8 @@ router.delete('/:id', authorize('ADMIN'), async (req, res) => {
   }
 });
 
-// POST /api/products/:id/stock/adjust - Ajuster le stock manuellement (Admin uniquement)
-router.post('/:id/stock/adjust', authorize('ADMIN'), [
+// POST /api/products/:id/stock/adjust - Ajuster le stock manuellement (Admin et Gestionnaire Stock)
+router.post('/:id/stock/adjust', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), [
   body('quantite').isInt().withMessage('Quantité invalide'),
   body('type').isIn(['APPROVISIONNEMENT', 'CORRECTION', 'PERTE']).withMessage('Type invalide'),
   body('motif').notEmpty().withMessage('Motif requis')

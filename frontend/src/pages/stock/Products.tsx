@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/utils/statusHelpers';
 import type { Product } from '@/types';
+import { useAuthStore } from '@/store/authStore';
 
 export default function Products() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -32,6 +33,10 @@ export default function Products() {
     stockAlerte: ''
   });
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+  
+  // Seul l'ADMIN peut gérer les produits (ajouter, modifier, supprimer)
+  const canManageProducts = user?.role === 'ADMIN';
 
   const { data: productsData, isLoading } = useQuery({
     queryKey: ['products', searchTerm],
@@ -207,13 +212,15 @@ export default function Products() {
           <h1 className="text-3xl font-bold text-gray-900">Gestion des Produits</h1>
           <p className="text-gray-600 mt-1">Inventaire et mouvements de stock</p>
         </div>
-        <button
-          onClick={() => setShowAddProductModal(true)}
-          className="btn btn-primary flex items-center gap-2"
-        >
-          <Plus size={20} />
-          Ajouter un produit
-        </button>
+        {canManageProducts && (
+          <button
+            onClick={() => setShowAddProductModal(true)}
+            className="btn btn-primary flex items-center gap-2"
+          >
+            <Plus size={20} />
+            Ajouter un produit
+          </button>
+        )}
       </div>
 
       {/* Statistiques */}
@@ -366,22 +373,24 @@ export default function Products() {
                     Ajuster le stock
                   </button>
                   
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => openEditModal(product)}
-                      className="btn btn-secondary flex-1 flex items-center justify-center gap-2"
-                    >
-                      <Edit2 size={16} />
-                      Modifier
-                    </button>
-                    <button
-                      onClick={() => openDeleteConfirm(product)}
-                      className="btn bg-red-600 text-white hover:bg-red-700 flex-1 flex items-center justify-center gap-2"
-                    >
-                      <Trash2 size={16} />
-                      Supprimer
-                    </button>
-                  </div>
+                  {canManageProducts && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => openEditModal(product)}
+                        className="btn btn-secondary flex-1 flex items-center justify-center gap-2"
+                      >
+                        <Edit2 size={16} />
+                        Modifier
+                      </button>
+                      <button
+                        onClick={() => openDeleteConfirm(product)}
+                        className="btn bg-red-600 text-white hover:bg-red-700 flex-1 flex items-center justify-center gap-2"
+                      >
+                        <Trash2 size={16} />
+                        Supprimer
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             );
