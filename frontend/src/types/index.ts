@@ -9,7 +9,13 @@ export type OrderStatus =
   | 'ASSIGNEE'
   | 'LIVREE'
   | 'REFUSEE'
-  | 'ANNULEE_LIVRAISON';
+  | 'ANNULEE_LIVRAISON'
+  | 'EXPEDITION'
+  | 'EXPRESS'
+  | 'EXPRESS_ARRIVE'
+  | 'EXPRESS_LIVRE';
+
+export type DeliveryType = 'LOCAL' | 'EXPEDITION' | 'EXPRESS';
 
 export interface User {
   id: number;
@@ -59,6 +65,18 @@ export interface Order {
   validatedAt?: string;
   deliveredAt?: string;
   statusHistory?: StatusHistory[];
+  // Nouveaux champs pour EXPÉDITION & EXPRESS
+  deliveryType?: DeliveryType;
+  montantPaye?: number;
+  montantRestant?: number;
+  modePaiement?: string;
+  referencePayment?: string;
+  clientNotifie?: boolean;
+  notifieAt?: string;
+  notifiePar?: number;
+  agenceRetrait?: string;
+  expedieAt?: string;
+  arriveAt?: string;
 }
 
 export interface StatusHistory {
@@ -132,5 +150,20 @@ export interface AuthResponse {
 export interface LoginCredentials {
   email: string;
   password: string;
+}
+
+export interface ExpeditionData {
+  montantPaye: number;
+  modePaiement: string;
+  referencePayment?: string;
+  note?: string;
+}
+
+export interface ExpressData {
+  montantPaye: number;
+  modePaiement: string;
+  referencePayment?: string;
+  agenceRetrait: string;
+  note?: string;
 }
 

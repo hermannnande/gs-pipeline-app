@@ -100,6 +100,32 @@ export const ordersApi = {
     const { data } = await api.delete(`/orders/${id}`);
     return data;
   },
+
+  // EXPÉDITION & EXPRESS
+  createExpedition: async (orderId: number, expeditionData: any) => {
+    const { data } = await api.post(`/orders/${orderId}/expedition`, expeditionData);
+    return data;
+  },
+
+  createExpress: async (orderId: number, expressData: any) => {
+    const { data } = await api.post(`/orders/${orderId}/express`, expressData);
+    return data;
+  },
+
+  markExpressArrived: async (orderId: number) => {
+    const { data } = await api.put(`/orders/${orderId}/express/arrive`);
+    return data;
+  },
+
+  notifyExpressClient: async (orderId: number) => {
+    const { data } = await api.post(`/orders/${orderId}/express/notifier`);
+    return data;
+  },
+
+  finalizeExpress: async (orderId: number, finalData: any) => {
+    const { data} = await api.post(`/orders/${orderId}/express/finaliser`, finalData);
+    return data;
+  },
 };
 
 // Delivery API

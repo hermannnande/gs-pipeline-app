@@ -1,16 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Phone, Search, RefreshCw } from 'lucide-react';
+import { Phone, Search, RefreshCw, Truck, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ordersApi } from '@/lib/api';
 import { formatCurrency, formatDateTime, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
 import type { Order } from '@/types';
+import ExpeditionModal from '@/components/modals/ExpeditionModal';
+import ExpressModal from '@/components/modals/ExpressModal';
 
 export default function Orders() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [note, setNote] = useState('');
+  const [showExpeditionModal, setShowExpeditionModal] = useState(false);
+  const [showExpressModal, setShowExpressModal] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: ordersData, isLoading, isFetching, refetch } = useQuery({
@@ -258,22 +262,53 @@ export default function Orders() {
                 className="btn btn-success w-full"
                 disabled={updateStatusMutation.isPending}
               >
-                ✓ Commande validée
+                ✓ Commande validée (Livraison locale)
               </button>
-              <button
-                onClick={() => handleUpdateStatus('INJOIGNABLE')}
-                className="btn btn-secondary w-full"
-                disabled={updateStatusMutation.isPending}
-              >
-                📵 Client injoignable
-              </button>
-              <button
-                onClick={() => handleUpdateStatus('ANNULEE')}
-                className="btn btn-danger w-full"
-                disabled={updateStatusMutation.isPending}
-              >
-                ✕ Commande annulée
-              </button>
+              
+              <div className="border-t border-gray-200 pt-2 mt-2">
+                <p className="text-xs text-gray-600 mb-2 font-medium">Pour les villes éloignées :</p>
+                
+                <button
+                  onClick={() => {
+                    setShowExpeditionModal(true);
+                    setSelectedOrder(selectedOrder);
+                  }}
+                  className="btn bg-blue-600 text-white hover:bg-blue-700 w-full flex items-center justify-center gap-2"
+                  disabled={updateStatusMutation.isPending}
+                >
+                  <Truck size={18} />
+                  📦 EXPÉDITION (Paiement 100%)
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setShowExpressModal(true);
+                    setSelectedOrder(selectedOrder);
+                  }}
+                  className="btn bg-amber-600 text-white hover:bg-amber-700 w-full flex items-center justify-center gap-2 mt-2"
+                  disabled={updateStatusMutation.isPending}
+                >
+                  <Zap size={18} />
+                  ⚡ EXPRESS (Paiement 10%)
+                </button>
+              </div>
+              
+              <div className="border-t border-gray-200 pt-2 mt-2">
+                <button
+                  onClick={() => handleUpdateStatus('INJOIGNABLE')}
+                  className="btn btn-secondary w-full"
+                  disabled={updateStatusMutation.isPending}
+                >
+                  📵 Client injoignable
+                </button>
+                <button
+                  onClick={() => handleUpdateStatus('ANNULEE')}
+                  className="btn btn-danger w-full mt-2"
+                  disabled={updateStatusMutation.isPending}
+                >
+                  ✕ Commande annulée
+                </button>
+              </div>
             </div>
 
             <button
@@ -287,6 +322,29 @@ export default function Orders() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Modals EXPÉDITION & EXPRESS */}
+      {showExpeditionModal && selectedOrder && (
+        <ExpeditionModal
+          order={selectedOrder}
+          onClose={() => {
+            setShowExpeditionModal(false);
+            setSelectedOrder(null);
+            setNote('');
+          }}
+        />
+      )}
+
+      {showExpressModal && selectedOrder && (
+        <ExpressModal
+          order={selectedOrder}
+          onClose={() => {
+            setShowExpressModal(false);
+            setSelectedOrder(null);
+            setNote('');
+          }}
+        />
       )}
     </div>
   );

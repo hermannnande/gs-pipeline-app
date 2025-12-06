@@ -11,6 +11,10 @@ export const getStatusLabel = (status: OrderStatus): string => {
     LIVREE: 'Livrée',
     REFUSEE: 'Refusée',
     ANNULEE_LIVRAISON: 'Annulée livraison',
+    EXPEDITION: 'Expédition',
+    EXPRESS: 'Express',
+    EXPRESS_ARRIVE: 'Express arrivé',
+    EXPRESS_LIVRE: 'Express livré',
   };
   return labels[status] || status;
 };
@@ -26,6 +30,10 @@ export const getStatusColor = (status: OrderStatus): string => {
     LIVREE: 'bg-emerald-100 text-emerald-800',
     REFUSEE: 'bg-red-100 text-red-800',
     ANNULEE_LIVRAISON: 'bg-gray-100 text-gray-800',
+    EXPEDITION: 'bg-blue-500 text-white',
+    EXPRESS: 'bg-amber-500 text-white',
+    EXPRESS_ARRIVE: 'bg-cyan-500 text-white',
+    EXPRESS_LIVRE: 'bg-teal-100 text-teal-800',
   };
   return colors[status] || 'bg-gray-100 text-gray-800';
 };

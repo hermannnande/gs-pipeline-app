@@ -396,6 +396,322 @@ router.put('/:id', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
   }
 });
 
+// POST /api/orders/:id/expedition - Créer une EXPÉDITION (paiement 100%)
+router.post('/:id/expedition', authorize('APPELANT', 'ADMIN'), [
+  body('montantPaye').isFloat({ min: 0 }).withMessage('Montant invalide'),
+  body('modePaiement').notEmpty().withMessage('Mode de paiement requis'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { id } = req.params;
+    const { montantPaye, modePaiement, referencePayment, note } = req.body;
+
+    const order = await prisma.order.findUnique({ 
+      where: { id: parseInt(id) },
+      include: { product: true }
+    });
+    
+    if (!order) {
+      return res.status(404).json({ error: 'Commande non trouvée.' });
+    }
+
+    if (parseFloat(montantPaye) < order.montant) {
+      return res.status(400).json({ 
+        error: 'Le montant payé doit être égal au montant total pour une EXPÉDITION.' 
+      });
+    }
+
+    const updatedOrder = await prisma.order.update({
+      where: { id: parseInt(id) },
+      data: {
+        status: 'EXPEDITION',
+        deliveryType: 'EXPEDITION',
+        montantPaye: parseFloat(montantPaye),
+        montantRestant: 0,
+        modePaiement,
+        referencePayment,
+        noteAppelant: note || order.noteAppelant,
+        validatedAt: new Date(),
+        callerId: req.user.id,
+        calledAt: new Date(),
+      },
+    });
+
+    await prisma.statusHistory.create({
+      data: {
+        orderId: parseInt(id),
+        oldStatus: order.status,
+        newStatus: 'EXPEDITION',
+        changedBy: req.user.id,
+        comment: `EXPÉDITION - Paiement total: ${montantPaye} FCFA via ${modePaiement}${referencePayment ? ' - Réf: ' + referencePayment : ''}`,
+      },
+    });
+
+    res.json({ 
+      order: updatedOrder, 
+      message: 'Commande transférée en EXPÉDITION avec succès.' 
+    });
+  } catch (error) {
+    console.error('Erreur création EXPÉDITION:', error);
+    res.status(500).json({ error: 'Erreur lors de la création de l\'expédition.' });
+  }
+});
+
+// POST /api/orders/:id/express - Créer un EXPRESS (paiement 10%)
+router.post('/:id/express', authorize('APPELANT', 'ADMIN'), [
+  body('montantPaye').isFloat({ min: 0 }).withMessage('Montant invalide'),
+  body('modePaiement').notEmpty().withMessage('Mode de paiement requis'),
+  body('agenceRetrait').notEmpty().withMessage('Agence de retrait requise'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { id } = req.params;
+    const { montantPaye, modePaiement, referencePayment, agenceRetrait, note } = req.body;
+
+    const order = await prisma.order.findUnique({ 
+      where: { id: parseInt(id) },
+      include: { product: true }
+    });
+    
+    if (!order) {
+      return res.status(404).json({ error: 'Commande non trouvée.' });
+    }
+
+    const dixPourcent = order.montant * 0.10;
+    const montantRestant = order.montant - parseFloat(montantPaye);
+
+    if (parseFloat(montantPaye) < dixPourcent * 0.8) {
+      return res.status(400).json({ 
+        error: `Le montant payé doit être au moins 10% du total (${Math.round(dixPourcent)} FCFA).` 
+      });
+    }
+
+    const updatedOrder = await prisma.order.update({
+      where: { id: parseInt(id) },
+      data: {
+        status: 'EXPRESS',
+        deliveryType: 'EXPRESS',
+        montantPaye: parseFloat(montantPaye),
+        montantRestant,
+        modePaiement,
+        referencePayment,
+        agenceRetrait,
+        noteAppelant: note || order.noteAppelant,
+        validatedAt: new Date(),
+        callerId: req.user.id,
+        calledAt: new Date(),
+      },
+    });
+
+    await prisma.statusHistory.create({
+      data: {
+        orderId: parseInt(id),
+        oldStatus: order.status,
+        newStatus: 'EXPRESS',
+        changedBy: req.user.id,
+        comment: `EXPRESS - Acompte: ${montantPaye} FCFA via ${modePaiement} | Restant: ${Math.round(montantRestant)} FCFA | Agence: ${agenceRetrait}${referencePayment ? ' - Réf: ' + referencePayment : ''}`,
+      },
+    });
+
+    res.json({ 
+      order: updatedOrder, 
+      message: 'Commande transférée en EXPRESS avec succès.' 
+    });
+  } catch (error) {
+    console.error('Erreur création EXPRESS:', error);
+    res.status(500).json({ error: 'Erreur lors de la création de l\'express.' });
+  }
+});
+
+// PUT /api/orders/:id/express/arrive - Marquer un EXPRESS comme arrivé en agence
+router.put('/:id/express/arrive', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const order = await prisma.order.findUnique({ where: { id: parseInt(id) } });
+    
+    if (!order) {
+      return res.status(404).json({ error: 'Commande non trouvée.' });
+    }
+
+    if (order.status !== 'EXPRESS') {
+      return res.status(400).json({ error: 'Cette commande n\'est pas un EXPRESS en attente.' });
+    }
+
+    const updatedOrder = await prisma.order.update({
+      where: { id: parseInt(id) },
+      data: {
+        status: 'EXPRESS_ARRIVE',
+        arriveAt: new Date(),
+      },
+    });
+
+    await prisma.statusHistory.create({
+      data: {
+        orderId: parseInt(id),
+        oldStatus: 'EXPRESS',
+        newStatus: 'EXPRESS_ARRIVE',
+        changedBy: req.user.id,
+        comment: `Colis arrivé en agence: ${order.agenceRetrait}`,
+      },
+    });
+
+    res.json({ 
+      order: updatedOrder, 
+      message: 'Colis marqué comme arrivé en agence.' 
+    });
+  } catch (error) {
+    console.error('Erreur:', error);
+    res.status(500).json({ error: 'Erreur lors de la mise à jour.' });
+  }
+});
+
+// POST /api/orders/:id/express/notifier - Notifier le client (EXPRESS arrivé)
+router.post('/:id/express/notifier', authorize('APPELANT', 'ADMIN'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const order = await prisma.order.findUnique({ where: { id: parseInt(id) } });
+    
+    if (!order) {
+      return res.status(404).json({ error: 'Commande non trouvée.' });
+    }
+
+    if (order.status !== 'EXPRESS_ARRIVE') {
+      return res.status(400).json({ error: 'Cette commande n\'est pas arrivée en agence.' });
+    }
+
+    const updatedOrder = await prisma.order.update({
+      where: { id: parseInt(id) },
+      data: {
+        clientNotifie: true,
+        notifieAt: new Date(),
+        notifiePar: req.user.id,
+      },
+    });
+
+    await prisma.statusHistory.create({
+      data: {
+        orderId: parseInt(id),
+        oldStatus: 'EXPRESS_ARRIVE',
+        newStatus: 'EXPRESS_ARRIVE',
+        changedBy: req.user.id,
+        comment: `Client ${order.clientNom} notifié de l'arrivée du colis à l'agence ${order.agenceRetrait}`,
+      },
+    });
+
+    res.json({ 
+      order: updatedOrder, 
+      message: 'Client notifié avec succès.' 
+    });
+  } catch (error) {
+    console.error('Erreur:', error);
+    res.status(500).json({ error: 'Erreur lors de la notification.' });
+  }
+});
+
+// POST /api/orders/:id/express/finaliser - Finaliser EXPRESS (paiement des 90% restants)
+router.post('/:id/express/finaliser', authorize('ADMIN', 'GESTIONNAIRE'), [
+  body('montantPaye').isFloat({ min: 0 }).withMessage('Montant invalide'),
+  body('modePaiement').notEmpty().withMessage('Mode de paiement requis'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { id } = req.params;
+    const { montantPaye, modePaiement, referencePayment } = req.body;
+
+    const order = await prisma.order.findUnique({ 
+      where: { id: parseInt(id) },
+      include: { product: true }
+    });
+    
+    if (!order) {
+      return res.status(404).json({ error: 'Commande non trouvée.' });
+    }
+
+    if (order.status !== 'EXPRESS_ARRIVE') {
+      return res.status(400).json({ error: 'Cette commande n\'est pas arrivée en agence.' });
+    }
+
+    const montantTotal = (order.montantPaye || 0) + parseFloat(montantPaye);
+    
+    if (montantTotal < order.montant * 0.95) {
+      return res.status(400).json({ 
+        error: `Le montant total payé (${Math.round(montantTotal)} FCFA) est insuffisant. Attendu: ${Math.round(order.montant)} FCFA.` 
+      });
+    }
+
+    // Transaction pour gérer le stock
+    const updatedOrder = await prisma.$transaction(async (tx) => {
+      const updated = await tx.order.update({
+        where: { id: parseInt(id) },
+        data: {
+          status: 'EXPRESS_LIVRE',
+          montantPaye: montantTotal,
+          montantRestant: 0,
+          deliveredAt: new Date(),
+        },
+      });
+
+      // Décrémenter le stock si lié à un produit
+      if (order.productId && order.product) {
+        const product = order.product;
+        const stockAvant = product.stockActuel;
+        const stockApres = stockAvant - order.quantite;
+
+        await tx.product.update({
+          where: { id: order.productId },
+          data: { stockActuel: stockApres },
+        });
+
+        await tx.stockMovement.create({
+          data: {
+            productId: order.productId,
+            type: 'LIVRAISON',
+            quantite: -order.quantite,
+            stockAvant,
+            stockApres,
+            effectuePar: req.user.id,
+            motif: `EXPRESS livré - ${order.orderReference} - Agence: ${order.agenceRetrait}`,
+          },
+        });
+      }
+
+      return updated;
+    });
+
+    await prisma.statusHistory.create({
+      data: {
+        orderId: parseInt(id),
+        oldStatus: 'EXPRESS_ARRIVE',
+        newStatus: 'EXPRESS_LIVRE',
+        changedBy: req.user.id,
+        comment: `Paiement final: ${montantPaye} FCFA via ${modePaiement} | Total payé: ${Math.round(montantTotal)} FCFA${referencePayment ? ' - Réf: ' + referencePayment : ''}`,
+      },
+    });
+
+    res.json({ 
+      order: updatedOrder, 
+      message: 'EXPRESS finalisé avec succès.' 
+    });
+  } catch (error) {
+    console.error('Erreur:', error);
+    res.status(500).json({ error: 'Erreur lors de la finalisation.' });
+  }
+});
+
 // DELETE /api/orders/:id - Supprimer une commande (Admin uniquement)
 router.delete('/:id', authorize('ADMIN'), async (req, res) => {
   try {
