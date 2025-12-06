@@ -628,7 +628,7 @@ router.post('/:id/express', authorize('APPELANT', 'ADMIN'), [
 });
 
 // PUT /api/orders/:id/express/arrive - Marquer un EXPRESS comme arrivé en agence
-router.put('/:id/express/arrive', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
+router.put('/:id/express/arrive', authorize('ADMIN', 'GESTIONNAIRE', 'APPELANT'), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -671,7 +671,7 @@ router.put('/:id/express/arrive', authorize('ADMIN', 'GESTIONNAIRE'), async (req
 });
 
 // POST /api/orders/:id/express/notifier - Notifier le client (EXPRESS arrivé)
-router.post('/:id/express/notifier', authorize('APPELANT', 'ADMIN'), async (req, res) => {
+router.post('/:id/express/notifier', authorize('ADMIN', 'GESTIONNAIRE', 'APPELANT'), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -770,7 +770,7 @@ router.post('/:id/expedition/livrer', authorize('LIVREUR', 'ADMIN'), async (req,
 });
 
 // POST /api/orders/:id/express/finaliser - Finaliser EXPRESS (paiement des 90% restants)
-router.post('/:id/express/finaliser', authorize('ADMIN', 'GESTIONNAIRE'), [
+router.post('/:id/express/finaliser', authorize('ADMIN', 'GESTIONNAIRE', 'APPELANT'), [
   body('montantPaye').isFloat({ min: 0 }).withMessage('Montant invalide'),
   body('modePaiement').notEmpty().withMessage('Mode de paiement requis'),
 ], async (req, res) => {
