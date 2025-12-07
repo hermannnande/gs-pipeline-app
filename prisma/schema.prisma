@@ -29,6 +29,7 @@ enum OrderStatus {
   LIVREE            // Livrée avec succès
   REFUSEE           // Refusée par le client à la livraison
   ANNULEE_LIVRAISON // Annulée pendant la livraison
+  RETOURNE          // Retourné par le livreur (client absent, etc.)
   EXPEDITION        // Paiement total 100% - Envoi vers autre ville
   EXPRESS           // Paiement partiel 10% - Retrait en agence
   EXPRESS_ARRIVE    // Colis arrivé en agence - En attente paiement 90%
@@ -114,6 +115,10 @@ model Order {
   noteAppelant    String?
   noteLivreur     String?
   noteGestionnaire String?
+  
+  // Gestion des retours
+  raisonRetour    String?     // Raison du retour (client absent, refuse, adresse incorrecte, etc.)
+  retourneAt      DateTime?   // Date du retour
   
   // Gestion EXPRESS - Notification d'arrivée
   clientNotifie   Boolean?    @default(false) // Client notifié de l'arrivée du colis

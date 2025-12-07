@@ -10,6 +10,8 @@ export default function Deliveries() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [note, setNote] = useState('');
+  const [showRetourOptions, setShowRetourOptions] = useState(false);
+  const [raisonRetour, setRaisonRetour] = useState('');
   const queryClient = useQueryClient();
 
   const { data: ordersData, isLoading } = useQuery({
@@ -18,13 +20,15 @@ export default function Deliveries() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status, note }: { id: number; status: string; note?: string }) =>
-      ordersApi.updateStatus(id, status, note),
+    mutationFn: ({ id, status, note, raisonRetour }: { id: number; status: string; note?: string; raisonRetour?: string }) =>
+      ordersApi.updateStatus(id, status, note, raisonRetour),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['livreur-deliveries'] });
       queryClient.invalidateQueries({ queryKey: ['livreur-my-stats'] });
       setSelectedOrder(null);
       setNote('');
+      setShowRetourOptions(false);
+      setRaisonRetour('');
       toast.success('Livraison mise à jour avec succès');
     },
     onError: (error: any) => {
@@ -32,18 +36,19 @@ export default function Deliveries() {
     },
   });
 
-  const handleUpdateStatus = (status: string) => {
+  const handleUpdateStatus = (status: string, raison?: string) => {
     if (!selectedOrder) return;
     updateStatusMutation.mutate({
       id: selectedOrder.id,
       status,
       note: note || undefined,
+      raisonRetour: raison,
     });
   };
 
   const pendingOrders = ordersData?.orders?.filter((o: Order) => o.status === 'ASSIGNEE') || [];
   const completedOrders = ordersData?.orders?.filter((o: Order) => 
-    ['LIVREE', 'REFUSEE', 'ANNULEE_LIVRAISON'].includes(o.status)
+    ['LIVREE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'].includes(o.status)
   ) || [];
 
   return (
@@ -181,8 +186,8 @@ export default function Deliveries() {
                     <strong className="text-lg text-green-600">
                       {formatCurrency(
                         completedOrders
-                          .filter(o => o.status === 'LIVREE')
-                          .reduce((sum, o) => sum + o.montant, 0)
+                          .filter((o: Order) => o.status === 'LIVREE')
+                          .reduce((sum: number, o: Order) => sum + o.montant, 0)
                       )}
                     </strong>
                   </p>
@@ -237,45 +242,85 @@ export default function Deliveries() {
               />
             </div>
 
-            <div className="space-y-2">
-              <button
-                onClick={() => handleUpdateStatus('LIVREE')}
-                className="btn btn-success w-full"
-                disabled={updateStatusMutation.isPending}
-              >
-                ✓ Livraison effectuée
-              </button>
-              <button
-                onClick={() => handleUpdateStatus('REFUSEE')}
-                className="btn btn-danger w-full"
-                disabled={updateStatusMutation.isPending}
-              >
-                ✕ Refusée par le client
-              </button>
-              <button
-                onClick={() => handleUpdateStatus('ANNULEE_LIVRAISON')}
-                className="btn btn-secondary w-full"
-                disabled={updateStatusMutation.isPending}
-              >
-                🚫 Annulée (absent, mauvaise adresse...)
-              </button>
-            </div>
+            {!showRetourOptions ? (
+              <div className="space-y-2">
+                <button
+                  onClick={() => handleUpdateStatus('LIVREE')}
+                  className="btn btn-success w-full"
+                  disabled={updateStatusMutation.isPending}
+                >
+                  ✓ Livraison effectuée
+                </button>
+                <button
+                  onClick={() => setShowRetourOptions(true)}
+                  className="btn btn-warning w-full"
+                  disabled={updateStatusMutation.isPending}
+                >
+                  ↩ Retour du colis (non livré)
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                  <p className="text-sm font-medium text-orange-900 mb-2">
+                    Pourquoi le colis n'a pas été livré ?
+                  </p>
+                  <select
+                    value={raisonRetour}
+                    onChange={(e) => setRaisonRetour(e.target.value)}
+                    className="input w-full"
+                  >
+                    <option value="">Sélectionnez une raison...</option>
+                    <option value="CLIENT_ABSENT">Client absent / Injoignable</option>
+                    <option value="CLIENT_REFUSE">Client a refusé le colis</option>
+                    <option value="CLIENT_REPORTE">Client veut reporter la livraison</option>
+                    <option value="ADRESSE_INCORRECTE">Adresse incorrecte / Introuvable</option>
+                    <option value="ZONE_DANGEREUSE">Zone dangereuse / Inaccessible</option>
+                    <option value="AUTRE">Autre raison</option>
+                  </select>
+                </div>
 
-            <button
-              onClick={() => {
-                setSelectedOrder(null);
-                setNote('');
-              }}
-              className="btn btn-secondary w-full mt-4"
-            >
-              Fermer
-            </button>
+                {raisonRetour && (
+                  <button
+                    onClick={() => handleUpdateStatus('RETOURNE', raisonRetour)}
+                    className="btn btn-warning w-full"
+                    disabled={updateStatusMutation.isPending}
+                  >
+                    ✓ Confirmer le retour
+                  </button>
+                )}
+
+                <button
+                  onClick={() => {
+                    setShowRetourOptions(false);
+                    setRaisonRetour('');
+                  }}
+                  className="btn btn-secondary w-full"
+                >
+                  ← Retour
+                </button>
+              </div>
+            )}
+
+            {!showRetourOptions && (
+              <button
+                onClick={() => {
+                  setSelectedOrder(null);
+                  setNote('');
+                }}
+                className="btn btn-secondary w-full mt-4"
+              >
+                Fermer
+              </button>
+            )}
           </div>
         </div>
       )}
     </div>
   );
 }
+
+
 
 
 

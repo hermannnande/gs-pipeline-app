@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import Overview from './Overview';
 import ValidatedOrders from './ValidatedOrders';
 import Deliveries from './Deliveries';
+import ColisRetournes from './ColisRetournes';
 import Stats from './Stats';
 import ClientDatabase from '../common/ClientDatabase';
 import CallerSupervision from '../common/CallerSupervision';
@@ -19,6 +20,7 @@ export default function GestionnaireDashboard() {
       <Route path="validated" element={<ValidatedOrders />} />
       <Route path="expeditions" element={<ExpeditionsExpress />} />
       <Route path="deliveries" element={<Deliveries />} />
+      <Route path="returned" element={<ColisRetournes />} />
       <Route path="users" element={<Users />} />
       <Route path="database" element={<ClientDatabase />} />
       <Route path="supervision" element={<CallerSupervision />} />

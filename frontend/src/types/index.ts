@@ -10,6 +10,7 @@ export type OrderStatus =
   | 'LIVREE'
   | 'REFUSEE'
   | 'ANNULEE_LIVRAISON'
+  | 'RETOURNE'
   | 'EXPEDITION'
   | 'EXPRESS'
   | 'EXPRESS_ARRIVE'
@@ -65,6 +66,9 @@ export interface Order {
   validatedAt?: string;
   deliveredAt?: string;
   statusHistory?: StatusHistory[];
+  // Gestion des retours
+  raisonRetour?: string;
+  retourneAt?: string;
   // Nouveaux champs pour EXPÉDITION & EXPRESS
   deliveryType?: DeliveryType;
   montantPaye?: number;

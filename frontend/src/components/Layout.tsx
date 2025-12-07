@@ -17,7 +17,8 @@ import {
   Eye,
   Zap,
   Menu,
-  X
+  X,
+  PackageX
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 
@@ -56,6 +57,7 @@ export default function Layout({ children }: LayoutProps) {
           { icon: CheckCircle, label: 'Commandes validées', path: '/gestionnaire/validated' },
           { icon: Zap, label: 'Expéditions & EXPRESS', path: '/gestionnaire/expeditions' },
           { icon: Truck, label: 'Livraisons', path: '/gestionnaire/deliveries' },
+          { icon: PackageX, label: 'Colis retournés', path: '/gestionnaire/returned' },
           { icon: Users, label: 'Utilisateurs', path: '/gestionnaire/users' },
           { icon: Database, label: 'Base Clients', path: '/gestionnaire/database' },
           { icon: Eye, label: 'Supervision Appelants', path: '/gestionnaire/supervision' },

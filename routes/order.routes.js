@@ -180,7 +180,7 @@ router.post('/', authorize('ADMIN', 'GESTIONNAIRE'), [
 router.put('/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, note } = req.body;
+    const { status, note, raisonRetour } = req.body;
     const user = req.user;
 
     const order = await prisma.order.findUnique({
@@ -205,8 +205,8 @@ router.put('/:id/status', async (req, res) => {
         });
       }
     } else if (user.role === 'LIVREUR') {
-      // Le livreur peut changer : ASSIGNEE -> LIVREE/REFUSEE/ANNULEE_LIVRAISON
-      if (!['LIVREE', 'REFUSEE', 'ANNULEE_LIVRAISON'].includes(status)) {
+      // Le livreur peut changer : ASSIGNEE -> LIVREE/REFUSEE/ANNULEE_LIVRAISON/RETOURNE
+      if (!['LIVREE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'].includes(status)) {
         return res.status(400).json({ error: 'Statut invalide pour un livreur.' });
       }
       if (order.delivererId !== user.id) {
@@ -225,7 +225,9 @@ router.put('/:id/status', async (req, res) => {
           noteLivreur: user.role === 'LIVREUR' && note ? note : order.noteLivreur,
           noteGestionnaire: (user.role === 'GESTIONNAIRE' || user.role === 'ADMIN') && note ? note : order.noteGestionnaire,
           validatedAt: status === 'VALIDEE' ? new Date() : order.validatedAt,
-          deliveredAt: status === 'LIVREE' ? new Date() : order.deliveredAt
+          deliveredAt: status === 'LIVREE' ? new Date() : order.deliveredAt,
+          raisonRetour: status === 'RETOURNE' && raisonRetour ? raisonRetour : order.raisonRetour,
+          retourneAt: status === 'RETOURNE' ? new Date() : order.retourneAt
         },
         include: {
           caller: {
