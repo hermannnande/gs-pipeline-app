@@ -82,6 +82,7 @@ export interface Order {
   expedieAt?: string;
   arriveAt?: string;
   codeExpedition?: string;
+  photoRecuExpedition?: string; // Photo du reçu d'expédition (base64)
 }
 
 export interface StatusHistory {

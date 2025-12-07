@@ -31,11 +31,15 @@ router.get('/lists', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STOCK', 'A
             id: true,
             orderReference: true,
             clientNom: true,
+            clientTelephone: true,
             clientVille: true,
+            clientAdresse: true,
+            produitNom: true,
             montant: true,
             status: true,
             deliveryType: true,
             codeExpedition: true,
+            photoRecuExpedition: true,
             expedieAt: true
           }
         }

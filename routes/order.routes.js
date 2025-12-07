@@ -723,11 +723,16 @@ router.post('/:id/express/notifier', authorize('ADMIN', 'GESTIONNAIRE', 'APPELAN
 router.post('/:id/expedition/livrer', authorize('LIVREUR', 'ADMIN'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { codeExpedition, note } = req.body;
+    const { codeExpedition, note, photoRecuExpedition } = req.body;
 
     // Validation : Code d'expédition obligatoire
     if (!codeExpedition || !codeExpedition.trim()) {
       return res.status(400).json({ error: 'Le code d\'expédition est obligatoire.' });
+    }
+
+    // Validation : Photo du reçu obligatoire
+    if (!photoRecuExpedition || !photoRecuExpedition.trim()) {
+      return res.status(400).json({ error: 'La photo du reçu d\'expédition est obligatoire.' });
     }
 
     const order = await prisma.order.findUnique({ 
@@ -757,6 +762,7 @@ router.post('/:id/expedition/livrer', authorize('LIVREUR', 'ADMIN'), async (req,
         delivererId: req.user.id || order.delivererId,
         noteLivreur: note || order.noteLivreur,
         codeExpedition: codeExpedition.trim(),
+        photoRecuExpedition: photoRecuExpedition.trim(), // ✅ Photo du reçu
         expedieAt: new Date(),
       },
     });

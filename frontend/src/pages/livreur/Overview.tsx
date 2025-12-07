@@ -11,6 +11,7 @@ export default function Overview() {
   const queryClient = useQueryClient();
   const [selectedExpedition, setSelectedExpedition] = useState<any>(null);
   const [codeExpedition, setCodeExpedition] = useState('');
+  const [photoRecuExpedition, setPhotoRecuExpedition] = useState('');
 
   const { data: stats } = useQuery({
     queryKey: ['livreur-my-stats'],
@@ -38,14 +39,15 @@ export default function Overview() {
 
   // Mutation pour marquer une expédition comme livrée
   const deliverExpeditionMutation = useMutation({
-    mutationFn: ({ orderId, codeExpedition }: { orderId: number; codeExpedition: string }) => 
-      ordersApi.deliverExpedition(orderId, codeExpedition),
+    mutationFn: ({ orderId, codeExpedition, photoRecuExpedition }: { orderId: number; codeExpedition: string; photoRecuExpedition: string }) => 
+      ordersApi.deliverExpedition(orderId, codeExpedition, undefined, photoRecuExpedition),
     onSuccess: () => {
       toast.success('✅ Expédition confirmée comme livrée');
       queryClient.invalidateQueries({ queryKey: ['livreur-expeditions'] });
       queryClient.invalidateQueries({ queryKey: ['livreur-my-stats'] });
       setSelectedExpedition(null);
       setCodeExpedition('');
+      setPhotoRecuExpedition('');
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.error || 'Erreur lors de la confirmation');
@@ -61,10 +63,39 @@ export default function Overview() {
       toast.error('Veuillez saisir le code d\'expédition');
       return;
     }
+    if (!photoRecuExpedition.trim()) {
+      toast.error('Veuillez prendre une photo du reçu d\'expédition');
+      return;
+    }
     deliverExpeditionMutation.mutate({
       orderId: selectedExpedition.id,
-      codeExpedition: codeExpedition.trim()
+      codeExpedition: codeExpedition.trim(),
+      photoRecuExpedition: photoRecuExpedition.trim()
     });
+  };
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Vérifier le type de fichier
+    if (!file.type.startsWith('image/')) {
+      toast.error('Veuillez sélectionner une image');
+      return;
+    }
+
+    // Vérifier la taille (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('L\'image ne doit pas dépasser 5 MB');
+      return;
+    }
+
+    // Convertir en base64
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoRecuExpedition(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   const cards = [
@@ -278,7 +309,7 @@ export default function Overview() {
               </div>
             </div>
 
-            <div className="mb-6">
+            <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Code d'expédition <span className="text-red-500">*</span>
               </label>
@@ -296,11 +327,40 @@ export default function Overview() {
               </p>
             </div>
 
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Photo du reçu d'expédition <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handlePhotoChange}
+                className="input w-full"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Prenez une photo du reçu comme preuve d'expédition
+              </p>
+              
+              {photoRecuExpedition && (
+                <div className="mt-3 p-2 bg-gray-50 rounded-lg">
+                  <p className="text-xs text-gray-600 mb-2">Prévisualisation :</p>
+                  <img 
+                    src={photoRecuExpedition} 
+                    alt="Reçu d'expédition" 
+                    className="w-full h-48 object-contain rounded border border-gray-200"
+                  />
+                </div>
+              )}
+            </div>
+
             <div className="flex gap-3">
               <button
                 onClick={() => {
                   setSelectedExpedition(null);
                   setCodeExpedition('');
+                  setPhotoRecuExpedition('');
                 }}
                 className="btn btn-secondary flex-1"
               >
@@ -308,7 +368,7 @@ export default function Overview() {
               </button>
               <button
                 onClick={confirmDeliverExpedition}
-                disabled={!codeExpedition.trim() || deliverExpeditionMutation.isPending}
+                disabled={!codeExpedition.trim() || !photoRecuExpedition.trim() || deliverExpeditionMutation.isPending}
                 className="btn btn-primary flex-1"
               >
                 {deliverExpeditionMutation.isPending ? 'Confirmation...' : '✓ Confirmer'}

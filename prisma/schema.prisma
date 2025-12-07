@@ -122,6 +122,7 @@ model Order {
   
   // Gestion EXPEDITION - Code de suivi
   codeExpedition  String?     // Code d'expédition/tracking fourni par le livreur
+  photoRecuExpedition String? // Photo du reçu d'expédition (base64 ou URL)
   
   // Gestion EXPRESS - Notification d'arrivée
   clientNotifie   Boolean?    @default(false) // Client notifié de l'arrivée du colis

@@ -112,8 +112,8 @@ export const ordersApi = {
     return data;
   },
 
-  deliverExpedition: async (orderId: number, codeExpedition?: string, note?: string) => {
-    const { data } = await api.post(`/orders/${orderId}/expedition/livrer`, { codeExpedition, note });
+  deliverExpedition: async (orderId: number, codeExpedition?: string, note?: string, photoRecuExpedition?: string) => {
+    const { data } = await api.post(`/orders/${orderId}/expedition/livrer`, { codeExpedition, note, photoRecuExpedition });
     return data;
   },
 
