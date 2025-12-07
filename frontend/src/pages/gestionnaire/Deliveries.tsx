@@ -52,6 +52,7 @@ export default function Deliveries() {
                       <th className="text-left py-2 px-3 text-sm font-medium text-gray-600">Ville</th>
                       <th className="text-left py-2 px-3 text-sm font-medium text-gray-600">Montant</th>
                       <th className="text-left py-2 px-3 text-sm font-medium text-gray-600">Statut</th>
+                      <th className="text-left py-2 px-3 text-sm font-medium text-gray-600">Code Expédition</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -64,6 +65,17 @@ export default function Deliveries() {
                           <span className={`badge ${getStatusColor(order.status)}`}>
                             {getStatusLabel(order.status)}
                           </span>
+                        </td>
+                        <td className="py-2 px-3 text-sm">
+                          {order.deliveryType === 'EXPEDITION' && order.codeExpedition ? (
+                            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-mono rounded">
+                              📦 {order.codeExpedition}
+                            </span>
+                          ) : order.deliveryType === 'EXPEDITION' && order.status === 'ASSIGNEE' ? (
+                            <span className="text-xs text-gray-400 italic">En attente...</span>
+                          ) : (
+                            <span className="text-xs text-gray-300">—</span>
+                          )}
                         </td>
                       </tr>
                     ))}

@@ -723,7 +723,12 @@ router.post('/:id/express/notifier', authorize('ADMIN', 'GESTIONNAIRE', 'APPELAN
 router.post('/:id/expedition/livrer', authorize('LIVREUR', 'ADMIN'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { note } = req.body;
+    const { codeExpedition, note } = req.body;
+
+    // Validation : Code d'expédition obligatoire
+    if (!codeExpedition || !codeExpedition.trim()) {
+      return res.status(400).json({ error: 'Le code d\'expédition est obligatoire.' });
+    }
 
     const order = await prisma.order.findUnique({ 
       where: { id: parseInt(id) },
@@ -751,6 +756,8 @@ router.post('/:id/expedition/livrer', authorize('LIVREUR', 'ADMIN'), async (req,
         deliveredAt: new Date(),
         delivererId: req.user.id || order.delivererId,
         noteLivreur: note || order.noteLivreur,
+        codeExpedition: codeExpedition.trim(),
+        expedieAt: new Date(),
       },
     });
 

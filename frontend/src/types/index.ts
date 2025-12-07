@@ -81,6 +81,7 @@ export interface Order {
   agenceRetrait?: string;
   expedieAt?: string;
   arriveAt?: string;
+  codeExpedition?: string;
 }
 
 export interface StatusHistory {

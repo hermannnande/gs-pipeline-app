@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Package, CheckCircle, XCircle, TrendingUp, Truck } from 'lucide-react';
 import { statsApi, deliveryApi, ordersApi } from '@/lib/api';
@@ -8,6 +9,8 @@ import toast from 'react-hot-toast';
 export default function Overview() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
+  const [selectedExpedition, setSelectedExpedition] = useState<any>(null);
+  const [codeExpedition, setCodeExpedition] = useState('');
 
   const { data: stats } = useQuery({
     queryKey: ['livreur-my-stats'],
@@ -35,11 +38,14 @@ export default function Overview() {
 
   // Mutation pour marquer une expédition comme livrée
   const deliverExpeditionMutation = useMutation({
-    mutationFn: (orderId: number) => ordersApi.deliverExpedition(orderId),
+    mutationFn: ({ orderId, codeExpedition }: { orderId: number; codeExpedition: string }) => 
+      ordersApi.deliverExpedition(orderId, codeExpedition),
     onSuccess: () => {
       toast.success('✅ Expédition confirmée comme livrée');
       queryClient.invalidateQueries({ queryKey: ['livreur-expeditions'] });
       queryClient.invalidateQueries({ queryKey: ['livreur-my-stats'] });
+      setSelectedExpedition(null);
+      setCodeExpedition('');
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.error || 'Erreur lors de la confirmation');
@@ -47,9 +53,18 @@ export default function Overview() {
   });
 
   const handleDeliverExpedition = (order: any) => {
-    if (confirm(`Confirmer que vous avez bien expédié/livré cette commande pour ${order.clientNom} ?\n\nClient : ${order.clientNom}\nVille : ${order.clientVille}\nProduit : ${order.produitNom}`)) {
-      deliverExpeditionMutation.mutate(order.id);
+    setSelectedExpedition(order);
+  };
+
+  const confirmDeliverExpedition = () => {
+    if (!codeExpedition.trim()) {
+      toast.error('Veuillez saisir le code d\'expédition');
+      return;
     }
+    deliverExpeditionMutation.mutate({
+      orderId: selectedExpedition.id,
+      codeExpedition: codeExpedition.trim()
+    });
   };
 
   const cards = [
@@ -233,6 +248,72 @@ export default function Overview() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmation avec code d'expédition */}
+      {selectedExpedition && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              📦 Confirmer l'expédition
+            </h3>
+            
+            <div className="space-y-3 mb-6">
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600">Client</p>
+                <p className="font-medium text-gray-900">{selectedExpedition.clientNom}</p>
+                <p className="text-sm text-gray-600">{selectedExpedition.clientTelephone}</p>
+              </div>
+              
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600">Destination</p>
+                <p className="font-medium text-gray-900">{selectedExpedition.clientVille}</p>
+              </div>
+              
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600">Produit</p>
+                <p className="font-medium text-gray-900">{selectedExpedition.produitNom}</p>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Code d'expédition <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={codeExpedition}
+                onChange={(e) => setCodeExpedition(e.target.value)}
+                placeholder="Ex: EXP123456, TRK789..."
+                className="input w-full"
+                autoFocus
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Code de suivi fourni par le transporteur
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setSelectedExpedition(null);
+                  setCodeExpedition('');
+                }}
+                className="btn btn-secondary flex-1"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={confirmDeliverExpedition}
+                disabled={!codeExpedition.trim() || deliverExpeditionMutation.isPending}
+                className="btn btn-primary flex-1"
+              >
+                {deliverExpeditionMutation.isPending ? 'Confirmation...' : '✓ Confirmer'}
+              </button>
+            </div>
           </div>
         </div>
       )}

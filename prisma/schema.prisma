@@ -120,6 +120,9 @@ model Order {
   raisonRetour    String?     // Raison du retour (client absent, refuse, adresse incorrecte, etc.)
   retourneAt      DateTime?   // Date du retour
   
+  // Gestion EXPEDITION - Code de suivi
+  codeExpedition  String?     // Code d'expédition/tracking fourni par le livreur
+  
   // Gestion EXPRESS - Notification d'arrivée
   clientNotifie   Boolean?    @default(false) // Client notifié de l'arrivée du colis
   notifieAt       DateTime?   // Date de notification du client
