@@ -10,6 +10,25 @@ router.use(authenticate);
 // GET /api/delivery/lists - Liste des listes de livraison (Admin/Gestionnaire/Stock/Appelant)
 router.get('/lists', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STOCK', 'APPELANT'), async (req, res) => {
   try {
+    // 🧹 Nettoyage automatique des photos expirées (silencieux)
+    try {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      await prisma.order.updateMany({
+        where: {
+          photoRecuExpedition: { not: null },
+          photoRecuExpeditionUploadedAt: { lt: sevenDaysAgo }
+        },
+        data: {
+          photoRecuExpedition: null,
+          photoRecuExpeditionUploadedAt: null
+        }
+      });
+    } catch (cleanupError) {
+      console.error('⚠️ Erreur nettoyage photos:', cleanupError);
+      // Ne pas bloquer la requête principale
+    }
+
     const { delivererId, startDate, endDate } = req.query;
 
     const where = {};

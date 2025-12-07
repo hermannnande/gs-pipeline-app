@@ -9,7 +9,7 @@ import statsRoutes from './routes/stats.routes.js';
 import webhookRoutes from './routes/webhook.routes.js';
 import productRoutes from './routes/product.routes.js';
 import stockRoutes from './routes/stock.routes.js';
-import { scheduleCleanupJob } from './jobs/cleanupPhotos.js';
+import cleanupRoutes from './routes/cleanup.routes.js';
 
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config();
@@ -44,6 +44,7 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/webhook', webhookRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/stock', stockRoutes);
+app.use('/api/cleanup', cleanupRoutes);
 
 // Route de test
 app.get('/', (req, res) => {
@@ -71,8 +72,5 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`🚀 Serveur démarré sur le port ${PORT}`);
   console.log(`📍 http://localhost:${PORT}`);
-  
-  // Démarrer le job cron de nettoyage des photos
-  scheduleCleanupJob();
 });
 
