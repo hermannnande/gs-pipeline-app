@@ -91,8 +91,8 @@ export const ordersApi = {
     return data;
   },
 
-  updateStatus: async (id: number, status: string, note?: string, raisonRetour?: string) => {
-    const { data } = await api.put(`/orders/${id}/status`, { status, note, raisonRetour });
+  updateStatus: async (id: number, status: string, note?: string) => {
+    const { data } = await api.put(`/orders/${id}/status`, { status, note });
     return data;
   },
 

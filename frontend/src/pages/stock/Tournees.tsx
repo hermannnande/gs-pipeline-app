@@ -1,9 +1,18 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Package, CheckCircle, XCircle, Truck, Calendar, Search, Filter, User } from 'lucide-react';
+import { Package, CheckCircle, Truck, Calendar, Search, Filter, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '@/lib/api';
 import { formatCurrency, formatDate, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
+
+const RAISONS_RETOUR = {
+  CLIENT_ABSENT: 'Client absent / Injoignable',
+  CLIENT_REFUSE: 'Client a refusé le colis',
+  CLIENT_REPORTE: 'Client veut reporter la livraison',
+  ADRESSE_INCORRECTE: 'Adresse incorrecte / Introuvable',
+  ZONE_DANGEREUSE: 'Zone dangereuse / Inaccessible',
+  AUTRE: 'Autre raison'
+};
 
 export default function Tournees() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -12,6 +21,7 @@ export default function Tournees() {
   const [colisRetour, setColisRetour] = useState('');
   const [ecartMotif, setEcartMotif] = useState('');
   const [modalType, setModalType] = useState<'remise' | 'retour' | 'detail' | null>(null);
+  const [raisonsRetour, setRaisonsRetour] = useState<Record<number, string>>({});
   
   // Filtres et recherche
   const [searchTerm, setSearchTerm] = useState('');
@@ -108,20 +118,23 @@ export default function Tournees() {
   });
 
   const confirmRetourMutation = useMutation({
-    mutationFn: async ({ tourneeId, colisRetour, ecartMotif }: any) => {
+    mutationFn: async ({ tourneeId, colisRetour, ecartMotif, raisonsRetour }: any) => {
       const { data } = await api.post(`/stock/tournees/${tourneeId}/confirm-retour`, {
         colisRetour: parseInt(colisRetour),
-        ecartMotif
+        ecartMotif,
+        raisonsRetour
       });
       return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['stock-tournees'] });
       queryClient.invalidateQueries({ queryKey: ['stock-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['returned-orders'] });
       setModalType(null);
       setSelectedTournee(null);
       setColisRetour('');
       setEcartMotif('');
+      setRaisonsRetour({});
       toast.success(data.message || 'Retour confirmé et stock mis à jour');
     },
     onError: (error: any) => {
@@ -148,10 +161,22 @@ export default function Tournees() {
       return;
     }
 
+    // Vérifier que toutes les raisons ont été spécifiées
+    const ordersNonLivres = tourneeDetail?.orders?.filter((order: any) => 
+      ['REFUSEE', 'ANNULEE_LIVRAISON'].includes(order.status)
+    ) || [];
+    
+    const missingReasons = ordersNonLivres.filter((order: any) => !raisonsRetour[order.id]);
+    if (missingReasons.length > 0) {
+      toast.error('Veuillez spécifier la raison de retour pour tous les colis non livrés');
+      return;
+    }
+
     confirmRetourMutation.mutate({
       tourneeId: selectedTournee.id,
       colisRetour,
-      ecartMotif: ecartCalcule !== 0 ? ecartMotif : null
+      ecartMotif: ecartCalcule !== 0 ? ecartMotif : null,
+      raisonsRetour
     });
   };
 
@@ -165,7 +190,15 @@ export default function Tournees() {
     setSelectedTournee(tournee);
     const colisNonLivres = tournee.stats.totalOrders - tournee.stats.livrees;
     setColisRetour(colisNonLivres.toString());
+    setRaisonsRetour({});
     setTimeout(() => setModalType('retour'), 100);
+  };
+
+  const setRaisonForOrder = (orderId: number, raison: string) => {
+    setRaisonsRetour(prev => ({
+      ...prev,
+      [orderId]: raison
+    }));
   };
 
   const getStatusBadge = (tournee: any) => {
@@ -619,23 +652,51 @@ export default function Tournees() {
               {/* Détail des produits non livrés attendus */}
               <div className="mt-4">
                 <h4 className="font-semibold text-gray-800 mb-2">Détail des produits non livrés attendus :</h4>
-                {tourneeDetail?.orders
-                  ?.filter((order: any) => ['ASSIGNEE', 'REFUSEE', 'ANNULEE_LIVRAISON'].includes(order.status))
-                  .map((order: any) => (
-                    <div key={order.id} className="flex justify-between items-center p-2 bg-gray-50 rounded-md mb-1">
-                      <span className="text-sm text-gray-700">{order.product?.nom || order.produitNom}</span>
-                      <span className="font-medium text-gray-900">x{order.quantite}</span>
-                    </div>
-                  ))}
-                {tourneeDetail?.orders?.filter((order: any) => ['ASSIGNEE', 'REFUSEE', 'ANNULEE_LIVRAISON'].includes(order.status)).length === 0 && (
-                  <p className="text-sm text-gray-500 italic">Aucun produit non livré attendu.</p>
-                )}
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {tourneeDetail?.orders
+                    ?.filter((order: any) => ['REFUSEE', 'ANNULEE_LIVRAISON'].includes(order.status))
+                    .map((order: any) => (
+                      <div key={order.id} className="bg-white p-3 rounded-lg border border-orange-200">
+                        <div className="mb-2">
+                          <p className="text-sm font-medium text-gray-900">
+                            {order.product?.nom || order.produitNom} (Qté: {order.quantite})
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            {order.clientNom} - {order.clientVille}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Statut: {order.status === 'REFUSEE' ? 'Refusé par client' : 'Annulé'}
+                          </p>
+                          {order.noteLivreur && (
+                            <p className="text-xs text-gray-500 italic mt-1">
+                              Note livreur: {order.noteLivreur}
+                            </p>
+                          )}
+                        </div>
+                        <select
+                          value={raisonsRetour[order.id] || ''}
+                          onChange={(e) => setRaisonForOrder(order.id, e.target.value)}
+                          className="input w-full text-sm"
+                          required
+                        >
+                          <option value="">Sélectionnez la raison du retour...</option>
+                          {Object.entries(RAISONS_RETOUR).map(([key, label]) => (
+                            <option key={key} value={key}>{label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    ))}
+                  
+                  {tourneeDetail?.orders?.filter((order: any) => ['REFUSEE', 'ANNULEE_LIVRAISON'].includes(order.status)).length === 0 && (
+                    <p className="text-sm text-gray-500 italic">Aucun colis non livré.</p>
+                  )}
+                </div>
               </div>
             </div>
 
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nombre de colis retournés reçus
+                Nombre total de colis retournés reçus
               </label>
               <input
                 type="number"

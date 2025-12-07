@@ -193,7 +193,7 @@ router.post('/tournees/:id/confirm-retour', authorize('GESTIONNAIRE_STOCK'), [
     }
 
     const { id } = req.params;
-    const { colisRetour, ecartMotif } = req.body;
+    const { colisRetour, ecartMotif, raisonsRetour } = req.body;
 
     const deliveryList = await prisma.deliveryList.findUnique({
       where: { id: parseInt(id) },
@@ -230,6 +230,36 @@ router.post('/tournees/:id/confirm-retour', authorize('GESTIONNAIRE_STOCK'), [
           ecartMotif: ecart !== 0 ? ecartMotif : null
         }
       });
+
+      // Mettre à jour les colis REFUSEE et ANNULEE_LIVRAISON vers RETOURNE avec raison
+      if (raisonsRetour && typeof raisonsRetour === 'object') {
+        const ordersToUpdate = deliveryList.orders.filter(o => 
+          ['REFUSEE', 'ANNULEE_LIVRAISON'].includes(o.status) && 
+          raisonsRetour[o.id]
+        );
+
+        for (const order of ordersToUpdate) {
+          await tx.order.update({
+            where: { id: order.id },
+            data: {
+              status: 'RETOURNE',
+              raisonRetour: raisonsRetour[order.id],
+              retourneAt: new Date()
+            }
+          });
+
+          // Créer l'historique
+          await tx.statusHistory.create({
+            data: {
+              orderId: order.id,
+              oldStatus: order.status,
+              newStatus: 'RETOURNE',
+              changedBy: req.user.id,
+              comment: `Retour confirmé par gestionnaire de stock - Raison: ${raisonsRetour[order.id]}`
+            }
+          });
+        }
+      }
 
       // ⚠️ RÈGLE MÉTIER IMPORTANTE :
       // Les produits REFUSÉS ou ANNULÉS ne sont PAS réintégrés dans le stock
