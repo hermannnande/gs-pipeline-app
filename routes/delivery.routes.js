@@ -7,8 +7,8 @@ const prisma = new PrismaClient();
 
 router.use(authenticate);
 
-// GET /api/delivery/lists - Liste des listes de livraison (Gestionnaire/Admin)
-router.get('/lists', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
+// GET /api/delivery/lists - Liste des listes de livraison (Admin/Gestionnaire/Stock/Appelant)
+router.get('/lists', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STOCK', 'APPELANT'), async (req, res) => {
   try {
     const { delivererId, startDate, endDate } = req.query;
 
