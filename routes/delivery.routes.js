@@ -165,6 +165,9 @@ router.get('/my-orders', authorize('LIVREUR'), async (req, res) => {
       // Si pas de tourneeStock, ne pas afficher (remise pas encore confirmée)
       if (!order.deliveryList.tourneeStock) return false;
       
+      // Exclure les EXPEDITION (elles ont leur propre section dans le dashboard)
+      if (order.deliveryType === 'EXPEDITION') return false;
+      
       // Ne montrer que si la remise est confirmée
       return order.deliveryList.tourneeStock.colisRemisConfirme === true;
     });
