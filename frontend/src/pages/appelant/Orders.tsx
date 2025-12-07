@@ -71,11 +71,17 @@ export default function Orders() {
 
   const filteredOrders = ordersData?.orders
     ?.filter((order: Order) => {
-      // IMPORTANT : Afficher UNIQUEMENT les commandes NOUVELLE et A_APPELER
-      // Les commandes traitées (VALIDEE, ANNULEE, INJOIGNABLE, etc.) ne doivent PAS apparaître ici
-      const isToCall = ['NOUVELLE', 'A_APPELER'].includes(order.status);
+      // IMPORTANT : Afficher les commandes en attente de traitement OU récemment traitées
+      // Les commandes restent visibles jusqu'à ce qu'elles soient assignées à un livreur (ASSIGNEE) ou finalisées
+      const isToCall = [
+        'NOUVELLE',      // Nouvelle commande reçue
+        'A_APPELER',     // Marquée pour appel
+        'VALIDEE',       // Appel traité - Client a validé (reste visible jusqu'à assignation)
+        'ANNULEE',       // Appel traité - Client a annulé (reste visible)
+        'INJOIGNABLE'    // Appel traité - Client injoignable (reste visible)
+      ].includes(order.status);
       
-      if (!isToCall) return false; // Exclure toutes les commandes déjà traitées
+      if (!isToCall) return false; // Masquer les commandes assignées, livrées, expéditions, etc.
       
       const matchesSearch = order.clientNom.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.clientTelephone.includes(searchTerm);
@@ -104,7 +110,7 @@ export default function Orders() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Commandes à appeler</h1>
-          <p className="text-gray-600 mt-1">Liste des commandes en attente de traitement</p>
+          <p className="text-gray-600 mt-1">Commandes en attente d'appel et commandes traitées en attente d'assignation</p>
         </div>
         <div className="flex items-center gap-4">
           {filteredOrders && (
@@ -157,6 +163,9 @@ export default function Orders() {
             <option value="">Tous</option>
             <option value="NOUVELLE">Nouvelle</option>
             <option value="A_APPELER">À appeler</option>
+            <option value="VALIDEE">Validée</option>
+            <option value="ANNULEE">Annulée</option>
+            <option value="INJOIGNABLE">Injoignable</option>
           </select>
         </div>
       </div>
