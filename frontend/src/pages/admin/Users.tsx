@@ -3,12 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { UserPlus, Edit, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usersApi } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 import type { User } from '@/types';
 
 export default function Users() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuthStore();
 
   const { data: usersData, isLoading } = useQuery({
     queryKey: ['users'],
@@ -53,6 +55,13 @@ export default function Users() {
     }
   };
 
+  // Déterminer les permissions basées sur le rôle
+  const isAdmin = currentUser?.role === 'ADMIN';
+  const isGestionnaire = currentUser?.role === 'GESTIONNAIRE';
+  const canCreateUser = isAdmin || isGestionnaire;
+  const canEditUser = isAdmin;
+  const canDeleteUser = isAdmin;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -60,13 +69,15 @@ export default function Users() {
           <h1 className="text-3xl font-bold text-gray-900">Utilisateurs</h1>
           <p className="text-gray-600 mt-1">Gestion des comptes utilisateurs</p>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="btn btn-primary flex items-center gap-2"
-        >
-          <UserPlus size={20} />
-          Nouvel utilisateur
-        </button>
+        {canCreateUser && (
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="btn btn-primary flex items-center gap-2"
+          >
+            <UserPlus size={20} />
+            Nouvel utilisateur
+          </button>
+        )}
       </div>
 
       {/* Statistiques rapides */}
@@ -122,20 +133,27 @@ export default function Users() {
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setEditingUser(user)}
-                          className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                          title="Modifier"
-                        >
-                          <Edit size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(user.id, `${user.prenom} ${user.nom}`)}
-                          className="p-1 text-red-600 hover:bg-red-50 rounded"
-                          title="Désactiver"
-                        >
-                          <Trash2 size={18} />
-                        </button>
+                        {canEditUser && (
+                          <button
+                            onClick={() => setEditingUser(user)}
+                            className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                            title="Modifier"
+                          >
+                            <Edit size={18} />
+                          </button>
+                        )}
+                        {canDeleteUser && (
+                          <button
+                            onClick={() => handleDelete(user.id, `${user.prenom} ${user.nom}`)}
+                            className="p-1 text-red-600 hover:bg-red-50 rounded"
+                            title="Désactiver"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
+                        {!canEditUser && !canDeleteUser && (
+                          <span className="text-sm text-gray-400">-</span>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -170,12 +188,21 @@ export default function Users() {
                 <input name="telephone" placeholder="Téléphone" className="input" />
                 <select name="role" className="input" required>
                   <option value="">Sélectionner un rôle</option>
-                  <option value="ADMIN">Admin</option>
-                  <option value="GESTIONNAIRE">Gestionnaire</option>
-                  <option value="GESTIONNAIRE_STOCK">Gestionnaire de Stock</option>
-                  <option value="APPELANT">Appelant</option>
+                  {isAdmin && (
+                    <>
+                      <option value="ADMIN">Admin</option>
+                      <option value="GESTIONNAIRE">Gestionnaire</option>
+                      <option value="GESTIONNAIRE_STOCK">Gestionnaire de Stock</option>
+                      <option value="APPELANT">Appelant</option>
+                    </>
+                  )}
                   <option value="LIVREUR">Livreur</option>
                 </select>
+                {isGestionnaire && (
+                  <p className="text-xs text-gray-500 italic">
+                    En tant que Gestionnaire, vous pouvez uniquement créer des comptes Livreur.
+                  </p>
+                )}
                 <input name="password" type="password" placeholder="Mot de passe (min 6 caractères)" className="input" required />
               </div>
               <div className="flex gap-2 mt-6">

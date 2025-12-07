@@ -41,8 +41,10 @@ router.get('/', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STOCK'), async 
   }
 });
 
-// POST /api/users - Créer un utilisateur (Admin uniquement)
-router.post('/', authorize('ADMIN'), [
+// POST /api/users - Créer un utilisateur (Admin et Gestionnaire)
+// Admin : Peut créer tous les rôles
+// Gestionnaire : Peut créer UNIQUEMENT des LIVREUR
+router.post('/', authorize('ADMIN', 'GESTIONNAIRE'), [
   body('email').isEmail().withMessage('Email invalide'),
   body('password').isLength({ min: 6 }).withMessage('Le mot de passe doit contenir au moins 6 caractères'),
   body('nom').notEmpty().withMessage('Nom requis'),
@@ -56,6 +58,13 @@ router.post('/', authorize('ADMIN'), [
     }
 
     const { email, password, nom, prenom, telephone, role } = req.body;
+
+    // RESTRICTION : Si l'utilisateur est GESTIONNAIRE, il ne peut créer que des LIVREUR
+    if (req.user.role === 'GESTIONNAIRE' && role !== 'LIVREUR') {
+      return res.status(403).json({ 
+        error: 'Vous n\'avez le droit de créer que des comptes Livreur.' 
+      });
+    }
 
     // Vérifier si l'email existe déjà
     const existingUser = await prisma.user.findUnique({
