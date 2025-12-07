@@ -902,10 +902,23 @@ router.post('/:id/expedition/assign', authorize('ADMIN', 'GESTIONNAIRE'), [
       return res.status(400).json({ error: 'Livreur invalide.' });
     }
 
+    // Créer une DeliveryList pour l'EXPÉDITION (comme pour les livraisons locales)
+    const deliveryDate = new Date();
+    const deliveryList = await prisma.deliveryList.create({
+      data: {
+        nom: `EXPÉDITION ${order.orderReference} - ${order.clientVille}`,
+        date: deliveryDate,
+        delivererId: parseInt(delivererId),
+        zone: order.clientVille
+      }
+    });
+
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
       data: {
         delivererId: parseInt(delivererId),
+        deliveryListId: deliveryList.id,
+        deliveryDate: deliveryDate,
         status: 'ASSIGNEE', // Passe en ASSIGNEE une fois assignée
       },
     });
@@ -920,7 +933,11 @@ router.post('/:id/expedition/assign', authorize('ADMIN', 'GESTIONNAIRE'), [
       }
     });
 
-    res.json({ order: updatedOrder, message: 'Livreur assigné avec succès.' });
+    res.json({ 
+      order: updatedOrder,
+      deliveryList,
+      message: 'EXPÉDITION assignée au livreur avec succès. Le gestionnaire de stock doit confirmer la remise du colis.' 
+    });
   } catch (error) {
     console.error('Erreur lors de l\'assignation du livreur:', error);
     res.status(500).json({ error: error.message || 'Erreur lors de l\'assignation du livreur.' });
