@@ -431,6 +431,64 @@ router.post('/:id/renvoyer-appel', authorize('ADMIN', 'GESTIONNAIRE'), async (re
   }
 });
 
+// POST /api/orders/:id/attente-paiement - Marquer une commande en attente de paiement
+// Accessible par APPELANT, ADMIN et GESTIONNAIRE
+router.post('/:id/attente-paiement', authorize('APPELANT', 'ADMIN', 'GESTIONNAIRE'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { note } = req.body;
+
+    const order = await prisma.order.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!order) {
+      return res.status(404).json({ error: 'Commande non trouvée.' });
+    }
+
+    // Vérifier que la commande n'est pas déjà traitée
+    if (!['A_APPELER', 'NOUVELLE'].includes(order.status)) {
+      return res.status(400).json({ 
+        error: 'Cette commande a déjà été traitée.' 
+      });
+    }
+
+    // Marquer en attente de paiement
+    const updatedOrder = await prisma.order.update({
+      where: { id: parseInt(id) },
+      data: {
+        enAttentePaiement: true,
+        attentePaiementAt: new Date(),
+        callerId: req.user.id, // Assigner l'appelant
+        calledAt: new Date(),
+        noteAppelant: note ? `[EN ATTENTE PAIEMENT] ${note}` : '[EN ATTENTE PAIEMENT] Client prêt à payer',
+      },
+      include: {
+        caller: { select: { id: true, nom: true, prenom: true } }
+      }
+    });
+
+    // Enregistrer l'historique
+    await prisma.statusHistory.create({
+      data: {
+        orderId: parseInt(id),
+        oldStatus: order.status,
+        newStatus: order.status, // Le statut ne change pas
+        changedBy: req.user.id,
+        comment: `Marquée "En attente de paiement" par ${req.user.prenom} ${req.user.nom}${note ? ' - Note: ' + note : ''}`
+      }
+    });
+
+    res.json({ 
+      order: updatedOrder, 
+      message: 'Commande marquée en attente de paiement.' 
+    });
+  } catch (error) {
+    console.error('Erreur attente paiement:', error);
+    res.status(500).json({ error: 'Erreur lors de la mise en attente de paiement.' });
+  }
+});
+
 // PUT /api/orders/:id/quantite - Modifier la quantité d'une commande VALIDEE
 // Accessible uniquement par ADMIN et GESTIONNAIRE
 router.put('/:id/quantite', authorize('ADMIN', 'GESTIONNAIRE'), [

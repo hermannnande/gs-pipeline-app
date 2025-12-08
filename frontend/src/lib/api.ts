@@ -106,6 +106,11 @@ export const ordersApi = {
     return data;
   },
 
+  marquerAttentePaiement: async (id: number, note?: string) => {
+    const { data } = await api.post(`/orders/${id}/attente-paiement`, { note });
+    return data;
+  },
+
   delete: async (id: number) => {
     const { data } = await api.delete(`/orders/${id}`);
     return data;

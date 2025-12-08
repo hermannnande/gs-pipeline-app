@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Phone, Search, RefreshCw, Truck, Zap } from 'lucide-react';
+import { Phone, Search, RefreshCw, Truck, Zap, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ordersApi } from '@/lib/api';
 import { formatCurrency, formatDateTime, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
@@ -60,11 +60,34 @@ export default function Orders() {
     },
   });
 
+  const attentePaiementMutation = useMutation({
+    mutationFn: ({ id, note }: { id: number; note?: string }) =>
+      ordersApi.marquerAttentePaiement(id, note),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appelant-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['appelant-my-stats'] });
+      setSelectedOrder(null);
+      setNote('');
+      toast.success('✅ Commande marquée en attente de paiement');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Erreur lors de la mise en attente');
+    },
+  });
+
   const handleUpdateStatus = (status: string) => {
     if (!selectedOrder) return;
     updateStatusMutation.mutate({
       id: selectedOrder.id,
       status,
+      note: note || undefined,
+    });
+  };
+
+  const handleAttentePaiement = () => {
+    if (!selectedOrder) return;
+    attentePaiementMutation.mutate({
+      id: selectedOrder.id,
       note: note || undefined,
     });
   };
@@ -182,9 +205,17 @@ export default function Orders() {
                   <h3 className="font-semibold text-lg text-gray-900">{order.clientNom}</h3>
                   <p className="text-sm text-gray-600">{order.clientVille}</p>
                 </div>
-                <span className={`badge ${getStatusColor(order.status)}`}>
-                  {getStatusLabel(order.status)}
-                </span>
+                <div className="flex flex-col gap-1 items-end">
+                  <span className={`badge ${getStatusColor(order.status)}`}>
+                    {getStatusLabel(order.status)}
+                  </span>
+                  {order.enAttentePaiement && (
+                    <span className="badge bg-purple-100 text-purple-700 border border-purple-300 text-xs flex items-center gap-1">
+                      <Clock size={12} />
+                      Attente paiement
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2 mb-4">
@@ -271,29 +302,38 @@ export default function Orders() {
               <div className="border-t border-gray-200 pt-2 mt-2">
                 <p className="text-xs text-gray-600 mb-2 font-medium">Pour les villes éloignées :</p>
                 
-                <button
-                  onClick={() => {
-                    setShowExpeditionModal(true);
-                    setSelectedOrder(selectedOrder);
-                  }}
-                  className="btn bg-blue-600 text-white hover:bg-blue-700 w-full flex items-center justify-center gap-2"
-                  disabled={updateStatusMutation.isPending}
-                >
-                  <Truck size={18} />
-                  📦 EXPÉDITION (Paiement 100%)
-                </button>
-                
-                <button
-                  onClick={() => {
-                    setShowExpressModal(true);
-                    setSelectedOrder(selectedOrder);
-                  }}
-                  className="btn bg-amber-600 text-white hover:bg-amber-700 w-full flex items-center justify-center gap-2 mt-2"
-                  disabled={updateStatusMutation.isPending}
-                >
-                  <Zap size={18} />
-                  ⚡ EXPRESS (Paiement 10%)
-                </button>
+              <button
+                onClick={() => {
+                  setShowExpeditionModal(true);
+                  setSelectedOrder(selectedOrder);
+                }}
+                className="btn bg-blue-600 text-white hover:bg-blue-700 w-full flex items-center justify-center gap-2"
+                disabled={updateStatusMutation.isPending}
+              >
+                <Truck size={18} />
+                📦 EXPÉDITION (Paiement 100%)
+              </button>
+              
+              <button
+                onClick={handleAttentePaiement}
+                className="btn bg-purple-100 text-purple-700 hover:bg-purple-200 w-full flex items-center justify-center gap-2 mt-2 border border-purple-300"
+                disabled={attentePaiementMutation.isPending}
+              >
+                <Clock size={18} />
+                ⏳ En attente de paiement (EXPÉDITION)
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowExpressModal(true);
+                  setSelectedOrder(selectedOrder);
+                }}
+                className="btn bg-amber-600 text-white hover:bg-amber-700 w-full flex items-center justify-center gap-2 mt-2"
+                disabled={updateStatusMutation.isPending}
+              >
+                <Zap size={18} />
+                ⚡ EXPRESS (Paiement 10%)
+              </button>
               </div>
               
               <div className="border-t border-gray-200 pt-2 mt-2">

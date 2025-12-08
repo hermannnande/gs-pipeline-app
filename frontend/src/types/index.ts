@@ -84,6 +84,10 @@ export interface Order {
   codeExpedition?: string;
   photoRecuExpedition?: string; // Photo du reçu d'expédition (base64)
   photoRecuExpeditionUploadedAt?: string; // Date d'upload (suppression auto après 7j)
+  
+  // Attente paiement
+  enAttentePaiement?: boolean;
+  attentePaiementAt?: string;
 }
 
 export interface StatusHistory {

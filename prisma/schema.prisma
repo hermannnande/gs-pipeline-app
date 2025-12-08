@@ -131,6 +131,10 @@ model Order {
   notifiePar      Int?        // Appelant qui a notifié
   agenceRetrait   String?     // Nom de l'agence de retrait
   
+  // Statut paiement EXPEDITION
+  enAttentePaiement Boolean    @default(false)  // Commande en attente de paiement (pour EXPEDITION)
+  attentePaiementAt DateTime?  // Date de mise en attente de paiement
+  
   // Dates de suivi
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
