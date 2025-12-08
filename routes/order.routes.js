@@ -494,43 +494,64 @@ router.put('/:id/quantite', authorize('ADMIN', 'GESTIONNAIRE'), [
         
         if (order.deliveryType === 'EXPEDITION') {
           // Pour EXPEDITION, le stock a déjà été réduit lors de la création
+          // Récupérer le stock actuel avant modification
+          const stockAvant = order.product.stockActuel;
+          const stockApres = differenceQuantite > 0 
+            ? stockAvant - differenceQuantite 
+            : stockAvant + Math.abs(differenceQuantite);
+          
           // Ajuster selon la différence
           await tx.product.update({
             where: { id: order.product.id },
             data: {
-              stockActuel: {
-                decrement: differenceQuantite > 0 ? differenceQuantite : 0,
-                increment: differenceQuantite < 0 ? Math.abs(differenceQuantite) : 0,
-              }
+              stockActuel: stockApres
             }
           });
+
+          // Enregistrer le mouvement de stock
+          if (differenceQuantite !== 0) {
+            await tx.stockMovement.create({
+              data: {
+                productId: order.product.id,
+                quantite: Math.abs(differenceQuantite),
+                type: differenceQuantite > 0 ? 'RESERVATION' : 'RETOUR',
+                stockAvant: stockAvant,
+                stockApres: stockApres,
+                effectuePar: req.user.id,
+                motif: `Modification quantité commande ${order.orderReference}: ${order.quantite} → ${quantite}`,
+                orderId: order.id
+              }
+            });
+          }
         } else if (order.deliveryType === 'EXPRESS') {
           // Pour EXPRESS, ajuster le stockExpress
+          const stockAvant = order.product.stockExpress;
+          const stockApres = differenceQuantite > 0 
+            ? stockAvant - differenceQuantite 
+            : stockAvant + Math.abs(differenceQuantite);
+          
           await tx.product.update({
             where: { id: order.product.id },
             data: {
-              stockExpress: {
-                decrement: differenceQuantite > 0 ? differenceQuantite : 0,
-                increment: differenceQuantite < 0 ? Math.abs(differenceQuantite) : 0,
-              }
+              stockExpress: stockApres
             }
           });
-        }
 
-        // Enregistrer le mouvement de stock
-        if (differenceQuantite !== 0) {
-          await tx.stockMovement.create({
-            data: {
-              productId: order.product.id,
-              quantite: Math.abs(differenceQuantite),
-              type: differenceQuantite > 0 
-                ? (order.deliveryType === 'EXPRESS' ? 'RESERVATION_EXPRESS' : 'RESERVATION')
-                : (order.deliveryType === 'EXPRESS' ? 'ANNULATION_EXPRESS' : 'RETOUR'),
-              userId: req.user.id,
-              note: `Modification quantité commande ${order.orderReference}: ${order.quantite} → ${quantite}`,
-              orderId: order.id
-            }
-          });
+          // Enregistrer le mouvement de stock
+          if (differenceQuantite !== 0) {
+            await tx.stockMovement.create({
+              data: {
+                productId: order.product.id,
+                quantite: Math.abs(differenceQuantite),
+                type: differenceQuantite > 0 ? 'RESERVATION_EXPRESS' : 'ANNULATION_EXPRESS',
+                stockAvant: stockAvant,
+                stockApres: stockApres,
+                effectuePar: req.user.id,
+                motif: `Modification quantité commande ${order.orderReference}: ${order.quantite} → ${quantite}`,
+                orderId: order.id
+              }
+            });
+          }
         }
       }
 
