@@ -181,6 +181,33 @@ export default function Overview() {
         })}
       </div>
 
+      {/* Bouton de correction Stock EXPRESS */}
+      <div className="card bg-amber-50 border-2 border-amber-200">
+        <div className="flex items-start gap-4">
+          <div className="p-3 bg-amber-500 text-white rounded-lg">
+            <Wrench size={24} />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-amber-900 mb-2">
+              Correction Stock EXPRESS
+            </h3>
+            <p className="text-sm text-amber-700 mb-4">
+              Si un produit affiche un Stock EXPRESS (réservé) alors que la commande a déjà été retirée par le client, 
+              cliquez sur ce bouton pour corriger automatiquement.
+            </p>
+            <button
+              onClick={handleFixExpressStock}
+              disabled={fixExpressStockMutation.isPending}
+              className="btn bg-amber-600 hover:bg-amber-700 text-white font-medium px-6 py-2 rounded-lg 
+                       disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <Wrench size={18} />
+              {fixExpressStockMutation.isPending ? 'Correction en cours...' : 'Corriger Stock EXPRESS'}
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Taux de conversion */}
       {stats && (
         <div className="card">
