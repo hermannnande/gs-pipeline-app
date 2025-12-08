@@ -655,6 +655,70 @@ router.put('/:id/quantite', authorize('ADMIN', 'GESTIONNAIRE'), [
   }
 });
 
+// PUT /api/orders/:id/adresse - Modifier l'adresse de livraison d'une commande VALIDEE
+// Accessible uniquement par ADMIN et GESTIONNAIRE
+router.put('/:id/adresse', authorize('ADMIN', 'GESTIONNAIRE'), [
+  body('clientVille').notEmpty().withMessage('La ville est requise'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { id } = req.params;
+    const { clientVille, clientCommune, clientAdresse } = req.body;
+
+    const order = await prisma.order.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!order) {
+      return res.status(404).json({ error: 'Commande non trouvée.' });
+    }
+
+    // Vérifier que la commande est VALIDEE (pas encore assignée)
+    if (order.status !== 'VALIDEE') {
+      return res.status(400).json({ 
+        error: 'Seules les commandes VALIDEES (non assignées) peuvent avoir leur adresse modifiée.' 
+      });
+    }
+
+    // Mettre à jour l'adresse
+    const updatedOrder = await prisma.$transaction(async (tx) => {
+      const updated = await tx.order.update({
+        where: { id: parseInt(id) },
+        data: {
+          clientVille,
+          clientCommune: clientCommune || order.clientCommune,
+          clientAdresse: clientAdresse || order.clientAdresse,
+        }
+      });
+
+      // Créer l'historique
+      await tx.statusHistory.create({
+        data: {
+          orderId: parseInt(id),
+          oldStatus: order.status,
+          newStatus: order.status,
+          changedBy: req.user.id,
+          comment: `Adresse modifiée: ${order.clientVille} → ${clientVille}${clientCommune ? ' | ' + clientCommune : ''}${clientAdresse ? ' | ' + clientAdresse : ''}`
+        }
+      });
+
+      return updated;
+    });
+
+    res.json({ 
+      order: updatedOrder, 
+      message: 'Adresse de livraison modifiée avec succès.' 
+    });
+  } catch (error) {
+    console.error('Erreur modification adresse:', error);
+    res.status(500).json({ error: 'Erreur lors de la modification de l\'adresse.' });
+  }
+});
+
 // PUT /api/orders/:id - Modifier une commande (Admin/Gestionnaire)
 router.put('/:id', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
   try {

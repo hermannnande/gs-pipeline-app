@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, Search, Edit2 } from 'lucide-react';
+import { Check, Search, Edit2, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { deliveryApi, usersApi, ordersApi } from '@/lib/api';
 import { formatCurrency, formatDateTime } from '@/utils/statusHelpers';
@@ -11,8 +11,12 @@ export default function ValidatedOrders() {
   const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showQuantiteModal, setShowQuantiteModal] = useState(false);
+  const [showAdresseModal, setShowAdresseModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [newQuantite, setNewQuantite] = useState(1);
+  const [newVille, setNewVille] = useState('');
+  const [newCommune, setNewCommune] = useState('');
+  const [newAdresse, setNewAdresse] = useState('');
   const [searchVille, setSearchVille] = useState('');
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
@@ -57,6 +61,24 @@ export default function ValidatedOrders() {
     },
   });
 
+  const updateAdresseMutation = useMutation({
+    mutationFn: ({ orderId, clientVille, clientCommune, clientAdresse }: { 
+      orderId: number; 
+      clientVille: string; 
+      clientCommune?: string; 
+      clientAdresse?: string;
+    }) => ordersApi.updateAdresse(orderId, clientVille, clientCommune, clientAdresse),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['validated-orders'] });
+      setShowAdresseModal(false);
+      setSelectedOrder(null);
+      toast.success('✅ Adresse modifiée avec succès');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Erreur lors de la modification');
+    },
+  });
+
   const handleAssign = (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget as HTMLFormElement);
@@ -92,6 +114,28 @@ export default function ValidatedOrders() {
     updateQuantiteMutation.mutate({
       orderId: selectedOrder.id,
       quantite: newQuantite,
+    });
+  };
+
+  const handleEditAdresse = (order: Order) => {
+    setSelectedOrder(order);
+    setNewVille(order.clientVille);
+    setNewCommune(order.clientCommune || '');
+    setNewAdresse(order.clientAdresse || '');
+    setShowAdresseModal(true);
+  };
+
+  const handleUpdateAdresse = () => {
+    if (!selectedOrder) return;
+    if (!newVille.trim()) {
+      toast.error('La ville est requise');
+      return;
+    }
+    updateAdresseMutation.mutate({
+      orderId: selectedOrder.id,
+      clientVille: newVille.trim(),
+      clientCommune: newCommune.trim() || undefined,
+      clientAdresse: newAdresse.trim() || undefined,
     });
   };
 
@@ -194,13 +238,22 @@ export default function ValidatedOrders() {
                     </td>
                     {canEditQuantite && (
                       <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={() => handleEditQuantite(order)}
-                          className="text-blue-600 hover:text-blue-800 transition-colors"
-                          title="Modifier la quantité"
-                        >
-                          <Edit2 size={18} />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleEditQuantite(order)}
+                            className="text-blue-600 hover:text-blue-800 transition-colors p-1 hover:bg-blue-50 rounded"
+                            title="Modifier la quantité"
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleEditAdresse(order)}
+                            className="text-green-600 hover:text-green-800 transition-colors p-1 hover:bg-green-50 rounded"
+                            title="Modifier l'adresse de livraison"
+                          >
+                            <MapPin size={18} />
+                          </button>
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -341,6 +394,96 @@ export default function ValidatedOrders() {
                   setSelectedOrder(null);
                 }}
                 className="btn btn-secondary flex-1"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de modification d'adresse */}
+      {showAdresseModal && selectedOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <MapPin className="text-green-600" size={24} />
+              Modifier l'adresse de livraison
+            </h2>
+            
+            <div className="bg-gray-50 p-4 rounded-lg mb-4">
+              <p className="text-sm text-gray-600 mb-1">Commande</p>
+              <p className="font-semibold">{selectedOrder.orderReference}</p>
+              
+              <p className="text-sm text-gray-600 mt-2 mb-1">Client</p>
+              <p className="font-semibold">{selectedOrder.clientNom}</p>
+              
+              <p className="text-sm text-gray-600 mt-2 mb-1">Adresse actuelle</p>
+              <p className="font-semibold text-primary-600">
+                {selectedOrder.clientVille}
+                {selectedOrder.clientCommune && ` • ${selectedOrder.clientCommune}`}
+                {selectedOrder.clientAdresse && ` • ${selectedOrder.clientAdresse}`}
+              </p>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ville <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={newVille}
+                  onChange={(e) => setNewVille(e.target.value)}
+                  placeholder="Ex: Abidjan, Yopougon, Daloa..."
+                  className="input w-full"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Commune (optionnel)
+                </label>
+                <input
+                  type="text"
+                  value={newCommune}
+                  onChange={(e) => setNewCommune(e.target.value)}
+                  placeholder="Ex: Yopougon, Cocody, Marcory..."
+                  className="input w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Adresse complète (optionnel)
+                </label>
+                <textarea
+                  value={newAdresse}
+                  onChange={(e) => setNewAdresse(e.target.value)}
+                  placeholder="Ex: Près de la pharmacie, en face du marché..."
+                  className="input w-full"
+                  rows={2}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleUpdateAdresse}
+                disabled={!newVille.trim() || updateAdresseMutation.isPending}
+                className="btn btn-primary flex-1"
+              >
+                {updateAdresseMutation.isPending ? 'Modification...' : '✓ Confirmer'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAdresseModal(false);
+                  setSelectedOrder(null);
+                }}
+                className="btn btn-secondary flex-1"
+                disabled={updateAdresseMutation.isPending}
               >
                 Annuler
               </button>

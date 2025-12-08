@@ -105,6 +105,10 @@ export const ordersApi = {
     const { data } = await api.put(`/orders/${id}/quantite`, { quantite });
     return data;
   },
+  updateAdresse: async (id: number, clientVille: string, clientCommune?: string, clientAdresse?: string) => {
+    const { data } = await api.put(`/orders/${id}/adresse`, { clientVille, clientCommune, clientAdresse });
+    return data;
+  },
 
   marquerAttentePaiement: async (id: number, note?: string) => {
     const { data } = await api.post(`/orders/${id}/attente-paiement`, { note });
