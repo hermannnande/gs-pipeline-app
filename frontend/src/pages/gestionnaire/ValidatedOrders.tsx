@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, Search, Edit2, MapPin } from 'lucide-react';
+import { Check, Search, Edit2, MapPin, MessageSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { deliveryApi, usersApi, ordersApi } from '@/lib/api';
 import { formatCurrency, formatDateTime } from '@/utils/statusHelpers';
@@ -199,6 +199,7 @@ export default function ValidatedOrders() {
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Produit</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Qté</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Montant</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Note Appelant</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Validée le</th>
                   {canEditQuantite && (
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Actions</th>
@@ -233,6 +234,18 @@ export default function ValidatedOrders() {
                       {order.quantite}
                     </td>
                     <td className="py-3 px-4 text-sm font-medium">{formatCurrency(order.montant)}</td>
+                    <td className="py-3 px-4 text-sm" onClick={(e) => e.stopPropagation()}>
+                      {order.noteAppelant ? (
+                        <div className="flex items-start gap-2 max-w-xs">
+                          <MessageSquare size={16} className="text-blue-500 flex-shrink-0 mt-0.5" />
+                          <span className="text-gray-700 line-clamp-2" title={order.noteAppelant}>
+                            {order.noteAppelant}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 text-xs">-</span>
+                      )}
+                    </td>
                     <td className="py-3 px-4 text-sm text-gray-500">
                       {order.validatedAt ? formatDateTime(order.validatedAt) : '-'}
                     </td>

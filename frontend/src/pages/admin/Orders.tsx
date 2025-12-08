@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Filter, Trash2, Calendar, Package, X, RefreshCw, RotateCcw } from 'lucide-react';
+import { Search, Filter, Trash2, Calendar, Package, X, RefreshCw, RotateCcw, MessageSquare } from 'lucide-react';
 import { ordersApi, productsApi } from '@/lib/api';
 import { formatCurrency, formatDateTime, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
 import type { Order } from '@/types';
@@ -297,6 +297,7 @@ export default function Orders() {
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Ville</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Produit</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Montant</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Note Appelant</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Statut</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Date</th>
                     {(canDelete || canRenvoyerAppel) && (
@@ -313,6 +314,18 @@ export default function Orders() {
                       <td className="py-3 px-4 text-sm">{order.clientVille}</td>
                       <td className="py-3 px-4 text-sm">{order.produitNom}</td>
                       <td className="py-3 px-4 text-sm font-medium">{formatCurrency(order.montant)}</td>
+                      <td className="py-3 px-4 text-sm max-w-xs">
+                        {order.noteAppelant ? (
+                          <div className="flex items-start gap-2">
+                            <MessageSquare size={16} className="text-blue-500 flex-shrink-0 mt-0.5" />
+                            <span className="text-gray-700 line-clamp-2" title={order.noteAppelant}>
+                              {order.noteAppelant}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                      </td>
                       <td className="py-3 px-4">
                         <span className={`badge ${getStatusColor(order.status)}`}>
                           {getStatusLabel(order.status)}
