@@ -39,7 +39,7 @@ router.post('/fix-express-stock', authenticate, authorize('ADMIN'), async (req, 
         data: {
           productId: product.id,
           quantite: stockAvant,
-          type: 'SORTIE',
+          type: 'RETRAIT_EXPRESS',
           stockAvant: stockAvant,
           stockApres: 0,
           effectuePar: req.user.id,
