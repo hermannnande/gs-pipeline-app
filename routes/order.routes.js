@@ -12,7 +12,7 @@ router.use(authenticate);
 // GET /api/orders - Liste des commandes (avec filtres selon rôle)
 router.get('/', async (req, res) => {
   try {
-    const { status, ville, produit, startDate, endDate, callerId, delivererId, page = 1, limit = 1000 } = req.query;
+    const { status, ville, produit, startDate, endDate, callerId, delivererId, deliveryType, page = 1, limit = 1000 } = req.query;
     const user = req.user;
 
     const where = {};
@@ -43,6 +43,7 @@ router.get('/', async (req, res) => {
     if (produit) where.produitNom = { contains: produit, mode: 'insensitive' };
     if (callerId) where.callerId = parseInt(callerId);
     if (delivererId) where.delivererId = parseInt(delivererId);
+    if (deliveryType) where.deliveryType = deliveryType; // ✅ Appliquer le filtre deliveryType
     
     if (startDate || endDate) {
       where.createdAt = {};
