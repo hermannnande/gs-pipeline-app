@@ -145,5 +145,52 @@ router.post('/:id/notifier', authenticate, authorize('ADMIN', 'GESTIONNAIRE', 'A
   }
 });
 
+// POST /api/express/:id/confirmer-retrait - Confirmer le retrait par le client
+router.post('/:id/confirmer-retrait', authenticate, authorize('ADMIN', 'GESTIONNAIRE', 'APPELANT'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const order = await prisma.order.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!order) {
+      return res.status(404).json({ error: 'Commande non trouvée.' });
+    }
+
+    if (order.status !== 'EXPRESS_ARRIVE') {
+      return res.status(400).json({ error: 'Cette commande n\'est pas en attente de retrait.' });
+    }
+
+    // Mettre à jour le statut à EXPRESS_LIVRE
+    const updatedOrder = await prisma.order.update({
+      where: { id: parseInt(id) },
+      data: {
+        status: 'EXPRESS_LIVRE',
+        deliveredAt: new Date(), // Date de retrait
+      }
+    });
+
+    // Créer l'historique
+    await prisma.statusHistory.create({
+      data: {
+        orderId: parseInt(id),
+        oldStatus: 'EXPRESS_ARRIVE',
+        newStatus: 'EXPRESS_LIVRE',
+        changedBy: req.user.id,
+        comment: `Colis retiré par le client - Confirmé par ${req.user.prenom} ${req.user.nom}`
+      }
+    });
+
+    res.json({
+      order: updatedOrder,
+      message: 'Retrait confirmé avec succès.'
+    });
+  } catch (error) {
+    console.error('Erreur confirmation retrait:', error);
+    res.status(500).json({ error: 'Erreur lors de la confirmation du retrait.' });
+  }
+});
+
 export default router;
 

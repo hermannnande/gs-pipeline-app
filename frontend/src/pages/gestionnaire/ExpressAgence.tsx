@@ -52,6 +52,17 @@ export default function ExpressAgence() {
     },
   });
 
+  const confirmerRetraitMutation = useMutation({
+    mutationFn: (id: number) => expressApi.confirmerRetrait(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['express-en-agence'] });
+      toast.success('✅ Retrait confirmé avec succès');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Erreur lors de la confirmation');
+    },
+  });
+
   const handleNotifier = (order: any) => {
     setSelectedOrder(order);
     setNoteNotification('');
@@ -63,6 +74,12 @@ export default function ExpressAgence() {
       id: selectedOrder.id,
       note: noteNotification.trim() || undefined
     });
+  };
+
+  const handleConfirmerRetrait = (orderId: number) => {
+    if (window.confirm('Confirmer que le client a retiré son colis ?')) {
+      confirmerRetraitMutation.mutate(orderId);
+    }
   };
 
   const orders = data?.orders || [];
@@ -279,14 +296,29 @@ export default function ExpressAgence() {
                     </p>
                   </div>
                   
-                  {order.status === 'EXPRESS_ARRIVE' && (
-                    <button
-                      onClick={() => handleNotifier(order)}
-                      className="btn btn-primary btn-sm flex items-center justify-center gap-2"
-                    >
-                      <Bell size={16} />
-                      Notifier
-                    </button>
+                  {order.status === 'EXPRESS_ARRIVE' ? (
+                    <>
+                      <button
+                        onClick={() => handleNotifier(order)}
+                        className="btn btn-primary btn-sm flex items-center justify-center gap-2"
+                      >
+                        <Bell size={16} />
+                        Notifier
+                      </button>
+                      <button
+                        onClick={() => handleConfirmerRetrait(order.id)}
+                        disabled={confirmerRetraitMutation.isPending}
+                        className="btn btn-success btn-sm flex items-center justify-center gap-2"
+                      >
+                        <CheckCircle2 size={16} />
+                        Client a retiré
+                      </button>
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-center gap-2 text-green-600">
+                      <CheckCircle2 size={20} />
+                      <span className="text-sm font-medium">Retiré</span>
+                    </div>
                   )}
                 </div>
               </div>

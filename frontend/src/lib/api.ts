@@ -292,5 +292,9 @@ export const expressApi = {
     const { data } = await api.post(`/express/${id}/notifier`, { note });
     return data;
   },
+  confirmerRetrait: async (id: number) => {
+    const { data } = await api.post(`/express/${id}/confirmer-retrait`);
+    return data;
+  },
 };
 
