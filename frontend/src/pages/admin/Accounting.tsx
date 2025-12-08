@@ -335,34 +335,115 @@ export default function Accounting() {
           {/* Top Livreurs */}
           {stats.topLivreurs && stats.topLivreurs.length > 0 && (
             <div className="card">
-              <div className="flex items-center gap-2 mb-4">
-                <Users className="text-primary-600" size={20} />
-                <h2 className="text-lg font-semibold">🏆 Top 5 Livreurs</h2>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Users className="text-primary-600" size={24} />
+                  <h2 className="text-xl font-bold">🚚 Performance des Livreurs</h2>
+                </div>
+                <div className="text-sm text-gray-600">
+                  {stats.topLivreurs.length} livreur(s) actif(s)
+                </div>
               </div>
+              
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
+                <table className="w-full">
                   <thead>
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rang</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Livreur</th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Montant Total</th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Nombre</th>
+                    <tr className="border-b-2 border-gray-200 bg-gray-50">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Rang</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Livreur</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Livraisons</th>
+                      <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Montant Total</th>
+                      <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Moyenne/Livraison</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Performance</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {stats.topLivreurs.map((livreur, index) => (
-                      <tr key={index} className={index === 0 ? 'bg-yellow-50' : ''}>
-                        <td className="px-4 py-3 text-sm">
-                          {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`}
-                        </td>
-                        <td className="px-4 py-3 text-sm font-medium">{livreur.nom}</td>
-                        <td className="px-4 py-3 text-sm text-right font-semibold text-green-600">
-                          {formatCurrency(livreur.montant)}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-right">{livreur.nombre}</td>
-                      </tr>
-                    ))}
+                  <tbody className="divide-y divide-gray-100">
+                    {stats.topLivreurs.map((livreur, index) => {
+                      const moyenneParLivraison = livreur.nombre > 0 ? livreur.montant / livreur.nombre : 0;
+                      const isTop3 = index < 3;
+                      
+                      return (
+                        <tr 
+                          key={index} 
+                          className={`hover:bg-gray-50 transition-colors ${
+                            index === 0 ? 'bg-yellow-50' : 
+                            index === 1 ? 'bg-gray-50' : 
+                            index === 2 ? 'bg-orange-50' : ''
+                          }`}
+                        >
+                          <td className="px-4 py-3 text-sm font-medium">
+                            <span className="text-2xl">
+                              {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
+                                index === 0 ? 'bg-yellow-500' :
+                                index === 1 ? 'bg-gray-400' :
+                                index === 2 ? 'bg-orange-500' :
+                                'bg-blue-500'
+                              }`}>
+                                {livreur.nom.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                              </div>
+                              <span className="font-medium text-gray-900">{livreur.nom}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-semibold">
+                              {livreur.nombre}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <span className={`font-bold ${isTop3 ? 'text-green-600 text-lg' : 'text-gray-900'}`}>
+                              {formatCurrency(livreur.montant)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <span className="text-sm text-gray-600">
+                              {formatCurrency(moyenneParLivraison)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-center gap-2">
+                              <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-24">
+                                <div 
+                                  className={`h-2 rounded-full ${
+                                    index === 0 ? 'bg-yellow-500' :
+                                    index === 1 ? 'bg-gray-400' :
+                                    index === 2 ? 'bg-orange-500' :
+                                    'bg-blue-500'
+                                  }`}
+                                  style={{ 
+                                    width: `${Math.min(100, (livreur.montant / (stats.topLivreurs[0]?.montant || 1)) * 100)}%` 
+                                  }}
+                                />
+                              </div>
+                              <span className="text-xs text-gray-500 w-12 text-right">
+                                {Math.round((livreur.montant / (stats.topLivreurs[0]?.montant || 1)) * 100)}%
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
+                  <tfoot className="border-t-2 border-gray-300 bg-gray-50">
+                    <tr>
+                      <td colSpan={2} className="px-4 py-3 text-sm font-bold text-gray-900">TOTAL GÉNÉRAL</td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-primary-100 text-primary-800 font-bold">
+                          {stats.topLivreurs.reduce((sum, l) => sum + l.nombre, 0)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <span className="font-bold text-green-600 text-lg">
+                          {formatCurrency(stats.topLivreurs.reduce((sum, l) => sum + l.montant, 0))}
+                        </span>
+                      </td>
+                      <td colSpan={2}></td>
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
             </div>
