@@ -12,6 +12,7 @@ import Movements from '../stock/Movements';
 import ExpeditionsExpress from './ExpeditionsExpress';
 import Deliveries from '../gestionnaire/Deliveries';
 import ValidatedOrders from '../gestionnaire/ValidatedOrders';
+import Accounting from './Accounting';
 
 export default function AdminDashboard() {
   return (
@@ -29,6 +30,7 @@ export default function AdminDashboard() {
       <Route path="database" element={<ClientDatabase />} />
       <Route path="supervision" element={<CallerSupervision />} />
       <Route path="stats" element={<Stats />} />
+      <Route path="accounting" element={<Accounting />} />
     </Routes>
   );
 }

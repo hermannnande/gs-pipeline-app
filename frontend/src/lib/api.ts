@@ -276,3 +276,10 @@ export const stockApi = {
   },
 };
 
+export const accountingApi = {
+  getStats: async (params?: { dateDebut?: string; dateFin?: string }) => {
+    const { data } = await api.get('/accounting/stats', { params });
+    return data;
+  },
+};
+
