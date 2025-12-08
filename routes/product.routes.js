@@ -254,6 +254,70 @@ router.post('/:id/stock/adjust', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), [
   }
 });
 
+// POST /api/products/:id/stock-express/adjust - Ajuster le stock EXPRESS manuellement (Admin uniquement)
+router.post('/:id/stock-express/adjust', authorize('ADMIN'), [
+  body('quantite').isInt().withMessage('Quantité invalide'),
+  body('motif').notEmpty().withMessage('Motif requis')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { id } = req.params;
+    const { quantite, motif } = req.body;
+
+    const product = await prisma.product.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!product) {
+      return res.status(404).json({ error: 'Produit non trouvé.' });
+    }
+
+    const qte = parseInt(quantite);
+    const stockExpressAvant = product.stockExpress || 0;
+    const stockExpressApres = stockExpressAvant + qte;
+
+    if (stockExpressApres < 0) {
+      return res.status(400).json({ error: 'Le stock EXPRESS ne peut pas être négatif.' });
+    }
+
+    // Transaction pour assurer la cohérence
+    const result = await prisma.$transaction(async (tx) => {
+      // Mettre à jour le stock EXPRESS
+      const updatedProduct = await tx.product.update({
+        where: { id: parseInt(id) },
+        data: { stockExpress: stockExpressApres }
+      });
+
+      // Créer un mouvement de stock
+      const movement = await tx.stockMovement.create({
+        data: {
+          productId: parseInt(id),
+          quantite: Math.abs(qte),
+          type: qte > 0 ? 'ENTREE' : 'SORTIE',
+          stockAvant: stockExpressAvant,
+          stockApres: stockExpressApres,
+          effectuePar: req.user.id,
+          motif: `[STOCK EXPRESS] ${motif}`
+        }
+      });
+
+      return { product: updatedProduct, movement };
+    });
+
+    res.json({
+      ...result,
+      message: 'Stock EXPRESS ajusté avec succès.'
+    });
+  } catch (error) {
+    console.error('Erreur ajustement stock EXPRESS:', error);
+    res.status(500).json({ error: 'Erreur lors de l\'ajustement du stock EXPRESS.' });
+  }
+});
+
 // GET /api/products/low-stock - Produits avec stock faible
 router.get('/alerts/low-stock', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), async (req, res) => {
   try {

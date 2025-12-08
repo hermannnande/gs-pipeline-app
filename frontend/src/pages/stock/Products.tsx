@@ -10,6 +10,7 @@ import { useAuthStore } from '@/store/authStore';
 export default function Products() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddStockModal, setShowAddStockModal] = useState(false);
+  const [showAddStockExpressModal, setShowAddStockExpressModal] = useState(false);
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [showEditProductModal, setShowEditProductModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -17,6 +18,8 @@ export default function Products() {
   const [adjustQuantity, setAdjustQuantity] = useState('');
   const [adjustType, setAdjustType] = useState('APPROVISIONNEMENT');
   const [adjustMotif, setAdjustMotif] = useState('');
+  const [adjustExpressQuantity, setAdjustExpressQuantity] = useState('');
+  const [adjustExpressMotif, setAdjustExpressMotif] = useState('');
   const [newProduct, setNewProduct] = useState({
     code: '',
     nom: '',
@@ -165,6 +168,26 @@ export default function Products() {
   const openAdjustModal = (product: any) => {
     setSelectedProduct(product);
     setShowAddStockModal(true);
+  };
+
+  const openAdjustExpressModal = (product: any) => {
+    setSelectedProduct(product);
+    setShowAddStockExpressModal(true);
+    setAdjustExpressQuantity('');
+    setAdjustExpressMotif('');
+  };
+
+  const handleAdjustStockExpress = () => {
+    if (!selectedProduct || !adjustExpressQuantity || !adjustExpressMotif) {
+      toast.error('Veuillez remplir tous les champs');
+      return;
+    }
+
+    adjustStockExpressMutation.mutate({
+      productId: selectedProduct.id,
+      quantite: adjustExpressQuantity,
+      motif: adjustExpressMotif
+    });
   };
 
   const openEditModal = (product: any) => {
@@ -374,6 +397,15 @@ export default function Products() {
                     Ajuster le stock
                   </button>
                   
+                  {canManageProducts && (product.stockExpress || 0) > 0 && (
+                    <button
+                      onClick={() => openAdjustExpressModal(product)}
+                      className="btn bg-amber-600 text-white hover:bg-amber-700 w-full flex items-center justify-center gap-2"
+                    >
+                      ⚡ Ajuster Stock EXPRESS
+                    </button>
+                  )}
+                  
                   {canManageProducts && (
                     <div className="flex gap-2">
                       <button
@@ -484,6 +516,92 @@ export default function Products() {
                   setSelectedProduct(null);
                   setAdjustQuantity('');
                   setAdjustMotif('');
+                }}
+                className="btn btn-secondary flex-1"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal d'ajustement Stock EXPRESS */}
+      {showAddStockExpressModal && selectedProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              ⚡ Ajuster Stock EXPRESS
+            </h2>
+            
+            <div className="mb-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
+              <p className="font-medium text-gray-900">{selectedProduct.nom}</p>
+              <p className="text-sm text-gray-600">Code: {selectedProduct.code}</p>
+              <p className="text-lg font-bold text-amber-600 mt-2">
+                Stock EXPRESS actuel: {selectedProduct.stockExpress || 0}
+              </p>
+              <p className="text-xs text-amber-700 mt-1">
+                Clients ayant payé 10%, en attente retrait
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Quantité à ajuster <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  value={adjustExpressQuantity}
+                  onChange={(e) => setAdjustExpressQuantity(e.target.value)}
+                  className="input"
+                  placeholder="Ex: -1 pour diminuer, +1 pour augmenter"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Nombre négatif pour diminuer, positif pour augmenter
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Motif de l'ajustement <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={adjustExpressMotif}
+                  onChange={(e) => setAdjustExpressMotif(e.target.value)}
+                  className="input"
+                  rows={3}
+                  placeholder="Ex: Correction manuelle, colis perdu, erreur système..."
+                  required
+                />
+              </div>
+
+              {adjustExpressQuantity && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+                  <p className="text-sm text-blue-800">
+                    Nouveau stock EXPRESS: <strong>
+                      {(selectedProduct.stockExpress || 0) + parseInt(adjustExpressQuantity || '0')}
+                    </strong>
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={handleAdjustStockExpress}
+                disabled={!adjustExpressQuantity || !adjustExpressMotif || adjustStockExpressMutation.isPending}
+                className="btn btn-primary flex-1"
+              >
+                Valider l'ajustement
+              </button>
+              <button
+                onClick={() => {
+                  setShowAddStockExpressModal(false);
+                  setSelectedProduct(null);
+                  setAdjustExpressQuantity('');
+                  setAdjustExpressMotif('');
                 }}
                 className="btn btn-secondary flex-1"
               >

@@ -237,6 +237,11 @@ export const productsApi = {
     return data;
   },
 
+  adjustStockExpress: async (id: number, adjustData: { quantite: number; motif: string }) => {
+    const { data } = await api.post(`/products/${id}/stock-express/adjust`, adjustData);
+    return data;
+  },
+
   delete: async (id: number) => {
     const { data } = await api.delete(`/products/${id}`);
     return data;
