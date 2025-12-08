@@ -345,7 +345,7 @@ export default function Accounting() {
                 </div>
               </div>
               
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b-2 border-gray-200 bg-gray-50">
