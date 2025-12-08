@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { 
   ShoppingCart, 
@@ -10,14 +10,35 @@ import {
   Users as UsersIcon,
   Calendar,
   Download,
-  FileText
+  FileText,
+  Wrench
 } from 'lucide-react';
-import { statsApi, ordersApi, usersApi } from '@/lib/api';
+import toast from 'react-hot-toast';
+import { statsApi, ordersApi, usersApi, adminApi } from '@/lib/api';
 import { formatCurrency, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
 
 export default function Overview() {
   const [period, setPeriod] = useState<'today' | 'week' | 'month' | 'all'>('month');
   const navigate = useNavigate();
+
+  const fixExpressStockMutation = useMutation({
+    mutationFn: () => adminApi.fixExpressStock(),
+    onSuccess: (data) => {
+      toast.success(`✅ Correction terminée ! ${data.total} produit(s) corrigé(s)`);
+      if (data.corrections && data.corrections.length > 0) {
+        console.log('Détails des corrections:', data.corrections);
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Erreur lors de la correction');
+    },
+  });
+
+  const handleFixExpressStock = () => {
+    if (window.confirm('Voulez-vous corriger automatiquement les stocks EXPRESS des commandes déjà retirées ?')) {
+      fixExpressStockMutation.mutate();
+    }
+  };
 
   const getDateRange = () => {
     const end = new Date();
@@ -242,6 +263,14 @@ export default function Overview() {
             >
               <UsersIcon size={20} />
               Créer un nouveau compte
+            </button>
+            <button 
+              onClick={handleFixExpressStock}
+              disabled={fixExpressStockMutation.isPending}
+              className="w-full btn bg-amber-600 text-white hover:bg-amber-700 flex items-center justify-center gap-2"
+            >
+              <Wrench size={20} />
+              {fixExpressStockMutation.isPending ? 'Correction en cours...' : '🔧 Corriger Stock EXPRESS'}
             </button>
             <button 
               onClick={() => navigate('/admin/orders')}
