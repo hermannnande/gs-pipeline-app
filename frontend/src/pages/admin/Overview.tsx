@@ -244,14 +244,6 @@ export default function Overview() {
               Créer un nouveau compte
             </button>
             <button 
-              onClick={handleFixExpressStock}
-              disabled={fixExpressStockMutation.isPending}
-              className="w-full btn bg-amber-600 text-white hover:bg-amber-700 flex items-center justify-center gap-2"
-            >
-              <Wrench size={20} />
-              {fixExpressStockMutation.isPending ? 'Correction en cours...' : '🔧 Corriger Stock EXPRESS'}
-            </button>
-            <button 
               onClick={() => navigate('/admin/orders')}
               className="w-full btn btn-secondary flex items-center justify-center gap-2"
             >
