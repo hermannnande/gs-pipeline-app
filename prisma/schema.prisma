@@ -136,6 +136,13 @@ model Order {
   enAttentePaiement Boolean    @default(false)  // Commande en attente de paiement (pour EXPEDITION)
   attentePaiementAt DateTime?  // Date de mise en attente de paiement
   
+  // Gestion des RDV (Rendez-vous pour rappel)
+  rdvProgramme    Boolean     @default(false)  // RDV programmé pour rappeler le client
+  rdvDate         DateTime?   // Date et heure du RDV
+  rdvNote         String?     // Note sur le RDV (client occupé, en voyage, etc.)
+  rdvProgrammePar Int?        // ID de l'appelant qui a programmé le RDV
+  rdvRappele      Boolean     @default(false)  // RDV traité (client rappelé)
+  
   // Dates de suivi
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt

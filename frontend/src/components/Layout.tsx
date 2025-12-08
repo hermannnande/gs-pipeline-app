@@ -19,7 +19,8 @@ import {
   Menu,
   X,
   DollarSign,
-  Bell
+  Bell,
+  Calendar
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 
@@ -40,6 +41,7 @@ export default function Layout({ children }: LayoutProps) {
         return [
           { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
           { icon: Phone, label: 'À appeler', path: '/admin/to-call' },
+          { icon: Calendar, label: 'RDV Programmés', path: '/admin/rdv' },
           { icon: ShoppingCart, label: 'Commandes', path: '/admin/orders' },
           { icon: CheckCircle, label: 'Commandes validées', path: '/admin/validated' },
           { icon: Zap, label: 'Expéditions & EXPRESS', path: '/admin/expeditions' },
@@ -58,6 +60,7 @@ export default function Layout({ children }: LayoutProps) {
         return [
           { icon: LayoutDashboard, label: 'Dashboard', path: '/gestionnaire' },
           { icon: Phone, label: 'À appeler', path: '/gestionnaire/to-call' },
+          { icon: Calendar, label: 'RDV Programmés', path: '/gestionnaire/rdv' },
           { icon: ShoppingCart, label: 'Toutes les commandes', path: '/gestionnaire/all-orders' },
           { icon: CheckCircle, label: 'Commandes validées', path: '/gestionnaire/validated' },
           { icon: Zap, label: 'Expéditions & EXPRESS', path: '/gestionnaire/expeditions' },
@@ -82,6 +85,7 @@ export default function Layout({ children }: LayoutProps) {
         return [
           { icon: LayoutDashboard, label: 'Dashboard', path: '/appelant' },
           { icon: Phone, label: 'À appeler', path: '/appelant/orders' },
+          { icon: Calendar, label: 'RDV Programmés', path: '/appelant/rdv' },
           { icon: ShoppingCart, label: 'Toutes les commandes', path: '/appelant/all-orders' },
           { icon: Zap, label: 'Expéditions & EXPRESS', path: '/appelant/expeditions' },
           { icon: Bell, label: 'EXPRESS - En agence', path: '/appelant/express-agence' },

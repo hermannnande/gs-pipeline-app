@@ -10,12 +10,14 @@ import ExpeditionsExpress from '../admin/ExpeditionsExpress';
 import ExpressAgence from './ExpressAgence';
 import AllOrders from '../admin/Orders';
 import Users from '../admin/Users';
+import RDV from '../appelant/RDV';
 
 export default function GestionnaireDashboard() {
   return (
     <Routes>
       <Route index element={<Overview />} />
       <Route path="to-call" element={<AppelantOrders />} />
+      <Route path="rdv" element={<RDV />} />
       <Route path="all-orders" element={<AllOrders />} />
       <Route path="validated" element={<ValidatedOrders />} />
       <Route path="expeditions" element={<ExpeditionsExpress />} />

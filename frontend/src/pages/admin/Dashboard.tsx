@@ -14,6 +14,7 @@ import Deliveries from '../gestionnaire/Deliveries';
 import ValidatedOrders from '../gestionnaire/ValidatedOrders';
 import Accounting from './Accounting';
 import ExpressAgence from '../gestionnaire/ExpressAgence';
+import RDV from '../appelant/RDV';
 
 export default function AdminDashboard() {
   return (
@@ -21,6 +22,7 @@ export default function AdminDashboard() {
       <Route index element={<Overview />} />
       <Route path="orders" element={<Orders />} />
       <Route path="to-call" element={<AppelantOrders />} />
+      <Route path="rdv" element={<RDV />} />
       <Route path="validated" element={<ValidatedOrders />} />
       <Route path="expeditions" element={<ExpeditionsExpress />} />
       <Route path="express-agence" element={<ExpressAgence />} />

@@ -298,3 +298,26 @@ export const expressApi = {
   },
 };
 
+export const rdvApi = {
+  getAll: async (params?: { rappele?: boolean; dateDebut?: string; dateFin?: string; search?: string }) => {
+    const { data } = await api.get('/rdv', { params });
+    return data;
+  },
+  programmer: async (orderId: number, rdvDate: string, rdvNote?: string) => {
+    const { data } = await api.post(`/rdv/${orderId}/programmer`, { rdvDate, rdvNote });
+    return data;
+  },
+  rappeler: async (orderId: number, note?: string) => {
+    const { data } = await api.post(`/rdv/${orderId}/rappeler`, { note });
+    return data;
+  },
+  modifier: async (orderId: number, rdvDate?: string, rdvNote?: string) => {
+    const { data } = await api.put(`/rdv/${orderId}`, { rdvDate, rdvNote });
+    return data;
+  },
+  annuler: async (orderId: number) => {
+    const { data } = await api.delete(`/rdv/${orderId}`);
+    return data;
+  },
+};
+

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Phone, Search, RefreshCw, Truck, Zap, Clock } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tantml:react-query';
+import { Phone, Search, RefreshCw, Truck, Zap, Clock, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { ordersApi } from '@/lib/api';
+import { ordersApi, rdvApi } from '@/lib/api';
 import { formatCurrency, formatDateTime, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
 import type { Order } from '@/types';
 import ExpeditionModal from '@/components/modals/ExpeditionModal';
@@ -15,6 +15,9 @@ export default function Orders() {
   const [note, setNote] = useState('');
   const [showExpeditionModal, setShowExpeditionModal] = useState(false);
   const [showExpressModal, setShowExpressModal] = useState(false);
+  const [showRdvModal, setShowRdvModal] = useState(false);
+  const [rdvDate, setRdvDate] = useState('');
+  const [rdvNote, setRdvNote] = useState('');
   const queryClient = useQueryClient();
 
   const { data: ordersData, isLoading, isFetching, refetch } = useQuery({
@@ -75,6 +78,22 @@ export default function Orders() {
     },
   });
 
+  const programmerRdvMutation = useMutation({
+    mutationFn: ({ id, rdvDate, rdvNote }: { id: number; rdvDate: string; rdvNote?: string }) =>
+      rdvApi.programmer(id, rdvDate, rdvNote),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appelant-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['rdv'] });
+      setShowRdvModal(false);
+      setRdvDate('');
+      setRdvNote('');
+      toast.success('✅ RDV programmé avec succès');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Erreur lors de la programmation du RDV');
+    },
+  });
+
   const handleUpdateStatus = (status: string) => {
     if (!selectedOrder) return;
     updateStatusMutation.mutate({
@@ -92,16 +111,43 @@ export default function Orders() {
     });
   };
 
+  const handleProgrammerRdv = (order: Order) => {
+    setSelectedOrder(order);
+    // Définir la date/heure par défaut à demain à 9h
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0);
+    setRdvDate(tomorrow.toISOString().slice(0, 16));
+    setRdvNote('');
+    setShowRdvModal(true);
+  };
+
+  const confirmRdv = () => {
+    if (!selectedOrder || !rdvDate) {
+      toast.error('Veuillez sélectionner une date et heure pour le RDV');
+      return;
+    }
+    programmerRdvMutation.mutate({
+      id: selectedOrder.id,
+      rdvDate,
+      rdvNote: rdvNote || undefined,
+    });
+  };
+
   const filteredOrders = ordersData?.orders
     ?.filter((order: Order) => {
       // IMPORTANT : Afficher UNIQUEMENT les commandes NOUVELLE et A_APPELER
+      // SAUF celles avec RDV programmé (qui apparaissent dans la page RDV)
       // Une fois validée, annulée ou marquée injoignable, la commande disparaît de cette liste
       const isToCall = [
         'NOUVELLE',      // Nouvelle commande reçue
         'A_APPELER'      // Marquée pour appel
       ].includes(order.status);
       
-      if (!isToCall) return false; // Masquer toutes les autres commandes
+      // Exclure les commandes avec RDV programmé
+      const hasRdv = (order as any).rdvProgramme;
+      
+      if (!isToCall || hasRdv) return false; // Masquer toutes les autres commandes et les RDV
       
       const matchesSearch = order.clientNom.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.clientTelephone.includes(searchTerm);
@@ -241,13 +287,22 @@ export default function Orders() {
                 )}
               </div>
 
-              <button
-                onClick={() => setSelectedOrder(order)}
-                className="btn btn-primary w-full flex items-center justify-center gap-2"
-              >
-                <Phone size={18} />
-                Traiter l'appel
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setSelectedOrder(order)}
+                  className="btn btn-primary flex items-center justify-center gap-2"
+                >
+                  <Phone size={18} />
+                  Traiter
+                </button>
+                <button
+                  onClick={() => handleProgrammerRdv(order)}
+                  className="btn bg-purple-600 text-white hover:bg-purple-700 flex items-center justify-center gap-2"
+                >
+                  <Calendar size={18} />
+                  RDV
+                </button>
+              </div>
 
               <p className="text-xs text-gray-500 mt-2">
                 Reçue le {formatDateTime(order.createdAt)}
@@ -388,6 +443,79 @@ export default function Orders() {
             setNote('');
           }}
         />
+      )}
+
+      {/* Modal RDV */}
+      {showRdvModal && selectedOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <Calendar className="text-purple-600" size={24} />
+              Programmer un RDV
+            </h3>
+            
+            <div className="mb-4">
+              <p className="text-gray-700 mb-2">
+                Client: <span className="font-medium">{selectedOrder.clientNom}</span>
+              </p>
+              <p className="text-gray-600 text-sm mb-4">
+                📞 {selectedOrder.clientTelephone} • 📍 {selectedOrder.clientVille}
+              </p>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Date et heure du RDV *
+                </label>
+                <input
+                  type="datetime-local"
+                  value={rdvDate}
+                  onChange={(e) => setRdvDate(e.target.value)}
+                  className="input w-full"
+                  min={new Date().toISOString().slice(0, 16)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Note / Raison du RDV
+                </label>
+                <textarea
+                  value={rdvNote}
+                  onChange={(e) => setRdvNote(e.target.value)}
+                  placeholder="Ex: Client occupé, en voyage, demande rappel à une heure précise..."
+                  className="input w-full"
+                  rows={3}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Cette commande sera retirée de "À appeler" et visible dans "RDV Programmés"
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={confirmRdv}
+                disabled={!rdvDate || programmerRdvMutation.isPending}
+                className="btn btn-primary flex-1"
+              >
+                {programmerRdvMutation.isPending ? 'Programmation...' : '✓ Programmer RDV'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowRdvModal(false);
+                  setRdvDate('');
+                  setRdvNote('');
+                }}
+                className="btn btn-secondary flex-1"
+                disabled={programmerRdvMutation.isPending}
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
