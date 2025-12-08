@@ -88,16 +88,6 @@ export default function Login() {
               )}
             </button>
           </form>
-
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <p className="text-sm text-gray-600 text-center mb-2">Comptes de test :</p>
-            <div className="space-y-1 text-xs text-gray-500">
-              <p>• <strong>Admin:</strong> admin@gs-pipeline.com / admin123</p>
-              <p>• <strong>Gestionnaire:</strong> gestionnaire@gs-pipeline.com / gestionnaire123</p>
-              <p>• <strong>Appelant:</strong> appelant@gs-pipeline.com / appelant123</p>
-              <p>• <strong>Livreur:</strong> livreur@gs-pipeline.com / livreur123</p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
