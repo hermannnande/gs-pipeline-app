@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Phone, Search, RefreshCw, Truck, Zap, Clock, Calendar } from 'lucide-react';
+import { Phone, Search, RefreshCw, Truck, Zap, Clock, Calendar, Edit2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ordersApi, rdvApi } from '@/lib/api';
 import { formatCurrency, formatDateTime, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
 import type { Order } from '@/types';
 import ExpeditionModal from '@/components/modals/ExpeditionModal';
 import ExpressModal from '@/components/modals/ExpressModal';
+import { useAuthStore } from '@/store/authStore';
 
 export default function Orders() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -18,7 +19,13 @@ export default function Orders() {
   const [showRdvModal, setShowRdvModal] = useState(false);
   const [rdvDate, setRdvDate] = useState('');
   const [rdvNote, setRdvNote] = useState('');
+  const [showQuantiteModal, setShowQuantiteModal] = useState(false);
+  const [newQuantite, setNewQuantite] = useState(1);
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+
+  // Vérifier si l'utilisateur peut modifier la quantité (Admin ou Gestionnaire)
+  const canEditQuantite = user?.role === 'ADMIN' || user?.role === 'GESTIONNAIRE';
 
   const { data: ordersData, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['appelant-orders'],
@@ -94,6 +101,20 @@ export default function Orders() {
     },
   });
 
+  const updateQuantiteMutation = useMutation({
+    mutationFn: ({ orderId, quantite }: { orderId: number; quantite: number }) => 
+      ordersApi.updateQuantite(orderId, quantite),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appelant-orders'] });
+      setShowQuantiteModal(false);
+      setSelectedOrder(null);
+      toast.success('✅ Quantité modifiée avec succès');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Erreur lors de la modification');
+    },
+  });
+
   const handleUpdateStatus = (status: string) => {
     if (!selectedOrder) return;
     updateStatusMutation.mutate({
@@ -131,6 +152,24 @@ export default function Orders() {
       id: selectedOrder.id,
       rdvDate,
       rdvNote: rdvNote || undefined,
+    });
+  };
+
+  const handleEditQuantite = (order: Order) => {
+    setSelectedOrder(order);
+    setNewQuantite(order.quantite);
+    setShowQuantiteModal(true);
+  };
+
+  const handleUpdateQuantite = () => {
+    if (!selectedOrder) return;
+    if (newQuantite < 1) {
+      toast.error('La quantité doit être au minimum 1');
+      return;
+    }
+    updateQuantiteMutation.mutate({
+      orderId: selectedOrder.id,
+      quantite: newQuantite,
     });
   };
 
@@ -247,20 +286,31 @@ export default function Orders() {
           {filteredOrders?.map((order: Order) => (
             <div key={order.id} className="card hover:shadow-lg transition-shadow">
               <div className="flex items-start justify-between mb-3">
-                <div>
+                <div className="flex-1">
                   <h3 className="font-semibold text-lg text-gray-900">{order.clientNom}</h3>
                   <p className="text-sm text-gray-600">{order.clientVille}</p>
                 </div>
-                <div className="flex flex-col gap-1 items-end">
-                  <span className={`badge ${getStatusColor(order.status)}`}>
-                    {getStatusLabel(order.status)}
-                  </span>
-                  {order.enAttentePaiement && (
-                    <span className="badge bg-purple-100 text-purple-700 border border-purple-300 text-xs flex items-center gap-1">
-                      <Clock size={12} />
-                      Attente paiement
-                    </span>
+                <div className="flex gap-2 items-start">
+                  {canEditQuantite && (
+                    <button
+                      onClick={() => handleEditQuantite(order)}
+                      className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                      title="Modifier la quantité"
+                    >
+                      <Edit2 size={18} />
+                    </button>
                   )}
+                  <div className="flex flex-col gap-1 items-end">
+                    <span className={`badge ${getStatusColor(order.status)}`}>
+                      {getStatusLabel(order.status)}
+                    </span>
+                    {order.enAttentePaiement && (
+                      <span className="badge bg-purple-100 text-purple-700 border border-purple-300 text-xs flex items-center gap-1">
+                        <Clock size={12} />
+                        Attente paiement
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -510,6 +560,74 @@ export default function Orders() {
                 }}
                 className="btn btn-secondary flex-1"
                 disabled={programmerRdvMutation.isPending}
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de modification de quantité */}
+      {showQuantiteModal && selectedOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4">📦 Modifier la quantité</h2>
+            
+            <div className="bg-gray-50 p-4 rounded-lg mb-4">
+              <p className="text-sm text-gray-600 mb-1">Commande</p>
+              <p className="font-semibold">{selectedOrder.orderReference}</p>
+              
+              <p className="text-sm text-gray-600 mt-2 mb-1">Client</p>
+              <p className="font-semibold">{selectedOrder.clientNom}</p>
+              
+              <p className="text-sm text-gray-600 mt-2 mb-1">Produit</p>
+              <p className="font-semibold">{selectedOrder.produitNom}</p>
+              
+              <p className="text-sm text-gray-600 mt-2 mb-1">Quantité actuelle</p>
+              <p className="font-semibold text-primary-600">{selectedOrder.quantite}</p>
+              
+              <p className="text-sm text-gray-600 mt-2 mb-1">Montant actuel</p>
+              <p className="font-semibold">{formatCurrency(selectedOrder.montant)}</p>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nouvelle quantité <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={newQuantite}
+                onChange={(e) => setNewQuantite(parseInt(e.target.value) || 1)}
+                className="input"
+                autoFocus
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Prix unitaire: {formatCurrency(selectedOrder.montant / selectedOrder.quantite)}
+              </p>
+              {newQuantite !== selectedOrder.quantite && (
+                <p className="text-sm text-primary-600 mt-2 font-semibold">
+                  → Nouveau montant: {formatCurrency((selectedOrder.montant / selectedOrder.quantite) * newQuantite)}
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={handleUpdateQuantite}
+                disabled={newQuantite === selectedOrder.quantite || updateQuantiteMutation.isPending}
+                className="btn btn-primary flex-1"
+              >
+                {updateQuantiteMutation.isPending ? 'Modification...' : '✓ Confirmer'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowQuantiteModal(false);
+                  setSelectedOrder(null);
+                }}
+                className="btn btn-secondary flex-1"
               >
                 Annuler
               </button>
