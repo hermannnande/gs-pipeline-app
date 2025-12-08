@@ -11,9 +11,26 @@ router.get('/stats', authenticate, authorize('ADMIN'), async (req, res) => {
   try {
     const { dateDebut, dateFin } = req.query;
 
-    // Définir les dates par défaut (aujourd'hui)
-    const startDate = dateDebut ? new Date(dateDebut) : new Date(new Date().setHours(0, 0, 0, 0));
-    const endDate = dateFin ? new Date(dateFin) : new Date(new Date().setHours(23, 59, 59, 999));
+    // Définir les dates par défaut (aujourd'hui en heure d'Abidjan - UTC+0)
+    // Les dates viennent du frontend au format YYYY-MM-DD (ex: "2025-12-08")
+    // Abidjan est en UTC+0, donc on utilise directement les dates UTC
+    let startDate, endDate;
+    
+    if (dateDebut) {
+      startDate = new Date(`${dateDebut}T00:00:00.000Z`);
+    } else {
+      // Aujourd'hui à minuit en UTC+0
+      const now = new Date();
+      startDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+    }
+    
+    if (dateFin) {
+      endDate = new Date(`${dateFin}T23:59:59.999Z`);
+    } else {
+      // Aujourd'hui à 23:59:59 en UTC+0
+      const now = new Date();
+      endDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999));
+    }
 
     // Récupérer toutes les commandes dans la période (tous types)
     const commandes = await prisma.order.findMany({
@@ -97,15 +114,24 @@ router.get('/stats', authenticate, authorize('ADMIN'), async (req, res) => {
     // Total général
     const totalGeneral = totalLivraisonsLocales + totalExpeditions + totalExpressAvance + totalExpressRetrait;
 
-    // Données pour graphiques - Évolution journalière
+    // Données pour graphiques - Évolution journalière (UTC+0 - Abidjan)
     const evolutionJournaliere = [];
     const currentDate = new Date(startDate);
     
     while (currentDate <= endDate) {
-      const jourDebut = new Date(currentDate);
-      jourDebut.setHours(0, 0, 0, 0);
-      const jourFin = new Date(currentDate);
-      jourFin.setHours(23, 59, 59, 999);
+      // Créer les bornes du jour en UTC (Abidjan = UTC+0)
+      const jourDebut = new Date(Date.UTC(
+        currentDate.getUTCFullYear(), 
+        currentDate.getUTCMonth(), 
+        currentDate.getUTCDate(), 
+        0, 0, 0, 0
+      ));
+      const jourFin = new Date(Date.UTC(
+        currentDate.getUTCFullYear(), 
+        currentDate.getUTCMonth(), 
+        currentDate.getUTCDate(), 
+        23, 59, 59, 999
+      ));
 
       const commandesJour = commandes.filter(c => {
         const date = c.deliveredAt || c.expedieAt || c.arriveAt;
