@@ -55,7 +55,6 @@ export default function Layout({ children }: LayoutProps) {
           { icon: Eye, label: 'Supervision Appelants', path: '/admin/supervision' },
           { icon: BarChart3, label: 'Statistiques', path: '/admin/stats' },
           { icon: DollarSign, label: 'Comptabilité', path: '/admin/accounting' },
-          { icon: Package, label: '🔧 Correction Stocks', path: '/admin/fix-stock' },
         ];
       case 'GESTIONNAIRE':
         return [

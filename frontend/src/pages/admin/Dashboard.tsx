@@ -15,7 +15,6 @@ import ValidatedOrders from '../gestionnaire/ValidatedOrders';
 import Accounting from './Accounting';
 import ExpressAgence from '../gestionnaire/ExpressAgence';
 import RDV from '../appelant/RDV';
-import FixStock from './FixStock';
 
 export default function AdminDashboard() {
   return (
@@ -36,7 +35,6 @@ export default function AdminDashboard() {
       <Route path="supervision" element={<CallerSupervision />} />
       <Route path="stats" element={<Stats />} />
       <Route path="accounting" element={<Accounting />} />
-      <Route path="fix-stock" element={<FixStock />} />
     </Routes>
   );
 }
