@@ -12,6 +12,7 @@ import accountingRoutes from './routes/accounting.routes.js';
 import expressRoutes from './routes/express.routes.js';
 import stockRoutes from './routes/stock.routes.js';
 import rdvRoutes from './routes/rdv.routes.js';
+import fixStockRoutes from './routes/fix-stock.routes.js';
 import { scheduleCleanupJob } from './jobs/cleanupPhotos.js';
 
 if (process.env.NODE_ENV !== 'production') {
@@ -52,6 +53,7 @@ app.use('/api/stock', stockRoutes);
 app.use('/api/accounting', accountingRoutes);
 app.use('/api/express', expressRoutes);
 app.use('/api/rdv', rdvRoutes);
+app.use('/api/fix-stock', fixStockRoutes);
 
 // Route de test
 app.get('/', (req, res) => {
