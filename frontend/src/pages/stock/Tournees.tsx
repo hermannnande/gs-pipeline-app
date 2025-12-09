@@ -27,6 +27,7 @@ export default function Tournees() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'remise' | 'retour' | 'completed'>('all');
   const [delivererFilter, setDelivererFilter] = useState('');
+  const [deliveryTypeFilter, setDeliveryTypeFilter] = useState<'all' | 'LOCAL' | 'EXPEDITION'>('all');
   const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('compact');
   
   const queryClient = useQueryClient();
@@ -94,9 +95,16 @@ export default function Tournees() {
         // Filtre par livreur
         const matchesDeliverer = !delivererFilter || tournee.deliverer.id.toString() === delivererFilter;
 
-        return matchesSearch && matchesStatus && matchesDeliverer;
+        // Filtre par type de livraison
+        let matchesDeliveryType = true;
+        if (deliveryTypeFilter !== 'all') {
+          // Vérifier si au moins une commande de la tournée correspond au type
+          matchesDeliveryType = tournee.orders?.some((order: any) => order.deliveryType === deliveryTypeFilter);
+        }
+
+        return matchesSearch && matchesStatus && matchesDeliverer && matchesDeliveryType;
       });
-  }, [tourneesData, searchTerm, statusFilter, delivererFilter]);
+  }, [tourneesData, searchTerm, statusFilter, delivererFilter, deliveryTypeFilter]);
 
   const confirmRemiseMutation = useMutation({
     mutationFn: async ({ tourneeId, colisRemis }: any) => {
@@ -239,6 +247,32 @@ export default function Tournees() {
     }
     
     return null;
+  };
+  
+  const getDeliveryTypeBadge = (tournee: any) => {
+    // Compter les types de livraison dans la tournée
+    const localCount = tournee.orders?.filter((o: any) => o.deliveryType === 'LOCAL').length || 0;
+    const expeditionCount = tournee.orders?.filter((o: any) => o.deliveryType === 'EXPEDITION').length || 0;
+    
+    if (localCount > 0 && expeditionCount > 0) {
+      return (
+        <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded flex items-center gap-1">
+          🏠✈️ Mixte
+        </span>
+      );
+    } else if (expeditionCount > 0) {
+      return (
+        <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded flex items-center gap-1">
+          ✈️ Expédition
+        </span>
+      );
+    } else {
+      return (
+        <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded flex items-center gap-1">
+          🏠 Local
+        </span>
+      );
+    }
   };
 
   // Calcul des KPIs globaux
@@ -388,6 +422,20 @@ export default function Tournees() {
             </select>
           </div>
 
+          {/* Filtre par type de livraison */}
+          <div className="relative md:col-span-2">
+            <Truck className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <select
+              value={deliveryTypeFilter}
+              onChange={(e) => setDeliveryTypeFilter(e.target.value as any)}
+              className="input pl-10 w-full"
+            >
+              <option value="all">🌍 Tous les types</option>
+              <option value="LOCAL">🏠 Livraisons locales</option>
+              <option value="EXPEDITION">✈️ Expéditions</option>
+            </select>
+          </div>
+
           {/* Filtre par livreur */}
           {deliverers.length > 0 && (
             <div className="relative md:col-span-2">
@@ -433,11 +481,12 @@ export default function Tournees() {
         </div>
 
         {/* Compteur de résultats */}
-        {searchTerm || statusFilter !== 'all' || delivererFilter ? (
+        {searchTerm || statusFilter !== 'all' || delivererFilter || deliveryTypeFilter !== 'all' ? (
           <div className="mt-4 pt-4 border-t border-gray-200">
             <p className="text-sm text-gray-600">
               <strong>{filteredTournees.length}</strong> tournée(s) trouvée(s)
               {searchTerm && ` pour "${searchTerm}"`}
+              {deliveryTypeFilter !== 'all' && ` • Type: ${deliveryTypeFilter === 'LOCAL' ? '🏠 Locales' : '✈️ Expéditions'}`}
             </p>
           </div>
         ) : null}
@@ -452,16 +501,17 @@ export default function Tournees() {
         <div className="card text-center py-12">
           <Package size={48} className="mx-auto text-gray-400 mb-4" />
           <p className="text-gray-500 text-lg">
-            {searchTerm || statusFilter !== 'all' || delivererFilter
+            {searchTerm || statusFilter !== 'all' || delivererFilter || deliveryTypeFilter !== 'all'
               ? 'Aucune tournée ne correspond aux filtres'
               : 'Aucune tournée pour cette date'}
           </p>
-          {(searchTerm || statusFilter !== 'all' || delivererFilter) && (
+          {(searchTerm || statusFilter !== 'all' || delivererFilter || deliveryTypeFilter !== 'all') && (
             <button
               onClick={() => {
                 setSearchTerm('');
                 setStatusFilter('all');
                 setDelivererFilter('');
+                setDeliveryTypeFilter('all');
               }}
               className="btn btn-secondary mt-4"
             >
@@ -490,7 +540,10 @@ export default function Tournees() {
                 <tr key={tournee.id} className={`hover:bg-gray-50 ${tournee.stats.alerteCritique ? 'bg-red-50' : tournee.stats.alerteRetard ? 'bg-orange-50' : ''}`}>
                   <td className="px-3 py-3">
                     <div>
-                      <p className="font-medium text-gray-900">{tournee.nom}</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-medium text-gray-900">{tournee.nom}</p>
+                        {getDeliveryTypeBadge(tournee)}
+                      </div>
                       {tournee.zone && (
                         <p className="text-xs text-gray-500">Zone: {tournee.zone}</p>
                       )}
@@ -572,8 +625,9 @@ export default function Tournees() {
                     <Truck size={24} />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="text-lg font-semibold">{tournee.nom}</h3>
+                      {getDeliveryTypeBadge(tournee)}
                       {getAlerteBadge(tournee)}
                     </div>
                     <p className="text-sm text-gray-600">
