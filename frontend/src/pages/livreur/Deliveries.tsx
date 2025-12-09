@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MapPin, Phone, Navigation } from 'lucide-react';
+import { MapPin, Phone, Navigation, Edit2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { deliveryApi, ordersApi } from '@/lib/api';
 import { formatCurrency, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
@@ -154,23 +154,42 @@ export default function Deliveries() {
           {/* Livraisons complétées */}
           {completedOrders.length > 0 && (
             <div>
-              <h2 className="text-xl font-semibold mb-4">Complétées ({completedOrders.length})</h2>
+              <h2 className="text-xl font-semibold mb-4">
+                Complétées ({completedOrders.length})
+                <span className="ml-2 text-sm font-normal text-gray-600">
+                  • Vous pouvez modifier une livraison en cas d'erreur
+                </span>
+              </h2>
               <div className="card">
                 <div className="space-y-2">
                   {completedOrders.map((order: Order) => (
                     <div
                       key={order.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                     >
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium text-gray-900">{order.clientNom}</p>
                         <p className="text-sm text-gray-600">{order.clientVille} • {order.clientTelephone}</p>
+                        <p className="text-xs text-gray-500 mt-1">{order.produitNom} (x{order.quantite})</p>
                       </div>
-                      <div className="text-right">
-                        <p className="font-medium text-gray-900">{formatCurrency(order.montant)}</p>
-                        <span className={`badge ${getStatusColor(order.status)} mt-1`}>
-                          {getStatusLabel(order.status)}
-                        </span>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p className="font-medium text-gray-900">{formatCurrency(order.montant)}</p>
+                          <span className={`badge ${getStatusColor(order.status)} mt-1`}>
+                            {getStatusLabel(order.status)}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setNote(order.noteLivreur || '');
+                          }}
+                          className="btn btn-secondary px-3 py-2 flex items-center gap-1"
+                          title="Modifier la livraison"
+                        >
+                          <Edit2 size={16} />
+                          Modifier
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -203,15 +222,33 @@ export default function Deliveries() {
       {selectedOrder && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">Traiter la livraison</h2>
+            <div className="flex items-center gap-2 mb-4">
+              <h2 className="text-xl font-bold">
+                {selectedOrder.status === 'ASSIGNEE' ? 'Traiter la livraison' : 'Modifier la livraison'}
+              </h2>
+              {selectedOrder.status !== 'ASSIGNEE' && (
+                <span className="px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded">
+                  Correction
+                </span>
+              )}
+            </div>
             
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <h3 className="font-semibold text-lg">{selectedOrder.clientNom}</h3>
-              <p className="text-gray-600">{selectedOrder.clientVille}</p>
-              {selectedOrder.clientAdresse && (
-                <p className="text-sm text-gray-600 mt-1">{selectedOrder.clientAdresse}</p>
-              )}
-              <a href={`tel:${selectedOrder.clientTelephone}`} className="text-primary-600 text-lg font-medium">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg">{selectedOrder.clientNom}</h3>
+                  <p className="text-gray-600">{selectedOrder.clientVille}</p>
+                  {selectedOrder.clientAdresse && (
+                    <p className="text-sm text-gray-600 mt-1">{selectedOrder.clientAdresse}</p>
+                  )}
+                </div>
+                {selectedOrder.status !== 'ASSIGNEE' && (
+                  <span className={`badge ${getStatusColor(selectedOrder.status)}`}>
+                    {getStatusLabel(selectedOrder.status)}
+                  </span>
+                )}
+              </div>
+              <a href={`tel:${selectedOrder.clientTelephone}`} className="text-primary-600 text-lg font-medium block mt-2">
                 {selectedOrder.clientTelephone}
               </a>
               <div className="mt-3 pt-3 border-t">
@@ -222,6 +259,12 @@ export default function Deliveries() {
                   {formatCurrency(selectedOrder.montant)}
                 </p>
               </div>
+              {selectedOrder.status !== 'ASSIGNEE' && selectedOrder.noteLivreur && (
+                <div className="mt-3 pt-3 border-t">
+                  <p className="text-xs text-gray-600 mb-1">Note actuelle :</p>
+                  <p className="text-sm text-gray-700 italic">{selectedOrder.noteLivreur}</p>
+                </div>
+              )}
             </div>
 
             <div className="mb-6">
