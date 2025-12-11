@@ -511,6 +511,7 @@ export default function ExpeditionsExpress() {
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Client</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Ville</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Produit</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Date & Heure</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Montant payé</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Paiement</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Livreur</th>
@@ -532,6 +533,12 @@ export default function ExpeditionsExpress() {
                           </td>
                           <td className="py-3 px-4 text-sm">{order.clientVille}</td>
                           <td className="py-3 px-4 text-sm">{order.produitNom} (x{order.quantite})</td>
+                          <td className="py-3 px-4 text-sm">
+                            <div className="flex items-center gap-1">
+                              <Calendar size={14} className="text-gray-400" />
+                              <span>{formatDateTime(order.expedieAt || order.createdAt)}</span>
+                            </div>
+                          </td>
                           <td className="py-3 px-4 text-sm font-bold text-green-600">
                             {formatCurrency(order.montantPaye || order.montant)}
                           </td>
@@ -627,6 +634,7 @@ export default function ExpeditionsExpress() {
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Référence</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Client</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Produit</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Date & Heure</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Acompte (10%)</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Restant (90%)</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Agence</th>
@@ -642,6 +650,12 @@ export default function ExpeditionsExpress() {
                           <div className="text-xs text-gray-500">{order.clientTelephone}</div>
                         </td>
                         <td className="py-3 px-4 text-sm">{order.produitNom} (x{order.quantite})</td>
+                        <td className="py-3 px-4 text-sm">
+                          <div className="flex items-center gap-1">
+                            <Calendar size={14} className="text-gray-400" />
+                            <span>{formatDateTime(order.expedieAt || order.createdAt)}</span>
+                          </div>
+                        </td>
                         <td className="py-3 px-4 text-sm font-bold text-green-600">
                           {formatCurrency(order.montantPaye || 0)}
                         </td>
