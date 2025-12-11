@@ -128,8 +128,43 @@ router.get('/callers', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
       callerStats[userId].totalInjoignables += stat.totalInjoignables;
     });
 
+    // Récupérer les statistiques EXPRESS et EXPEDITION depuis les commandes
+    const orderDateFilter = {};
+    if (startDate || endDate) {
+      orderDateFilter.createdAt = {};
+      if (startDate) orderDateFilter.createdAt.gte = new Date(startDate);
+      if (endDate) orderDateFilter.createdAt.lte = new Date(endDate);
+    }
+
+    const orders = await prisma.order.findMany({
+      where: {
+        ...orderDateFilter,
+        callerId: callerId ? parseInt(callerId) : { not: null },
+        deliveryType: { in: ['EXPEDITION', 'EXPRESS'] }
+      },
+      select: {
+        callerId: true,
+        deliveryType: true,
+        status: true
+      }
+    });
+
+    // Ajouter les stats EXPRESS et EXPEDITION
+    orders.forEach(order => {
+      const userId = order.callerId;
+      if (callerStats[userId]) {
+        if (order.deliveryType === 'EXPEDITION') {
+          callerStats[userId].totalExpeditions = (callerStats[userId].totalExpeditions || 0) + 1;
+        } else if (order.deliveryType === 'EXPRESS') {
+          callerStats[userId].totalExpress = (callerStats[userId].totalExpress || 0) + 1;
+        }
+      }
+    });
+
     const result = Object.values(callerStats).map(caller => ({
       ...caller,
+      totalExpeditions: caller.totalExpeditions || 0,
+      totalExpress: caller.totalExpress || 0,
       tauxValidation: caller.totalAppels > 0 
         ? ((caller.totalValides / caller.totalAppels) * 100).toFixed(2)
         : 0

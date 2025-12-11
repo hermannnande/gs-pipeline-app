@@ -89,6 +89,8 @@ export default function Stats() {
   const totalCallers = filteredCallers.length;
   const totalAppels = filteredCallers.reduce((sum: number, s: any) => sum + s.totalAppels, 0);
   const totalValides = filteredCallers.reduce((sum: number, s: any) => sum + s.totalValides, 0);
+  const totalExpeditions = filteredCallers.reduce((sum: number, s: any) => sum + (s.totalExpeditions || 0), 0);
+  const totalExpress = filteredCallers.reduce((sum: number, s: any) => sum + (s.totalExpress || 0), 0);
   const avgTauxValidation = totalAppels > 0 ? ((totalValides / totalAppels) * 100).toFixed(2) : '0';
 
   const totalDeliverers = filteredDeliverers.length;
@@ -99,13 +101,15 @@ export default function Stats() {
   const handleExport = () => {
     // Fonction d'export CSV
     const csvCallers = [
-      ['Appelant', 'Total appels', 'Validées', 'Annulées', 'Injoignables', 'Taux validation'],
+      ['Appelant', 'Total appels', 'Validées', 'Annulées', 'Injoignables', 'Expéditions', 'Express', 'Taux validation'],
       ...filteredCallers.map((s: any) => [
         `${s.user.prenom} ${s.user.nom}`,
         s.totalAppels,
         s.totalValides,
         s.totalAnnules,
         s.totalInjoignables,
+        s.totalExpeditions || 0,
+        s.totalExpress || 0,
         s.tauxValidation + '%'
       ])
     ].map(row => row.join(',')).join('\n');
@@ -398,13 +402,15 @@ export default function Stats() {
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Validées</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Annulées</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Injoignables</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600 bg-blue-50">📦 Expéditions</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600 bg-amber-50">⚡ Express</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Taux de validation</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredCallers.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="text-center py-8 text-gray-500">
+                      <td colSpan={8} className="text-center py-8 text-gray-500">
                         Aucun appelant trouvé
                       </td>
                     </tr>
@@ -418,6 +424,12 @@ export default function Stats() {
                         <td className="py-3 px-4 text-sm text-green-600 font-medium">{stat.totalValides}</td>
                         <td className="py-3 px-4 text-sm text-red-600">{stat.totalAnnules}</td>
                         <td className="py-3 px-4 text-sm text-orange-600">{stat.totalInjoignables}</td>
+                        <td className="py-3 px-4 text-sm font-medium text-blue-600 bg-blue-50">
+                          {stat.totalExpeditions || 0}
+                        </td>
+                        <td className="py-3 px-4 text-sm font-medium text-amber-600 bg-amber-50">
+                          {stat.totalExpress || 0}
+                        </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-3">
                             <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-[100px]">
@@ -447,14 +459,20 @@ export default function Stats() {
             </div>
 
             {/* Totaux */}
-            <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between text-sm">
-              <div className="font-medium text-gray-700">
-                Totaux: {totalAppels} appels
-              </div>
-              <div className="text-gray-600">
-                <span className="text-green-600 font-medium">{totalValides} validées</span>
-                {' • '}
-                <span className="font-medium">Taux moyen: {avgTauxValidation}%</span>
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="flex flex-wrap justify-between gap-4 text-sm">
+                <div className="font-medium text-gray-700">
+                  Totaux: {totalAppels} appels
+                </div>
+                <div className="flex flex-wrap gap-4 text-gray-600">
+                  <span className="text-green-600 font-medium">{totalValides} validées</span>
+                  <span className="text-gray-300">•</span>
+                  <span className="text-blue-600 font-medium">📦 {totalExpeditions} expéditions</span>
+                  <span className="text-gray-300">•</span>
+                  <span className="text-amber-600 font-medium">⚡ {totalExpress} express</span>
+                  <span className="text-gray-300">•</span>
+                  <span className="font-medium">Taux moyen: {avgTauxValidation}%</span>
+                </div>
               </div>
             </div>
           </>
