@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Phone, CheckCircle, XCircle, PhoneOff } from 'lucide-react';
+import { Phone, CheckCircle, XCircle, PhoneOff, Truck, Zap } from 'lucide-react';
 import { statsApi, ordersApi } from '@/lib/api';
 
 export default function Overview() {
@@ -38,6 +38,18 @@ export default function Overview() {
       icon: PhoneOff,
       color: 'bg-orange-500',
     },
+    {
+      title: '📦 Expéditions',
+      value: stats?.stats?.totalExpeditions || 0,
+      icon: Truck,
+      color: 'bg-cyan-500',
+    },
+    {
+      title: '⚡ Express',
+      value: stats?.stats?.totalExpress || 0,
+      icon: Zap,
+      color: 'bg-amber-500',
+    },
   ];
 
   return (
@@ -47,7 +59,7 @@ export default function Overview() {
         <p className="text-gray-600 mt-1">Votre activité du jour</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {cards.map((card) => {
           const Icon = card.icon;
           return (

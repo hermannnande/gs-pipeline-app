@@ -269,6 +269,20 @@ router.get('/my-stats', authorize('APPELANT', 'LIVREUR'), async (req, res) => {
         totalInjoignables: acc.totalInjoignables + stat.totalInjoignables
       }), { totalAppels: 0, totalValides: 0, totalAnnules: 0, totalInjoignables: 0 });
 
+      // Récupérer les statistiques EXPRESS et EXPEDITION
+      const orders = await prisma.order.findMany({
+        where: {
+          callerId: user.id,
+          createdAt: { gte: startDate },
+          deliveryType: { in: ['EXPEDITION', 'EXPRESS'] }
+        },
+        select: {
+          deliveryType: true
+        }
+      });
+
+      totals.totalExpeditions = orders.filter(o => o.deliveryType === 'EXPEDITION').length;
+      totals.totalExpress = orders.filter(o => o.deliveryType === 'EXPRESS').length;
       totals.tauxValidation = totals.totalAppels > 0 
         ? ((totals.totalValides / totals.totalAppels) * 100).toFixed(2)
         : 0;

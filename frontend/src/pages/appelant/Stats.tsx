@@ -70,7 +70,7 @@ export default function Stats() {
       </div>
 
       {/* Détails statistiques */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="card">
           <p className="text-sm text-gray-600 mb-2">Total appels</p>
           <p className="text-3xl font-bold text-gray-900">{stats?.totalAppels || 0}</p>
@@ -86,6 +86,14 @@ export default function Stats() {
         <div className="card">
           <p className="text-sm text-gray-600 mb-2">Injoignables</p>
           <p className="text-3xl font-bold text-orange-600">{stats?.totalInjoignables || 0}</p>
+        </div>
+        <div className="card bg-blue-50 border-2 border-blue-200">
+          <p className="text-sm text-blue-700 font-medium mb-2">📦 Expéditions</p>
+          <p className="text-3xl font-bold text-blue-600">{stats?.totalExpeditions || 0}</p>
+        </div>
+        <div className="card bg-amber-50 border-2 border-amber-200">
+          <p className="text-sm text-amber-700 font-medium mb-2">⚡ Express</p>
+          <p className="text-3xl font-bold text-amber-600">{stats?.totalExpress || 0}</p>
         </div>
       </div>
 
