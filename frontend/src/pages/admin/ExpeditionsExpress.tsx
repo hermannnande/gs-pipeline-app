@@ -202,21 +202,61 @@ export default function ExpeditionsExpress() {
       // Filtre par mode de paiement
       if (filterPaiement && order.modePaiement !== filterPaiement) return false;
 
-      // Filtre par période
+      // Filtre par période - Utiliser expedieAt pour EXPRESS, createdAt pour EXPEDITION
       if (filterStartDate) {
-        const orderDate = new Date(order.createdAt);
+        const dateToCheck = (order.deliveryType === 'EXPRESS' && order.expedieAt) 
+          ? new Date(order.expedieAt) 
+          : new Date(order.createdAt);
         const startDate = new Date(filterStartDate);
-        if (orderDate < startDate) return false;
+        startDate.setHours(0, 0, 0, 0);
+        if (dateToCheck < startDate) return false;
       }
       if (filterEndDate) {
-        const orderDate = new Date(order.createdAt);
+        const dateToCheck = (order.deliveryType === 'EXPRESS' && order.expedieAt) 
+          ? new Date(order.expedieAt) 
+          : new Date(order.createdAt);
         const endDate = new Date(filterEndDate);
         endDate.setHours(23, 59, 59, 999);
-        if (orderDate > endDate) return false;
+        if (dateToCheck > endDate) return false;
       }
 
       return true;
     });
+  };
+
+  // Fonction pour définir des raccourcis de date
+  const setDateShortcut = (type: 'today' | 'yesterday' | '7days' | '30days' | 'all') => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    switch (type) {
+      case 'today':
+        setFilterStartDate(today.toISOString().split('T')[0]);
+        setFilterEndDate(today.toISOString().split('T')[0]);
+        break;
+      case 'yesterday':
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        setFilterStartDate(yesterday.toISOString().split('T')[0]);
+        setFilterEndDate(yesterday.toISOString().split('T')[0]);
+        break;
+      case '7days':
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        setFilterStartDate(sevenDaysAgo.toISOString().split('T')[0]);
+        setFilterEndDate(today.toISOString().split('T')[0]);
+        break;
+      case '30days':
+        const thirtyDaysAgo = new Date(today);
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        setFilterStartDate(thirtyDaysAgo.toISOString().split('T')[0]);
+        setFilterEndDate(today.toISOString().split('T')[0]);
+        break;
+      case 'all':
+        setFilterStartDate('');
+        setFilterEndDate('');
+        break;
+    }
   };
 
   // Appliquer les filtres
@@ -417,14 +457,53 @@ export default function ExpeditionsExpress() {
               </div>
             </div>
 
+            {/* Raccourcis de date */}
+            <div className="border-t pt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                ⚡ Raccourcis de date
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setDateShortcut('today')}
+                  className="px-3 py-2 text-sm bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  📅 Aujourd'hui
+                </button>
+                <button
+                  onClick={() => setDateShortcut('yesterday')}
+                  className="px-3 py-2 text-sm bg-orange-50 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors"
+                >
+                  📆 Hier
+                </button>
+                <button
+                  onClick={() => setDateShortcut('7days')}
+                  className="px-3 py-2 text-sm bg-purple-50 text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
+                >
+                  📊 7 derniers jours
+                </button>
+                <button
+                  onClick={() => setDateShortcut('30days')}
+                  className="px-3 py-2 text-sm bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+                >
+                  📈 30 derniers jours
+                </button>
+                <button
+                  onClick={() => setDateShortcut('all')}
+                  className="px-3 py-2 text-sm bg-gray-50 text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  🌐 Tout afficher
+                </button>
+              </div>
+            </div>
+
             {/* Bouton réinitialiser */}
-            <div className="flex justify-end">
+            <div className="flex justify-end border-t pt-4">
               <button
                 onClick={resetFilters}
                 className="btn btn-secondary text-sm flex items-center gap-2"
               >
                 <X size={16} />
-                Réinitialiser les filtres
+                Réinitialiser tous les filtres
               </button>
             </div>
           </div>
