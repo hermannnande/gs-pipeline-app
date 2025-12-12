@@ -157,16 +157,17 @@ router.get('/callers', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
     // Récupérer les statistiques EXPRESS et EXPEDITION depuis les commandes
     const orderDateFilter = {};
     if (startDate || endDate) {
-      orderDateFilter.createdAt = {};
-      if (startDate) orderDateFilter.createdAt.gte = new Date(startDate);
-      if (endDate) orderDateFilter.createdAt.lte = new Date(endDate);
+      orderDateFilter.expedieAt = {}; // Utiliser expedieAt au lieu de createdAt car c'est la date de création EXPEDITION/EXPRESS
+      if (startDate) orderDateFilter.expedieAt.gte = new Date(startDate);
+      if (endDate) orderDateFilter.expedieAt.lte = new Date(endDate);
     }
 
     const orders = await prisma.order.findMany({
       where: {
         ...orderDateFilter,
         callerId: callerId ? parseInt(callerId) : { not: null },
-        deliveryType: { in: ['EXPEDITION', 'EXPRESS'] }
+        deliveryType: { in: ['EXPEDITION', 'EXPRESS'] },
+        expedieAt: { not: null } // S'assurer que c'est bien une EXPEDITION/EXPRESS validée
       },
       select: {
         callerId: true,
@@ -299,7 +300,7 @@ router.get('/my-stats', authorize('APPELANT', 'LIVREUR'), async (req, res) => {
       const orders = await prisma.order.findMany({
         where: {
           callerId: user.id,
-          createdAt: { gte: startDate },
+          expedieAt: { gte: startDate }, // Utiliser expedieAt pour la date de création EXPEDITION/EXPRESS
           deliveryType: { in: ['EXPEDITION', 'EXPRESS'] }
         },
         select: {
