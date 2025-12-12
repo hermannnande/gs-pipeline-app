@@ -22,18 +22,23 @@ export default function ExpressAgence() {
   const [agenceFilter, setAgenceFilter] = useState('all');
   const [statutFilter, setStatutFilter] = useState('all');
   const [nonRetiresOnly, setNonRetiresOnly] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [triPar, setTriPar] = useState<'date' | 'notifications' | 'jours'>('jours');
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [noteNotification, setNoteNotification] = useState('');
   
   const queryClient = useQueryClient();
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['express-en-agence', searchTerm, agenceFilter, statutFilter, nonRetiresOnly],
+    queryKey: ['express-en-agence', searchTerm, agenceFilter, statutFilter, nonRetiresOnly, startDate, endDate],
     queryFn: () => expressApi.getEnAgence({
       search: searchTerm,
       agence: agenceFilter,
       statut: statutFilter,
-      nonRetires: nonRetiresOnly ? 'true' : 'false'
+      nonRetires: nonRetiresOnly ? 'true' : 'false',
+      startDate: startDate || undefined,
+      endDate: endDate || undefined
     }),
     refetchInterval: 30000, // Refresh toutes les 30 secondes
   });
@@ -84,6 +89,53 @@ export default function ExpressAgence() {
 
   const orders = data?.orders || [];
   const stats = data?.stats || {};
+
+  // Trier les commandes selon le critère sélectionné
+  const sortedOrders = [...orders].sort((a, b) => {
+    switch (triPar) {
+      case 'date':
+        return new Date(b.arriveAt || b.expedieAt).getTime() - new Date(a.arriveAt || a.expedieAt).getTime();
+      case 'notifications':
+        return b.nombreNotifications - a.nombreNotifications;
+      case 'jours':
+        return b.joursEnAgence - a.joursEnAgence;
+      default:
+        return 0;
+    }
+  });
+
+  // Raccourcis de dates
+  const setDateRaccourci = (type: string) => {
+    const today = new Date();
+    switch(type) {
+      case 'aujourdhui':
+        setStartDate(today.toISOString().split('T')[0]);
+        setEndDate(today.toISOString().split('T')[0]);
+        break;
+      case 'hier':
+        const hier = new Date(today);
+        hier.setDate(hier.getDate() - 1);
+        setStartDate(hier.toISOString().split('T')[0]);
+        setEndDate(hier.toISOString().split('T')[0]);
+        break;
+      case 'semaine':
+        const semaine = new Date(today);
+        semaine.setDate(semaine.getDate() - 7);
+        setStartDate(semaine.toISOString().split('T')[0]);
+        setEndDate(today.toISOString().split('T')[0]);
+        break;
+      case 'mois':
+        const mois = new Date(today);
+        mois.setMonth(mois.getMonth() - 1);
+        setStartDate(mois.toISOString().split('T')[0]);
+        setEndDate(today.toISOString().split('T')[0]);
+        break;
+      case 'tout':
+        setStartDate('');
+        setEndDate('');
+        break;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -138,58 +190,194 @@ export default function ExpressAgence() {
 
       {/* Filtres */}
       <div className="card">
-        <div className="flex items-center gap-2 mb-4">
-          <Filter className="text-primary-600" size={20} />
-          <h2 className="text-lg font-semibold">Filtres</h2>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Filter className="text-primary-600" size={20} />
+            <h2 className="text-lg font-semibold">Filtres de recherche</h2>
+          </div>
+          <button
+            onClick={() => {
+              setSearchTerm('');
+              setAgenceFilter('all');
+              setStatutFilter('all');
+              setNonRetiresOnly(false);
+              setStartDate('');
+              setEndDate('');
+            }}
+            className="btn btn-secondary btn-sm"
+          >
+            Réinitialiser
+          </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* Raccourcis de dates */}
+        <div className="mb-4 pb-4 border-b">
+          <p className="text-sm font-medium text-gray-700 mb-2">📅 Filtrer par période :</p>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => setDateRaccourci('aujourdhui')} className="btn btn-sm btn-secondary">
+              Aujourd'hui
+            </button>
+            <button onClick={() => setDateRaccourci('hier')} className="btn btn-sm btn-secondary">
+              Hier
+            </button>
+            <button onClick={() => setDateRaccourci('semaine')} className="btn btn-sm btn-secondary">
+              7 derniers jours
+            </button>
+            <button onClick={() => setDateRaccourci('mois')} className="btn btn-sm btn-secondary">
+              30 derniers jours
+            </button>
+            <button onClick={() => setDateRaccourci('tout')} className="btn btn-sm btn-secondary">
+              Tout afficher
+            </button>
+          </div>
+        </div>
+
+        {/* Filtres détaillés */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Recherche */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+          <div className="lg:col-span-3">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              🔍 Recherche
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Nom, téléphone, référence, produit..."
+                className="input pl-10 w-full"
+              />
+            </div>
+          </div>
+
+          {/* Date de début */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              📅 Date de début
+            </label>
             <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Rechercher (nom, tél, réf)..."
-              className="input pl-10"
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="input w-full"
             />
           </div>
 
+          {/* Date de fin */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              📅 Date de fin
+            </label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="input w-full"
+            />
+          </div>
+
+          {/* Tri */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              🔄 Trier par
+            </label>
+            <select
+              value={triPar}
+              onChange={(e) => setTriPar(e.target.value as any)}
+              className="input w-full"
+            >
+              <option value="jours">Jours en agence (urgent)</option>
+              <option value="notifications">Notifications (à relancer)</option>
+              <option value="date">Date d'arrivée (récent)</option>
+            </select>
+          </div>
+
           {/* Agence */}
-          <select
-            value={agenceFilter}
-            onChange={(e) => setAgenceFilter(e.target.value)}
-            className="input"
-          >
-            <option value="all">Toutes les agences</option>
-            {stats.agences?.map((agence: string) => (
-              <option key={agence} value={agence}>{agence}</option>
-            ))}
-          </select>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              📍 Agence
+            </label>
+            <select
+              value={agenceFilter}
+              onChange={(e) => setAgenceFilter(e.target.value)}
+              className="input w-full"
+            >
+              <option value="all">Toutes les agences</option>
+              {stats.agences?.map((agence: string) => (
+                <option key={agence} value={agence}>{agence}</option>
+              ))}
+            </select>
+          </div>
 
           {/* Statut */}
-          <select
-            value={statutFilter}
-            onChange={(e) => setStatutFilter(e.target.value)}
-            className="input"
-          >
-            <option value="all">Tous les statuts</option>
-            <option value="EXPRESS_ARRIVE">En attente de retrait</option>
-            <option value="EXPRESS_LIVRE">Retiré</option>
-          </select>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              ⚡ Statut
+            </label>
+            <select
+              value={statutFilter}
+              onChange={(e) => setStatutFilter(e.target.value)}
+              className="input w-full"
+            >
+              <option value="all">Tous les statuts</option>
+              <option value="EXPRESS_ARRIVE">En attente de retrait</option>
+              <option value="EXPRESS_LIVRE">Retiré</option>
+            </select>
+          </div>
 
           {/* Non retirés */}
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={nonRetiresOnly}
-              onChange={(e) => setNonRetiresOnly(e.target.checked)}
-              className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
-            />
-            <span className="text-sm font-medium text-gray-700">Non retirés uniquement</span>
-          </label>
+          <div className="flex items-end">
+            <label className="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-lg w-full hover:bg-gray-50 transition-colors">
+              <input
+                type="checkbox"
+                checked={nonRetiresOnly}
+                onChange={(e) => setNonRetiresOnly(e.target.checked)}
+                className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
+              />
+              <span className="text-sm font-medium text-gray-700">⏳ Non retirés uniquement</span>
+            </label>
+          </div>
         </div>
+
+        {/* Résumé des filtres actifs */}
+        {(searchTerm || agenceFilter !== 'all' || statutFilter !== 'all' || nonRetiresOnly || startDate || endDate) && (
+          <div className="mt-4 pt-4 border-t">
+            <p className="text-sm font-medium text-gray-700 mb-2">Filtres actifs :</p>
+            <div className="flex flex-wrap gap-2">
+              {searchTerm && (
+                <span className="badge bg-blue-100 text-blue-800">
+                  🔍 "{searchTerm}"
+                </span>
+              )}
+              {agenceFilter !== 'all' && (
+                <span className="badge bg-purple-100 text-purple-800">
+                  📍 {agenceFilter}
+                </span>
+              )}
+              {statutFilter !== 'all' && (
+                <span className="badge bg-green-100 text-green-800">
+                  ⚡ {statutFilter === 'EXPRESS_ARRIVE' ? 'En attente' : 'Retiré'}
+                </span>
+              )}
+              {nonRetiresOnly && (
+                <span className="badge bg-orange-100 text-orange-800">
+                  ⏳ Non retirés
+                </span>
+              )}
+              {startDate && (
+                <span className="badge bg-cyan-100 text-cyan-800">
+                  📅 Du {new Date(startDate).toLocaleDateString('fr-FR')}
+                </span>
+              )}
+              {endDate && (
+                <span className="badge bg-cyan-100 text-cyan-800">
+                  📅 Au {new Date(endDate).toLocaleDateString('fr-FR')}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Liste des commandes */}
@@ -197,45 +385,98 @@ export default function ExpressAgence() {
         <div className="flex justify-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
         </div>
-      ) : orders.length === 0 ? (
+      ) : sortedOrders.length === 0 ? (
         <div className="card text-center py-12">
           <Package className="mx-auto text-gray-400 mb-4" size={48} />
           <p className="text-gray-500 text-lg">Aucun colis en agence</p>
-          <p className="text-gray-400 text-sm mt-2">Essayez de modifier vos filtres</p>
+          <p className="text-gray-400 text-sm mt-2">
+            {orders.length === 0 ? "Aucun EXPRESS en agence pour le moment" : "Aucun résultat avec ces filtres"}
+          </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {orders.map((order: any) => (
-            <div key={order.id} className={`card hover:shadow-lg transition-shadow ${
-              order.nombreNotifications > 5 ? 'border-l-4 border-red-500' :
-              order.nombreNotifications > 2 ? 'border-l-4 border-orange-500' :
-              order.nombreNotifications > 0 ? 'border-l-4 border-yellow-500' :
-              'border-l-4 border-gray-300'
-            }`}>
+        <>
+          {/* En-tête de la liste */}
+          <div className="card bg-gray-50 border-2 border-gray-200">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-700">
+                📋 {sortedOrders.length} colis {sortedOrders.length !== orders.length && `sur ${orders.length}`}
+              </p>
+              <p className="text-xs text-gray-600">
+                Trié par: <strong>
+                  {triPar === 'jours' ? 'Jours en agence (urgent)' : 
+                   triPar === 'notifications' ? 'Notifications (à relancer)' : 
+                   'Date d\'arrivée (récent)'}
+                </strong>
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {sortedOrders.map((order: any) => {
+              // Déterminer l'urgence
+              const isUrgent = order.joursEnAgence > 7;
+              const isAttention = order.joursEnAgence > 3;
+              const isTropNotifie = order.nombreNotifications > 5;
+
+              return (
+                <div key={order.id} className={`card hover:shadow-lg transition-shadow ${
+                  isUrgent ? 'border-l-4 border-red-500 bg-red-50' :
+                  isTropNotifie ? 'border-l-4 border-orange-500 bg-orange-50' :
+                  isAttention ? 'border-l-4 border-yellow-500 bg-yellow-50' :
+                  order.nombreNotifications > 0 ? 'border-l-4 border-blue-500' :
+                  'border-l-4 border-gray-300'
+                }`}>
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 {/* Informations client - 4 colonnes */}
                 <div className="lg:col-span-4">
+                  {/* Badges d'urgence */}
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {isUrgent && (
+                      <span className="badge bg-red-100 text-red-700 text-xs">
+                        🚨 URGENT - {order.joursEnAgence}j en agence
+                      </span>
+                    )}
+                    {!isUrgent && isAttention && (
+                      <span className="badge bg-yellow-100 text-yellow-700 text-xs">
+                        ⚠️ {order.joursEnAgence}j en agence
+                      </span>
+                    )}
+                    {isTropNotifie && (
+                      <span className="badge bg-orange-100 text-orange-700 text-xs">
+                        🔔 {order.nombreNotifications} notifications
+                      </span>
+                    )}
+                  </div>
+
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <h3 className="font-semibold text-lg text-gray-900">{order.clientNom}</h3>
-                      <p className="text-sm text-gray-600">{order.clientTelephone}</p>
+                      <p className="text-sm text-gray-600 flex items-center gap-1">
+                        📞 {order.clientTelephone}
+                      </p>
                       <p className="text-xs text-gray-500 mt-1">Réf: {order.orderReference}</p>
                     </div>
                     {order.status === 'EXPRESS_ARRIVE' ? (
                       <span className="badge bg-orange-100 text-orange-700">En attente</span>
                     ) : (
-                      <span className="badge bg-green-100 text-green-700">Retiré</span>
+                      <span className="badge bg-green-100 text-green-700">Retiré ✓</span>
                     )}
                   </div>
                   
                   <div className="space-y-1 mt-3">
                     <div className="flex items-center gap-2 text-sm">
                       <Package size={14} className="text-gray-400" />
-                      <span className="text-gray-700">{order.product?.nom || order.produitNom}</span>
+                      <span className="text-gray-700">{order.product?.nom || order.produitNom} (x{order.quantite})</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <MapPin size={14} className="text-gray-400" />
                       <span className="text-gray-700 font-medium">{order.agenceRetrait}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar size={14} className="text-gray-400" />
+                      <span className="text-gray-600">
+                        Arrivé le {formatDateTime(order.arriveAt || order.expedieAt)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -245,8 +486,16 @@ export default function ExpressAgence() {
                   <p className="text-xs font-medium text-gray-500 uppercase mb-2">Suivi</p>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Clock size={16} className="text-blue-500" />
-                      <span className="text-sm">
+                      <Clock size={16} className={
+                        order.joursEnAgence > 7 ? 'text-red-500' :
+                        order.joursEnAgence > 3 ? 'text-orange-500' :
+                        'text-blue-500'
+                      } />
+                      <span className={`text-sm font-medium ${
+                        order.joursEnAgence > 7 ? 'text-red-600' :
+                        order.joursEnAgence > 3 ? 'text-orange-600' :
+                        'text-gray-700'
+                      }`}>
                         <strong>{order.joursEnAgence}</strong> jour(s) en agence
                       </span>
                     </div>
@@ -266,6 +515,14 @@ export default function ExpressAgence() {
                         <User size={16} className="text-purple-500" />
                         <span className="text-xs text-gray-600">
                           Par {order.derniereNotification.user.prenom} {order.derniereNotification.user.nom}
+                        </span>
+                      </div>
+                    )}
+                    {order.derniereNotification?.notifiedAt && (
+                      <div className="flex items-center gap-2">
+                        <Calendar size={16} className="text-gray-400" />
+                        <span className="text-xs text-gray-600">
+                          Dernier rappel: {formatDateTime(order.derniereNotification.notifiedAt)}
                         </span>
                       </div>
                     )}
@@ -348,8 +605,9 @@ export default function ExpressAgence() {
                 </details>
               )}
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </>
       )}
 
       {/* Modal de notification */}

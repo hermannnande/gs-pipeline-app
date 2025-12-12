@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 // GET /api/express/en-agence - Récupérer tous les EXPRESS en agence avec stats
 router.get('/en-agence', authenticate, authorize('ADMIN', 'GESTIONNAIRE', 'APPELANT'), async (req, res) => {
   try {
-    const { search, agence, statut, nonRetires } = req.query;
+    const { search, agence, statut, nonRetires, startDate, endDate } = req.query;
 
     // Construire le filtre
     const where = {
@@ -18,12 +18,13 @@ router.get('/en-agence', authenticate, authorize('ADMIN', 'GESTIONNAIRE', 'APPEL
       }
     };
 
-    // Filtre par recherche (nom, téléphone, référence)
+    // Filtre par recherche (nom, téléphone, référence, produit)
     if (search) {
       where.OR = [
         { clientNom: { contains: search, mode: 'insensitive' } },
         { clientTelephone: { contains: search } },
-        { orderReference: { contains: search, mode: 'insensitive' } }
+        { orderReference: { contains: search, mode: 'insensitive' } },
+        { produitNom: { contains: search, mode: 'insensitive' } }
       ];
     }
 
@@ -40,6 +41,13 @@ router.get('/en-agence', authenticate, authorize('ADMIN', 'GESTIONNAIRE', 'APPEL
     // Filtre non retirés uniquement
     if (nonRetires === 'true') {
       where.status = 'EXPRESS_ARRIVE';
+    }
+
+    // Filtre par dates (utiliser arriveAt pour les dates d'arrivée en agence)
+    if (startDate || endDate) {
+      where.arriveAt = {};
+      if (startDate) where.arriveAt.gte = new Date(startDate + 'T00:00:00.000Z');
+      if (endDate) where.arriveAt.lte = new Date(endDate + 'T23:59:59.999Z');
     }
 
     // Récupérer les commandes avec notifications
