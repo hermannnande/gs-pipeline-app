@@ -202,9 +202,10 @@ export default function ExpeditionsExpress() {
       // Filtre par mode de paiement
       if (filterPaiement && order.modePaiement !== filterPaiement) return false;
 
-      // Filtre par période - Utiliser expedieAt pour EXPRESS, createdAt pour EXPEDITION
+      // Filtre par période - Utiliser expedieAt si disponible, sinon createdAt
       if (filterStartDate) {
-        const dateToCheck = (order.deliveryType === 'EXPRESS' && order.expedieAt) 
+        // Priorité à expedieAt pour toutes les commandes (EXPEDITION et EXPRESS)
+        const dateToCheck = order.expedieAt 
           ? new Date(order.expedieAt) 
           : new Date(order.createdAt);
         const startDate = new Date(filterStartDate);
@@ -212,7 +213,8 @@ export default function ExpeditionsExpress() {
         if (dateToCheck < startDate) return false;
       }
       if (filterEndDate) {
-        const dateToCheck = (order.deliveryType === 'EXPRESS' && order.expedieAt) 
+        // Priorité à expedieAt pour toutes les commandes (EXPEDITION et EXPRESS)
+        const dateToCheck = order.expedieAt 
           ? new Date(order.expedieAt) 
           : new Date(order.createdAt);
         const endDate = new Date(filterEndDate);
