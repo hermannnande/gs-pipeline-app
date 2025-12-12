@@ -964,11 +964,7 @@ router.post('/:id/express', authorize('APPELANT', 'ADMIN', 'GESTIONNAIRE'), [
         const stockNormalApres = stockNormalAvant - order.quantite;
         const stockExpressApres = stockExpressAvant + order.quantite;
 
-        // Vérifier qu'il y a assez de stock
-        if (stockNormalAvant < order.quantite) {
-          throw new Error('Stock insuffisant pour créer cet EXPRESS');
-        }
-
+        // Pas de blocage si stock insuffisant - on autorise le stock négatif pour EXPRESS
         await tx.product.update({
           where: { id: order.productId },
           data: { 

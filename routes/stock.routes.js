@@ -411,18 +411,16 @@ router.get('/stats', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), async (req, res) 
     const [
       totalProduits,
       produitsActifs,
-      produitsAlerteStock,
+      allProducts,
       totalLivraisons,
       totalRetours,
       stockTotal
     ] = await Promise.all([
       prisma.product.count(),
       prisma.product.count({ where: { actif: true } }),
-      prisma.product.count({
-        where: {
-          actif: true,
-          stockActuel: { lte: prisma.raw('stock_alerte') }
-        }
+      prisma.product.findMany({
+        where: { actif: true },
+        select: { stockActuel: true, stockAlerte: true }
       }),
       prisma.stockMovement.count({
         where: { ...dateFilter, type: 'LIVRAISON' }
@@ -435,6 +433,9 @@ router.get('/stats', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), async (req, res) 
         _sum: { stockActuel: true }
       })
     ]);
+
+    // Compter les produits en alerte (stock <= stock d'alerte)
+    const produitsAlerteStock = allProducts.filter(p => p.stockActuel <= p.stockAlerte).length;
 
     res.json({
       stats: {

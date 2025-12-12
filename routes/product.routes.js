@@ -257,15 +257,14 @@ router.post('/:id/stock/adjust', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), [
 // GET /api/products/low-stock - Produits avec stock faible
 router.get('/alerts/low-stock', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), async (req, res) => {
   try {
-    const products = await prisma.product.findMany({
-      where: {
-        actif: true,
-        stockActuel: {
-          lte: prisma.raw('stock_alerte')
-        }
-      },
+    // Récupérer tous les produits actifs et filtrer en JavaScript
+    const allProducts = await prisma.product.findMany({
+      where: { actif: true },
       orderBy: { stockActuel: 'asc' }
     });
+
+    // Filtrer ceux dont le stock est <= stock d'alerte
+    const products = allProducts.filter(p => p.stockActuel <= p.stockAlerte);
 
     res.json({ products });
   } catch (error) {
