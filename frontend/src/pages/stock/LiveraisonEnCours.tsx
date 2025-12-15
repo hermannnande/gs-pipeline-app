@@ -32,10 +32,17 @@ export default function LiveraisonEnCours() {
       queryClient.invalidateQueries({ queryKey: ['stock-analysis-local'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
       
-      if (data.totalCorrections === 0) {
-        toast.success('Aucune correction nécessaire - Les données sont à jour');
+      console.log('📊 Résultat recalcul:', data);
+      
+      if (data.totalCommandesAnalysees === 0) {
+        toast('Aucune commande ASSIGNEE en livraison LOCAL trouvée', {
+          icon: 'ℹ️',
+          duration: 5000
+        });
+      } else if (data.totalCorrections === 0) {
+        toast.success(`${data.totalCommandesAnalysees} commande(s) analysée(s) - Aucune correction nécessaire`);
       } else {
-        toast.success(`${data.totalCorrections} correction(s) effectuée(s)`);
+        toast.success(`${data.totalCorrections} correction(s) effectuée(s) sur ${data.totalCommandesAnalysees} commande(s)`);
       }
     },
     onError: (error: any) => {
@@ -292,10 +299,19 @@ export default function LiveraisonEnCours() {
         {parLivreur.length === 0 ? (
           <div className="text-center py-8">
             <Truck size={48} className="mx-auto text-gray-300 mb-3" />
-            <p className="text-gray-500">Aucun livreur en cours de tournée</p>
-            <p className="text-sm text-gray-400 mt-1">
-              {dateFilter !== 'all' && 'Essayez de changer le filtre de date'}
-            </p>
+            <p className="text-gray-500 font-medium">Aucun livreur en cours de tournée</p>
+            <div className="mt-4 text-sm text-gray-600 max-w-md mx-auto">
+              {dateFilter !== 'all' ? (
+                <p>Essayez de changer le filtre de date vers "Tout"</p>
+              ) : (
+                <div className="space-y-2">
+                  <p>Aucune commande avec statut <span className="font-mono bg-gray-200 px-2 py-1 rounded">ASSIGNEE</span> et type <span className="font-mono bg-gray-200 px-2 py-1 rounded">LOCAL</span> trouvée.</p>
+                  <p className="text-xs text-gray-500">
+                    Cliquez sur "Recalculer" pour synchroniser avec les commandes actuelles.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className="space-y-3">

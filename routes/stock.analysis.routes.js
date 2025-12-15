@@ -165,31 +165,58 @@ router.get('/local-reserve', authorize('ADMIN'), async (req, res) => {
 // POST /api/stock-analysis/recalculate-local-reserve - Recalculer le stock local réservé
 router.post('/recalculate-local-reserve', authorize('ADMIN'), async (req, res) => {
   try {
-    // 1. Récupérer toutes les commandes ASSIGNEE par produit
+    console.log('🔄 Début du recalcul du stock local réservé...');
+    
+    // 1. Récupérer toutes les commandes ASSIGNEE LOCAL avec détails
     const ordersInDelivery = await prisma.order.findMany({
       where: {
         status: 'ASSIGNEE',
         deliveryType: 'LOCAL',
         productId: { not: null }
       },
-      select: {
-        productId: true,
-        quantite: true
+      include: {
+        product: {
+          select: {
+            id: true,
+            nom: true,
+            code: true
+          }
+        },
+        deliverer: {
+          select: {
+            nom: true,
+            prenom: true
+          }
+        }
       }
     });
+
+    console.log(`📦 ${ordersInDelivery.length} commandes ASSIGNEE LOCAL trouvées`);
 
     // 2. Calculer le stock réel en livraison par produit
     const stockByProduct = {};
     ordersInDelivery.forEach(order => {
       if (!stockByProduct[order.productId]) {
-        stockByProduct[order.productId] = 0;
+        stockByProduct[order.productId] = {
+          quantite: 0,
+          nom: order.product.nom,
+          code: order.product.code,
+          commandes: []
+        };
       }
-      stockByProduct[order.productId] += order.quantite;
+      stockByProduct[order.productId].quantite += order.quantite;
+      stockByProduct[order.productId].commandes.push({
+        ref: order.orderReference,
+        quantite: order.quantite,
+        livreur: order.deliverer ? `${order.deliverer.prenom} ${order.deliverer.nom}` : 'N/A'
+      });
     });
+
+    console.log(`📊 ${Object.keys(stockByProduct).length} produits différents concernés`);
 
     // 3. Mettre à jour chaque produit
     const updates = [];
-    for (const [productIdStr, quantite] of Object.entries(stockByProduct)) {
+    for (const [productIdStr, data] of Object.entries(stockByProduct)) {
       const productId = parseInt(productIdStr);
       
       const product = await prisma.product.findUnique({
@@ -197,35 +224,38 @@ router.post('/recalculate-local-reserve', authorize('ADMIN'), async (req, res) =
       });
 
       if (product) {
-        const oldStockLocalReserve = product.stockLocalReserve;
+        const oldStockLocalReserve = product.stockLocalReserve || 0;
+        const newStockLocalReserve = data.quantite;
         
-        if (oldStockLocalReserve !== quantite) {
+        if (oldStockLocalReserve !== newStockLocalReserve) {
           await prisma.product.update({
             where: { id: productId },
-            data: { stockLocalReserve: quantite }
+            data: { stockLocalReserve: newStockLocalReserve }
           });
 
-          // Créer un mouvement de correction si nécessaire
-          if (oldStockLocalReserve !== quantite) {
-            await prisma.stockMovement.create({
-              data: {
-                productId,
-                type: 'CORRECTION',
-                quantite: quantite - oldStockLocalReserve,
-                stockAvant: oldStockLocalReserve,
-                stockApres: quantite,
-                effectuePar: req.user.id,
-                motif: `Correction automatique stock local réservé - Ancien: ${oldStockLocalReserve}, Nouveau: ${quantite}`
-              }
-            });
-          }
+          // Créer un mouvement de correction
+          await prisma.stockMovement.create({
+            data: {
+              productId,
+              type: 'CORRECTION',
+              quantite: newStockLocalReserve - oldStockLocalReserve,
+              stockAvant: oldStockLocalReserve,
+              stockApres: newStockLocalReserve,
+              effectuePar: req.user.id,
+              motif: `Synchronisation stock local - ${data.commandes.length} commande(s) en livraison`
+            }
+          });
+
+          console.log(`✅ ${data.nom}: ${oldStockLocalReserve} → ${newStockLocalReserve}`);
 
           updates.push({
             productId,
-            productNom: product.nom,
+            productNom: data.nom,
+            productCode: data.code,
             ancien: oldStockLocalReserve,
-            nouveau: quantite,
-            ecart: quantite - oldStockLocalReserve
+            nouveau: newStockLocalReserve,
+            ecart: newStockLocalReserve - oldStockLocalReserve,
+            commandes: data.commandes
           });
         }
       }
@@ -253,9 +283,11 @@ router.post('/recalculate-local-reserve', authorize('ADMIN'), async (req, res) =
             stockAvant: product.stockLocalReserve,
             stockApres: 0,
             effectuePar: req.user.id,
-            motif: `Correction automatique - Aucune commande en livraison pour ce produit`
+            motif: `Réinitialisation - Aucune commande ASSIGNEE pour ce produit`
           }
         });
+
+        console.log(`🔄 ${product.nom}: ${product.stockLocalReserve} → 0 (plus de commandes)`);
 
         updates.push({
           productId: product.id,
@@ -267,14 +299,19 @@ router.post('/recalculate-local-reserve', authorize('ADMIN'), async (req, res) =
       }
     }
 
+    console.log(`✅ Recalcul terminé: ${updates.length} correction(s)`);
+
     res.json({
-      message: 'Recalcul terminé avec succès',
+      message: updates.length > 0 
+        ? `${updates.length} correction(s) effectuée(s) avec succès` 
+        : 'Aucune correction nécessaire - Les données sont déjà à jour',
       totalCorrections: updates.length,
+      totalCommandesAnalysees: ordersInDelivery.length,
       corrections: updates,
       timestamp: new Date()
     });
   } catch (error) {
-    console.error('Erreur recalcul stock local:', error);
+    console.error('❌ Erreur recalcul stock local:', error);
     res.status(500).json({ error: 'Erreur lors du recalcul du stock local.' });
   }
 });
