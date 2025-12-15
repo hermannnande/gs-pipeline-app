@@ -310,24 +310,24 @@ router.put('/:id/status', async (req, res) => {
             });
           } else {
             // Sinon, réduire stockActuel (comportement par défaut)
-            const stockAvant = product.stockActuel;
-            const stockApres = stockAvant - order.quantite;
+          const stockAvant = product.stockActuel;
+          const stockApres = stockAvant - order.quantite;
 
-            await tx.product.update({
-              where: { id: order.productId },
-              data: { stockActuel: stockApres }
-            });
+          await tx.product.update({
+            where: { id: order.productId },
+            data: { stockActuel: stockApres }
+          });
 
-            await tx.stockMovement.create({
-              data: {
-                productId: order.productId,
-                type: 'LIVRAISON',
-                quantite: -order.quantite,
-                stockAvant,
-                stockApres,
-                orderId: order.id,
-                effectuePar: user.id,
-                motif: `Livraison commande ${order.orderReference} - ${order.clientNom}`
+          await tx.stockMovement.create({
+            data: {
+              productId: order.productId,
+              type: 'LIVRAISON',
+              quantite: -order.quantite,
+              stockAvant,
+              stockApres,
+              orderId: order.id,
+              effectuePar: user.id,
+              motif: `Livraison commande ${order.orderReference} - ${order.clientNom}`
               }
             });
           }
@@ -911,7 +911,7 @@ router.post('/:id/expedition', authorize('APPELANT', 'ADMIN', 'GESTIONNAIRE'), [
 
       // Pas de blocage si stock insuffisant - on autorise le stock négatif pour EXPEDITION
       // Le stock sera renouvelé plus tard
-      
+
       // Réduire le stock immédiatement (peut devenir négatif)
       const stockAvant = product.stockActuel;
       const stockApres = stockAvant - order.quantite;

@@ -10,12 +10,17 @@ router.use(authenticate);
 // GET /api/stock-analysis/local-reserve - Analyse complète du stock en livraison locale
 router.get('/local-reserve', authorize('ADMIN'), async (req, res) => {
   try {
-    // 1. Récupérer toutes les commandes ASSIGNEE (en cours de livraison locale)
+    // 1. Récupérer toutes les commandes qui sont physiquement avec les livreurs
+    // ASSIGNEE = En cours de livraison
+    // REFUSEE = Refusé par client, produit encore avec livreur
+    // ANNULEE_LIVRAISON = Annulé en livraison, produit encore avec livreur
+    // RETOURNE = En cours de retour, produit encore avec livreur
     const ordersInDelivery = await prisma.order.findMany({
       where: {
-        status: 'ASSIGNEE',
+        status: { in: ['ASSIGNEE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'] },
         deliveryType: 'LOCAL',
-        productId: { not: null }
+        productId: { not: null },
+        delivererId: { not: null } // S'assurer qu'il y a bien un livreur assigné
       },
       include: {
         product: {
@@ -64,22 +69,23 @@ router.get('/local-reserve', authorize('ADMIN'), async (req, res) => {
           product: order.product,
           quantiteReelle: 0,
           quantiteEnregistree: order.product?.stockLocalReserve || 0,
-          commandes: [],
-          livreurs: new Set()
-        };
-      }
-      stockByProduct[productId].quantiteReelle += order.quantite;
-      stockByProduct[productId].commandes.push({
-        id: order.id,
-        orderReference: order.orderReference,
-        clientNom: order.clientNom,
-        clientTelephone: order.clientTelephone,
-        clientVille: order.clientVille,
-        quantite: order.quantite,
-        deliveryDate: order.deliveryDate,
-        deliveryList: order.deliveryList,
-        deliverer: order.deliverer
-      });
+      commandes: [],
+        livreurs: new Set()
+      };
+    }
+    stockByProduct[productId].quantiteReelle += order.quantite;
+    stockByProduct[productId].commandes.push({
+      id: order.id,
+      orderReference: order.orderReference,
+      clientNom: order.clientNom,
+      clientTelephone: order.clientTelephone,
+      clientVille: order.clientVille,
+      quantite: order.quantite,
+      status: order.status,
+      deliveryDate: order.deliveryDate,
+      deliveryList: order.deliveryList,
+      deliverer: order.deliverer
+    });
       if (delivererId) {
         stockByProduct[productId].livreurs.add(delivererId);
       }
@@ -89,20 +95,21 @@ router.get('/local-reserve', authorize('ADMIN'), async (req, res) => {
         if (!stockByDeliverer[delivererId]) {
           stockByDeliverer[delivererId] = {
             deliverer: order.deliverer,
-            totalQuantite: 0,
-            produits: {},
-            commandes: []
-          };
-        }
-        stockByDeliverer[delivererId].totalQuantite += order.quantite;
-        stockByDeliverer[delivererId].commandes.push({
-          id: order.id,
-          orderReference: order.orderReference,
-          clientNom: order.clientNom,
-          produitNom: order.product?.nom,
-          quantite: order.quantite,
-          deliveryDate: order.deliveryDate
-        });
+        totalQuantite: 0,
+        produits: {},
+        commandes: []
+      };
+    }
+    stockByDeliverer[delivererId].totalQuantite += order.quantite;
+    stockByDeliverer[delivererId].commandes.push({
+      id: order.id,
+      orderReference: order.orderReference,
+      clientNom: order.clientNom,
+      produitNom: order.product?.nom,
+      quantite: order.quantite,
+      status: order.status,
+      deliveryDate: order.deliveryDate
+    });
 
         if (!stockByDeliverer[delivererId].produits[productId]) {
           stockByDeliverer[delivererId].produits[productId] = {
@@ -167,12 +174,14 @@ router.post('/recalculate-local-reserve', authorize('ADMIN'), async (req, res) =
   try {
     console.log('🔄 Début du recalcul du stock local réservé...');
     
-    // 1. Récupérer toutes les commandes ASSIGNEE LOCAL avec détails
+    // 1. Récupérer toutes les commandes physiquement avec les livreurs (pas encore livrées)
+    // Inclut: ASSIGNEE, REFUSEE, ANNULEE_LIVRAISON, RETOURNE
     const ordersInDelivery = await prisma.order.findMany({
       where: {
-        status: 'ASSIGNEE',
+        status: { in: ['ASSIGNEE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'] },
         deliveryType: 'LOCAL',
-        productId: { not: null }
+        productId: { not: null },
+        delivererId: { not: null }
       },
       include: {
         product: {
@@ -191,7 +200,7 @@ router.post('/recalculate-local-reserve', authorize('ADMIN'), async (req, res) =
       }
     });
 
-    console.log(`📦 ${ordersInDelivery.length} commandes ASSIGNEE LOCAL trouvées`);
+    console.log(`📦 ${ordersInDelivery.length} commandes avec livreurs trouvées (ASSIGNEE, REFUSEE, ANNULEE_LIVRAISON, RETOURNE)`);
 
     // 2. Calculer le stock réel en livraison par produit
     const stockByProduct = {};

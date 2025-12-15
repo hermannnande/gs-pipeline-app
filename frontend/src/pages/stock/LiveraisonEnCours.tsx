@@ -1,9 +1,33 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Package, Truck, AlertCircle, RefreshCw, ChevronDown, ChevronUp, User, Calendar } from 'lucide-react';
+import { Package, Truck, AlertCircle, RefreshCw, ChevronDown, ChevronUp, User, Calendar, Clock, XCircle, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/utils/statusHelpers';
+
+// Helper pour afficher le badge de statut
+const getStatusBadge = (status: string) => {
+  switch (status) {
+    case 'ASSIGNEE':
+      return <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium flex items-center gap-1">
+        <Clock size={12} /> En livraison
+      </span>;
+    case 'REFUSEE':
+      return <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium flex items-center gap-1">
+        <XCircle size={12} /> Refusé
+      </span>;
+    case 'ANNULEE_LIVRAISON':
+      return <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium flex items-center gap-1">
+        <XCircle size={12} /> Annulé
+      </span>;
+    case 'RETOURNE':
+      return <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium flex items-center gap-1">
+        <RotateCcw size={12} /> Retourné
+      </span>;
+    default:
+      return <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">{status}</span>;
+  }
+};
 
 type DateFilter = 'today' | 'week' | 'month' | 'all';
 
@@ -304,8 +328,9 @@ export default function LiveraisonEnCours() {
               {dateFilter !== 'all' ? (
                 <p>Essayez de changer le filtre de date vers "Tout"</p>
               ) : (
-                <div className="space-y-2">
-                  <p>Aucune commande avec statut <span className="font-mono bg-gray-200 px-2 py-1 rounded">ASSIGNEE</span> et type <span className="font-mono bg-gray-200 px-2 py-1 rounded">LOCAL</span> trouvée.</p>
+              <div className="space-y-2">
+                <p>Aucune commande physiquement avec les livreurs trouvée.</p>
+                <p className="text-xs">Statuts recherchés : ASSIGNEE, REFUSEE, ANNULEE_LIVRAISON, RETOURNE (type LOCAL)</p>
                   <p className="text-xs text-gray-500">
                     Cliquez sur "Recalculer" pour synchroniser avec les commandes actuelles.
                   </p>
@@ -387,7 +412,10 @@ export default function LiveraisonEnCours() {
                             className="p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-blue-300 transition-colors"
                           >
                             <div className="flex items-center justify-between mb-2">
-                              <span className="font-semibold text-primary-600">{commande.orderReference}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-primary-600">{commande.orderReference}</span>
+                                {getStatusBadge(commande.status)}
+                              </div>
                               <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-bold">
                                 ×{commande.quantite}
                               </span>
@@ -482,7 +510,10 @@ export default function LiveraisonEnCours() {
                           className="p-3 bg-gray-50 rounded border border-gray-200"
                         >
                           <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium text-primary-600">{commande.orderReference}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-primary-600">{commande.orderReference}</span>
+                              {commande.status && getStatusBadge(commande.status)}
+                            </div>
                             <span className="text-sm font-bold text-gray-900">×{commande.quantite}</span>
                           </div>
                           <div className="text-sm text-gray-600 space-y-1">
@@ -518,10 +549,9 @@ export default function LiveraisonEnCours() {
           <div className="text-sm text-blue-900">
             <p className="font-medium mb-1">ℹ️ Informations</p>
             <ul className="list-disc list-inside space-y-1 text-blue-800">
-              <li>Les données affichées sont basées sur les commandes au statut "ASSIGNEE" (en LOCAL)</li>
-              <li>Le stock en livraison est automatiquement mis à jour lors des assignations</li>
-              <li>Utilisez "Recalculer" pour synchroniser si des écarts apparaissent</li>
-              <li>Les retours de colis sont automatiquement remis en stock principal</li>
+              <li>Affiche TOUS les produits physiquement avec les livreurs (pas encore livrés)</li>
+              <li>Inclut: En livraison (ASSIGNEE), Refusé (REFUSEE), Annulé (ANNULEE_LIVRAISON), Retourné (RETOURNE)</li>
+              <li>Utilisez "Recalculer" pour synchroniser avec les commandes actuelles</li>
               <li>Les commandes livrées sont automatiquement retirées du stock en livraison</li>
             </ul>
           </div>
