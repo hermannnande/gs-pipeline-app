@@ -69,23 +69,23 @@ router.get('/local-reserve', authorize('ADMIN'), async (req, res) => {
           product: order.product,
           quantiteReelle: 0,
           quantiteEnregistree: order.product?.stockLocalReserve || 0,
-      commandes: [],
-        livreurs: new Set()
-      };
-    }
-    stockByProduct[productId].quantiteReelle += order.quantite;
-    stockByProduct[productId].commandes.push({
-      id: order.id,
-      orderReference: order.orderReference,
-      clientNom: order.clientNom,
-      clientTelephone: order.clientTelephone,
-      clientVille: order.clientVille,
-      quantite: order.quantite,
-      status: order.status,
-      deliveryDate: order.deliveryDate,
-      deliveryList: order.deliveryList,
-      deliverer: order.deliverer
-    });
+          commandes: [],
+          livreurs: new Set()
+        };
+      }
+      stockByProduct[productId].quantiteReelle += order.quantite;
+      stockByProduct[productId].commandes.push({
+        id: order.id,
+        orderReference: order.orderReference,
+        clientNom: order.clientNom,
+        clientTelephone: order.clientTelephone,
+        clientVille: order.clientVille,
+        quantite: order.quantite,
+        status: order.status,
+        deliveryDate: order.deliveryDate,
+        deliveryList: order.deliveryList,
+        deliverer: order.deliverer
+      });
       if (delivererId) {
         stockByProduct[productId].livreurs.add(delivererId);
       }
@@ -95,21 +95,21 @@ router.get('/local-reserve', authorize('ADMIN'), async (req, res) => {
         if (!stockByDeliverer[delivererId]) {
           stockByDeliverer[delivererId] = {
             deliverer: order.deliverer,
-        totalQuantite: 0,
-        produits: {},
-        commandes: []
-      };
-    }
-    stockByDeliverer[delivererId].totalQuantite += order.quantite;
-    stockByDeliverer[delivererId].commandes.push({
-      id: order.id,
-      orderReference: order.orderReference,
-      clientNom: order.clientNom,
-      produitNom: order.product?.nom,
-      quantite: order.quantite,
-      status: order.status,
-      deliveryDate: order.deliveryDate
-    });
+            totalQuantite: 0,
+            produits: {},
+            commandes: []
+          };
+        }
+        stockByDeliverer[delivererId].totalQuantite += order.quantite;
+        stockByDeliverer[delivererId].commandes.push({
+          id: order.id,
+          orderReference: order.orderReference,
+          clientNom: order.clientNom,
+          produitNom: order.product?.nom,
+          quantite: order.quantite,
+          status: order.status,
+          deliveryDate: order.deliveryDate
+        });
 
         if (!stockByDeliverer[delivererId].produits[productId]) {
           stockByDeliverer[delivererId].produits[productId] = {
