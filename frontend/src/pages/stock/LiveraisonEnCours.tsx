@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Package, Truck, AlertCircle, RefreshCw, ChevronDown, ChevronUp, User } from 'lucide-react';
+import { Package, Truck, AlertCircle, RefreshCw, ChevronDown, ChevronUp, User, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/utils/statusHelpers';
 
+type DateFilter = 'today' | 'week' | 'month' | 'all';
+
 export default function LiveraisonEnCours() {
   const [expandedProduct, setExpandedProduct] = useState<number | null>(null);
   const [expandedDeliverer, setExpandedDeliverer] = useState<number | null>(null);
+  const [dateFilter, setDateFilter] = useState<DateFilter>('all');
   const queryClient = useQueryClient();
 
   // Récupérer l'analyse complète
@@ -40,10 +43,59 @@ export default function LiveraisonEnCours() {
     },
   });
 
+  // Filtrer les données par date
+  const filterByDate = (items: any[]) => {
+    if (dateFilter === 'all') return items;
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const monthAgo = new Date(today);
+    monthAgo.setMonth(monthAgo.getMonth() - 1);
+
+    return items.map(item => {
+      const filteredCommandes = item.commandes.filter((cmd: any) => {
+        const cmdDate = cmd.deliveryDate ? new Date(cmd.deliveryDate) : new Date();
+        
+        switch (dateFilter) {
+          case 'today':
+            return cmdDate >= today;
+          case 'week':
+            return cmdDate >= weekAgo;
+          case 'month':
+            return cmdDate >= monthAgo;
+          default:
+            return true;
+        }
+      });
+
+      if (filteredCommandes.length === 0) return null;
+
+      // Recalculer les quantités
+      const quantite = filteredCommandes.reduce((sum: number, cmd: any) => sum + cmd.quantite, 0);
+
+      return {
+        ...item,
+        commandes: filteredCommandes,
+        quantiteReelle: quantite,
+        totalQuantite: quantite
+      };
+    }).filter(Boolean);
+  };
+
   const summary = analysisData?.summary || {};
-  const parProduit = analysisData?.parProduit || [];
-  const parLivreur = analysisData?.parLivreur || [];
+  const parProduit = filterByDate(analysisData?.parProduit || []);
+  const parLivreur = filterByDate(analysisData?.parLivreur || []);
   const ecarts = analysisData?.ecarts || [];
+
+  // Recalculer les stats basées sur le filtre
+  const filteredSummary = {
+    totalCommandes: parProduit.reduce((sum, p) => sum + p.commandes.length, 0),
+    totalQuantite: parProduit.reduce((sum, p) => sum + p.quantiteReelle, 0),
+    totalProduitsConcernes: parProduit.length,
+    totalLivreurs: parLivreur.length,
+  };
 
   const toggleProduct = (productId: number) => {
     setExpandedProduct(expandedProduct === productId ? null : productId);
@@ -90,6 +142,56 @@ export default function LiveraisonEnCours() {
         </div>
       </div>
 
+      {/* Filtres par date */}
+      <div className="card">
+        <div className="flex items-center gap-3 mb-3">
+          <Calendar size={20} className="text-primary-600" />
+          <h3 className="font-semibold text-gray-900">Filtrer par période</h3>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setDateFilter('today')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              dateFilter === 'today'
+                ? 'bg-primary-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Aujourd'hui
+          </button>
+          <button
+            onClick={() => setDateFilter('week')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              dateFilter === 'week'
+                ? 'bg-primary-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Cette semaine
+          </button>
+          <button
+            onClick={() => setDateFilter('month')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              dateFilter === 'month'
+                ? 'bg-primary-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Ce mois
+          </button>
+          <button
+            onClick={() => setDateFilter('all')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              dateFilter === 'all'
+                ? 'bg-primary-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Tout
+          </button>
+        </div>
+      </div>
+
       {/* Statistiques globales */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="card bg-blue-50 border-blue-200">
@@ -97,7 +199,7 @@ export default function LiveraisonEnCours() {
             <Package className="text-blue-600" size={32} />
             <div>
               <p className="text-sm text-gray-600">Commandes en livraison</p>
-              <p className="text-2xl font-bold text-blue-600">{summary.totalCommandes || 0}</p>
+              <p className="text-2xl font-bold text-blue-600">{filteredSummary.totalCommandes}</p>
             </div>
           </div>
         </div>
@@ -107,7 +209,7 @@ export default function LiveraisonEnCours() {
             <Package className="text-green-600" size={32} />
             <div>
               <p className="text-sm text-gray-600">Quantité totale</p>
-              <p className="text-2xl font-bold text-green-600">{summary.totalQuantite || 0}</p>
+              <p className="text-2xl font-bold text-green-600">{filteredSummary.totalQuantite}</p>
             </div>
           </div>
         </div>
@@ -117,7 +219,7 @@ export default function LiveraisonEnCours() {
             <Truck className="text-purple-600" size={32} />
             <div>
               <p className="text-sm text-gray-600">Livreurs actifs</p>
-              <p className="text-2xl font-bold text-purple-600">{summary.totalLivreurs || 0}</p>
+              <p className="text-2xl font-bold text-purple-600">{filteredSummary.totalLivreurs}</p>
             </div>
           </div>
         </div>
@@ -127,7 +229,7 @@ export default function LiveraisonEnCours() {
             <AlertCircle className="text-amber-600" size={32} />
             <div>
               <p className="text-sm text-gray-600">Produits concernés</p>
-              <p className="text-2xl font-bold text-amber-600">{summary.totalProduitsConcernes || 0}</p>
+              <p className="text-2xl font-bold text-amber-600">{filteredSummary.totalProduitsConcernes}</p>
             </div>
           </div>
         </div>
@@ -144,6 +246,7 @@ export default function LiveraisonEnCours() {
               </h3>
               <p className="text-sm text-red-700 mb-3">
                 Les quantités enregistrées ne correspondent pas aux commandes en cours.
+                Cliquez sur "Corriger les écarts" pour synchroniser automatiquement.
               </p>
               <div className="space-y-2">
                 {ecarts.map((ecart, idx) => (
@@ -179,6 +282,126 @@ export default function LiveraisonEnCours() {
         </div>
       )}
 
+      {/* Stock par livreur - EN PREMIER pour voir qui a quoi */}
+      <div className="card">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <Truck size={24} className="text-primary-600" />
+          Produits chez chaque livreur
+        </h2>
+
+        {parLivreur.length === 0 ? (
+          <div className="text-center py-8">
+            <Truck size={48} className="mx-auto text-gray-300 mb-3" />
+            <p className="text-gray-500">Aucun livreur en cours de tournée</p>
+            <p className="text-sm text-gray-400 mt-1">
+              {dateFilter !== 'all' && 'Essayez de changer le filtre de date'}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {parLivreur.map((item: any) => (
+              <div
+                key={item.deliverer.id}
+                className="border rounded-lg overflow-hidden hover:border-primary-300 transition-colors"
+              >
+                <div
+                  className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 cursor-pointer flex items-center justify-between"
+                  onClick={() => toggleDeliverer(item.deliverer.id)}
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <User className="text-primary-600" size={24} />
+                      <div>
+                        <h3 className="font-bold text-gray-900 text-lg">
+                          {item.deliverer.prenom} {item.deliverer.nom}
+                        </h3>
+                        <p className="text-sm text-gray-600">{item.deliverer.telephone}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 mt-3 text-sm">
+                      <span className="bg-white px-3 py-1 rounded-full border border-blue-200">
+                        📦 <span className="font-bold text-blue-600">{item.totalQuantite}</span> produits
+                      </span>
+                      <span className="bg-white px-3 py-1 rounded-full border border-green-200">
+                        📋 <span className="font-bold text-green-600">{item.commandes.length}</span> commandes
+                      </span>
+                      <span className="bg-white px-3 py-1 rounded-full border border-purple-200">
+                        🏷️ <span className="font-bold text-purple-600">{Object.keys(item.produits).length}</span> types
+                      </span>
+                    </div>
+                  </div>
+                  {expandedDeliverer === item.deliverer.id ? (
+                    <ChevronUp className="text-gray-400" size={24} />
+                  ) : (
+                    <ChevronDown className="text-gray-400" size={24} />
+                  )}
+                </div>
+
+                {expandedDeliverer === item.deliverer.id && (
+                  <div className="p-4 bg-white border-t">
+                    {/* Résumé par produit */}
+                    <div className="mb-4">
+                      <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <Package size={18} />
+                        Produits en possession
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {Object.values(item.produits).map((produit: any, idx: number) => (
+                          <div
+                            key={idx}
+                            className="p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200"
+                          >
+                            <p className="font-semibold text-gray-900 mb-1">{produit.nom}</p>
+                            <p className="text-2xl font-bold text-blue-600">×{produit.quantite}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Liste des commandes */}
+                    <div>
+                      <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <Package size={18} />
+                        Détail des commandes ({item.commandes.length})
+                      </h4>
+                      <div className="space-y-2">
+                        {item.commandes.map((commande: any) => (
+                          <div
+                            key={commande.id}
+                            className="p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-blue-300 transition-colors"
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-semibold text-primary-600">{commande.orderReference}</span>
+                              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-bold">
+                                ×{commande.quantite}
+                              </span>
+                            </div>
+                            <div className="text-sm text-gray-600 space-y-1">
+                              <p className="font-medium">📦 {commande.produitNom}</p>
+                              <p>👤 {commande.clientNom}</p>
+                              {commande.deliveryDate && (
+                                <p className="text-gray-500">
+                                  📅 {new Date(commande.deliveryDate).toLocaleDateString('fr-FR', {
+                                    weekday: 'long',
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                  })}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Stock par produit */}
       <div className="card">
         <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -187,7 +410,13 @@ export default function LiveraisonEnCours() {
         </h2>
 
         {parProduit.length === 0 ? (
-          <p className="text-center text-gray-500 py-8">Aucune commande en cours de livraison</p>
+          <div className="text-center py-8">
+            <Package size={48} className="mx-auto text-gray-300 mb-3" />
+            <p className="text-gray-500">Aucune commande en cours de livraison</p>
+            <p className="text-sm text-gray-400 mt-1">
+              {dateFilter !== 'all' && 'Essayez de changer le filtre de date'}
+            </p>
+          </div>
         ) : (
           <div className="space-y-3">
             {parProduit.map((item: any) => (
@@ -202,7 +431,9 @@ export default function LiveraisonEnCours() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
                       <h3 className="font-semibold text-gray-900">{item.product.nom}</h3>
-                      <span className="text-sm text-gray-500">({item.product.code})</span>
+                      <span className="text-sm text-gray-500 bg-gray-200 px-2 py-1 rounded">
+                        {item.product.code}
+                      </span>
                     </div>
                     <div className="flex items-center gap-4 mt-2 text-sm">
                       <span className="text-gray-600">
@@ -243,8 +474,8 @@ export default function LiveraisonEnCours() {
                             <p>📞 {commande.clientTelephone}</p>
                             <p>📍 {commande.clientVille}</p>
                             {commande.deliverer && (
-                              <p className="text-blue-600">
-                                🚚 {commande.deliverer.nom} {commande.deliverer.prenom}
+                              <p className="text-blue-600 font-medium">
+                                🚚 {commande.deliverer.prenom} {commande.deliverer.nom}
                               </p>
                             )}
                             {commande.deliveryDate && (
@@ -264,106 +495,6 @@ export default function LiveraisonEnCours() {
         )}
       </div>
 
-      {/* Stock par livreur */}
-      <div className="card">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <Truck size={24} className="text-primary-600" />
-          Stock par livreur
-        </h2>
-
-        {parLivreur.length === 0 ? (
-          <p className="text-center text-gray-500 py-8">Aucun livreur en cours de tournée</p>
-        ) : (
-          <div className="space-y-3">
-            {parLivreur.map((item: any) => (
-              <div
-                key={item.deliverer.id}
-                className="border rounded-lg overflow-hidden hover:border-primary-300 transition-colors"
-              >
-                <div
-                  className="p-4 bg-gray-50 cursor-pointer flex items-center justify-between"
-                  onClick={() => toggleDeliverer(item.deliverer.id)}
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <User className="text-primary-600" size={20} />
-                      <h3 className="font-semibold text-gray-900">
-                        {item.deliverer.nom} {item.deliverer.prenom}
-                      </h3>
-                    </div>
-                    <div className="flex items-center gap-4 mt-2 text-sm">
-                      <span className="text-gray-600">
-                        Quantité totale: <span className="font-bold text-blue-600">{item.totalQuantite}</span>
-                      </span>
-                      <span className="text-gray-600">
-                        Commandes: <span className="font-medium">{item.commandes.length}</span>
-                      </span>
-                      <span className="text-gray-600">
-                        Produits: <span className="font-medium">{Object.keys(item.produits).length}</span>
-                      </span>
-                    </div>
-                  </div>
-                  {expandedDeliverer === item.deliverer.id ? (
-                    <ChevronUp className="text-gray-400" />
-                  ) : (
-                    <ChevronDown className="text-gray-400" />
-                  )}
-                </div>
-
-                {expandedDeliverer === item.deliverer.id && (
-                  <div className="p-4 bg-white border-t">
-                    {/* Résumé par produit */}
-                    <div className="mb-4">
-                      <h4 className="font-medium text-gray-700 mb-3">Produits</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        {Object.values(item.produits).map((produit: any, idx: number) => (
-                          <div
-                            key={idx}
-                            className="p-2 bg-blue-50 rounded border border-blue-200 text-sm"
-                          >
-                            <p className="font-medium text-gray-900">{produit.nom}</p>
-                            <p className="text-blue-600 font-bold">×{produit.quantite}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Liste des commandes */}
-                    <div>
-                      <h4 className="font-medium text-gray-700 mb-3">
-                        Commandes ({item.commandes.length})
-                      </h4>
-                      <div className="space-y-2">
-                        {item.commandes.map((commande: any) => (
-                          <div
-                            key={commande.id}
-                            className="p-3 bg-gray-50 rounded border border-gray-200"
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-medium text-primary-600">{commande.orderReference}</span>
-                              <span className="text-sm font-bold text-gray-900">×{commande.quantite}</span>
-                            </div>
-                            <div className="text-sm text-gray-600 space-y-1">
-                              <p>📦 {commande.produitNom}</p>
-                              <p>👤 {commande.clientNom}</p>
-                              {commande.deliveryDate && (
-                                <p className="text-gray-500">
-                                  📅 {new Date(commande.deliveryDate).toLocaleDateString('fr-FR')}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
       {/* Informations */}
       <div className="card bg-blue-50 border-blue-200">
         <div className="flex items-start gap-3">
@@ -371,10 +502,11 @@ export default function LiveraisonEnCours() {
           <div className="text-sm text-blue-900">
             <p className="font-medium mb-1">ℹ️ Informations</p>
             <ul className="list-disc list-inside space-y-1 text-blue-800">
-              <li>Les données affichées sont basées sur les commandes au statut "ASSIGNEE"</li>
+              <li>Les données affichées sont basées sur les commandes au statut "ASSIGNEE" (en LOCAL)</li>
               <li>Le stock en livraison est automatiquement mis à jour lors des assignations</li>
-              <li>Utilisez "Recalculer" si vous constatez des écarts</li>
-              <li>Les retours de colis sont gérés automatiquement</li>
+              <li>Utilisez "Recalculer" pour synchroniser si des écarts apparaissent</li>
+              <li>Les retours de colis sont automatiquement remis en stock principal</li>
+              <li>Les commandes livrées sont automatiquement retirées du stock en livraison</li>
             </ul>
           </div>
         </div>
@@ -382,4 +514,3 @@ export default function LiveraisonEnCours() {
     </div>
   );
 }
-
