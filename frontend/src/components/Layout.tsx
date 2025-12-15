@@ -75,6 +75,7 @@ export default function Layout({ children }: LayoutProps) {
         return [
           { icon: LayoutDashboard, label: 'Dashboard', path: '/stock' },
           { icon: Truck, label: 'Tournées', path: '/stock/tournees' },
+          { icon: Package, label: '🚚 Livraisons en cours', path: '/stock/livraisons-en-cours' },
           { icon: Zap, label: 'Expéditions & EXPRESS', path: '/stock/expeditions' },
           { icon: TrendingUp, label: 'Listes de livraison', path: '/stock/deliveries' },
           { icon: Package, label: 'Produits', path: '/stock/products' },

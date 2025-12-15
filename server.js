@@ -11,6 +11,7 @@ import productRoutes from './routes/product.routes.js';
 import accountingRoutes from './routes/accounting.routes.js';
 import expressRoutes from './routes/express.routes.js';
 import stockRoutes from './routes/stock.routes.js';
+import stockAnalysisRoutes from './routes/stock.analysis.routes.js';
 import rdvRoutes from './routes/rdv.routes.js';
 import { scheduleCleanupJob } from './jobs/cleanupPhotos.js';
 
@@ -49,6 +50,7 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/webhook', webhookRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/stock', stockRoutes);
+app.use('/api/stock-analysis', stockAnalysisRoutes);
 app.use('/api/accounting', accountingRoutes);
 app.use('/api/express', expressRoutes);
 app.use('/api/rdv', rdvRoutes);
