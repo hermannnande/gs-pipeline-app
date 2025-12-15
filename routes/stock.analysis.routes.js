@@ -149,7 +149,7 @@ router.get('/local-reserve', authorize('ADMIN'), async (req, res) => {
     // 5. Préparer le résumé
     const summary = {
       totalCommandes: totalOrders,
-      totalQuantite,
+      totalQuantite: totalQuantity,
       totalProduitsConcernes: Object.keys(stockByProduct).length,
       totalLivreurs: Object.keys(stockByDeliverer).length,
       totalEcarts: ecarts.length,
