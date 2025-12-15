@@ -15,7 +15,7 @@ router.get('/local-reserve', authorize('ADMIN'), async (req, res) => {
     // REFUSEE = Refusé par client, produit encore avec livreur
     // ANNULEE_LIVRAISON = Annulé en livraison, produit encore avec livreur
     // RETOURNE = En cours de retour, produit encore avec livreur
-    const ordersInDelivery = await prisma.order.findMany({
+    const allOrders = await prisma.order.findMany({
       where: {
         status: { in: ['ASSIGNEE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'] },
         deliveryType: 'LOCAL',
@@ -44,7 +44,12 @@ router.get('/local-reserve', authorize('ADMIN'), async (req, res) => {
           select: {
             id: true,
             nom: true,
-            date: true
+            date: true,
+            tourneeStock: {
+              select: {
+                colisRetourConfirme: true
+              }
+            }
           }
         }
       },
@@ -53,7 +58,14 @@ router.get('/local-reserve', authorize('ADMIN'), async (req, res) => {
       }
     });
 
-    console.log(`📦 ${ordersInDelivery.length} commandes avec livreurs trouvées (ASSIGNEE, REFUSEE, ANNULEE_LIVRAISON, RETOURNE)`);
+    // Exclure les commandes dont la tournée est terminée (colisRetourConfirme = true)
+    const ordersInDelivery = allOrders.filter(order => {
+      const tourneeTerminee = order.deliveryList?.tourneeStock?.colisRetourConfirme;
+      return tourneeTerminee !== true; // Garder seulement si tournée pas terminée
+    });
+
+    console.log(`📦 ${allOrders.length} commandes trouvées avec statuts ASSIGNEE/REFUSEE/ANNULEE_LIVRAISON/RETOURNE`);
+    console.log(`✅ ${ordersInDelivery.length} commandes encore chez les livreurs (tournées non terminées)`);
 
     // 2. Calculer le stock réel en livraison par produit
     const stockByProduct = {};
@@ -178,7 +190,7 @@ router.post('/recalculate-local-reserve', authorize('ADMIN'), async (req, res) =
     
     // 1. Récupérer toutes les commandes physiquement avec les livreurs (pas encore livrées)
     // Inclut: ASSIGNEE, REFUSEE, ANNULEE_LIVRAISON, RETOURNE
-    const ordersInDelivery = await prisma.order.findMany({
+    const allOrders = await prisma.order.findMany({
       where: {
         status: { in: ['ASSIGNEE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'] },
         deliveryType: 'LOCAL',
@@ -198,11 +210,27 @@ router.post('/recalculate-local-reserve', authorize('ADMIN'), async (req, res) =
             nom: true,
             prenom: true
           }
+        },
+        deliveryList: {
+          select: {
+            tourneeStock: {
+              select: {
+                colisRetourConfirme: true
+              }
+            }
+          }
         }
       }
     });
 
-    console.log(`📦 ${ordersInDelivery.length} commandes avec livreurs trouvées (ASSIGNEE, REFUSEE, ANNULEE_LIVRAISON, RETOURNE)`);
+    // Exclure les commandes dont la tournée est terminée (colisRetourConfirme = true)
+    const ordersInDelivery = allOrders.filter(order => {
+      const tourneeTerminee = order.deliveryList?.tourneeStock?.colisRetourConfirme;
+      return tourneeTerminee !== true;
+    });
+
+    console.log(`📦 ${allOrders.length} commandes trouvées avec statuts ASSIGNEE/REFUSEE/ANNULEE_LIVRAISON/RETOURNE`);
+    console.log(`✅ ${ordersInDelivery.length} commandes encore chez les livreurs (tournées non terminées)`);
 
     // 2. Calculer le stock réel en livraison par produit
     const stockByProduct = {};
