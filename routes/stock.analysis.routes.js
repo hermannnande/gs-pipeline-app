@@ -17,16 +17,15 @@ router.get('/local-reserve', authorize('ADMIN'), async (req, res) => {
     // RETOURNE = En cours de retour, produit encore avec livreur
     const ordersInDelivery = await prisma.order.findMany({
       where: {
+        // Toute commande encore physiquement chez le livreur (non livrée, non remise confirmée)
         status: { in: ['ASSIGNEE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'] },
         deliveryType: 'LOCAL',
         productId: { not: null },
-        delivererId: { not: null }, // S'assurer qu'il y a bien un livreur assigné
+        delivererId: { not: null }, // doit être affectée à un livreur
+        // Exclure uniquement les colis dont le retour en stock a déjà été confirmé
         OR: [
-          // Non confirmés comme remis
           { deliveryList: { tourneeStock: { colisRemisConfirme: false } } },
-          // Pas encore confirmés / pas de tournée associée
           { deliveryList: { tourneeStock: null } },
-          // Pas de deliveryList (cas anciens)
           { deliveryList: null }
         ]
       },
@@ -191,6 +190,7 @@ router.post('/recalculate-local-reserve', authorize('ADMIN'), async (req, res) =
     // Inclut: ASSIGNEE, REFUSEE, ANNULEE_LIVRAISON, RETOURNE
     const ordersInDelivery = await prisma.order.findMany({
       where: {
+        // Physiquement chez le livreur (non livré, non remis confirmé)
         status: { in: ['ASSIGNEE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'] },
         deliveryType: 'LOCAL',
         productId: { not: null },
