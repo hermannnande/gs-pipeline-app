@@ -52,21 +52,25 @@ export default function LiveraisonEnCours() {
       const { data } = await api.post('/stock-analysis/recalculate-local-reserve');
       return data;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['stock-analysis-local'] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      
+    onSuccess: async (data) => {
       console.log('📊 Résultat recalcul:', data);
       
+      // Invalider et attendre le rechargement des données
+      await queryClient.invalidateQueries({ queryKey: ['stock-analysis-local'] });
+      await queryClient.invalidateQueries({ queryKey: ['products'] });
+      
+      // Forcer un refetch immédiat
+      await refetch();
+      
       if (data.totalCommandesAnalysees === 0) {
-        toast('Aucune commande ASSIGNEE en livraison LOCAL trouvée', {
+        toast('Aucune commande avec livreur trouvée', {
           icon: 'ℹ️',
           duration: 5000
         });
       } else if (data.totalCorrections === 0) {
         toast.success(`${data.totalCommandesAnalysees} commande(s) analysée(s) - Aucune correction nécessaire`);
       } else {
-        toast.success(`${data.totalCorrections} correction(s) effectuée(s) sur ${data.totalCommandesAnalysees} commande(s)`);
+        toast.success(`${data.totalCorrections} correction(s) effectuée(s) sur ${data.totalCommandesAnalysees} commande(s) - Page actualisée !`);
       }
     },
     onError: (error: any) => {
