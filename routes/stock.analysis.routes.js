@@ -15,19 +15,12 @@ router.get('/local-reserve', authorize('ADMIN'), async (req, res) => {
     // REFUSEE = Refusé par client, produit encore avec livreur
     // ANNULEE_LIVRAISON = Annulé en livraison, produit encore avec livreur
     // RETOURNE = En cours de retour, produit encore avec livreur
-    const ordersInDelivery = await prisma.order.findMany({
+    const allOrdersWithDeliverers = await prisma.order.findMany({
       where: {
-        // Toute commande encore physiquement chez le livreur (non livrée, non remise confirmée)
         status: { in: ['ASSIGNEE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'] },
         deliveryType: 'LOCAL',
         productId: { not: null },
-        delivererId: { not: null }, // doit être affectée à un livreur
-        // Exclure uniquement les colis dont le retour en stock a déjà été confirmé
-        OR: [
-          { deliveryList: { tourneeStock: { colisRemisConfirme: false } } },
-          { deliveryList: { tourneeStock: null } },
-          { deliveryList: null }
-        ]
+        delivererId: { not: null }
       },
       include: {
         product: {
@@ -64,6 +57,19 @@ router.get('/local-reserve', authorize('ADMIN'), async (req, res) => {
         deliveryDate: 'desc'
       }
     });
+
+    // Filtrer pour exclure uniquement les colis déjà remis et confirmés
+    const ordersInDelivery = allOrdersWithDeliverers.filter(order => {
+      // Garder la commande si :
+      // - Pas de deliveryList (commande pas encore en tournée)
+      // - Pas de tourneeStock (tournée pas encore confirmée)
+      // - tourneeStock existe mais colisRemisConfirme est false/null
+      const colisRemisConfirme = order.deliveryList?.tourneeStock?.colisRemisConfirme;
+      return colisRemisConfirme !== true;
+    });
+
+    console.log(`📦 ${allOrdersWithDeliverers.length} commandes avec livreurs trouvées`);
+    console.log(`✅ ${ordersInDelivery.length} commandes encore chez les livreurs (après exclusion des colis remis confirmés)`);
 
     // 2. Calculer le stock réel en livraison par produit
     const stockByProduct = {};
@@ -188,18 +194,12 @@ router.post('/recalculate-local-reserve', authorize('ADMIN'), async (req, res) =
     
     // 1. Récupérer toutes les commandes physiquement avec les livreurs (pas encore livrées)
     // Inclut: ASSIGNEE, REFUSEE, ANNULEE_LIVRAISON, RETOURNE
-    const ordersInDelivery = await prisma.order.findMany({
+    const allOrdersWithDeliverers = await prisma.order.findMany({
       where: {
-        // Physiquement chez le livreur (non livré, non remis confirmé)
         status: { in: ['ASSIGNEE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'] },
         deliveryType: 'LOCAL',
         productId: { not: null },
-        delivererId: { not: null },
-        OR: [
-          { deliveryList: { tourneeStock: { colisRemisConfirme: false } } },
-          { deliveryList: { tourneeStock: null } },
-          { deliveryList: null }
-        ]
+        delivererId: { not: null }
       },
       include: {
         product: {
@@ -227,7 +227,14 @@ router.post('/recalculate-local-reserve', authorize('ADMIN'), async (req, res) =
       }
     });
 
-    console.log(`📦 ${ordersInDelivery.length} commandes avec livreurs trouvées (ASSIGNEE, REFUSEE, ANNULEE_LIVRAISON, RETOURNE)`);
+    // Filtrer pour exclure uniquement les colis déjà remis et confirmés
+    const ordersInDelivery = allOrdersWithDeliverers.filter(order => {
+      const colisRemisConfirme = order.deliveryList?.tourneeStock?.colisRemisConfirme;
+      return colisRemisConfirme !== true;
+    });
+
+    console.log(`📦 ${allOrdersWithDeliverers.length} commandes avec livreurs trouvées (ASSIGNEE, REFUSEE, ANNULEE_LIVRAISON, RETOURNE)`);
+    console.log(`✅ ${ordersInDelivery.length} commandes encore chez les livreurs (après exclusion des colis remis confirmés)`);
 
     // 2. Calculer le stock réel en livraison par produit
     const stockByProduct = {};
