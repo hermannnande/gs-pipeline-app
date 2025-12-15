@@ -21,14 +21,14 @@ router.get('/local-reserve', authorize('ADMIN'), async (req, res) => {
         deliveryType: 'LOCAL',
         productId: { not: null },
         delivererId: { not: null }, // S'assurer qu'il y a bien un livreur assigné
-        NOT: {
-          // Exclure les colis dont le retour a déjà été confirmé par le gestionnaire de stock
-          deliveryList: {
-            tourneeStock: {
-              colisRemisConfirme: true
-            }
-          }
-        }
+        OR: [
+          // Non confirmés comme remis
+          { deliveryList: { tourneeStock: { colisRemisConfirme: false } } },
+          // Pas encore confirmés / pas de tournée associée
+          { deliveryList: { tourneeStock: null } },
+          // Pas de deliveryList (cas anciens)
+          { deliveryList: null }
+        ]
       },
       include: {
         product: {
@@ -195,13 +195,11 @@ router.post('/recalculate-local-reserve', authorize('ADMIN'), async (req, res) =
         deliveryType: 'LOCAL',
         productId: { not: null },
         delivererId: { not: null },
-        NOT: {
-          deliveryList: {
-            tourneeStock: {
-              colisRemisConfirme: true
-            }
-          }
-        }
+        OR: [
+          { deliveryList: { tourneeStock: { colisRemisConfirme: false } } },
+          { deliveryList: { tourneeStock: null } },
+          { deliveryList: null }
+        ]
       },
       include: {
         product: {
