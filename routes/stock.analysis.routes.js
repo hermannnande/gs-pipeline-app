@@ -20,7 +20,15 @@ router.get('/local-reserve', authorize('ADMIN'), async (req, res) => {
         status: { in: ['ASSIGNEE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'] },
         deliveryType: 'LOCAL',
         productId: { not: null },
-        delivererId: { not: null } // S'assurer qu'il y a bien un livreur assigné
+        delivererId: { not: null }, // S'assurer qu'il y a bien un livreur assigné
+        NOT: {
+          // Exclure les colis dont le retour a déjà été confirmé par le gestionnaire de stock
+          deliveryList: {
+            tourneeStock: {
+              colisRemisConfirme: true
+            }
+          }
+        }
       },
       include: {
         product: {
@@ -44,7 +52,12 @@ router.get('/local-reserve', authorize('ADMIN'), async (req, res) => {
           select: {
             id: true,
             nom: true,
-            date: true
+            date: true,
+            tourneeStock: {
+              select: {
+                colisRemisConfirme: true
+              }
+            }
           }
         }
       },
@@ -181,7 +194,14 @@ router.post('/recalculate-local-reserve', authorize('ADMIN'), async (req, res) =
         status: { in: ['ASSIGNEE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'] },
         deliveryType: 'LOCAL',
         productId: { not: null },
-        delivererId: { not: null }
+        delivererId: { not: null },
+        NOT: {
+          deliveryList: {
+            tourneeStock: {
+              colisRemisConfirme: true
+            }
+          }
+        }
       },
       include: {
         product: {
@@ -195,6 +215,15 @@ router.post('/recalculate-local-reserve', authorize('ADMIN'), async (req, res) =
           select: {
             nom: true,
             prenom: true
+          }
+        },
+        deliveryList: {
+          select: {
+            tourneeStock: {
+              select: {
+                colisRemisConfirme: true
+              }
+            }
           }
         }
       }
