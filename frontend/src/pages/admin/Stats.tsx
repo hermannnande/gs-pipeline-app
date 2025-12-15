@@ -461,17 +461,17 @@ export default function Stats() {
             {/* Totaux */}
             <div className="mt-4 pt-4 border-t border-gray-200">
               <div className="flex flex-wrap justify-between gap-4 text-sm">
-                <div className="font-medium text-gray-700">
-                  Totaux: {totalAppels} appels
-                </div>
+              <div className="font-medium text-gray-700">
+                Totaux: {totalAppels} appels
+              </div>
                 <div className="flex flex-wrap gap-4 text-gray-600">
-                  <span className="text-green-600 font-medium">{totalValides} validées</span>
+                <span className="text-green-600 font-medium">{totalValides} validées</span>
                   <span className="text-gray-300">•</span>
                   <span className="text-blue-600 font-medium">📦 {totalExpeditions} expéditions</span>
                   <span className="text-gray-300">•</span>
                   <span className="text-amber-600 font-medium">⚡ {totalExpress} express</span>
                   <span className="text-gray-300">•</span>
-                  <span className="font-medium">Taux moyen: {avgTauxValidation}%</span>
+                <span className="font-medium">Taux moyen: {avgTauxValidation}%</span>
                 </div>
               </div>
             </div>

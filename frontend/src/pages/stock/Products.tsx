@@ -225,15 +225,21 @@ export default function Products() {
       </div>
 
       {/* Statistiques */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="card">
           <p className="text-sm text-gray-600">Total produits</p>
           <p className="text-2xl font-bold text-primary-600">{filteredProducts.length}</p>
         </div>
         <div className="card">
-          <p className="text-sm text-gray-600">Stock total</p>
+          <p className="text-sm text-gray-600">Stock disponible</p>
           <p className="text-2xl font-bold text-green-600">
             {filteredProducts.reduce((sum: number, p: any) => sum + p.stockActuel, 0)}
+          </p>
+        </div>
+        <div className="card">
+          <p className="text-sm text-gray-600">🚚 En livraison</p>
+          <p className="text-2xl font-bold text-blue-600">
+            {filteredProducts.reduce((sum: number, p: any) => sum + (p.stockLocalReserve || 0), 0)}
           </p>
         </div>
         <div className="card">
@@ -336,12 +342,40 @@ export default function Products() {
                       </p>
                     </div>
                     
+                    {/* Stock LOCAL réservé - En livraison avec livreurs */}
+                    <div className={`mt-2 p-2 rounded-md ${
+                      (product.stockLocalReserve || 0) > 0 
+                        ? 'bg-blue-50 border border-blue-200' 
+                        : 'bg-gray-50 border border-gray-200'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <span className={`text-xs flex items-center gap-1 ${
+                          (product.stockLocalReserve || 0) > 0 ? 'text-blue-700' : 'text-gray-600'
+                        }`}>
+                          🚚 Stock en livraison
+                        </span>
+                        <span className={`text-sm font-bold ${
+                          (product.stockLocalReserve || 0) > 0 ? 'text-blue-900' : 'text-gray-500'
+                        }`}>
+                          {product.stockLocalReserve || 0}
+                        </span>
+                      </div>
+                      <p className={`text-xs mt-1 ${
+                        (product.stockLocalReserve || 0) > 0 ? 'text-blue-600' : 'text-gray-500'
+                      }`}>
+                        {(product.stockLocalReserve || 0) > 0 
+                          ? 'Stock sorti avec les livreurs'
+                          : 'Aucune commande en livraison'
+                        }
+                      </p>
+                    </div>
+                    
                     {/* Stock total */}
                     <div className="mt-2 pt-2 border-t border-gray-200">
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-gray-600 font-medium">📊 Stock total (physique)</span>
                         <span className="text-sm font-bold text-primary-600">
-                          {product.stockActuel + (product.stockExpress || 0)}
+                          {product.stockActuel + (product.stockExpress || 0) + (product.stockLocalReserve || 0)}
                         </span>
                       </div>
                     </div>

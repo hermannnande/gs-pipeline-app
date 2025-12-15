@@ -257,17 +257,18 @@ model ExpressNotification {
 
 // Table des produits
 model Product {
-  id           Int      @id @default(autoincrement())
-  code         String   @unique  // Code/référence produit
-  nom          String
-  description  String?
-  prixUnitaire Float
-  stockActuel  Int      @default(0)  // Stock disponible normal
-  stockExpress Int      @default(0)  // Stock réservé EXPRESS (payé 10%, en attente retrait)
-  stockAlerte  Int      @default(10) // Seuil d'alerte
-  actif        Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                Int      @id @default(autoincrement())
+  code              String   @unique  // Code/référence produit
+  nom               String
+  description       String?
+  prixUnitaire      Float
+  stockActuel       Int      @default(0)  // Stock disponible normal
+  stockExpress      Int      @default(0)  // Stock réservé EXPRESS (payé 10%, en attente retrait)
+  stockLocalReserve Int      @default(0)  // Stock réservé en livraison locale (avec livreurs)
+  stockAlerte       Int      @default(10) // Seuil d'alerte
+  actif             Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   // Relations
   stockMovements StockMovement[]
@@ -289,6 +290,9 @@ enum StockMovementType {
   RESERVATION_EXPRESS  // Déplacement vers stock EXPRESS (10% payé)
   RETRAIT_EXPRESS      // Sortie du stock EXPRESS (client a retiré)
   ANNULATION_EXPRESS   // Annulation EXPRESS, retour au stock normal
+  RESERVATION_LOCAL    // Déplacement vers stock local réservé (avec livreur)
+  LIVRAISON_LOCAL      // Sortie du stock local réservé (livraison réussie)
+  RETOUR_LOCAL         // Retour du stock local réservé vers stock normal
 }
 
 // Mouvements de stock (entrées/sorties)

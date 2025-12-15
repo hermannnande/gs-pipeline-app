@@ -241,33 +241,130 @@ router.put('/:id/status', async (req, res) => {
         }
       });
 
-      // RÈGLE MÉTIER 1 : Décrémenter le stock uniquement si la commande passe à LIVRÉE
+      // ⚡ NOUVEAU : Quand une commande passe à ASSIGNEE (assignée à livreur)
+      // → Déplacer le stock de stockActuel vers stockLocalReserve
+      if (status === 'ASSIGNEE' && order.status !== 'ASSIGNEE' && order.productId && order.deliveryType === 'LOCAL') {
+        const product = await tx.product.findUnique({
+          where: { id: order.productId }
+        });
+
+        if (product) {
+          const stockActuelAvant = product.stockActuel;
+          const stockLocalReserveAvant = product.stockLocalReserve;
+          const stockActuelApres = stockActuelAvant - order.quantite;
+          const stockLocalReserveApres = stockLocalReserveAvant + order.quantite;
+
+          // Mettre à jour les deux stocks
+          await tx.product.update({
+            where: { id: order.productId },
+            data: { 
+              stockActuel: stockActuelApres,
+              stockLocalReserve: stockLocalReserveApres
+            }
+          });
+
+          // Créer le mouvement de réservation locale
+          await tx.stockMovement.create({
+            data: {
+              productId: order.productId,
+              type: 'RESERVATION_LOCAL',
+              quantite: order.quantite,
+              stockAvant: stockActuelAvant,
+              stockApres: stockActuelApres,
+              orderId: order.id,
+              effectuePar: user.id,
+              motif: `Réservation locale - ${order.orderReference} assignée au livreur ${updated.deliverer?.nom || 'N/A'}`
+            }
+          });
+        }
+      }
+
+      // RÈGLE MÉTIER 1 : Décrémenter le stock quand la commande passe à LIVRÉE
       if (status === 'LIVREE' && order.status !== 'LIVREE' && order.productId) {
         const product = await tx.product.findUnique({
           where: { id: order.productId }
         });
 
         if (product) {
-          const stockAvant = product.stockActuel;
-          const stockApres = stockAvant - order.quantite;
+          // Si la commande était ASSIGNEE (livraison locale), réduire stockLocalReserve
+          if (order.status === 'ASSIGNEE' && order.deliveryType === 'LOCAL') {
+            const stockLocalReserveAvant = product.stockLocalReserve;
+            const stockLocalReserveApres = stockLocalReserveAvant - order.quantite;
 
-          // Mettre à jour le stock du produit
+            await tx.product.update({
+              where: { id: order.productId },
+              data: { stockLocalReserve: stockLocalReserveApres }
+            });
+
+            await tx.stockMovement.create({
+              data: {
+                productId: order.productId,
+                type: 'LIVRAISON_LOCAL',
+                quantite: -order.quantite,
+                stockAvant: stockLocalReserveAvant,
+                stockApres: stockLocalReserveApres,
+                orderId: order.id,
+                effectuePar: user.id,
+                motif: `Livraison locale ${order.orderReference} - ${order.clientNom}`
+              }
+            });
+          } else {
+            // Sinon, réduire stockActuel (comportement par défaut)
+            const stockAvant = product.stockActuel;
+            const stockApres = stockAvant - order.quantite;
+
+            await tx.product.update({
+              where: { id: order.productId },
+              data: { stockActuel: stockApres }
+            });
+
+            await tx.stockMovement.create({
+              data: {
+                productId: order.productId,
+                type: 'LIVRAISON',
+                quantite: -order.quantite,
+                stockAvant,
+                stockApres,
+                orderId: order.id,
+                effectuePar: user.id,
+                motif: `Livraison commande ${order.orderReference} - ${order.clientNom}`
+              }
+            });
+          }
+        }
+      }
+
+      // ⚡ NOUVEAU : Quand une commande passe à RETOURNE (retour au stock)
+      // → Remettre le stock de stockLocalReserve vers stockActuel
+      if (status === 'RETOURNE' && order.status === 'ASSIGNEE' && order.productId && order.deliveryType === 'LOCAL') {
+        const product = await tx.product.findUnique({
+          where: { id: order.productId }
+        });
+
+        if (product) {
+          const stockActuelAvant = product.stockActuel;
+          const stockLocalReserveAvant = product.stockLocalReserve;
+          const stockActuelApres = stockActuelAvant + order.quantite;
+          const stockLocalReserveApres = stockLocalReserveAvant - order.quantite;
+
           await tx.product.update({
             where: { id: order.productId },
-            data: { stockActuel: stockApres }
+            data: { 
+              stockActuel: stockActuelApres,
+              stockLocalReserve: stockLocalReserveApres
+            }
           });
 
-          // Créer le mouvement de stock
           await tx.stockMovement.create({
             data: {
               productId: order.productId,
-              type: 'LIVRAISON',
-              quantite: -order.quantite,
-              stockAvant,
-              stockApres,
+              type: 'RETOUR_LOCAL',
+              quantite: order.quantite,
+              stockAvant: stockActuelAvant,
+              stockApres: stockActuelApres,
               orderId: order.id,
               effectuePar: user.id,
-              motif: `Livraison commande ${order.orderReference} - ${order.clientNom}`
+              motif: `Retour local - ${order.orderReference} retourné par ${updated.deliverer?.nom || 'N/A'} - ${raisonRetour || 'Non spécifié'}`
             }
           });
         }

@@ -34,6 +34,127 @@ router.get('/', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), async (req, res) => {
   }
 });
 
+// GET /api/products/stock-by-deliverer/:productId - Stock par livreur pour un produit
+router.get('/stock-by-deliverer/:productId', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    // Récupérer toutes les commandes ASSIGNEE (en livraison) pour ce produit
+    const ordersInDelivery = await prisma.order.findMany({
+      where: {
+        productId: parseInt(productId),
+        status: 'ASSIGNEE',
+        deliveryType: 'LOCAL'
+      },
+      include: {
+        deliverer: {
+          select: {
+            id: true,
+            nom: true,
+            prenom: true
+          }
+        }
+      }
+    });
+
+    // Grouper par livreur
+    const stockByDeliverer = {};
+    ordersInDelivery.forEach(order => {
+      if (order.deliverer) {
+        const delivererId = order.deliverer.id;
+        if (!stockByDeliverer[delivererId]) {
+          stockByDeliverer[delivererId] = {
+            delivererId,
+            delivererNom: `${order.deliverer.nom} ${order.deliverer.prenom}`,
+            quantite: 0,
+            commandes: []
+          };
+        }
+        stockByDeliverer[delivererId].quantite += order.quantite;
+        stockByDeliverer[delivererId].commandes.push({
+          id: order.id,
+          orderReference: order.orderReference,
+          clientNom: order.clientNom,
+          quantite: order.quantite,
+          deliveryDate: order.deliveryDate
+        });
+      }
+    });
+
+    res.json({ stockByDeliverer: Object.values(stockByDeliverer) });
+  } catch (error) {
+    console.error('Erreur récupération stock par livreur:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération du stock par livreur.' });
+  }
+});
+
+// GET /api/products/stock-local-reserve - Vue d'ensemble du stock local réservé
+router.get('/stock-local-reserve/overview', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), async (req, res) => {
+  try {
+    // Récupérer tous les produits avec leur stock local réservé
+    const products = await prisma.product.findMany({
+      where: {
+        actif: true,
+        stockLocalReserve: { gt: 0 }
+      },
+      select: {
+        id: true,
+        code: true,
+        nom: true,
+        stockActuel: true,
+        stockLocalReserve: true,
+        stockExpress: true
+      }
+    });
+
+    // Pour chaque produit, récupérer la répartition par livreur
+    const productsWithDeliverers = await Promise.all(
+      products.map(async (product) => {
+        const ordersInDelivery = await prisma.order.findMany({
+          where: {
+            productId: product.id,
+            status: 'ASSIGNEE',
+            deliveryType: 'LOCAL'
+          },
+          include: {
+            deliverer: {
+              select: {
+                id: true,
+                nom: true,
+                prenom: true
+              }
+            }
+          }
+        });
+
+        const stockByDeliverer = {};
+        ordersInDelivery.forEach(order => {
+          if (order.deliverer) {
+            const delivererId = order.deliverer.id;
+            if (!stockByDeliverer[delivererId]) {
+              stockByDeliverer[delivererId] = {
+                delivererNom: `${order.deliverer.nom} ${order.deliverer.prenom}`,
+                quantite: 0
+              };
+            }
+            stockByDeliverer[delivererId].quantite += order.quantite;
+          }
+        });
+
+        return {
+          ...product,
+          livreurs: Object.values(stockByDeliverer)
+        };
+      })
+    );
+
+    res.json({ products: productsWithDeliverers });
+  } catch (error) {
+    console.error('Erreur récupération stock local réservé:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération du stock local réservé.' });
+  }
+});
+
 // GET /api/products/:id - Détail d'un produit
 router.get('/:id', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), async (req, res) => {
   try {

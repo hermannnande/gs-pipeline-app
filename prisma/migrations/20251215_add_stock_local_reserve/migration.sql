@@ -1,0 +1,8 @@
+-- AlterEnum
+ALTER TYPE "StockMovementType" ADD VALUE 'RESERVATION_LOCAL';
+ALTER TYPE "StockMovementType" ADD VALUE 'LIVRAISON_LOCAL';
+ALTER TYPE "StockMovementType" ADD VALUE 'RETOUR_LOCAL';
+
+-- AlterTable
+ALTER TABLE "products" ADD COLUMN "stockLocalReserve" INTEGER NOT NULL DEFAULT 0;
+
