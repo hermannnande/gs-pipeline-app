@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 router.use(authenticate);
 
 // GET /api/stock-analysis/local-reserve - Analyse complète du stock en livraison locale
-router.get('/local-reserve', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STOCK'), async (req, res) => {
+router.get('/local-reserve', authorize('ADMIN'), async (req, res) => {
   try {
     // 1. Récupérer toutes les commandes ASSIGNEE (en cours de livraison locale)
     const ordersInDelivery = await prisma.order.findMany({
@@ -163,7 +163,7 @@ router.get('/local-reserve', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_ST
 });
 
 // POST /api/stock-analysis/recalculate-local-reserve - Recalculer le stock local réservé
-router.post('/recalculate-local-reserve', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), async (req, res) => {
+router.post('/recalculate-local-reserve', authorize('ADMIN'), async (req, res) => {
   try {
     // 1. Récupérer toutes les commandes ASSIGNEE par produit
     const ordersInDelivery = await prisma.order.findMany({
@@ -280,7 +280,7 @@ router.post('/recalculate-local-reserve', authorize('ADMIN', 'GESTIONNAIRE_STOCK
 });
 
 // GET /api/stock-analysis/deliverer-details/:delivererId - Détails des livraisons en cours pour un livreur
-router.get('/deliverer-details/:delivererId', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STOCK', 'LIVREUR'), async (req, res) => {
+router.get('/deliverer-details/:delivererId', authorize('ADMIN', 'LIVREUR'), async (req, res) => {
   try {
     const { delivererId } = req.params;
     const userId = parseInt(delivererId);

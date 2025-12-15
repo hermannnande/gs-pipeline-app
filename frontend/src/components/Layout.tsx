@@ -50,6 +50,7 @@ export default function Layout({ children }: LayoutProps) {
           { icon: Truck, label: 'Gestion des Tournées', path: '/admin/tournees' },
           { icon: TrendingUp, label: 'Listes de livraison', path: '/admin/deliveries' },
           { icon: Package, label: 'Gestion des Produits', path: '/admin/products' },
+          { icon: Warehouse, label: '🚚 Livraisons en cours', path: '/admin/livraisons-en-cours' },
           { icon: History, label: 'Historique Mouvements', path: '/admin/movements' },
           { icon: Database, label: 'Base Clients', path: '/admin/database' },
           { icon: Eye, label: 'Supervision Appelants', path: '/admin/supervision' },
@@ -75,7 +76,6 @@ export default function Layout({ children }: LayoutProps) {
         return [
           { icon: LayoutDashboard, label: 'Dashboard', path: '/stock' },
           { icon: Truck, label: 'Tournées', path: '/stock/tournees' },
-          { icon: Package, label: '🚚 Livraisons en cours', path: '/stock/livraisons-en-cours' },
           { icon: Zap, label: 'Expéditions & EXPRESS', path: '/stock/expeditions' },
           { icon: TrendingUp, label: 'Listes de livraison', path: '/stock/deliveries' },
           { icon: Package, label: 'Produits', path: '/stock/products' },

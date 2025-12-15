@@ -192,7 +192,7 @@ export default function ExpressAgence() {
       <div className="card">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Filter className="text-primary-600" size={20} />
+          <Filter className="text-primary-600" size={20} />
             <h2 className="text-lg font-semibold">Filtres de recherche</h2>
           </div>
           <button
@@ -239,12 +239,12 @@ export default function ExpressAgence() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               🔍 Recherche
             </label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Nom, téléphone, référence, produit..."
                 className="input pl-10 w-full"
               />
@@ -298,16 +298,16 @@ export default function ExpressAgence() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               📍 Agence
             </label>
-            <select
-              value={agenceFilter}
-              onChange={(e) => setAgenceFilter(e.target.value)}
+          <select
+            value={agenceFilter}
+            onChange={(e) => setAgenceFilter(e.target.value)}
               className="input w-full"
-            >
-              <option value="all">Toutes les agences</option>
-              {stats.agences?.map((agence: string) => (
-                <option key={agence} value={agence}>{agence}</option>
-              ))}
-            </select>
+          >
+            <option value="all">Toutes les agences</option>
+            {stats.agences?.map((agence: string) => (
+              <option key={agence} value={agence}>{agence}</option>
+            ))}
+          </select>
           </div>
 
           {/* Statut */}
@@ -315,29 +315,29 @@ export default function ExpressAgence() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               ⚡ Statut
             </label>
-            <select
-              value={statutFilter}
-              onChange={(e) => setStatutFilter(e.target.value)}
+          <select
+            value={statutFilter}
+            onChange={(e) => setStatutFilter(e.target.value)}
               className="input w-full"
-            >
-              <option value="all">Tous les statuts</option>
-              <option value="EXPRESS_ARRIVE">En attente de retrait</option>
-              <option value="EXPRESS_LIVRE">Retiré</option>
-            </select>
+          >
+            <option value="all">Tous les statuts</option>
+            <option value="EXPRESS_ARRIVE">En attente de retrait</option>
+            <option value="EXPRESS_LIVRE">Retiré</option>
+          </select>
           </div>
 
           {/* Non retirés */}
           <div className="flex items-end">
             <label className="flex items-center gap-2 cursor-pointer p-3 border-2 border-gray-200 rounded-lg w-full hover:bg-gray-50 transition-colors">
-              <input
-                type="checkbox"
-                checked={nonRetiresOnly}
-                onChange={(e) => setNonRetiresOnly(e.target.checked)}
+            <input
+              type="checkbox"
+              checked={nonRetiresOnly}
+              onChange={(e) => setNonRetiresOnly(e.target.checked)}
                 className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
-              />
+            />
               <span className="text-sm font-medium text-gray-700">⏳ Non retirés uniquement</span>
-            </label>
-          </div>
+          </label>
+        </div>
         </div>
 
         {/* Résumé des filtres actifs */}
@@ -411,7 +411,7 @@ export default function ExpressAgence() {
             </div>
           </div>
 
-          <div className="space-y-4">
+        <div className="space-y-4">
             {sortedOrders.map((order: any) => {
               // Déterminer l'urgence
               const isUrgent = order.joursEnAgence > 7;
@@ -419,13 +419,13 @@ export default function ExpressAgence() {
               const isTropNotifie = order.nombreNotifications > 5;
 
               return (
-                <div key={order.id} className={`card hover:shadow-lg transition-shadow ${
+            <div key={order.id} className={`card hover:shadow-lg transition-shadow ${
                   isUrgent ? 'border-l-4 border-red-500 bg-red-50' :
                   isTropNotifie ? 'border-l-4 border-orange-500 bg-orange-50' :
                   isAttention ? 'border-l-4 border-yellow-500 bg-yellow-50' :
                   order.nombreNotifications > 0 ? 'border-l-4 border-blue-500' :
-                  'border-l-4 border-gray-300'
-                }`}>
+              'border-l-4 border-gray-300'
+            }`}>
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 {/* Informations client - 4 colonnes */}
                 <div className="lg:col-span-4">
@@ -604,10 +604,10 @@ export default function ExpressAgence() {
                   </div>
                 </details>
               )}
-                </div>
+            </div>
               );
             })}
-          </div>
+        </div>
         </>
       )}
 
