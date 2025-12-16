@@ -132,21 +132,19 @@ export default function Orders() {
     });
   };
 
-  const marquerAppelMutation = useMutation({
+  const notifierClientMutation = useMutation({
     mutationFn: (id: number) => ordersApi.marquerAppel(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appelant-orders'] });
+      toast.success('🔔 Client notifié avec succès');
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Erreur lors du marquage de l\'appel');
+      toast.error(error.response?.data?.error || 'Erreur lors de la notification');
     },
   });
 
-  const handleTraiterClick = async (order: Order) => {
-    // Marquer l'appel immédiatement
-    await marquerAppelMutation.mutateAsync(order.id);
-    // Puis ouvrir la modale
-    setSelectedOrder(order);
+  const handleNotifierClient = (orderId: number) => {
+    notifierClientMutation.mutate(orderId);
   };
 
   const handleProgrammerRdv = (order: Order) => {
@@ -327,11 +325,10 @@ export default function Orders() {
                         Attente paiement
                       </span>
                     )}
-                    {/* Badge nombre d'appels et appelant */}
+                    {/* Badge nombre de notifications et appelant */}
                     {order.nombreAppels && order.nombreAppels > 0 && (
                       <span className="badge bg-orange-100 text-orange-700 border border-orange-300 text-xs flex items-center gap-1">
-                        <Phone size={12} />
-                        {order.nombreAppels} appel{order.nombreAppels > 1 ? 's' : ''}
+                        🔔 {order.nombreAppels} notification{order.nombreAppels > 1 ? 's' : ''}
                         {order.caller && ` · ${order.caller.prenom}`}
                       </span>
                     )}
@@ -362,11 +359,18 @@ export default function Orders() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <button
-                  onClick={() => handleTraiterClick(order)}
+                  onClick={() => handleNotifierClient(order.id)}
+                  className="btn bg-blue-600 text-white hover:bg-blue-700 flex items-center justify-center gap-2"
+                  disabled={notifierClientMutation.isPending}
+                  title="Notifier le client"
+                >
+                  🔔 Notifier
+                </button>
+                <button
+                  onClick={() => setSelectedOrder(order)}
                   className="btn btn-primary flex items-center justify-center gap-2"
-                  disabled={marquerAppelMutation.isPending}
                 >
                   <Phone size={18} />
                   Traiter
