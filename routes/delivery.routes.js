@@ -120,15 +120,9 @@ router.post('/assign', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
       }
     });
 
-    // Assigner les commandes ET gérer le stock
-    const updatePromises = orderIds.map(async (orderId) => {
-      const order = await prisma.order.findUnique({
-        where: { id: parseInt(orderId) },
-        include: { product: true }
-      });
-
-      // Mettre à jour la commande
-      const updatedOrder = await prisma.order.update({
+    // Assigner les commandes
+    const updatePromises = orderIds.map(orderId =>
+      prisma.order.update({
         where: { id: parseInt(orderId) },
         data: {
           delivererId: parseInt(delivererId),
@@ -136,42 +130,8 @@ router.post('/assign', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
           deliveryDate: new Date(deliveryDate),
           status: 'ASSIGNEE'
         }
-      });
-
-      // ⚡ NOUVEAU : Déplacer le stock de stockActuel vers stockLocalReserve
-      if (order && order.productId && order.deliveryType === 'LOCAL') {
-        const product = order.product;
-        if (product) {
-          const stockActuelAvant = product.stockActuel;
-          const stockLocalReserveAvant = product.stockLocalReserve;
-          const stockActuelApres = stockActuelAvant - order.quantite;
-          const stockLocalReserveApres = stockLocalReserveAvant + order.quantite;
-
-          await prisma.product.update({
-            where: { id: order.productId },
-            data: { 
-              stockActuel: stockActuelApres,
-              stockLocalReserve: stockLocalReserveApres
-            }
-          });
-
-          await prisma.stockMovement.create({
-            data: {
-              productId: order.productId,
-              type: 'RESERVATION_LOCAL',
-              quantite: order.quantite,
-              stockAvant: stockActuelAvant,
-              stockApres: stockActuelApres,
-              orderId: order.id,
-              effectuePar: req.user.id,
-              motif: `Réservation locale - ${order.orderReference} assignée au livreur ${deliverer.prenom} ${deliverer.nom}`
-            }
-          });
-        }
-      }
-
-      return updatedOrder;
-    });
+      })
+    );
 
     await Promise.all(updatePromises);
 

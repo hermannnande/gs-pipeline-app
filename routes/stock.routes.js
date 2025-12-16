@@ -218,34 +218,90 @@ router.post('/tournees/:id/confirm-remise', authorize('ADMIN', 'GESTIONNAIRE', '
 
     const deliveryList = await prisma.deliveryList.findUnique({
       where: { id: parseInt(id) },
-      include: { orders: true }
+      include: { 
+        orders: {
+          include: { product: true }
+        },
+        tourneeStock: true
+      }
     });
 
     if (!deliveryList) {
       return res.status(404).json({ error: 'Tournée non trouvée.' });
     }
 
-    // Créer ou mettre à jour TourneeStock
-    const tourneeStock = await prisma.tourneeStock.upsert({
-      where: { deliveryListId: parseInt(id) },
-      create: {
-        deliveryListId: parseInt(id),
-        colisRemis: parseInt(colisRemis),
-        colisRemisConfirme: true,
-        colisRemisAt: new Date(),
-        colisRemisBy: req.user.id
-      },
-      update: {
-        colisRemis: parseInt(colisRemis),
-        colisRemisConfirme: true,
-        colisRemisAt: new Date(),
-        colisRemisBy: req.user.id
+    // Vérifier si c'est la première confirmation (pour déplacer le stock)
+    const isFirstConfirmation = !deliveryList.tourneeStock?.colisRemisConfirme;
+
+    // ⚡ TRANSACTION : Créer TourneeStock ET déplacer le stock vers stockLocalReserve
+    const result = await prisma.$transaction(async (tx) => {
+      // Créer ou mettre à jour TourneeStock
+      const tourneeStock = await tx.tourneeStock.upsert({
+        where: { deliveryListId: parseInt(id) },
+        create: {
+          deliveryListId: parseInt(id),
+          colisRemis: parseInt(colisRemis),
+          colisRemisConfirme: true,
+          colisRemisAt: new Date(),
+          colisRemisBy: req.user.id
+        },
+        update: {
+          colisRemis: parseInt(colisRemis),
+          colisRemisConfirme: true,
+          colisRemisAt: new Date(),
+          colisRemisBy: req.user.id
+        }
+      });
+
+      // ⚡ DÉPLACER LE STOCK : stockActuel → stockLocalReserve
+      // UNIQUEMENT si c'est la première confirmation
+      const stockMovements = [];
+      if (isFirstConfirmation) {
+        for (const order of deliveryList.orders) {
+          if (order.productId && order.deliveryType === 'LOCAL' && order.product) {
+            const product = order.product;
+            const stockActuelAvant = product.stockActuel;
+            const stockLocalReserveAvant = product.stockLocalReserve;
+            const stockActuelApres = stockActuelAvant - order.quantite;
+            const stockLocalReserveApres = stockLocalReserveAvant + order.quantite;
+
+            // Mettre à jour les deux stocks
+            await tx.product.update({
+              where: { id: order.productId },
+              data: { 
+                stockActuel: stockActuelApres,
+                stockLocalReserve: stockLocalReserveApres
+              }
+            });
+
+            // Créer le mouvement de réservation locale
+            const movement = await tx.stockMovement.create({
+              data: {
+                productId: order.productId,
+                type: 'RESERVATION_LOCAL',
+                quantite: order.quantite,
+                stockAvant: stockActuelAvant,
+                stockApres: stockActuelApres,
+                orderId: order.id,
+                tourneeId: tourneeStock.id,
+                effectuePar: req.user.id,
+                motif: `Remise colis tournée ${deliveryList.nom} - ${order.orderReference} - ${order.clientNom}`
+              }
+            });
+            stockMovements.push(movement);
+          }
+        }
       }
+
+      return { tourneeStock, stockMovements };
     });
 
     res.json({ 
-      tourneeStock, 
-      message: `${colisRemis} colis confirmés pour la remise.` 
+      tourneeStock: result.tourneeStock, 
+      stockMovements: result.stockMovements,
+      message: isFirstConfirmation 
+        ? `${colisRemis} colis confirmés pour la remise. Stock déplacé vers "En livraison".`
+        : `${colisRemis} colis confirmés pour la remise (mise à jour).` 
     });
   } catch (error) {
     console.error('Erreur confirmation remise:', error);
