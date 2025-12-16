@@ -388,17 +388,49 @@ router.post('/tournees/:id/confirm-retour', authorize('ADMIN', 'GESTIONNAIRE', '
         }
       }
 
-      // ⚠️ RÈGLE MÉTIER IMPORTANTE :
-      // Les produits REFUSÉS ou ANNULÉS ne sont PAS réintégrés dans le stock
-      // car ils n'en sont JAMAIS sortis (seul le statut LIVREE décrémente le stock).
-      // 
-      // La confirmation de retour est une opération physique (réception des colis)
-      // mais n'a AUCUN impact sur le stock logique qui n'a jamais bougé pour ces produits.
-      //
-      // Le stock ne diminue QUE lors d'une livraison réussie (LIVREE).
-      // Les produits refusés/annulés restent dans le stock tout au long du processus.
+      // ⚡ RETOURNER LE STOCK : stockLocalReserve → stockActuel
+      // Pour chaque commande NON livrée (REFUSEE, ANNULEE_LIVRAISON, RETOURNE, ASSIGNEE)
+      const stockMovements = [];
+      const ordersToReturn = deliveryList.orders.filter(o => 
+        !['LIVREE'].includes(o.status) && o.productId && o.deliveryType === 'LOCAL'
+      );
 
-      return { tourneeStock, movements: [] };
+      for (const order of ordersToReturn) {
+        if (order.product) {
+          const product = order.product;
+          const stockActuelAvant = product.stockActuel;
+          const stockLocalReserveAvant = product.stockLocalReserve;
+          const stockActuelApres = stockActuelAvant + order.quantite;
+          const stockLocalReserveApres = stockLocalReserveAvant - order.quantite;
+
+          // Mettre à jour les deux stocks
+          await tx.product.update({
+            where: { id: order.productId },
+            data: { 
+              stockActuel: stockActuelApres,
+              stockLocalReserve: stockLocalReserveApres
+            }
+          });
+
+          // Créer le mouvement de retour local
+          const movement = await tx.stockMovement.create({
+            data: {
+              productId: order.productId,
+              type: 'RETOUR_LOCAL',
+              quantite: order.quantite,
+              stockAvant: stockActuelAvant,
+              stockApres: stockActuelApres,
+              orderId: order.id,
+              tourneeId: tourneeStock.id,
+              effectuePar: req.user.id,
+              motif: `Retour tournée ${deliveryList.nom} - ${order.orderReference} - ${order.status} - ${order.clientNom}`
+            }
+          });
+          stockMovements.push(movement);
+        }
+      }
+
+      return { tourneeStock, movements: stockMovements };
     });
 
     res.json({ 

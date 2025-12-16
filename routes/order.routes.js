@@ -376,41 +376,8 @@ router.put('/:id/status', async (req, res) => {
         }
       }
 
-      // ⚡ NOUVEAU : Quand une commande passe à RETOURNE (retour au stock)
-      // → Remettre le stock de stockLocalReserve vers stockActuel
-      if (status === 'RETOURNE' && order.status === 'ASSIGNEE' && order.productId && order.deliveryType === 'LOCAL') {
-        const product = await tx.product.findUnique({
-          where: { id: order.productId }
-        });
-
-        if (product) {
-          const stockActuelAvant = product.stockActuel;
-          const stockLocalReserveAvant = product.stockLocalReserve;
-          const stockActuelApres = stockActuelAvant + order.quantite;
-          const stockLocalReserveApres = stockLocalReserveAvant - order.quantite;
-
-          await tx.product.update({
-            where: { id: order.productId },
-            data: { 
-              stockActuel: stockActuelApres,
-              stockLocalReserve: stockLocalReserveApres
-            }
-          });
-
-          await tx.stockMovement.create({
-            data: {
-              productId: order.productId,
-              type: 'RETOUR_LOCAL',
-              quantite: order.quantite,
-              stockAvant: stockActuelAvant,
-              stockApres: stockActuelApres,
-              orderId: order.id,
-              effectuePar: user.id,
-              motif: `Retour local - ${order.orderReference} retourné par ${updated.deliverer?.nom || 'N/A'} - ${raisonRetour || 'Non spécifié'}`
-            }
-          });
-        }
-      }
+      // ⚠️ NOTE : Le stock ne bouge PAS ici lors du changement de statut par le livreur
+      // Le stock revient UNIQUEMENT lors de la confirmation de retour par le gestionnaire de stock
 
       // RÈGLE MÉTIER 2 : Réincrémenter le stock si la commande était LIVRÉE et change vers un autre statut
       // (Le livreur corrige son erreur : la livraison n'a pas été effectuée)
