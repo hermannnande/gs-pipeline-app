@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Package, Truck, AlertCircle, RefreshCw, ChevronDown, ChevronUp, User, Calendar, Clock, XCircle, RotateCcw } from 'lucide-react';
-import toast from 'react-hot-toast';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/utils/statusHelpers';
 
@@ -35,7 +34,6 @@ export default function LiveraisonEnCours() {
   const [expandedProduct, setExpandedProduct] = useState<number | null>(null);
   const [expandedDeliverer, setExpandedDeliverer] = useState<number | null>(null);
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
-  const queryClient = useQueryClient();
 
   // Récupérer l'analyse complète
   const { data: analysisData, isLoading, refetch } = useQuery({
@@ -43,38 +41,6 @@ export default function LiveraisonEnCours() {
     queryFn: async () => {
       const { data } = await api.get('/stock-analysis/local-reserve');
       return data;
-    },
-  });
-
-  // Mutation pour recalculer le stock
-  const recalculateMutation = useMutation({
-    mutationFn: async () => {
-      const { data } = await api.post('/stock-analysis/recalculate-local-reserve');
-      return data;
-    },
-    onSuccess: async (data) => {
-      console.log('📊 Résultat recalcul:', data);
-      
-      // Invalider et attendre le rechargement des données
-      await queryClient.invalidateQueries({ queryKey: ['stock-analysis-local'] });
-      await queryClient.invalidateQueries({ queryKey: ['products'] });
-      
-      // Forcer un refetch immédiat
-      await refetch();
-      
-      if (data.totalCommandesAnalysees === 0) {
-        toast('Aucune commande avec livreur trouvée', {
-          icon: 'ℹ️',
-          duration: 5000
-        });
-      } else if (data.totalCorrections === 0) {
-        toast.success(`${data.totalCommandesAnalysees} commande(s) analysée(s) - Aucune correction nécessaire`);
-      } else {
-        toast.success(`${data.totalCorrections} correction(s) effectuée(s) sur ${data.totalCommandesAnalysees} commande(s) - Page actualisée !`);
-      }
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Erreur lors du recalcul');
     },
   });
 
@@ -165,14 +131,6 @@ export default function LiveraisonEnCours() {
           >
             <RefreshCw size={18} />
             Actualiser
-          </button>
-          <button
-            onClick={() => recalculateMutation.mutate()}
-            disabled={recalculateMutation.isPending}
-            className="btn btn-primary flex items-center gap-2"
-          >
-            <RefreshCw size={18} className={recalculateMutation.isPending ? 'animate-spin' : ''} />
-            {recalculateMutation.isPending ? 'Recalcul...' : 'Recalculer'}
           </button>
         </div>
       </div>
@@ -270,52 +228,7 @@ export default function LiveraisonEnCours() {
         </div>
       </div>
 
-      {/* Alertes d'écarts */}
-      {ecarts.length > 0 && (
-        <div className="card border-2 border-red-300 bg-red-50">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="text-red-600 flex-shrink-0" size={24} />
-            <div className="flex-1">
-              <h3 className="font-semibold text-red-900 mb-2">
-                ⚠️ {ecarts.length} écart(s) détecté(s)
-              </h3>
-              <p className="text-sm text-red-700 mb-3">
-                Les quantités enregistrées ne correspondent pas aux commandes en cours.
-                Cliquez sur "Corriger les écarts" pour synchroniser automatiquement.
-              </p>
-              <div className="space-y-2">
-                {ecarts.map((ecart, idx) => (
-                  <div key={idx} className="bg-white p-3 rounded border border-red-200">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">{ecart.productNom}</p>
-                        <p className="text-sm text-gray-600">Code: {ecart.productCode}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-600">
-                          Enregistré: <span className="font-medium">{ecart.quantiteEnregistree}</span>
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          Réel: <span className="font-medium">{ecart.quantiteReelle}</span>
-                        </p>
-                        <p className={`text-sm font-bold ${ecart.ecart > 0 ? 'text-red-600' : 'text-orange-600'}`}>
-                          Écart: {ecart.ecart > 0 ? '+' : ''}{ecart.ecart}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <button
-                onClick={() => recalculateMutation.mutate()}
-                className="mt-3 btn btn-danger w-full"
-              >
-                Corriger les écarts maintenant
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Bloc d'alertes d'écarts supprimé - Peut être trompeur */}
 
       {/* Stock par livreur - EN PREMIER pour voir qui a quoi */}
       <div className="card">
