@@ -177,6 +177,45 @@ router.post('/', authorize('ADMIN', 'GESTIONNAIRE'), [
   }
 });
 
+// POST /api/orders/:id/marquer-appel - Marquer qu'un appel est en cours (sans changer le statut)
+router.post('/:id/marquer-appel', authorize('ADMIN', 'GESTIONNAIRE', 'APPELANT'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = req.user;
+
+    const order = await prisma.order.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!order) {
+      return res.status(404).json({ error: 'Commande non trouvée.' });
+    }
+
+    // Incrémenter le compteur d'appels et assigner l'appelant
+    const updatedOrder = await prisma.order.update({
+      where: { id: parseInt(id) },
+      data: {
+        nombreAppels: { increment: 1 },
+        callerId: order.callerId || user.id, // Assigner l'appelant si pas déjà assigné
+        calledAt: order.calledAt || new Date() // Marquer la date du premier appel
+      },
+      include: {
+        caller: {
+          select: { id: true, nom: true, prenom: true }
+        }
+      }
+    });
+
+    res.json({ 
+      order: updatedOrder, 
+      message: 'Appel marqué avec succès.' 
+    });
+  } catch (error) {
+    console.error('Erreur marquer appel:', error);
+    res.status(500).json({ error: 'Erreur lors du marquage de l\'appel.' });
+  }
+});
+
 // PUT /api/orders/:id/status - Changer le statut d'une commande
 router.put('/:id/status', async (req, res) => {
   try {
@@ -198,21 +237,14 @@ router.put('/:id/status', async (req, res) => {
       if (!['VALIDEE', 'ANNULEE', 'INJOIGNABLE'].includes(status)) {
         return res.status(400).json({ error: 'Statut invalide pour un appelant.' });
       }
-      // Assigner l'appelant si ce n'est pas déjà fait et incrémenter le compteur d'appels
+      // Assigner l'appelant si ce n'est pas déjà fait
       if (!order.callerId) {
         await prisma.order.update({
           where: { id: parseInt(id) },
           data: { 
             callerId: user.id, 
-            calledAt: new Date(),
-            nombreAppels: { increment: 1 } // Incrémenter le compteur d'appels
+            calledAt: new Date()
           }
-        });
-      } else {
-        // Si l'appelant est déjà assigné, juste incrémenter le compteur
-        await prisma.order.update({
-          where: { id: parseInt(id) },
-          data: { nombreAppels: { increment: 1 } }
         });
       }
     } else if (user.role === 'LIVREUR') {

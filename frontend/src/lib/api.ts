@@ -101,6 +101,11 @@ export const ordersApi = {
     return data;
   },
 
+  marquerAppel: async (id: number) => {
+    const { data } = await api.post(`/orders/${id}/marquer-appel`);
+    return data;
+  },
+
   updateQuantite: async (id: number, quantite: number) => {
     const { data } = await api.put(`/orders/${id}/quantite`, { quantite });
     return data;

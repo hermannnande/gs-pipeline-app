@@ -132,6 +132,23 @@ export default function Orders() {
     });
   };
 
+  const marquerAppelMutation = useMutation({
+    mutationFn: (id: number) => ordersApi.marquerAppel(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appelant-orders'] });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Erreur lors du marquage de l\'appel');
+    },
+  });
+
+  const handleTraiterClick = async (order: Order) => {
+    // Marquer l'appel immédiatement
+    await marquerAppelMutation.mutateAsync(order.id);
+    // Puis ouvrir la modale
+    setSelectedOrder(order);
+  };
+
   const handleProgrammerRdv = (order: Order) => {
     setSelectedOrder(order);
     // Définir la date/heure par défaut à demain à 9h
@@ -347,8 +364,9 @@ export default function Orders() {
 
               <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => setSelectedOrder(order)}
+                  onClick={() => handleTraiterClick(order)}
                   className="btn btn-primary flex items-center justify-center gap-2"
+                  disabled={marquerAppelMutation.isPending}
                 >
                   <Phone size={18} />
                   Traiter
