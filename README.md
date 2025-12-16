@@ -12,6 +12,18 @@ GS Pipeline est une application web complète permettant de gérer l'intégralit
 4. **Livraison** : Les livreurs effectuent les livraisons et mettent à jour les statuts
 5. **Suivi** : Statistiques complètes pour tous les acteurs
 
+## 📚 Documentation Complète
+
+**🎯 IMPORTANT : Consultez [ARCHITECTURE_ET_REGLES_METIER.md](./ARCHITECTURE_ET_REGLES_METIER.md) pour comprendre TOUTE la logique du système**
+
+Ce document contient :
+- 🔄 Flux complets des commandes
+- 📦 Règles métier critiques de gestion de stock
+- 🛣️ Routes API détaillées
+- 🎨 Architecture frontend/backend
+- 🚨 Erreurs courantes à éviter
+- 📝 Exemples de code
+
 ## 🎯 Fonctionnalités principales
 
 ### Pipeline de commandes
@@ -19,9 +31,11 @@ GS Pipeline est une application web complète permettant de gérer l'intégralit
 - ✅ Gestion des statuts (Nouvelle → À appeler → Validée → Assignée → Livrée)
 - ✅ Historique complet de chaque commande
 - ✅ Notes internes par rôle
+- ✅ Système de notification pour éviter les appels en double
+- ✅ Gestion des rendez-vous de rappel
 
 ### Gestion des utilisateurs
-- 👤 4 rôles : Admin, Gestionnaire, Appelant, Livreur
+- 👤 **5 rôles** : Admin, Gestionnaire, Gestionnaire de Stock, Appelant, Livreur
 - 🔐 Authentification sécurisée JWT
 - 👥 Création et gestion des comptes par l'admin
 - 🔒 Permissions granulaires par rôle
@@ -37,6 +51,15 @@ GS Pipeline est une application web complète permettant de gérer l'intégralit
 - 🚚 Assignation intelligente aux livreurs par zone/date
 - 📦 Création de listes de livraison journalières
 - 📈 Suivi en temps réel des livraisons
+
+### Gestionnaire de Stock (NOUVEAU)
+- 📦 Gestion complète de l'inventaire des produits
+- ✅ **Confirmation de REMISE** des colis aux livreurs (déplace le stock)
+- ✅ **Confirmation de RETOUR** des colis non livrés (retourne le stock)
+- 📊 Suivi en temps réel du stock disponible et en livraison
+- 🔍 Contrôle des écarts entre remis, livrés et retournés
+- 📈 Historique complet des mouvements de stock
+- 🚨 Alertes automatiques pour stock faible
 
 ### Livreurs
 - 🗺️ Liste journalière optimisée
@@ -145,6 +168,7 @@ Après le seeding, vous pouvez vous connecter avec :
 |------|-------|--------------|
 | **Admin** | admin@gs-pipeline.com | admin123 |
 | **Gestionnaire** | gestionnaire@gs-pipeline.com | gestionnaire123 |
+| **Gestionnaire de Stock** | stock@gs-pipeline.com | stock123 |
 | **Appelant** | appelant@gs-pipeline.com | appelant123 |
 | **Livreur** | livreur@gs-pipeline.com | livreur123 |
 
@@ -251,15 +275,29 @@ location / {
 
 ## 📊 Statuts des commandes
 
+### **Statuts principaux**
 1. **NOUVELLE** : Commande reçue du site web
 2. **A_APPELER** : En attente de traitement par un appelant
 3. **VALIDEE** : Client a confirmé la commande
 4. **ANNULEE** : Client a annulé
 5. **INJOIGNABLE** : Impossible de joindre le client
 6. **ASSIGNEE** : Assignée à un livreur
-7. **LIVREE** : Livraison effectuée avec succès
-8. **REFUSEE** : Client a refusé à la livraison
-9. **ANNULEE_LIVRAISON** : Annulée pendant la livraison
+7. **LIVREE** : Livraison effectuée avec succès ✅
+8. **REFUSEE** : Client a refusé à la livraison ❌
+9. **ANNULEE_LIVRAISON** : Annulée pendant la livraison ❌
+10. **RETOURNE** : Colis retourné au dépôt ↩️
+
+### **Statuts EXPEDITION / EXPRESS**
+11. **EXPEDITION** : Paiement 100% - En attente d'envoi vers autre ville
+12. **EXPRESS** : Paiement 10% - En cours d'envoi vers agence
+13. **EXPRESS_ARRIVE** : Colis arrivé en agence - En attente paiement 90%
+14. **EXPRESS_LIVRE** : Express livré après paiement des 90%
+
+## 🚚 Types de livraison
+
+- **LOCAL** : Livraison locale classique avec livreurs (Dakar et environs)
+- **EXPEDITION** : Paiement 100% avant envoi vers autre ville (via agence de transport)
+- **EXPRESS** : Paiement 10% avant envoi, 90% à la réception en agence de retrait
 
 ## 🔒 Sécurité
 
