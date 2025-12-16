@@ -198,11 +198,21 @@ router.put('/:id/status', async (req, res) => {
       if (!['VALIDEE', 'ANNULEE', 'INJOIGNABLE'].includes(status)) {
         return res.status(400).json({ error: 'Statut invalide pour un appelant.' });
       }
-      // Assigner l'appelant si ce n'est pas déjà fait
+      // Assigner l'appelant si ce n'est pas déjà fait et incrémenter le compteur d'appels
       if (!order.callerId) {
         await prisma.order.update({
           where: { id: parseInt(id) },
-          data: { callerId: user.id, calledAt: new Date() }
+          data: { 
+            callerId: user.id, 
+            calledAt: new Date(),
+            nombreAppels: { increment: 1 } // Incrémenter le compteur d'appels
+          }
+        });
+      } else {
+        // Si l'appelant est déjà assigné, juste incrémenter le compteur
+        await prisma.order.update({
+          where: { id: parseInt(id) },
+          data: { nombreAppels: { increment: 1 } }
         });
       }
     } else if (user.role === 'LIVREUR') {

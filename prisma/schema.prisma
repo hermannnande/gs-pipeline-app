@@ -105,6 +105,7 @@ model Order {
   callerId        Int?
   caller          User?       @relation("CallerOrders", fields: [callerId], references: [id])
   calledAt        DateTime?
+  nombreAppels    Int         @default(0) // Nombre de tentatives d'appel
   
   delivererId     Int?
   deliverer       User?       @relation("DelivererOrders", fields: [delivererId], references: [id])

@@ -60,6 +60,7 @@ export interface Order {
   noteLivreur?: string;
   noteGestionnaire?: string;
   calledAt?: string;
+  nombreAppels?: number; // Nombre de tentatives d'appel
   deliveryDate?: string;
   createdAt: string;
   updatedAt: string;

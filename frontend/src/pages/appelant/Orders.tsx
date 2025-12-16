@@ -310,6 +310,14 @@ export default function Orders() {
                         Attente paiement
                       </span>
                     )}
+                    {/* Badge nombre d'appels et appelant */}
+                    {order.nombreAppels && order.nombreAppels > 0 && (
+                      <span className="badge bg-orange-100 text-orange-700 border border-orange-300 text-xs flex items-center gap-1">
+                        <Phone size={12} />
+                        {order.nombreAppels} appel{order.nombreAppels > 1 ? 's' : ''}
+                        {order.caller && ` · ${order.caller.prenom}`}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
