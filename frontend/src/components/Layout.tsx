@@ -20,7 +20,8 @@ import {
   X,
   DollarSign,
   Bell,
-  Calendar
+  Calendar,
+  AlertTriangle
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 
@@ -56,6 +57,7 @@ export default function Layout({ children }: LayoutProps) {
           { icon: Eye, label: 'Supervision Appelants', path: '/admin/supervision' },
           { icon: BarChart3, label: 'Statistiques', path: '/admin/stats' },
           { icon: DollarSign, label: 'Comptabilité', path: '/admin/accounting' },
+          { icon: AlertTriangle, label: '🔧 Diagnostic Stock', path: '/admin/diagnostic-stock' },
         ];
       case 'GESTIONNAIRE':
         return [
