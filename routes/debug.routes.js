@@ -5,6 +5,83 @@ import { authenticate, authorize } from '../middlewares/auth.middleware.js';
 const router = Router();
 const prisma = new PrismaClient();
 
+// Route temporaire pour diagnostiquer le stock négatif (JSON)
+// À SUPPRIMER après utilisation
+// Accessible uniquement aux ADMIN
+router.get('/diagnostic-stock-json', authenticate, authorize('ADMIN'), async (req, res) => {
+  try {
+    // Trouver tous les produits avec stock en livraison négatif
+    const produitsNegatifs = await prisma.product.findMany({
+      where: {
+        stockLocalReserve: { lt: 0 }
+      },
+      orderBy: {
+        stockLocalReserve: 'asc'
+      }
+    });
+
+    const resultat = {
+      produitsNegatifs: [],
+      totalCorrection: 0
+    };
+
+    for (const produit of produitsNegatifs) {
+      // Analyser les commandes LIVREE pour ce produit
+      const commandesLivrees = await prisma.order.findMany({
+        where: {
+          productId: produit.id,
+          status: 'LIVREE',
+          deliveryType: 'LOCAL'
+        },
+        include: {
+          deliveryList: {
+            include: {
+              tourneeStock: true
+            }
+          }
+        }
+      });
+
+      let avecRemiseConfirmee = 0;
+      let sansRemiseConfirmee = 0;
+
+      commandesLivrees.forEach((cmd) => {
+        if (cmd.deliveryList) {
+          if (cmd.deliveryList.tourneeStock && cmd.deliveryList.tourneeStock.colisRemisConfirme) {
+            avecRemiseConfirmee++;
+          } else {
+            sansRemiseConfirmee++;
+          }
+        } else {
+          sansRemiseConfirmee++;
+        }
+      });
+
+      const correctionNecessaire = Math.abs(produit.stockLocalReserve);
+      resultat.totalCorrection += correctionNecessaire;
+
+      resultat.produitsNegatifs.push({
+        nom: produit.nom,
+        code: produit.code,
+        stockActuel: produit.stockActuel,
+        stockExpress: produit.stockExpress,
+        stockLocalReserve: produit.stockLocalReserve,
+        stockTotal: produit.stockActuel + produit.stockExpress + produit.stockLocalReserve,
+        commandesLivrees: commandesLivrees.length,
+        avecRemiseConfirmee,
+        sansRemiseConfirmee,
+        correctionNecessaire
+      });
+    }
+
+    res.json(resultat);
+
+  } catch (error) {
+    console.error('❌ ERREUR lors du diagnostic :', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Route temporaire pour diagnostiquer le stock négatif
 // À SUPPRIMER après utilisation
 // Accessible uniquement aux ADMIN
