@@ -13,6 +13,7 @@ import expressRoutes from './routes/express.routes.js';
 import stockRoutes from './routes/stock.routes.js';
 import stockAnalysisRoutes from './routes/stock.analysis.routes.js';
 import rdvRoutes from './routes/rdv.routes.js';
+import debugRoutes from './routes/debug.routes.js';
 import { scheduleCleanupJob } from './jobs/cleanupPhotos.js';
 
 if (process.env.NODE_ENV !== 'production') {
@@ -54,6 +55,7 @@ app.use('/api/stock-analysis', stockAnalysisRoutes);
 app.use('/api/accounting', accountingRoutes);
 app.use('/api/express', expressRoutes);
 app.use('/api/rdv', rdvRoutes);
+app.use('/api/debug', debugRoutes);
 
 // Route de test
 app.get('/', (req, res) => {
