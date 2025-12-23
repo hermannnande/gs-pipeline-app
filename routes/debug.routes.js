@@ -5,6 +5,25 @@ import { authenticate, authorize } from '../middlewares/auth.middleware.js';
 const router = Router();
 const prisma = new PrismaClient();
 
+// Route de test simple (sans auth pour debug)
+router.get('/test-connection', async (req, res) => {
+  try {
+    const count = await prisma.product.count({
+      where: { stockLocalReserve: { lt: 0 } }
+    });
+    res.json({ 
+      success: true, 
+      message: 'Connexion OK',
+      produitsNegatifs: count 
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
 // Route temporaire pour diagnostiquer le stock négatif (JSON)
 // À SUPPRIMER après utilisation
 // Accessible uniquement aux ADMIN
