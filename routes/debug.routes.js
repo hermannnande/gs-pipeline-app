@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { authenticate, authorize } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 const prisma = new PrismaClient();
 
 // Route temporaire pour diagnostiquer le stock négatif
 // À SUPPRIMER après utilisation
-router.get('/diagnostic-stock-negatif', async (req, res) => {
+// Accessible uniquement aux ADMIN
+router.get('/diagnostic-stock-negatif', authenticate, authorize('ADMIN'), async (req, res) => {
   try {
     let output = '';
     const log = (msg) => { output += msg + '\n'; };
@@ -241,7 +243,8 @@ router.get('/diagnostic-stock-negatif', async (req, res) => {
 
 // Route temporaire pour corriger le stock négatif
 // À SUPPRIMER après utilisation
-router.get('/corriger-stock-negatif', async (req, res) => {
+// Accessible uniquement aux ADMIN
+router.get('/corriger-stock-negatif', authenticate, authorize('ADMIN'), async (req, res) => {
   try {
     let output = '';
     const log = (msg) => { output += msg + '\n'; };
