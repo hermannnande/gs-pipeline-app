@@ -235,22 +235,22 @@ router.post('/tournees/:id/confirm-remise', authorize('ADMIN', 'GESTIONNAIRE', '
 
     // ⚡ TRANSACTION : Créer TourneeStock ET déplacer le stock vers stockLocalReserve
     const result = await prisma.$transaction(async (tx) => {
-      // Créer ou mettre à jour TourneeStock
+    // Créer ou mettre à jour TourneeStock
       const tourneeStock = await tx.tourneeStock.upsert({
-        where: { deliveryListId: parseInt(id) },
-        create: {
-          deliveryListId: parseInt(id),
-          colisRemis: parseInt(colisRemis),
-          colisRemisConfirme: true,
-          colisRemisAt: new Date(),
-          colisRemisBy: req.user.id
-        },
-        update: {
-          colisRemis: parseInt(colisRemis),
-          colisRemisConfirme: true,
-          colisRemisAt: new Date(),
-          colisRemisBy: req.user.id
-        }
+      where: { deliveryListId: parseInt(id) },
+      create: {
+        deliveryListId: parseInt(id),
+        colisRemis: parseInt(colisRemis),
+        colisRemisConfirme: true,
+        colisRemisAt: new Date(),
+        colisRemisBy: req.user.id
+      },
+      update: {
+        colisRemis: parseInt(colisRemis),
+        colisRemisConfirme: true,
+        colisRemisAt: new Date(),
+        colisRemisBy: req.user.id
+      }
       });
 
       // ⚡ DÉPLACER LE STOCK : stockActuel → stockLocalReserve

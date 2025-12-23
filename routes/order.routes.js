@@ -370,8 +370,8 @@ router.put('/:id/status', async (req, res) => {
               orderId: order.id,
               effectuePar: user.id,
               motif: `Livraison commande ${order.orderReference} - ${order.clientNom}`
-              }
-            });
+            }
+          });
           }
         }
       }
