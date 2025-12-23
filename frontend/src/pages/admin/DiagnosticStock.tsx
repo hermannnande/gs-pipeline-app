@@ -10,22 +10,34 @@ const DiagnosticStock = () => {
   const executerDiagnostic = async () => {
     setLoading(true);
     setError(null);
+    setDiagnostic(null);
+    
+    console.log('🔍 Début du diagnostic...');
+    
     try {
+      const token = localStorage.getItem('token');
+      console.log('Token présent:', !!token);
+      
       const response = await fetch('/api/debug/diagnostic-stock-negatif', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
       
+      console.log('Réponse reçue:', response.status, response.statusText);
+      
       if (!response.ok) {
-        throw new Error(`Erreur ${response.status}`);
+        const errorText = await response.text();
+        console.error('Erreur serveur:', errorText);
+        throw new Error(`Erreur ${response.status}: ${response.statusText}`);
       }
       
       const html = await response.text();
+      console.log('HTML reçu, longueur:', html.length);
       setDiagnostic(html);
     } catch (err: any) {
-      setError(err.message);
       console.error('Erreur diagnostic:', err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -93,9 +105,18 @@ const DiagnosticStock = () => {
 
         {diagnostic && (
           <div className="mt-6">
-            <div className="bg-gray-900 rounded-lg p-4 overflow-auto max-h-96">
+            <h3 className="text-lg font-semibold mb-2 text-green-600">✅ Diagnostic terminé !</h3>
+            <div className="bg-gray-900 rounded-lg p-4 overflow-auto max-h-[600px]">
               <div dangerouslySetInnerHTML={{ __html: diagnostic }} />
             </div>
+          </div>
+        )}
+
+        {!loading && !diagnostic && !error && (
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-blue-800">
+              ℹ️ Cliquez sur "Exécuter le diagnostic" pour analyser tous les produits.
+            </p>
           </div>
         )}
       </div>
