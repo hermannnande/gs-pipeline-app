@@ -80,27 +80,38 @@ node scripts/fix-stock-en-livraison-negatif.js
 ```
 
 **Ce que fait le script :**
-1. ✅ Identifie tous les produits avec `stockLocalReserve < 0`
-2. ✅ Affiche la liste des produits concernés
-3. ✅ Corrige automatiquement en mettant à `0`
-4. ✅ Crée un mouvement de stock pour tracer la correction
-5. ✅ Vérifie que tout est OK
+1. ✅ Analyse TOUS les produits de la base
+2. ✅ Calcule le stock LOCAL RÉEL basé sur les commandes ASSIGNEE en cours
+3. ✅ Compare avec le stock en base de données
+4. ✅ Affiche les incohérences détectées avec les commandes concernées
+5. ✅ Corrige automatiquement pour aligner sur la réalité
+6. ✅ Crée un mouvement de stock pour tracer la correction
+7. ✅ Vérifie que tout est cohérent
+
+**⚠️ SÉCURITÉ :** Le script respecte les livraisons en cours ! Il ne met PAS tout à 0, mais recalcule le stock réel.
 
 **Exemple de sortie :**
 ```
-🔍 Recherche des produits avec stockLocalReserve négatif...
+🔍 Analyse du stock en livraison et recalcul basé sur les livraisons réelles...
 
-❌ 1 produit(s) avec stockLocalReserve négatif trouvé(s):
+📦 15 produit(s) trouvé(s) au total.
+
+⚠️  1 produit(s) avec incohérence de stock détecté(s):
 
   - [GAINE_TOURMALINE] Gaine Tourmaline Chauffante
-    Stock actuel: 34
-    Stock en livraison (LOCAL): -16 ⚠️
-    Stock EXPRESS: 0
+    Stock actuel (magasin): 34
+    Stock en livraison (BDD): -16 ⚠️ NÉGATIF
+    Stock en livraison (RÉEL): 5 ✅
+    Différence: +21
+    📋 2 commande(s) en livraison:
+       • #CMD-2025-123 - 3 unité(s) - Moussa Diallo
+       • #CMD-2025-124 - 2 unité(s) - Aminata Sow
 
 🔧 Correction de [GAINE_TOURMALINE] Gaine Tourmaline Chauffante...
-   ✅ -16 → 0
+   ✅ -16 → 5 (+21)
 
 ✅ Correction terminée avec succès!
+✅ Tous les stocks en livraison sont cohérents avec les commandes réelles.
 ```
 
 ---

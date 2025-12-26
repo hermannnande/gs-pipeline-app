@@ -3,47 +3,94 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function fixNegativeStockLocalReserve() {
-  console.log('🔍 Recherche des produits avec stockLocalReserve négatif...\n');
+  console.log('🔍 Analyse du stock en livraison et recalcul basé sur les livraisons réelles...\n');
 
   try {
-    // 1. Trouver tous les produits avec stockLocalReserve négatif
-    const productsWithNegativeStock = await prisma.product.findMany({
-      where: {
-        stockLocalReserve: {
-          lt: 0
+    // 1. Trouver TOUS les produits (pas seulement les négatifs)
+    const allProducts = await prisma.product.findMany({
+      include: {
+        orders: {
+          where: {
+            status: 'ASSIGNEE',
+            deliveryType: 'LOCAL'
+          },
+          include: {
+            deliverer: {
+              select: {
+                id: true,
+                nom: true,
+                prenom: true
+              }
+            }
+          }
         }
       }
     });
 
-    if (productsWithNegativeStock.length === 0) {
-      console.log('✅ Aucun produit avec stockLocalReserve négatif trouvé.');
+    console.log(`📦 ${allProducts.length} produit(s) trouvé(s) au total.\n`);
+
+    const productsToFix = [];
+
+    // 2. Pour chaque produit, calculer le stock réel en livraison
+    for (const product of allProducts) {
+      // Calculer le stock LOCAL RÉEL basé sur les commandes ASSIGNEE
+      const realStockLocalReserve = product.orders.reduce((sum, order) => {
+        return sum + (order.quantite || 0);
+      }, 0);
+
+      const currentStockLocalReserve = product.stockLocalReserve || 0;
+
+      // Si différence détectée
+      if (realStockLocalReserve !== currentStockLocalReserve) {
+        productsToFix.push({
+          product,
+          currentStock: currentStockLocalReserve,
+          realStock: realStockLocalReserve,
+          difference: realStockLocalReserve - currentStockLocalReserve,
+          ordersInDelivery: product.orders
+        });
+      }
+    }
+
+    if (productsToFix.length === 0) {
+      console.log('✅ Aucune incohérence détectée. Tous les stocks en livraison sont corrects.');
       return;
     }
 
-    console.log(`❌ ${productsWithNegativeStock.length} produit(s) avec stockLocalReserve négatif trouvé(s):\n`);
+    console.log(`⚠️  ${productsToFix.length} produit(s) avec incohérence de stock détecté(s):\n`);
 
-    productsWithNegativeStock.forEach(product => {
+    productsToFix.forEach(({ product, currentStock, realStock, difference, ordersInDelivery }) => {
       console.log(`  - [${product.code}] ${product.nom}`);
-      console.log(`    Stock actuel: ${product.stockActuel}`);
-      console.log(`    Stock en livraison (LOCAL): ${product.stockLocalReserve} ⚠️`);
-      console.log(`    Stock EXPRESS: ${product.stockExpress}`);
+      console.log(`    Stock actuel (magasin): ${product.stockActuel}`);
+      console.log(`    Stock en livraison (BDD): ${currentStock} ${currentStock < 0 ? '⚠️ NÉGATIF' : ''}`);
+      console.log(`    Stock en livraison (RÉEL): ${realStock} ✅`);
+      console.log(`    Différence: ${difference > 0 ? '+' : ''}${difference}`);
+      
+      if (ordersInDelivery.length > 0) {
+        console.log(`    📋 ${ordersInDelivery.length} commande(s) en livraison:`);
+        ordersInDelivery.forEach(order => {
+          const livreurNom = order.deliverer 
+            ? `${order.deliverer.nom} ${order.deliverer.prenom}` 
+            : 'Non assigné';
+          console.log(`       • #${order.orderReference} - ${order.quantite} unité(s) - ${livreurNom}`);
+        });
+      } else {
+        console.log(`    📋 Aucune commande en livraison (stock devrait être à 0)`);
+      }
       console.log('');
     });
 
-    // 2. Demander confirmation
+    // 3. Demander confirmation
     console.log('⚠️  CORRECTION AUTOMATIQUE:');
-    console.log('   - Mettre stockLocalReserve à 0 pour tous ces produits\n');
+    console.log('   - Recalculer le stockLocalReserve basé sur les commandes ASSIGNEE réelles\n');
 
-    // En production, vous devriez demander une confirmation
-    // Pour l'instant, on procède automatiquement
-
-    // 3. Corriger chaque produit
-    for (const product of productsWithNegativeStock) {
+    // 4. Corriger chaque produit
+    for (const { product, currentStock, realStock, difference } of productsToFix) {
       console.log(`🔧 Correction de [${product.code}] ${product.nom}...`);
 
       await prisma.product.update({
         where: { id: product.id },
-        data: { stockLocalReserve: 0 }
+        data: { stockLocalReserve: realStock }
       });
 
       // Créer un mouvement de stock pour tracer la correction
@@ -51,34 +98,45 @@ async function fixNegativeStockLocalReserve() {
         data: {
           productId: product.id,
           type: 'CORRECTION',
-          quantite: -product.stockLocalReserve, // Quantité pour passer de négatif à 0
-          stockAvant: product.stockLocalReserve,
-          stockApres: 0,
+          quantite: difference,
+          stockAvant: currentStock,
+          stockApres: realStock,
           effectuePar: 1, // ID de l'admin - à ajuster selon votre base
-          motif: `Correction automatique du stockLocalReserve négatif (${product.stockLocalReserve} → 0) suite à correction de la double logique de stock.`
+          motif: `Recalcul automatique du stockLocalReserve basé sur les commandes ASSIGNEE réelles. Correction de l'incohérence suite au bug de double logique (${currentStock} → ${realStock}).`
         }
       });
 
-      console.log(`   ✅ ${product.stockLocalReserve} → 0`);
+      console.log(`   ✅ ${currentStock} → ${realStock} (${difference > 0 ? '+' : ''}${difference})`);
       console.log('');
     }
 
     console.log('\n✅ Correction terminée avec succès!');
     console.log('\n📊 Vérification finale:');
 
-    // 4. Vérifier que tout est corrigé
-    const verification = await prisma.product.findMany({
-      where: {
-        stockLocalReserve: {
-          lt: 0
+    // 5. Vérifier que tout est corrigé
+    const verificationProducts = await prisma.product.findMany({
+      include: {
+        orders: {
+          where: {
+            status: 'ASSIGNEE',
+            deliveryType: 'LOCAL'
+          }
         }
       }
     });
 
-    if (verification.length === 0) {
-      console.log('   ✅ Aucun produit avec stockLocalReserve négatif.');
+    let stillInconsistent = 0;
+    for (const product of verificationProducts) {
+      const realStock = product.orders.reduce((sum, order) => sum + (order.quantite || 0), 0);
+      if (realStock !== product.stockLocalReserve) {
+        stillInconsistent++;
+      }
+    }
+
+    if (stillInconsistent === 0) {
+      console.log('   ✅ Tous les stocks en livraison sont cohérents avec les commandes réelles.');
     } else {
-      console.log(`   ❌ ${verification.length} produit(s) encore négatif(s).`);
+      console.log(`   ❌ ${stillInconsistent} produit(s) encore incohérent(s).`);
     }
 
   } catch (error) {
