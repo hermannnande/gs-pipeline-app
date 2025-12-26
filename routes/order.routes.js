@@ -354,35 +354,105 @@ router.put('/:id/status', async (req, res) => {
       // Le stock revient UNIQUEMENT lors de la confirmation de retour par le gestionnaire de stock
 
       // RÈGLE MÉTIER 2 : Réincrémenter le stock si la commande était LIVRÉE et change vers un autre statut
-      // (Le livreur corrige son erreur : la livraison n'a pas été effectuée)
+      // (Le livreur corrige son erreur dans les 24h : la livraison n'a pas été effectuée)
       if (order.status === 'LIVREE' && status !== 'LIVREE' && order.productId) {
         const product = await tx.product.findUnique({
           where: { id: order.productId }
         });
 
         if (product) {
-          const stockAvant = product.stockActuel;
-          const stockApres = stockAvant + order.quantite; // RÉINCRÉMENTER
+          // 📦 LOCAL : Remettre dans stockLocalReserve (le colis est encore chez le livreur)
+          if (order.deliveryType === 'LOCAL') {
+            const stockLocalReserveAvant = product.stockLocalReserve;
+            const stockLocalReserveApres = stockLocalReserveAvant + order.quantite;
 
-          // Mettre à jour le stock du produit
-          await tx.product.update({
-            where: { id: order.productId },
-            data: { stockActuel: stockApres }
-          });
+            await tx.product.update({
+              where: { id: order.productId },
+              data: { stockLocalReserve: stockLocalReserveApres }
+            });
 
-          // Créer le mouvement de stock (RETOUR)
-          await tx.stockMovement.create({
-            data: {
-              productId: order.productId,
-              type: 'RETOUR',
-              quantite: order.quantite, // Positif car on rajoute
-              stockAvant,
-              stockApres,
-              orderId: order.id,
-              effectuePar: user.id,
-              motif: `Correction statut ${order.orderReference} - ${order.status} → ${status} - ${order.clientNom}`
-            }
-          });
+            await tx.stockMovement.create({
+              data: {
+                productId: order.productId,
+                type: 'CORRECTION_LIVRAISON_LOCAL',
+                quantite: order.quantite, // Positif car on rajoute
+                stockAvant: stockLocalReserveAvant,
+                stockApres: stockLocalReserveApres,
+                orderId: order.id,
+                effectuePar: user.id,
+                motif: `Correction livraison LOCAL ${order.orderReference} - ${order.status} → ${status} (< 24h) - Colis encore chez livreur - ${order.clientNom}`
+              }
+            });
+          }
+          // 📮 EXPEDITION : Remettre dans stockActuel (le colis peut revenir)
+          else if (order.deliveryType === 'EXPEDITION') {
+            const stockAvant = product.stockActuel;
+            const stockApres = stockAvant + order.quantite;
+
+            await tx.product.update({
+              where: { id: order.productId },
+              data: { stockActuel: stockApres }
+            });
+
+            await tx.stockMovement.create({
+              data: {
+                productId: order.productId,
+                type: 'RETOUR_EXPEDITION',
+                quantite: order.quantite,
+                stockAvant,
+                stockApres,
+                orderId: order.id,
+                effectuePar: user.id,
+                motif: `Correction EXPEDITION ${order.orderReference} - ${order.status} → ${status} (< 24h) - ${order.clientNom}`
+              }
+            });
+          }
+          // ⚡ EXPRESS : Remettre dans stockExpress
+          else if (order.deliveryType === 'EXPRESS') {
+            const stockExpressAvant = product.stockExpress || 0;
+            const stockExpressApres = stockExpressAvant + order.quantite;
+
+            await tx.product.update({
+              where: { id: order.productId },
+              data: { stockExpress: stockExpressApres }
+            });
+
+            await tx.stockMovement.create({
+              data: {
+                productId: order.productId,
+                type: 'CORRECTION_EXPRESS',
+                quantite: order.quantite,
+                stockAvant: stockExpressAvant,
+                stockApres: stockExpressApres,
+                orderId: order.id,
+                effectuePar: user.id,
+                motif: `Correction EXPRESS ${order.orderReference} - ${order.status} → ${status} (< 24h) - ${order.clientNom}`
+              }
+            });
+          }
+          // 🔹 Autres types : Comportement par défaut (stockActuel)
+          else {
+            const stockAvant = product.stockActuel;
+            const stockApres = stockAvant + order.quantite;
+
+            await tx.product.update({
+              where: { id: order.productId },
+              data: { stockActuel: stockApres }
+            });
+
+            await tx.stockMovement.create({
+              data: {
+                productId: order.productId,
+                type: 'RETOUR',
+                quantite: order.quantite,
+                stockAvant,
+                stockApres,
+                orderId: order.id,
+                effectuePar: user.id,
+                motif: `Correction statut ${order.orderReference} - ${order.status} → ${status} - ${order.clientNom}`
+              }
+            });
+          }
         }
       }
 

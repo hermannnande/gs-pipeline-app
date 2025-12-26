@@ -294,6 +294,10 @@ enum StockMovementType {
   RESERVATION_LOCAL    // Déplacement vers stock local réservé (avec livreur)
   LIVRAISON_LOCAL      // Sortie du stock local réservé (livraison réussie)
   RETOUR_LOCAL         // Retour du stock local réservé vers stock normal
+  CORRECTION_LIVRAISON_LOCAL  // Correction < 24h LOCAL : retour dans stockLocalReserve
+  RETOUR_EXPEDITION    // Correction < 24h EXPEDITION : retour dans stockActuel
+  CORRECTION_EXPRESS   // Correction < 24h EXPRESS : retour dans stockExpress
+  AJUSTEMENT          // Ajustement manuel par admin (entrée/sortie)
 }
 
 // Mouvements de stock (entrées/sorties)
