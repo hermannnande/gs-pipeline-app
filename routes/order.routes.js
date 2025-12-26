@@ -294,37 +294,53 @@ router.put('/:id/status', async (req, res) => {
         });
 
         if (product) {
-          // 📦 LOCAL : Si la commande était ASSIGNEE (livraison locale), réduire stockLocalReserve
-          if (order.status === 'ASSIGNEE' && order.deliveryType === 'LOCAL') {
-            const stockLocalReserveAvant = product.stockLocalReserve;
-            const stockLocalReserveApres = stockLocalReserveAvant - order.quantite;
+          // 📦 LOCAL : Si le colis était chez le livreur (peu importe le statut), réduire stockLocalReserve
+          if (order.deliveryType === 'LOCAL') {
+            // Liste des statuts où le colis est chez le livreur
+            // Aligné avec la logique RETOUR (routes/stock.routes.js ligne 420)
+            const statusAvecLivreur = ['ASSIGNEE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'];
+            
+            if (statusAvecLivreur.includes(order.status)) {
+              // ✅ Le colis était chez le livreur, réduire stockLocalReserve
+              const stockLocalReserveAvant = product.stockLocalReserve;
+              const stockLocalReserveApres = stockLocalReserveAvant - order.quantite;
 
-            await tx.product.update({
-              where: { id: order.productId },
-              data: { stockLocalReserve: stockLocalReserveApres }
-            });
+              await tx.product.update({
+                where: { id: order.productId },
+                data: { stockLocalReserve: stockLocalReserveApres }
+              });
 
-            await tx.stockMovement.create({
-              data: {
-                productId: order.productId,
-                type: 'LIVRAISON_LOCAL',
-                quantite: -order.quantite,
-                stockAvant: stockLocalReserveAvant,
-                stockApres: stockLocalReserveApres,
-                orderId: order.id,
-                effectuePar: user.id,
-                motif: `Livraison locale ${order.orderReference} - ${order.clientNom}`
-              }
-            });
-          } 
+              await tx.stockMovement.create({
+                data: {
+                  productId: order.productId,
+                  type: 'LIVRAISON_LOCAL',
+                  quantite: -order.quantite,
+                  stockAvant: stockLocalReserveAvant,
+                  stockApres: stockLocalReserveApres,
+                  orderId: order.id,
+                  effectuePar: user.id,
+                  motif: `Livraison locale ${order.orderReference} - ${order.status} → LIVREE - ${order.clientNom}`
+                }
+              });
+            } else {
+              // Cas rare : LOCAL → LIVREE sans passer par les statuts avec livreur
+              // Cela peut arriver si la commande n'a pas encore été remise (pas de REMISE confirmée)
+              console.warn(`Commande ${order.orderReference} : LOCAL → LIVREE depuis statut ${order.status} (pas de REMISE préalable détectée)`);
+            }
+          }
           // 📮 EXPEDITION : Stock déjà réduit lors de la création, ne rien faire
           else if (order.deliveryType === 'EXPEDITION') {
             // ✅ Pas de réduction de stock pour EXPEDITION (déjà réduit lors du paiement 100%)
             // La route POST /api/orders/:id/expedition/livrer gère la confirmation de livraison
             // sans toucher au stock
           }
-          // ⚡ EXPRESS ou autres : comportement par défaut (ne devrait pas arriver ici normalement)
-          else if (order.deliveryType !== 'EXPRESS') {
+          // ⚡ EXPRESS : Géré par route dédiée
+          else if (order.deliveryType === 'EXPRESS') {
+            // ✅ EXPRESS géré par route dédiée /api/orders/:id/express/finaliser
+            // Le stock est dans stockExpress, pas dans stockActuel
+          }
+          // 🔹 Autres types (ne devrait pas arriver normalement)
+          else {
             // Réduire stockActuel pour les cas non gérés spécifiquement
             const stockAvant = product.stockActuel;
             const stockApres = stockAvant - order.quantite;
