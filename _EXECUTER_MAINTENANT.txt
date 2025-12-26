@@ -1,0 +1,84 @@
+========================================
+  EXECUTION IMMEDIATE - CORRECTION STOCK
+========================================
+
+TOUT EST PRET ! Le script est corrige et pousse sur Railway.
+
+ETAPE 1 : Ouvrir PowerShell
+----------------------------
+- Clic droit sur le dossier "GS cursor"
+- "Ouvrir dans le terminal" ou "Open in PowerShell"
+
+ETAPE 2 : Executer le script
+-----------------------------
+Copiez-collez cette commande :
+
+    .\executer-correction-stock-production.ps1
+
+ETAPE 3 : Suivre les instructions
+----------------------------------
+Le script va vous demander :
+1. Votre email ADMIN
+2. Votre mot de passe
+
+Puis il va :
+1. Verifier la coherence du stock
+2. Afficher les incoherences
+3. Demander confirmation
+4. Corriger automatiquement
+5. Afficher les resultats
+
+========================================
+
+ALTERNATIVE : Commandes manuelles
+===================================
+
+Si vous preferez executer manuellement :
+
+# 1. Connexion
+$body = @{
+    email = "votre_email@gs.com"
+    password = "votre_mot_de_passe"
+} | ConvertTo-Json
+
+$response = Invoke-RestMethod `
+    -Uri "https://gs-pipeline-app-production.up.railway.app/api/auth/login" `
+    -Method POST `
+    -Body $body `
+    -ContentType "application/json"
+
+$token = $response.token
+Write-Host "Token obtenu !"
+
+# 2. Verifier (sans corriger)
+$headers = @{
+    "Authorization" = "Bearer $token"
+    "Content-Type" = "application/json"
+}
+
+$check = Invoke-RestMethod `
+    -Uri "https://gs-pipeline-app-production.up.railway.app/api/maintenance/check-stock-coherence" `
+    -Method GET `
+    -Headers $headers
+
+$check | ConvertTo-Json -Depth 10
+
+# 3. Corriger
+$fix = Invoke-RestMethod `
+    -Uri "https://gs-pipeline-app-production.up.railway.app/api/maintenance/fix-stock-local-reserve" `
+    -Method POST `
+    -Headers $headers
+
+$fix | ConvertTo-Json -Depth 10
+
+========================================
+
+C'EST TOUT !
+
+Le script va corriger automatiquement le stock
+en livraison base sur les commandes reelles.
+
+Aucun risque, tout est trace.
+
+========================================
+
