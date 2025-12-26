@@ -255,40 +255,66 @@ router.post('/tournees/:id/confirm-remise', authorize('ADMIN', 'GESTIONNAIRE', '
 
       // ⚡ DÉPLACER LE STOCK : stockActuel → stockLocalReserve
       // UNIQUEMENT si c'est la première confirmation
+      // ⚠️ IMPORTANT : 
+      // - LOCAL : On déplace le stock (stockActuel → stockLocalReserve)
+      // - EXPEDITION : On NE déplace PAS le stock (déjà réduit lors de la création, pas de retour possible)
       const stockMovements = [];
       if (isFirstConfirmation) {
         for (const order of deliveryList.orders) {
-          if (order.productId && order.deliveryType === 'LOCAL' && order.product) {
-            const product = order.product;
-            const stockActuelAvant = product.stockActuel;
-            const stockLocalReserveAvant = product.stockLocalReserve;
-            const stockActuelApres = stockActuelAvant - order.quantite;
-            const stockLocalReserveApres = stockLocalReserveAvant + order.quantite;
+          // ✅ Inclure LOCAL et EXPEDITION pour la REMISE
+          if (order.productId && order.product) {
+            // 📦 LOCAL : Déplacer le stock vers stockLocalReserve
+            if (order.deliveryType === 'LOCAL') {
+              const product = order.product;
+              const stockActuelAvant = product.stockActuel;
+              const stockLocalReserveAvant = product.stockLocalReserve;
+              const stockActuelApres = stockActuelAvant - order.quantite;
+              const stockLocalReserveApres = stockLocalReserveAvant + order.quantite;
 
-            // Mettre à jour les deux stocks
-            await tx.product.update({
-              where: { id: order.productId },
-              data: { 
-                stockActuel: stockActuelApres,
-                stockLocalReserve: stockLocalReserveApres
-              }
-            });
+              // Mettre à jour les deux stocks
+              await tx.product.update({
+                where: { id: order.productId },
+                data: { 
+                  stockActuel: stockActuelApres,
+                  stockLocalReserve: stockLocalReserveApres
+                }
+              });
 
-            // Créer le mouvement de réservation locale
-            const movement = await tx.stockMovement.create({
-              data: {
-                productId: order.productId,
-                type: 'RESERVATION_LOCAL',
-                quantite: order.quantite,
-                stockAvant: stockActuelAvant,
-                stockApres: stockActuelApres,
-                orderId: order.id,
-                tourneeId: tourneeStock.id,
-                effectuePar: req.user.id,
-                motif: `Remise colis tournée ${deliveryList.nom} - ${order.orderReference} - ${order.clientNom}`
-              }
-            });
-            stockMovements.push(movement);
+              // Créer le mouvement de réservation locale
+              const movement = await tx.stockMovement.create({
+                data: {
+                  productId: order.productId,
+                  type: 'RESERVATION_LOCAL',
+                  quantite: order.quantite,
+                  stockAvant: stockActuelAvant,
+                  stockApres: stockActuelApres,
+                  orderId: order.id,
+                  tourneeId: tourneeStock.id,
+                  effectuePar: req.user.id,
+                  motif: `Remise colis LOCAL tournée ${deliveryList.nom} - ${order.orderReference} - ${order.clientNom}`
+                }
+              });
+              stockMovements.push(movement);
+            }
+            // 📮 EXPEDITION : Pas de déplacement de stock (déjà réduit lors de la création)
+            // La REMISE sert uniquement à la traçabilité (qui a remis quoi à qui)
+            else if (order.deliveryType === 'EXPEDITION') {
+              // Créer un mouvement de traçabilité sans modifier le stock
+              const movement = await tx.stockMovement.create({
+                data: {
+                  productId: order.productId,
+                  type: 'RESERVATION', // Type générique pour EXPEDITION
+                  quantite: 0, // Pas de changement de stock
+                  stockAvant: order.product.stockActuel,
+                  stockApres: order.product.stockActuel,
+                  orderId: order.id,
+                  tourneeId: tourneeStock.id,
+                  effectuePar: req.user.id,
+                  motif: `Remise colis EXPEDITION tournée ${deliveryList.nom} - ${order.orderReference} - ${order.clientNom} - Stock déjà réduit lors du paiement`
+                }
+              });
+              stockMovements.push(movement);
+            }
           }
         }
       }

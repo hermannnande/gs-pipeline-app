@@ -283,43 +283,9 @@ router.put('/:id/status', async (req, res) => {
         }
       });
 
-      // ⚡ NOUVEAU : Quand une commande passe à ASSIGNEE (assignée à livreur)
-      // → Déplacer le stock de stockActuel vers stockLocalReserve
-      if (status === 'ASSIGNEE' && order.status !== 'ASSIGNEE' && order.productId && order.deliveryType === 'LOCAL') {
-        const product = await tx.product.findUnique({
-          where: { id: order.productId }
-        });
-
-        if (product) {
-          const stockActuelAvant = product.stockActuel;
-          const stockLocalReserveAvant = product.stockLocalReserve;
-          const stockActuelApres = stockActuelAvant - order.quantite;
-          const stockLocalReserveApres = stockLocalReserveAvant + order.quantite;
-
-          // Mettre à jour les deux stocks
-          await tx.product.update({
-            where: { id: order.productId },
-            data: { 
-              stockActuel: stockActuelApres,
-              stockLocalReserve: stockLocalReserveApres
-            }
-          });
-
-          // Créer le mouvement de réservation locale
-          await tx.stockMovement.create({
-            data: {
-              productId: order.productId,
-              type: 'RESERVATION_LOCAL',
-              quantite: order.quantite,
-              stockAvant: stockActuelAvant,
-              stockApres: stockActuelApres,
-              orderId: order.id,
-              effectuePar: user.id,
-              motif: `Réservation locale - ${order.orderReference} assignée au livreur ${updated.deliverer?.nom || 'N/A'}`
-            }
-          });
-        }
-      }
+      // ⚠️ STOCK : Le stock NE se déplace PAS lors de l'assignation
+      // Le stock se déplacera UNIQUEMENT lors de la confirmation de REMISE
+      // par le gestionnaire de stock (voir routes/stock.routes.js ligne 207)
 
       // RÈGLE MÉTIER 1 : Décrémenter le stock quand la commande passe à LIVRÉE
       if (status === 'LIVREE' && order.status !== 'LIVREE' && order.productId) {
@@ -328,7 +294,7 @@ router.put('/:id/status', async (req, res) => {
         });
 
         if (product) {
-          // Si la commande était ASSIGNEE (livraison locale), réduire stockLocalReserve
+          // 📦 LOCAL : Si la commande était ASSIGNEE (livraison locale), réduire stockLocalReserve
           if (order.status === 'ASSIGNEE' && order.deliveryType === 'LOCAL') {
             const stockLocalReserveAvant = product.stockLocalReserve;
             const stockLocalReserveApres = stockLocalReserveAvant - order.quantite;
@@ -350,28 +316,36 @@ router.put('/:id/status', async (req, res) => {
                 motif: `Livraison locale ${order.orderReference} - ${order.clientNom}`
               }
             });
-          } else {
-            // Sinon, réduire stockActuel (comportement par défaut)
-          const stockAvant = product.stockActuel;
-          const stockApres = stockAvant - order.quantite;
+          } 
+          // 📮 EXPEDITION : Stock déjà réduit lors de la création, ne rien faire
+          else if (order.deliveryType === 'EXPEDITION') {
+            // ✅ Pas de réduction de stock pour EXPEDITION (déjà réduit lors du paiement 100%)
+            // La route POST /api/orders/:id/expedition/livrer gère la confirmation de livraison
+            // sans toucher au stock
+          }
+          // ⚡ EXPRESS ou autres : comportement par défaut (ne devrait pas arriver ici normalement)
+          else if (order.deliveryType !== 'EXPRESS') {
+            // Réduire stockActuel pour les cas non gérés spécifiquement
+            const stockAvant = product.stockActuel;
+            const stockApres = stockAvant - order.quantite;
 
-          await tx.product.update({
-            where: { id: order.productId },
-            data: { stockActuel: stockApres }
-          });
+            await tx.product.update({
+              where: { id: order.productId },
+              data: { stockActuel: stockApres }
+            });
 
-          await tx.stockMovement.create({
-            data: {
-              productId: order.productId,
-              type: 'LIVRAISON',
-              quantite: -order.quantite,
-              stockAvant,
-              stockApres,
-              orderId: order.id,
-              effectuePar: user.id,
-              motif: `Livraison commande ${order.orderReference} - ${order.clientNom}`
-            }
-          });
+            await tx.stockMovement.create({
+              data: {
+                productId: order.productId,
+                type: 'LIVRAISON',
+                quantite: -order.quantite,
+                stockAvant,
+                stockApres,
+                orderId: order.id,
+                effectuePar: user.id,
+                motif: `Livraison commande ${order.orderReference} - ${order.clientNom}`
+              }
+            });
           }
         }
       }
