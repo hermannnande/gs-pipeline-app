@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Phone, Search, RefreshCw, Truck, Zap, Clock, Calendar, Edit2 } from 'lucide-react';
+import { Phone, Search, RefreshCw, Truck, Zap, Clock, Calendar, Edit2, Trash2, CheckSquare, Square } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ordersApi, rdvApi } from '@/lib/api';
 import { formatCurrency, formatDateTime, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
@@ -21,11 +21,14 @@ export default function Orders() {
   const [rdvNote, setRdvNote] = useState('');
   const [showQuantiteModal, setShowQuantiteModal] = useState(false);
   const [newQuantite, setNewQuantite] = useState(1);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<number[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
 
   // Vérifier si l'utilisateur peut modifier la quantité (Admin ou Gestionnaire)
   const canEditQuantite = user?.role === 'ADMIN' || user?.role === 'GESTIONNAIRE';
+  const isAdmin = user?.role === 'ADMIN';
 
   const { data: ordersData, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['appelant-orders'],
@@ -188,6 +191,48 @@ export default function Orders() {
     });
   };
 
+  // Suppression multiple
+  const bulkDeleteMutation = useMutation({
+    mutationFn: (orderIds: number[]) => ordersApi.bulkDelete(orderIds),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['appelant-orders'] });
+      setSelectedOrderIds([]);
+      setShowDeleteConfirm(false);
+      toast.success(data.message || 'Commandes supprimées avec succès');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Erreur lors de la suppression');
+    },
+  });
+
+  const handleSelectOrder = (orderId: number) => {
+    setSelectedOrderIds(prev => 
+      prev.includes(orderId) 
+        ? prev.filter(id => id !== orderId)
+        : [...prev, orderId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedOrderIds.length === filteredOrders?.length) {
+      setSelectedOrderIds([]);
+    } else {
+      setSelectedOrderIds(filteredOrders?.map((o: Order) => o.id) || []);
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedOrderIds.length === 0) {
+      toast.error('Veuillez sélectionner au moins une commande');
+      return;
+    }
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmBulkDelete = () => {
+    bulkDeleteMutation.mutate(selectedOrderIds);
+  };
+
   const filteredOrders = ordersData?.orders
     ?.filter((order: Order) => {
       // IMPORTANT : Afficher UNIQUEMENT les commandes NOUVELLE et A_APPELER
@@ -233,6 +278,16 @@ export default function Orders() {
           <p className="text-gray-600 mt-1">Liste des commandes en attente de traitement</p>
         </div>
         <div className="flex items-center gap-4">
+          {isAdmin && selectedOrderIds.length > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              className="btn bg-red-600 text-white hover:bg-red-700 flex items-center gap-2"
+              disabled={bulkDeleteMutation.isPending}
+            >
+              <Trash2 size={18} />
+              Supprimer ({selectedOrderIds.length})
+            </button>
+          )}
           {filteredOrders && (
             <div className="text-right">
               <p className="text-2xl font-bold text-primary-600">{filteredOrders.length}</p>
@@ -265,6 +320,24 @@ export default function Orders() {
 
       <div className="card">
         <div className="flex flex-col md:flex-row gap-4">
+          {isAdmin && filteredOrders && filteredOrders.length > 0 && (
+            <button
+              onClick={handleSelectAll}
+              className="btn btn-secondary flex items-center gap-2"
+            >
+              {selectedOrderIds.length === filteredOrders.length ? (
+                <>
+                  <CheckSquare size={18} />
+                  Tout désélectionner
+                </>
+              ) : (
+                <>
+                  <Square size={18} />
+                  Tout sélectionner
+                </>
+              )}
+            </button>
+          )}
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
             <input
@@ -299,7 +372,22 @@ export default function Orders() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredOrders?.map((order: Order) => (
-            <div key={order.id} className="card hover:shadow-lg transition-shadow">
+            <div key={order.id} className={`card hover:shadow-lg transition-shadow ${selectedOrderIds.includes(order.id) ? 'ring-2 ring-primary-500' : ''}`}>
+              {isAdmin && (
+                <div className="flex items-center mb-3">
+                  <button
+                    onClick={() => handleSelectOrder(order.id)}
+                    className="flex items-center gap-2 text-sm hover:text-primary-600 transition-colors"
+                  >
+                    {selectedOrderIds.includes(order.id) ? (
+                      <CheckSquare size={20} className="text-primary-600" />
+                    ) : (
+                      <Square size={20} className="text-gray-400" />
+                    )}
+                    <span className="text-xs text-gray-500">Sélectionner</span>
+                  </button>
+                </div>
+              )}
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg text-gray-900">{order.clientNom}</h3>
@@ -665,7 +753,68 @@ export default function Orders() {
           </div>
         </div>
       )}
+
+      {/* Modal de confirmation de suppression */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4 text-red-600 flex items-center gap-2">
+              <Trash2 size={24} />
+              Confirmer la suppression
+            </h2>
+            
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-yellow-800 mb-2">
+                ⚠️ <strong>Attention :</strong> Cette action est irréversible !
+              </p>
+              <p className="text-sm text-gray-700">
+                Vous êtes sur le point de supprimer <strong className="text-red-600">{selectedOrderIds.length} commande(s)</strong>.
+              </p>
+            </div>
+
+            <div className="space-y-2 mb-6">
+              <p className="text-sm text-gray-600">
+                ✓ Les commandes seront définitivement supprimées
+              </p>
+              <p className="text-sm text-gray-600">
+                ✓ Le stock sera restauré si nécessaire
+              </p>
+              <p className="text-sm text-gray-600">
+                ✓ L'historique sera conservé dans les mouvements de stock
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={confirmBulkDelete}
+                disabled={bulkDeleteMutation.isPending}
+                className="btn bg-red-600 text-white hover:bg-red-700 flex-1 flex items-center justify-center gap-2"
+              >
+                {bulkDeleteMutation.isPending ? (
+                  <>
+                    <RefreshCw size={18} className="animate-spin" />
+                    Suppression...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={18} />
+                    Confirmer la suppression
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={bulkDeleteMutation.isPending}
+                className="btn btn-secondary flex-1"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
 

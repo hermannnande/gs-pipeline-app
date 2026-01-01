@@ -125,6 +125,11 @@ export const ordersApi = {
     return data;
   },
 
+  bulkDelete: async (orderIds: number[]) => {
+    const { data } = await api.post('/orders/bulk-delete', { orderIds });
+    return data;
+  },
+
   // EXPÉDITION & EXPRESS
   createExpedition: async (orderId: number, expeditionData: any) => {
     const { data } = await api.post(`/orders/${orderId}/expedition`, expeditionData);

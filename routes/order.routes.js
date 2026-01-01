@@ -302,16 +302,16 @@ router.put('/:id/status', async (req, res) => {
             
             if (statusAvecLivreur.includes(order.status)) {
               // ✅ Le colis était chez le livreur, réduire stockLocalReserve
-              const stockLocalReserveAvant = product.stockLocalReserve;
+          const stockLocalReserveAvant = product.stockLocalReserve;
               const stockLocalReserveApres = stockLocalReserveAvant - order.quantite;
 
-              await tx.product.update({
-                where: { id: order.productId },
+          await tx.product.update({
+            where: { id: order.productId },
                 data: { stockLocalReserve: stockLocalReserveApres }
               });
 
               await tx.stockMovement.create({
-                data: {
+            data: { 
                   productId: order.productId,
                   type: 'LIVRAISON_LOCAL',
                   quantite: -order.quantite,
@@ -350,15 +350,15 @@ router.put('/:id/status', async (req, res) => {
               data: { stockActuel: stockApres }
             });
 
-            await tx.stockMovement.create({
-              data: {
-                productId: order.productId,
+          await tx.stockMovement.create({
+            data: {
+              productId: order.productId,
                 type: 'LIVRAISON',
                 quantite: -order.quantite,
                 stockAvant,
                 stockApres,
-                orderId: order.id,
-                effectuePar: user.id,
+              orderId: order.id,
+              effectuePar: user.id,
                 motif: `Livraison commande ${order.orderReference} - ${order.clientNom}`
               }
             });
@@ -402,26 +402,26 @@ router.put('/:id/status', async (req, res) => {
           }
           // 📮 EXPEDITION : Remettre dans stockActuel (le colis peut revenir)
           else if (order.deliveryType === 'EXPEDITION') {
-            const stockAvant = product.stockActuel;
+          const stockAvant = product.stockActuel;
             const stockApres = stockAvant + order.quantite;
 
-            await tx.product.update({
-              where: { id: order.productId },
-              data: { stockActuel: stockApres }
-            });
+          await tx.product.update({
+            where: { id: order.productId },
+            data: { stockActuel: stockApres }
+          });
 
-            await tx.stockMovement.create({
-              data: {
-                productId: order.productId,
+          await tx.stockMovement.create({
+            data: {
+              productId: order.productId,
                 type: 'RETOUR_EXPEDITION',
                 quantite: order.quantite,
-                stockAvant,
-                stockApres,
-                orderId: order.id,
-                effectuePar: user.id,
+              stockAvant,
+              stockApres,
+              orderId: order.id,
+              effectuePar: user.id,
                 motif: `Correction EXPEDITION ${order.orderReference} - ${order.status} → ${status} (< 24h) - ${order.clientNom}`
-              }
-            });
+            }
+          });
           }
           // ⚡ EXPRESS : Remettre dans stockExpress
           else if (order.deliveryType === 'EXPRESS') {
@@ -448,26 +448,26 @@ router.put('/:id/status', async (req, res) => {
           }
           // 🔹 Autres types : Comportement par défaut (stockActuel)
           else {
-            const stockAvant = product.stockActuel;
+          const stockAvant = product.stockActuel;
             const stockApres = stockAvant + order.quantite;
 
-            await tx.product.update({
-              where: { id: order.productId },
-              data: { stockActuel: stockApres }
-            });
+          await tx.product.update({
+            where: { id: order.productId },
+            data: { stockActuel: stockApres }
+          });
 
-            await tx.stockMovement.create({
-              data: {
-                productId: order.productId,
-                type: 'RETOUR',
+          await tx.stockMovement.create({
+            data: {
+              productId: order.productId,
+              type: 'RETOUR',
                 quantite: order.quantite,
-                stockAvant,
-                stockApres,
-                orderId: order.id,
-                effectuePar: user.id,
-                motif: `Correction statut ${order.orderReference} - ${order.status} → ${status} - ${order.clientNom}`
-              }
-            });
+              stockAvant,
+              stockApres,
+              orderId: order.id,
+              effectuePar: user.id,
+              motif: `Correction statut ${order.orderReference} - ${order.status} → ${status} - ${order.clientNom}`
+            }
+          });
           }
         }
       }
@@ -1565,6 +1565,125 @@ router.delete('/:id', authorize('ADMIN'), async (req, res) => {
   } catch (error) {
     console.error('Erreur suppression commande:', error);
     res.status(500).json({ error: 'Erreur lors de la suppression de la commande.' });
+  }
+});
+
+// POST /api/orders/bulk-delete - Supprimer plusieurs commandes à la fois (Admin uniquement)
+router.post('/bulk-delete', authorize('ADMIN'), [
+  body('orderIds').isArray({ min: 1 }).withMessage('La liste des IDs est requise'),
+  body('orderIds.*').isInt().withMessage('Chaque ID doit être un nombre')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { orderIds } = req.body;
+    const numericIds = orderIds.map(id => parseInt(id));
+
+    // Récupérer toutes les commandes à supprimer avec leurs informations de produit
+    const orders = await prisma.order.findMany({
+      where: { id: { in: numericIds } },
+      include: { product: true }
+    });
+
+    if (orders.length === 0) {
+      return res.status(404).json({ error: 'Aucune commande trouvée.' });
+    }
+
+    // Transaction pour gérer toutes les suppressions
+    const result = await prisma.$transaction(async (tx) => {
+      let deletedCount = 0;
+      let restoredStock = {};
+
+      for (const order of orders) {
+        // Restaurer le stock si nécessaire selon le type et statut
+        if (order.productId && order.product) {
+          let needsStockRestoration = false;
+          let stockField = 'stockActuel';
+
+          // EXPÉDITION : stock réduit dès la création, restaurer si pas encore livrée
+          if (order.deliveryType === 'EXPEDITION' && ['EXPEDITION', 'ASSIGNEE'].includes(order.status)) {
+            needsStockRestoration = true;
+            stockField = 'stockActuel';
+          }
+          
+          // EXPRESS : stock EXPRESS réduit, restaurer si statuts EXPRESS ou EXPRESS_ARRIVE
+          else if (order.deliveryType === 'EXPRESS' && ['EXPRESS', 'EXPRESS_ARRIVE'].includes(order.status)) {
+            needsStockRestoration = true;
+            stockField = 'stockExpress';
+          }
+
+          // Commandes livrées : stock déjà réduit, restaurer
+          else if (order.status === 'LIVREE' || order.status === 'EXPRESS_LIVRE') {
+            needsStockRestoration = true;
+            stockField = order.deliveryType === 'EXPRESS' ? 'stockExpress' : 'stockActuel';
+          }
+
+          if (needsStockRestoration) {
+            const currentStock = order.product[stockField];
+            const newStock = currentStock + order.quantite;
+
+            // Restaurer le stock
+            await tx.product.update({
+              where: { id: order.productId },
+              data: { [stockField]: newStock }
+            });
+
+            // Créer un mouvement de stock pour la restauration
+            await tx.stockMovement.create({
+              data: {
+                productId: order.productId,
+                type: 'CORRECTION',
+                quantite: order.quantite,
+                stockAvant: currentStock,
+                stockApres: newStock,
+                effectuePar: req.user.id,
+                motif: `Restauration ${stockField} suite à suppression multiple de la commande ${order.orderReference} (${order.deliveryType || 'LOCALE'})`
+              }
+            });
+
+            // Tracker les restaurations de stock pour le résumé
+            if (!restoredStock[order.productId]) {
+              restoredStock[order.productId] = {
+                nom: order.product.nom,
+                quantite: 0
+              };
+            }
+            restoredStock[order.productId].quantite += order.quantite;
+          }
+        }
+
+        // Supprimer les mouvements de stock liés à cette commande
+        await tx.stockMovement.deleteMany({
+          where: { orderId: order.id }
+        });
+
+        // Supprimer l'historique des statuts
+        await tx.statusHistory.deleteMany({
+          where: { orderId: order.id }
+        });
+
+        deletedCount++;
+      }
+
+      // Supprimer toutes les commandes en une seule requête
+      await tx.order.deleteMany({
+        where: { id: { in: numericIds } }
+      });
+
+      return { deletedCount, restoredStock };
+    });
+
+    res.json({ 
+      message: `${result.deletedCount} commande(s) supprimée(s) avec succès.`,
+      deletedCount: result.deletedCount,
+      restoredStock: result.restoredStock
+    });
+  } catch (error) {
+    console.error('Erreur suppression multiple commandes:', error);
+    res.status(500).json({ error: 'Erreur lors de la suppression des commandes.' });
   }
 });
 
