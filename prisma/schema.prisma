@@ -20,27 +20,27 @@ enum UserRole {
 
 // Énumération des statuts de commande
 enum OrderStatus {
-  NOUVELLE          // Reçue depuis le site
-  A_APPELER         // En attente d'appel
-  VALIDEE           // Client a validé la commande
-  ANNULEE           // Client a annulé
-  INJOIGNABLE       // Client non joignable
-  ASSIGNEE          // Assignée à un livreur
-  LIVREE            // Livrée avec succès
-  REFUSEE           // Refusée par le client à la livraison
+  NOUVELLE // Reçue depuis le site
+  A_APPELER // En attente d'appel
+  VALIDEE // Client a validé la commande
+  ANNULEE // Client a annulé
+  INJOIGNABLE // Client non joignable
+  ASSIGNEE // Assignée à un livreur
+  LIVREE // Livrée avec succès
+  REFUSEE // Refusée par le client à la livraison
   ANNULEE_LIVRAISON // Annulée pendant la livraison
-  RETOURNE          // Retourné par le livreur (client absent, etc.)
-  EXPEDITION        // Paiement total 100% - Envoi vers autre ville
-  EXPRESS           // Paiement partiel 10% - Retrait en agence
-  EXPRESS_ARRIVE    // Colis arrivé en agence - En attente paiement 90%
-  EXPRESS_LIVRE     // Express livré après paiement des 90%
+  RETOURNE // Retourné par le livreur (client absent, etc.)
+  EXPEDITION // Paiement total 100% - Envoi vers autre ville
+  EXPRESS // Paiement partiel 10% - Retrait en agence
+  EXPRESS_ARRIVE // Colis arrivé en agence - En attente paiement 90%
+  EXPRESS_LIVRE // Express livré après paiement des 90%
 }
 
 // Type de livraison pour les villes éloignées
 enum DeliveryType {
-  LOCAL       // Livraison locale normale
-  EXPEDITION  // Paiement 100% avant envoi
-  EXPRESS     // Paiement 10% avant envoi, 90% à la réception
+  LOCAL // Livraison locale normale
+  EXPEDITION // Paiement 100% avant envoi
+  EXPRESS // Paiement 10% avant envoi, 90% à la réception
 }
 
 // Table des utilisateurs
@@ -57,199 +57,336 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  ordersAsCaller   Order[]          @relation("CallerOrders")
-  ordersAsDeliverer Order[]         @relation("DelivererOrders")
-  deliveryLists       DeliveryList[]
-  callStats           CallStatistic[]
-  deliveryStats       DeliveryStatistic[]
+  ordersAsCaller       Order[]               @relation("CallerOrders")
+  ordersAsDeliverer    Order[]               @relation("DelivererOrders")
+  deliveryLists        DeliveryList[]
+  callStats            CallStatistic[]
+  deliveryStats        DeliveryStatistic[]
   expressNotifications ExpressNotification[]
+
+  // Chat
+  conversationsCreated     Conversation[]            @relation("ConversationCreator")
+  conversationParticipants ConversationParticipant[] @relation("ChatParticipants")
+  messagesSent             Message[]                 @relation("MessageSender")
+  messageReads             MessageRead[]             @relation("MessageReads")
+  messageReactions         MessageReaction[]         @relation("MessageReactions")
 
   @@map("users")
 }
 
 // Table des commandes
 model Order {
-  id              Int         @id @default(autoincrement())
-  orderReference  String      @unique @default(uuid())
-  
+  id             Int    @id @default(autoincrement())
+  orderReference String @unique @default(uuid())
+
   // Informations client
   clientNom       String
   clientTelephone String
   clientVille     String
   clientCommune   String?
   clientAdresse   String?
-  
+
   // Informations produit
-  produitNom      String
-  produitPage     String?
-  productId       Int?        // Lien vers le produit (optionnel pour rétrocompatibilité)
-  product         Product?    @relation("ProductOrders", fields: [productId], references: [id])
-  quantite        Int         @default(1)
-  montant         Float
-  
+  produitNom  String
+  produitPage String?
+  productId   Int? // Lien vers le produit (optionnel pour rétrocompatibilité)
+  product     Product? @relation("ProductOrders", fields: [productId], references: [id])
+  quantite    Int      @default(1)
+  montant     Float
+
   // Gestion des paiements (pour EXPEDITION & EXPRESS)
-  deliveryType    DeliveryType @default(LOCAL)
-  montantPaye     Float?      // Montant déjà payé (10% pour EXPRESS, 100% pour EXPEDITION)
-  montantRestant  Float?      // Montant restant à payer (90% pour EXPRESS)
-  modePaiement    String?     // Mobile Money, Cash, etc.
-  referencePayment String?    // Référence de transaction Mobile Money
-  
+  deliveryType     DeliveryType @default(LOCAL)
+  montantPaye      Float? // Montant déjà payé (10% pour EXPRESS, 100% pour EXPEDITION)
+  montantRestant   Float? // Montant restant à payer (90% pour EXPRESS)
+  modePaiement     String? // Mobile Money, Cash, etc.
+  referencePayment String? // Référence de transaction Mobile Money
+
   // Informations marketing
-  sourceCampagne  String?
-  sourcePage      String?
-  
+  sourceCampagne String?
+  sourcePage     String?
+
   // Statut et pipeline
-  status          OrderStatus @default(NOUVELLE)
-  
+  status OrderStatus @default(NOUVELLE)
+
   // Assignations
-  callerId        Int?
-  caller          User?       @relation("CallerOrders", fields: [callerId], references: [id])
-  calledAt        DateTime?
-  nombreAppels    Int         @default(0) // Nombre de tentatives d'appel
-  
-  delivererId     Int?
-  deliverer       User?       @relation("DelivererOrders", fields: [delivererId], references: [id])
-  deliveryDate    DateTime?
-  deliveryListId  Int?
-  deliveryList    DeliveryList? @relation(fields: [deliveryListId], references: [id])
-  
+  callerId     Int?
+  caller       User?     @relation("CallerOrders", fields: [callerId], references: [id])
+  calledAt     DateTime?
+  nombreAppels Int       @default(0) // Nombre de tentatives d'appel
+
+  delivererId    Int?
+  deliverer      User?         @relation("DelivererOrders", fields: [delivererId], references: [id])
+  deliveryDate   DateTime?
+  deliveryListId Int?
+  deliveryList   DeliveryList? @relation(fields: [deliveryListId], references: [id])
+
   // Notes internes
-  noteAppelant    String?
-  noteLivreur     String?
+  noteAppelant     String?
+  noteLivreur      String?
   noteGestionnaire String?
-  
+
   // Gestion des retours
-  raisonRetour    String?     // Raison du retour (client absent, refuse, adresse incorrecte, etc.)
-  retourneAt      DateTime?   // Date du retour
-  
+  raisonRetour String? // Raison du retour (client absent, refuse, adresse incorrecte, etc.)
+  retourneAt   DateTime? // Date du retour
+
   // Gestion EXPEDITION - Code de suivi
-  codeExpedition  String?     // Code d'expédition/tracking fourni par le livreur
-  photoRecuExpedition String? // Photo du reçu d'expédition (base64 ou URL)
+  codeExpedition                String? // Code d'expédition/tracking fourni par le livreur
+  photoRecuExpedition           String? // Photo du reçu d'expédition (base64 ou URL)
   photoRecuExpeditionUploadedAt DateTime? // Date d'upload de la photo (pour suppression auto après 7j)
-  
+
   // Gestion EXPRESS - Notification d'arrivée
-  clientNotifie   Boolean?    @default(false) // Client notifié de l'arrivée du colis
-  notifieAt       DateTime?   // Date de notification du client
-  notifiePar      Int?        // Appelant qui a notifié
-  agenceRetrait   String?     // Nom de l'agence de retrait
-  
+  clientNotifie Boolean?  @default(false) // Client notifié de l'arrivée du colis
+  notifieAt     DateTime? // Date de notification du client
+  notifiePar    Int? // Appelant qui a notifié
+  agenceRetrait String? // Nom de l'agence de retrait
+
   // Statut paiement EXPEDITION
-  enAttentePaiement Boolean    @default(false)  // Commande en attente de paiement (pour EXPEDITION)
-  attentePaiementAt DateTime?  // Date de mise en attente de paiement
-  
+  enAttentePaiement Boolean   @default(false) // Commande en attente de paiement (pour EXPEDITION)
+  attentePaiementAt DateTime? // Date de mise en attente de paiement
+
   // Gestion des RDV (Rendez-vous pour rappel)
-  rdvProgramme    Boolean     @default(false)  // RDV programmé pour rappeler le client
-  rdvDate         DateTime?   // Date et heure du RDV
-  rdvNote         String?     // Note sur le RDV (client occupé, en voyage, etc.)
-  rdvProgrammePar Int?        // ID de l'appelant qui a programmé le RDV
-  rdvRappele      Boolean     @default(false)  // RDV traité (client rappelé)
-  
+  rdvProgramme    Boolean   @default(false) // RDV programmé pour rappeler le client
+  rdvDate         DateTime? // Date et heure du RDV
+  rdvNote         String? // Note sur le RDV (client occupé, en voyage, etc.)
+  rdvProgrammePar Int? // ID de l'appelant qui a programmé le RDV
+  rdvRappele      Boolean   @default(false) // RDV traité (client rappelé)
+
   // Dates de suivi
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  validatedAt     DateTime?
-  deliveredAt     DateTime?
-  expedieAt       DateTime?   // Date d'expédition (pour EXPEDITION et EXPRESS)
-  arriveAt        DateTime?   // Date d'arrivée en agence (pour EXPRESS)
-  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  validatedAt DateTime?
+  deliveredAt DateTime?
+  expedieAt   DateTime? // Date d'expédition (pour EXPEDITION et EXPRESS)
+  arriveAt    DateTime? // Date d'arrivée en agence (pour EXPRESS)
+
   // Historique des changements de statut
-  statusHistory        StatusHistory[]
-  
+  statusHistory StatusHistory[]
+
   // Notifications EXPRESS
   expressNotifications ExpressNotification[]
 
-  @@map("orders")
   @@index([status])
   @@index([clientTelephone])
   @@index([clientVille])
   @@index([deliveryDate])
   @@index([callerId])
   @@index([delivererId])
+  @@map("orders")
 }
 
 // Historique des changements de statut
 model StatusHistory {
-  id        Int         @id @default(autoincrement())
+  id        Int          @id @default(autoincrement())
   orderId   Int
-  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order     Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
   oldStatus OrderStatus?
   newStatus OrderStatus
   changedBy Int
   comment   String?
-  createdAt DateTime    @default(now())
+  createdAt DateTime     @default(now())
 
-  @@map("status_history")
   @@index([orderId])
+  @@map("status_history")
 }
 
 // Listes de livraison journalières
 model DeliveryList {
-  id           Int      @id @default(autoincrement())
+  id           Int           @id @default(autoincrement())
   nom          String
   date         DateTime
   delivererId  Int
-  deliverer    User     @relation(fields: [delivererId], references: [id])
-  zone         String?  // Zone géographique
+  deliverer    User          @relation(fields: [delivererId], references: [id])
+  zone         String? // Zone géographique
   orders       Order[]
   tourneeStock TourneeStock? // Lien avec la gestion de stock
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
-  @@map("delivery_lists")
   @@index([delivererId, date])
+  @@map("delivery_lists")
 }
 
 // Statistiques d'appels (pour les appelants)
 model CallStatistic {
-  id                Int      @id @default(autoincrement())
-  userId            Int
-  user              User     @relation(fields: [userId], references: [id])
-  date              DateTime @default(now())
-  
-  totalAppels       Int      @default(0)
-  totalValides      Int      @default(0)
-  totalAnnules      Int      @default(0)
-  totalInjoignables Int      @default(0)
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id     Int      @id @default(autoincrement())
+  userId Int
+  user   User     @relation(fields: [userId], references: [id])
+  date   DateTime @default(now())
 
-  @@map("call_statistics")
+  totalAppels       Int @default(0)
+  totalValides      Int @default(0)
+  totalAnnules      Int @default(0)
+  totalInjoignables Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([userId, date])
+  @@map("call_statistics")
 }
 
 // Statistiques de livraison (pour les livreurs)
 model DeliveryStatistic {
-  id               Int      @id @default(autoincrement())
-  userId           Int
-  user             User     @relation(fields: [userId], references: [id])
-  date             DateTime @default(now())
-  
-  totalLivraisons  Int      @default(0)
-  totalRefusees    Int      @default(0)
-  totalAnnulees    Int      @default(0)
-  montantLivre     Float    @default(0)
-  
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id     Int      @id @default(autoincrement())
+  userId Int
+  user   User     @relation(fields: [userId], references: [id])
+  date   DateTime @default(now())
 
-  @@map("delivery_statistics")
+  totalLivraisons Int   @default(0)
+  totalRefusees   Int   @default(0)
+  totalAnnulees   Int   @default(0)
+  montantLivre    Float @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([userId, date])
+  @@map("delivery_statistics")
 }
 
 // Notifications pour les EXPRESS en agence
 model ExpressNotification {
-  id          Int      @id @default(autoincrement())
-  orderId     Int
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  userId      Int      // Appelant qui a notifié
-  user        User     @relation(fields: [userId], references: [id])
-  note        String?  // Raison du non-retrait (occupé, voyage, etc.)
-  notifiedAt  DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  orderId    Int
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  userId     Int // Appelant qui a notifié
+  user       User     @relation(fields: [userId], references: [id])
+  note       String? // Raison du non-retrait (occupé, voyage, etc.)
+  notifiedAt DateTime @default(now())
 
-  @@map("express_notifications")
   @@index([orderId])
   @@index([userId])
+  @@map("express_notifications")
+}
+
+// ========================================
+// CHAT ENTREPRISE
+// ========================================
+
+// Conversations (privées ou groupes)
+model Conversation {
+  id          Int              @id @default(autoincrement())
+  type        ConversationType @default(PRIVATE) // PRIVATE, GROUP, BROADCAST
+  name        String? // Nom du groupe (si type = GROUP)
+  description String? // Description du groupe
+  createdBy   Int
+  creator     User             @relation("ConversationCreator", fields: [createdBy], references: [id])
+
+  // Participants
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastMessageAt DateTime? // Date du dernier message (pour tri)
+
+  @@index([type])
+  @@index([lastMessageAt])
+  @@map("conversations")
+}
+
+// Participants d'une conversation
+model ConversationParticipant {
+  id             Int          @id @default(autoincrement())
+  conversationId Int
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         Int
+  user           User         @relation("ChatParticipants", fields: [userId], references: [id])
+
+  // Permissions
+  isAdmin Boolean @default(false) // Admin du groupe (peut ajouter/retirer membres)
+  isMuted Boolean @default(false) // Notifications désactivées pour cette conv
+
+  // Suivi
+  lastReadAt DateTime? // Dernière fois que l'utilisateur a lu les messages
+  joinedAt   DateTime  @default(now())
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@index([conversationId])
+  @@map("conversation_participants")
+}
+
+// Messages
+model Message {
+  id             Int          @id @default(autoincrement())
+  conversationId Int
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       Int
+  sender         User         @relation("MessageSender", fields: [senderId], references: [id])
+
+  // Contenu
+  content String?     @db.Text // Texte du message
+  type    MessageType @default(TEXT) // TEXT, IMAGE, FILE, SYSTEM
+
+  // Fichiers joints
+  fileUrl      String? // URL du fichier/image uploadé
+  fileName     String? // Nom original du fichier
+  fileSize     Int? // Taille en octets
+  fileMimeType String? // Type MIME (image/png, application/pdf, etc.)
+
+  // Métadonnées
+  isEdited  Boolean   @default(false)
+  isPinned  Boolean   @default(false) // Message épinglé
+  replyToId Int? // ID du message auquel on répond
+  replyTo   Message?  @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies   Message[] @relation("MessageReplies")
+
+  // Suivi
+  reads     MessageRead[]
+  reactions MessageReaction[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Soft delete
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+// Lecture des messages (pour savoir qui a lu quoi)
+model MessageRead {
+  id        Int      @id @default(autoincrement())
+  messageId Int
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User     @relation("MessageReads", fields: [userId], references: [id])
+  readAt    DateTime @default(now())
+
+  @@unique([messageId, userId])
+  @@index([userId])
+  @@index([messageId])
+  @@map("message_reads")
+}
+
+// Réactions aux messages (emojis)
+model MessageReaction {
+  id        Int      @id @default(autoincrement())
+  messageId Int
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User     @relation("MessageReactions", fields: [userId], references: [id])
+  emoji     String // Unicode emoji (👍, ❤️, 😂, etc.)
+  createdAt DateTime @default(now())
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@map("message_reactions")
+}
+
+enum ConversationType {
+  PRIVATE // Conversation privée (1-1)
+  GROUP // Groupe/Channel
+  BROADCAST // Message broadcast (annonces globales)
+}
+
+enum MessageType {
+  TEXT // Message texte
+  IMAGE // Image
+  FILE // Fichier (PDF, doc, etc.)
+  SYSTEM // Message système (X a rejoint, Y a quitté, etc.)
 }
 
 // ========================================
@@ -259,13 +396,13 @@ model ExpressNotification {
 // Table des produits
 model Product {
   id                Int      @id @default(autoincrement())
-  code              String   @unique  // Code/référence produit
+  code              String   @unique // Code/référence produit
   nom               String
   description       String?
   prixUnitaire      Float
-  stockActuel       Int      @default(0)  // Stock disponible normal
-  stockExpress      Int      @default(0)  // Stock réservé EXPRESS (payé 10%, en attente retrait)
-  stockLocalReserve Int      @default(0)  // Stock réservé en livraison locale (avec livreurs)
+  stockActuel       Int      @default(0) // Stock disponible normal
+  stockExpress      Int      @default(0) // Stock réservé EXPRESS (payé 10%, en attente retrait)
+  stockLocalReserve Int      @default(0) // Stock réservé en livraison locale (avec livreurs)
   stockAlerte       Int      @default(10) // Seuil d'alerte
   actif             Boolean  @default(true)
   createdAt         DateTime @default(now())
@@ -273,94 +410,93 @@ model Product {
 
   // Relations
   stockMovements StockMovement[]
-  orders         Order[]          @relation("ProductOrders")
+  orders         Order[]         @relation("ProductOrders")
 
-  @@map("products")
   @@index([code])
   @@index([actif])
+  @@map("products")
 }
 
 // Types de mouvements de stock
 enum StockMovementType {
-  APPROVISIONNEMENT     // Ajout de stock manuel par admin
-  LIVRAISON            // Sortie de stock (commande livrée)
-  RETOUR               // Retour de colis non livré
-  CORRECTION           // Correction manuelle
-  PERTE                // Perte/casse
-  RESERVATION          // Réservation stock pour EXPÉDITION (100% payé)
-  RESERVATION_EXPRESS  // Déplacement vers stock EXPRESS (10% payé)
-  RETRAIT_EXPRESS      // Sortie du stock EXPRESS (client a retiré)
-  ANNULATION_EXPRESS   // Annulation EXPRESS, retour au stock normal
-  RESERVATION_LOCAL    // Déplacement vers stock local réservé (avec livreur)
-  LIVRAISON_LOCAL      // Sortie du stock local réservé (livraison réussie)
-  RETOUR_LOCAL         // Retour du stock local réservé vers stock normal
-  CORRECTION_LIVRAISON_LOCAL  // Correction < 24h LOCAL : retour dans stockLocalReserve
-  RETOUR_EXPEDITION    // Correction < 24h EXPEDITION : retour dans stockActuel
-  CORRECTION_EXPRESS   // Correction < 24h EXPRESS : retour dans stockExpress
-  AJUSTEMENT          // Ajustement manuel par admin (entrée/sortie)
+  APPROVISIONNEMENT // Ajout de stock manuel par admin
+  LIVRAISON // Sortie de stock (commande livrée)
+  RETOUR // Retour de colis non livré
+  CORRECTION // Correction manuelle
+  PERTE // Perte/casse
+  RESERVATION // Réservation stock pour EXPÉDITION (100% payé)
+  RESERVATION_EXPRESS // Déplacement vers stock EXPRESS (10% payé)
+  RETRAIT_EXPRESS // Sortie du stock EXPRESS (client a retiré)
+  ANNULATION_EXPRESS // Annulation EXPRESS, retour au stock normal
+  RESERVATION_LOCAL // Déplacement vers stock local réservé (avec livreur)
+  LIVRAISON_LOCAL // Sortie du stock local réservé (livraison réussie)
+  RETOUR_LOCAL // Retour du stock local réservé vers stock normal
+  CORRECTION_LIVRAISON_LOCAL // Correction < 24h LOCAL : retour dans stockLocalReserve
+  RETOUR_EXPEDITION // Correction < 24h EXPEDITION : retour dans stockActuel
+  CORRECTION_EXPRESS // Correction < 24h EXPRESS : retour dans stockExpress
+  AJUSTEMENT // Ajustement manuel par admin (entrée/sortie)
 }
 
 // Mouvements de stock (entrées/sorties)
 model StockMovement {
-  id          Int               @id @default(autoincrement())
-  productId   Int
-  product     Product           @relation(fields: [productId], references: [id])
-  
-  type        StockMovementType
-  quantite    Int               // Positif pour entrée, négatif pour sortie
-  stockAvant  Int               // Stock avant le mouvement
-  stockApres  Int               // Stock après le mouvement
-  
-  // Références optionnelles
-  orderId     Int?              // Si lié à une commande
-  tourneeId   Int?              // Si lié à une tournée
-  tournee     TourneeStock?     @relation(fields: [tourneeId], references: [id])
-  
-  effectuePar Int               // User qui a effectué le mouvement
-  motif       String?           // Raison du mouvement
-  
-  createdAt   DateTime          @default(now())
+  id        Int     @id @default(autoincrement())
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
 
-  @@map("stock_movements")
+  type       StockMovementType
+  quantite   Int // Positif pour entrée, négatif pour sortie
+  stockAvant Int // Stock avant le mouvement
+  stockApres Int // Stock après le mouvement
+
+  // Références optionnelles
+  orderId   Int? // Si lié à une commande
+  tourneeId Int? // Si lié à une tournée
+  tournee   TourneeStock? @relation(fields: [tourneeId], references: [id])
+
+  effectuePar Int // User qui a effectué le mouvement
+  motif       String? // Raison du mouvement
+
+  createdAt DateTime @default(now())
+
   @@index([productId])
   @@index([type])
   @@index([createdAt])
   @@index([tourneeId])
+  @@map("stock_movements")
 }
 
 // Gestion des tournées côté stock (colis remis/retournés)
 model TourneeStock {
-  id                    Int      @id @default(autoincrement())
-  deliveryListId        Int      @unique
-  deliveryList          DeliveryList @relation(fields: [deliveryListId], references: [id])
-  
+  id             Int          @id @default(autoincrement())
+  deliveryListId Int          @unique
+  deliveryList   DeliveryList @relation(fields: [deliveryListId], references: [id])
+
   // Colis remis au départ
-  colisRemis            Int      @default(0)
-  colisRemisConfirme    Boolean  @default(false)
-  colisRemisAt          DateTime?
-  colisRemisBy          Int?     // Gestionnaire de stock qui a confirmé
-  
+  colisRemis         Int       @default(0)
+  colisRemisConfirme Boolean   @default(false)
+  colisRemisAt       DateTime?
+  colisRemisBy       Int? // Gestionnaire de stock qui a confirmé
+
   // Retour après tournée
-  colisLivres           Int      @default(0) // Calculé automatiquement depuis les commandes
-  colisRetour           Int      @default(0)
-  colisRetourConfirme   Boolean  @default(false)
-  colisRetourAt         DateTime?
-  colisRetourBy         Int?     // Gestionnaire de stock qui a enregistré
-  
+  colisLivres         Int       @default(0) // Calculé automatiquement depuis les commandes
+  colisRetour         Int       @default(0)
+  colisRetourConfirme Boolean   @default(false)
+  colisRetourAt       DateTime?
+  colisRetourBy       Int? // Gestionnaire de stock qui a enregistré
+
   // Vérification
-  ecart                 Int      @default(0) // colisRemis - (colisLivres + colisRetour)
-  ecartResolu           Boolean  @default(false)
-  ecartMotif            String?  // Explication si écart (perte, casse, etc.)
-  
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  ecart       Int     @default(0) // colisRemis - (colisLivres + colisRetour)
+  ecartResolu Boolean @default(false)
+  ecartMotif  String? // Explication si écart (perte, casse, etc.)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  stockMovements        StockMovement[]
+  stockMovements StockMovement[]
 
-  @@map("tournees_stock")
   @@index([deliveryListId])
   @@index([colisRemisConfirme])
   @@index([colisRetourConfirme])
+  @@map("tournees_stock")
 }
-

@@ -16,7 +16,9 @@ import stockRoutes from './routes/stock.routes.js';
 import stockAnalysisRoutes from './routes/stock.analysis.routes.js';
 import rdvRoutes from './routes/rdv.routes.js';
 import maintenanceRoutes from './routes/maintenance.routes.js';
+import chatRoutes from './routes/chat.routes.js';
 import { scheduleCleanupJob } from './jobs/cleanupPhotos.js';
+import { initializeChatSocket } from './utils/chatSocket.js';
 
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config();
@@ -78,6 +80,10 @@ app.use('/api/accounting', accountingRoutes);
 app.use('/api/express', expressRoutes);
 app.use('/api/rdv', rdvRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
+app.use('/api/chat', chatRoutes);
+
+// Servir les fichiers uploadés
+app.use('/uploads', express.static('uploads'));
 
 // Route de test
 app.get('/', (req, res) => {
@@ -102,7 +108,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Gestion des connexions Socket.io
+// Gestion des connexions Socket.io pour notifications générales
 io.on('connection', (socket) => {
   console.log(`✅ Client connecté: ${socket.id}`);
   
@@ -123,9 +129,13 @@ io.on('connection', (socket) => {
   });
 });
 
+// Initialiser le système de chat Socket.io
+initializeChatSocket(io);
+
 httpServer.listen(PORT, () => {
   console.log(`🚀 Serveur démarré sur le port ${PORT}`);
   console.log(`📍 http://localhost:${PORT}`);
   console.log(`🔌 WebSocket prêt pour les notifications en temps réel`);
+  console.log(`💬 Chat en temps réel activé`);
 });
 
