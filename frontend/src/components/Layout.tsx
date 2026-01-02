@@ -23,6 +23,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import NotificationCenter from './NotificationCenter';
 
 interface LayoutProps {
   children: ReactNode;
@@ -113,13 +114,31 @@ export default function Layout({ children }: LayoutProps) {
       {/* Mobile Header with Burger Menu */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-30">
         <h1 className="text-xl font-bold text-primary-600">GS Pipeline</h1>
-        <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          aria-label="Toggle menu"
-        >
-          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        <div className="flex items-center gap-2">
+          <NotificationCenter />
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            aria-label="Toggle menu"
+          >
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
+      </div>
+
+      {/* Desktop Header */}
+      <div className="hidden lg:block fixed top-0 right-0 left-64 h-16 bg-white border-b border-gray-200 z-20">
+        <div className="h-full px-8 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Bienvenue, {user?.prenom} !
+            </h2>
+            <p className="text-sm text-gray-500">
+              {new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
+          <NotificationCenter />
+        </div>
       </div>
 
       {/* Mobile Overlay */}
@@ -205,7 +224,7 @@ export default function Layout({ children }: LayoutProps) {
       </aside>
 
       {/* Main content */}
-      <main className="pt-16 lg:pt-0 lg:ml-64 p-4 sm:p-6 lg:p-8">
+      <main className="pt-16 lg:pt-16 lg:ml-64 p-4 sm:p-6 lg:p-8">
         {children}
       </main>
     </div>
