@@ -15,6 +15,7 @@ export default function NewConversationModal({ onClose, onCreated }: NewConversa
   const [groupName, setGroupName] = useState('');
   const [groupDescription, setGroupDescription] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Récupérer tous les utilisateurs
   const { data: usersData, isLoading } = useQuery({
@@ -25,7 +26,15 @@ export default function NewConversationModal({ onClose, onCreated }: NewConversa
     }
   });
 
-  const users = usersData?.users?.filter((u: any) => u.id !== user?.id && u.actif) || [];
+  const users =
+    usersData?.users?.filter((u: any) => u.id !== user?.id && u.actif) || [];
+
+  const filteredUsers = users.filter((u: any) => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return true;
+    const fullName = `${u.prenom || ''} ${u.nom || ''}`.trim().toLowerCase();
+    return fullName.includes(q);
+  });
 
   // Mutation pour créer la conversation
   const createMutation = useMutation({
@@ -192,11 +201,26 @@ export default function NewConversationModal({ onClose, onCreated }: NewConversa
                   ? 'Sélectionner un utilisateur'
                   : 'Sélectionner les participants'}
               </label>
+              {/* Recherche par nom */}
+              <div className="mb-3">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Rechercher par nom..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
               {isLoading ? (
                 <div className="text-center py-4">Chargement...</div>
               ) : (
                 <div className="border border-gray-300 rounded-lg max-h-64 overflow-y-auto">
-                  {users.map((u: any) => (
+                  {filteredUsers.length === 0 ? (
+                    <div className="p-4 text-center text-gray-500">
+                      Aucun utilisateur trouvé
+                    </div>
+                  ) : (
+                    filteredUsers.map((u: any) => (
                     <button
                       key={u.id}
                       type="button"
@@ -223,7 +247,8 @@ export default function NewConversationModal({ onClose, onCreated }: NewConversa
                         <div className="text-sm text-gray-600">{u.role}</div>
                       </div>
                     </button>
-                  ))}
+                    ))
+                  )}
                 </div>
               )}
               {selectedUsers.length > 0 && conversationType !== 'PRIVATE' && (

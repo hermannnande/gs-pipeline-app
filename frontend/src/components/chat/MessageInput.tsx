@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { chatApi } from '../../lib/chatApi';
 import EmojiPicker from './EmojiPicker';
+import toast from 'react-hot-toast';
 
 interface MessageInputProps {
   conversationId: number;
@@ -53,10 +54,48 @@ export default function MessageInput({ conversationId, chatSocket }: MessageInpu
   const sendFileMutation = useMutation({
     mutationFn: (data: { file: File; content?: string }) =>
       chatApi.sendFile(conversationId, data.file, data.content),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
+    onSuccess: (data) => {
+      const newMessage = data?.message;
+      if (newMessage) {
+        queryClient.setQueryData(['messages', conversationId], (old: any) => {
+          if (!old) return { messages: [newMessage] };
+          const exists = old.messages?.some((m: any) => m.id === newMessage.id);
+          if (exists) return old;
+          return { messages: [...(old.messages || []), newMessage] };
+        });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
       setSelectedFile(null);
       setMessage('');
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.error || "Échec de l'envoi du fichier");
+    }
+  });
+
+  // Mutation pour envoyer un message texte (fiable) via REST
+  const sendTextMutation = useMutation({
+    mutationFn: (content: string) => chatApi.sendMessage(conversationId, { content }),
+    onSuccess: (data) => {
+      const newMessage = data?.message;
+      if (newMessage) {
+        queryClient.setQueryData(['messages', conversationId], (old: any) => {
+          if (!old) return { messages: [newMessage] };
+          const exists = old.messages?.some((m: any) => m.id === newMessage.id);
+          if (exists) return old;
+          return { messages: [...(old.messages || []), newMessage] };
+        });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      setMessage('');
+    },
+    onError: (err: any) => {
+      // IMPORTANT: ne pas vider le champ si l'envoi échoue
+      toast.error(err?.response?.data?.error || "Message non envoyé (réessayez)");
     }
   });
 
@@ -68,9 +107,8 @@ export default function MessageInput({ conversationId, chatSocket }: MessageInpu
         content: message.trim() || undefined
       });
     } else if (message.trim()) {
-      // Envoyer le message texte via Socket.io
-      chatSocket.sendMessage(conversationId, message.trim());
-      setMessage('');
+      // Envoyer le message texte via API REST (plus fiable que le socket seul)
+      sendTextMutation.mutate(message.trim());
     }
 
     // Arrêter l'indicateur "en train d'écrire"
@@ -185,7 +223,7 @@ export default function MessageInput({ conversationId, chatSocket }: MessageInpu
         {/* Bouton envoyer */}
         <button
           onClick={handleSend}
-          disabled={!message.trim() && !selectedFile}
+          disabled={(!message.trim() && !selectedFile) || sendFileMutation.isPending || sendTextMutation.isPending}
           className={`p-2 rounded-lg transition-colors ${
             message.trim() || selectedFile
               ? 'bg-indigo-600 text-white hover:bg-indigo-700'
