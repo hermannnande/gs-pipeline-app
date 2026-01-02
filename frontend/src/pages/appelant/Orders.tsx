@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Phone, Search, RefreshCw, Truck, Zap, Clock, Calendar, Edit2, Trash2, CheckSquare, Square } from 'lucide-react';
+import { Phone, Search, RefreshCw, Truck, Zap, Clock, Calendar, Edit2, Trash2, CheckSquare, Square, PhoneCall, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ordersApi, rdvApi } from '@/lib/api';
 import { formatCurrency, formatDateTime, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
@@ -8,6 +8,8 @@ import type { Order } from '@/types';
 import ExpeditionModal from '@/components/modals/ExpeditionModal';
 import ExpressModal from '@/components/modals/ExpressModal';
 import { useAuthStore } from '@/store/authStore';
+import { PageHeader, LoadingState, EmptyState, SearchInput } from '@/components/UIComponents';
+import { OrderCard } from '@/components/OrderCard';
 
 export default function Orders() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -271,59 +273,55 @@ export default function Orders() {
   }, [filteredOrders?.length]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Commandes à appeler</h1>
-          <p className="text-gray-600 mt-1">Liste des commandes en attente de traitement</p>
-        </div>
-        <div className="flex items-center gap-4">
-          {isAdmin && selectedOrderIds.length > 0 && (
-            <button
-              onClick={handleBulkDelete}
-              className="btn bg-red-600 text-white hover:bg-red-700 flex items-center gap-2"
-              disabled={bulkDeleteMutation.isPending}
-            >
-              <Trash2 size={18} />
-              Supprimer ({selectedOrderIds.length})
-            </button>
-          )}
-          {filteredOrders && (
-            <div className="text-right">
-              <p className="text-2xl font-bold text-primary-600">{filteredOrders.length}</p>
-              <p className="text-sm text-gray-600">commande(s)</p>
-            </div>
-          )}
-          <div className="flex flex-col items-end gap-2">
-            {isFetching ? (
-              <span className="text-sm text-gray-500 flex items-center gap-2">
-                <RefreshCw size={16} className="animate-spin" />
-                Actualisation...
-              </span>
-            ) : (
-              <span className="text-xs text-gray-400">
-                Mis à jour il y a {secondsSinceUpdate}s
-              </span>
+    <div className="space-y-8">
+      <PageHeader
+        title="Commandes à appeler"
+        subtitle={`${filteredOrders?.length || 0} commande(s) en attente de traitement`}
+        icon={PhoneCall}
+        actions={
+          <div className="flex items-center gap-3">
+            {isAdmin && selectedOrderIds.length > 0 && (
+              <button
+                onClick={handleBulkDelete}
+                className="btn btn-danger"
+                disabled={bulkDeleteMutation.isPending}
+              >
+                <Trash2 size={18} />
+                Supprimer ({selectedOrderIds.length})
+              </button>
             )}
-            <button
-              onClick={() => refetch()}
-              disabled={isFetching}
-              className="btn btn-secondary flex items-center gap-2 text-sm py-2"
-              title="Actualiser les commandes"
-            >
-              <RefreshCw size={16} className={isFetching ? 'animate-spin' : ''} />
-              Actualiser
-            </button>
+            <div className="flex flex-col items-end gap-1">
+              {isFetching ? (
+                <span className="text-sm text-gray-500 flex items-center gap-2">
+                  <RefreshCw size={16} className="animate-spin" />
+                  Actualisation...
+                </span>
+              ) : (
+                <span className="text-xs text-gray-400">
+                  Mis à jour il y a {secondsSinceUpdate}s
+                </span>
+              )}
+              <button
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="btn btn-secondary"
+                title="Actualiser les commandes"
+              >
+                <RefreshCw size={16} className={isFetching ? 'animate-spin' : ''} />
+                Actualiser
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
+        }
+      />
 
+      {/* Filtres et recherche */}
       <div className="card">
-        <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-4">
           {isAdmin && filteredOrders && filteredOrders.length > 0 && (
             <button
               onClick={handleSelectAll}
-              className="btn btn-secondary flex items-center gap-2"
+              className="btn btn-secondary whitespace-nowrap"
             >
               {selectedOrderIds.length === filteredOrders.length ? (
                 <>
@@ -333,149 +331,60 @@ export default function Orders() {
               ) : (
                 <>
                   <Square size={18} />
-                  Tout sélectionner
+                  Tout sélectionner ({filteredOrders.length})
                 </>
               )}
             </button>
           )}
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Rechercher par nom ou téléphone..."
+          
+          <div className="flex-1">
+            <SearchInput
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="input pl-10"
+              onChange={setSearchTerm}
+              placeholder="Rechercher par nom ou téléphone..."
+              icon={Search}
             />
           </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="input md:w-48"
-          >
-            <option value="">Tous</option>
-            <option value="NOUVELLE">Nouvelle</option>
-            <option value="A_APPELER">À appeler</option>
-          </select>
+          
+          <div className="relative">
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="input pl-10 sm:w-48"
+            >
+              <option value="">Tous les statuts</option>
+              <option value="NOUVELLE">Nouvelle</option>
+              <option value="A_APPELER">À appeler</option>
+            </select>
+          </div>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        </div>
+        <LoadingState text="Chargement des commandes..." />
       ) : filteredOrders && filteredOrders.length === 0 ? (
-        <div className="card text-center py-12">
-          <p className="text-gray-500 text-lg">Aucune commande trouvée</p>
-          <p className="text-gray-400 text-sm mt-2">Essayez de modifier vos filtres</p>
-        </div>
+        <EmptyState
+          icon={PhoneCall}
+          title="Aucune commande à appeler"
+          description="Toutes les commandes ont été traitées ou aucune ne correspond aux filtres"
+        />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredOrders?.map((order: Order) => (
-            <div key={order.id} className={`card hover:shadow-lg transition-shadow ${selectedOrderIds.includes(order.id) ? 'ring-2 ring-primary-500' : ''}`}>
-              {isAdmin && (
-                <div className="flex items-center mb-3">
-                  <button
-                    onClick={() => handleSelectOrder(order.id)}
-                    className="flex items-center gap-2 text-sm hover:text-primary-600 transition-colors"
-                  >
-                    {selectedOrderIds.includes(order.id) ? (
-                      <CheckSquare size={20} className="text-primary-600" />
-                    ) : (
-                      <Square size={20} className="text-gray-400" />
-                    )}
-                    <span className="text-xs text-gray-500">Sélectionner</span>
-                  </button>
-                </div>
-              )}
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg text-gray-900">{order.clientNom}</h3>
-                  <p className="text-sm text-gray-600">{order.clientVille}</p>
-                </div>
-                <div className="flex gap-2 items-start">
-                  {canEditQuantite && (
-                    <button
-                      onClick={() => handleEditQuantite(order)}
-                      className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-                      title="Modifier la quantité"
-                    >
-                      <Edit2 size={18} />
-                    </button>
-                  )}
-                  <div className="flex flex-col gap-1 items-end">
-                    <span className={`badge ${getStatusColor(order.status)}`}>
-                      {getStatusLabel(order.status)}
-                    </span>
-                    {order.enAttentePaiement && (
-                      <span className="badge bg-purple-100 text-purple-700 border border-purple-300 text-xs flex items-center gap-1">
-                        <Clock size={12} />
-                        Attente paiement
-                      </span>
-                    )}
-                    {/* Badge nombre de notifications et appelant */}
-                    {order.nombreAppels && order.nombreAppels > 0 && (
-                      <span className="badge bg-orange-100 text-orange-700 border border-orange-300 text-xs flex items-center gap-1">
-                        🔔 {order.nombreAppels} notification{order.nombreAppels > 1 ? 's' : ''}
-                        {order.caller && ` · ${order.caller.prenom}`}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-2 text-sm">
-                  <Phone size={16} className="text-gray-400" />
-                  <a href={`tel:${order.clientTelephone}`} className="text-primary-600 hover:underline">
-                    {order.clientTelephone}
-                  </a>
-                </div>
-                <div className="text-sm text-gray-600">
-                  <strong>Produit:</strong> {order.produitNom}
-                </div>
-                <div className="text-sm text-gray-600">
-                  <strong>Quantité:</strong> {order.quantite}
-                </div>
-                <div className="text-sm font-medium text-gray-900">
-                  <strong>Montant:</strong> {formatCurrency(order.montant)}
-                </div>
-                {order.clientAdresse && (
-                  <div className="text-sm text-gray-600">
-                    <strong>Adresse:</strong> {order.clientAdresse}
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  onClick={() => handleNotifierClient(order.id)}
-                  className="btn bg-blue-600 text-white hover:bg-blue-700 flex items-center justify-center gap-2"
-                  disabled={notifierClientMutation.isPending}
-                  title="Notifier le client"
-                >
-                  🔔 Notifier
-                </button>
-                <button
-                  onClick={() => setSelectedOrder(order)}
-                  className="btn btn-primary flex items-center justify-center gap-2"
-                >
-                  <Phone size={18} />
-                  Traiter
-                </button>
-                <button
-                  onClick={() => handleProgrammerRdv(order)}
-                  className="btn bg-purple-600 text-white hover:bg-purple-700 flex items-center justify-center gap-2"
-                >
-                  <Calendar size={18} />
-                  RDV
-                </button>
-              </div>
-
-              <p className="text-xs text-gray-500 mt-2">
-                Reçue le {formatDateTime(order.createdAt)}
-              </p>
-            </div>
+            <OrderCard
+              key={order.id}
+              order={order}
+              isSelected={selectedOrderIds.includes(order.id)}
+              showCheckbox={isAdmin}
+              onSelect={handleSelectOrder}
+              onNotify={handleNotifierClient}
+              onCall={setSelectedOrder}
+              onScheduleRdv={handleProgrammerRdv}
+              onEditQuantity={canEditQuantite ? handleEditQuantite : undefined}
+              canEditQuantity={canEditQuantite}
+              showActions="toCall"
+            />
           ))}
         </div>
       )}
