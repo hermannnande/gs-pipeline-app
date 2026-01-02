@@ -1,7 +1,7 @@
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useAuthStore } from '../../stores/authStore';
+import { useAuthStore } from '@/store/authStore';
 
 interface ConversationListProps {
   conversations: any[];

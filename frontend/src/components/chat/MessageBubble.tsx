@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useAuthStore } from '../../stores/authStore';
+import { useAuthStore } from '@/store/authStore';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const BASE_URL = API_URL.replace('/api', '');

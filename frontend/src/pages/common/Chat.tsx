@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { chatApi } from '../../lib/chatApi';
 import { useChatSocket } from '../../hooks/useChatSocket';
 import ConversationList from '../../components/chat/ConversationList';
 import MessageArea from '../../components/chat/MessageArea';
 import NewConversationModal from '../../components/chat/NewConversationModal';
-import { useAuthStore } from '../../stores/authStore';
 
 export default function Chat() {
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
   const [showNewConversation, setShowNewConversation] = useState(false);
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
   const chatSocket = useChatSocket();
 
   // Récupérer les conversations

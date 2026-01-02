@@ -13,7 +13,7 @@ export function useChatSocket() {
     if (!token) return;
 
     // Créer la connexion Socket.io pour le chat
-    const socket = io(SOCKET_URL, {
+    const socket = io(`${SOCKET_URL}/chat`, {
       auth: { token },
       transports: ['websocket', 'polling']
     });

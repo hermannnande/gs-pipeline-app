@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { chatApi } from '../../lib/chatApi';
 import { api } from '../../lib/api';
-import { useAuthStore } from '../../stores/authStore';
+import { useAuthStore } from '@/store/authStore';
 
 interface NewConversationModalProps {
   onClose: () => void;

@@ -19,6 +19,7 @@ import maintenanceRoutes from './routes/maintenance.routes.js';
 import chatRoutes from './routes/chat.routes.js';
 import { scheduleCleanupJob } from './jobs/cleanupPhotos.js';
 import { initializeChatSocket } from './utils/chatSocket.js';
+import { setSocketServers } from './utils/socket.js';
 
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config();
@@ -44,8 +45,11 @@ const io = new Server(httpServer, {
   }
 });
 
-// Rendre io accessible globalement
-export { io };
+// Namespace dédié au chat (authentifié) pour ne pas casser les notifications existantes
+const chatNamespace = io.of('/chat');
+
+// Rendre io accessibles globalement (sans import circulaire)
+setSocketServers(io, chatNamespace);
 
 // Middlewares
 app.use(cors({
@@ -129,8 +133,8 @@ io.on('connection', (socket) => {
   });
 });
 
-// Initialiser le système de chat Socket.io
-initializeChatSocket(io);
+// Initialiser le système de chat Socket.io (namespace /chat)
+initializeChatSocket(chatNamespace);
 
 httpServer.listen(PORT, () => {
   console.log(`🚀 Serveur démarré sur le port ${PORT}`);

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { chatApi } from '../../lib/chatApi';
-import { useAuthStore } from '../../stores/authStore';
+import { useAuthStore } from '@/store/authStore';
 import MessageInput from './MessageInput';
 import MessageBubble from './MessageBubble';
 

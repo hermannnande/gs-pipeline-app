@@ -20,10 +20,13 @@ import {
   X,
   DollarSign,
   Bell,
-  Calendar
+  Calendar,
+  MessageSquare
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import NotificationCenter from './NotificationCenter';
+import { useQuery } from '@tanstack/react-query';
+import { chatApi } from '@/lib/chatApi';
 
 interface LayoutProps {
   children: ReactNode;
@@ -33,6 +36,17 @@ export default function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuthStore();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Badge messages non lus (simple) - on récupère les conversations et on somme unreadCount
+  const { data: chatConvData } = useQuery({
+    queryKey: ['chat-unread-count'],
+    queryFn: chatApi.getConversations,
+    enabled: !!user,
+    refetchInterval: 30000
+  });
+
+  const totalUnread =
+    chatConvData?.conversations?.reduce((sum: number, c: any) => sum + (c.unreadCount || 0), 0) || 0;
 
   const getNavigationItems = () => {
     const baseUrl = `/${user?.role?.toLowerCase()}`;
@@ -57,6 +71,8 @@ export default function Layout({ children }: LayoutProps) {
           { icon: Eye, label: 'Supervision Appelants', path: '/admin/supervision' },
           { icon: BarChart3, label: 'Statistiques', path: '/admin/stats' },
           { icon: DollarSign, label: 'Comptabilité', path: '/admin/accounting' },
+          { icon: MessageSquare, label: 'Chat', path: '/admin/chat' },
+          { icon: MessageSquare, label: 'Supervision Chat', path: '/admin/chat-supervision' },
         ];
       case 'GESTIONNAIRE':
         return [
@@ -72,6 +88,7 @@ export default function Layout({ children }: LayoutProps) {
           { icon: Database, label: 'Base Clients', path: '/gestionnaire/database' },
           { icon: Eye, label: 'Supervision Appelants', path: '/gestionnaire/supervision' },
           { icon: BarChart3, label: 'Statistiques', path: '/gestionnaire/stats' },
+          { icon: MessageSquare, label: 'Chat', path: '/gestionnaire/chat' },
         ];
       case 'GESTIONNAIRE_STOCK':
         return [
@@ -82,6 +99,7 @@ export default function Layout({ children }: LayoutProps) {
           { icon: Package, label: 'Produits', path: '/stock/products' },
           { icon: History, label: 'Mouvements', path: '/stock/movements' },
           { icon: Database, label: 'Base Clients', path: '/stock/database' },
+          { icon: MessageSquare, label: 'Chat', path: '/stock/chat' },
         ];
       case 'APPELANT':
         return [
@@ -95,12 +113,14 @@ export default function Layout({ children }: LayoutProps) {
           { icon: CheckCircle, label: 'Mes commandes traitées', path: '/appelant/processed' },
           { icon: Database, label: 'Base Clients', path: '/appelant/database' },
           { icon: BarChart3, label: 'Mes statistiques', path: '/appelant/stats' },
+          { icon: MessageSquare, label: 'Chat', path: '/appelant/chat' },
         ];
       case 'LIVREUR':
         return [
           { icon: LayoutDashboard, label: 'Dashboard', path: '/livreur' },
           { icon: Package, label: 'Mes livraisons', path: '/livreur/deliveries' },
           { icon: BarChart3, label: 'Mes statistiques', path: '/livreur/stats' },
+          { icon: MessageSquare, label: 'Chat', path: '/livreur/chat' },
         ];
       default:
         return [];
@@ -182,6 +202,7 @@ export default function Layout({ children }: LayoutProps) {
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
+            const isChatLink = item.path?.endsWith('/chat');
             
             return (
               <Link
@@ -195,7 +216,12 @@ export default function Layout({ children }: LayoutProps) {
                 }`}
               >
                 <Icon size={20} />
-                <span>{item.label}</span>
+                <span className="flex-1">{item.label}</span>
+                {isChatLink && totalUnread > 0 && (
+                  <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                    {totalUnread}
+                  </span>
+                )}
               </Link>
             );
           })}

@@ -5,6 +5,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import { chatIo } from '../utils/socket.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -624,6 +625,11 @@ router.post('/conversations/:id/messages', async (req, res) => {
       data: { lastMessageAt: new Date() }
     });
 
+    // Temps réel (namespace /chat) - utile si un client envoie via REST
+    if (chatIo) {
+      chatIo.to(`conversation:${id}`).emit('message:new', message);
+    }
+
     res.json({ message });
   } catch (error) {
     console.error('Erreur envoi message:', error);
@@ -706,6 +712,11 @@ router.post('/conversations/:id/messages/file', upload.single('file'), async (re
       where: { id: parseInt(id) },
       data: { lastMessageAt: new Date() }
     });
+
+    // Temps réel (namespace /chat) - IMPORTANT pour les messages fichier/image
+    if (chatIo) {
+      chatIo.to(`conversation:${id}`).emit('message:new', message);
+    }
 
     res.json({ message });
   } catch (error) {
