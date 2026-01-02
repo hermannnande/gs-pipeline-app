@@ -56,6 +56,46 @@ const upload = multer({
 router.use(authenticate);
 
 // ========================================
+// UTILISATEURS (pour créer des conversations)
+// ========================================
+
+// GET /api/chat/users - Liste des utilisateurs actifs (tous rôles)
+// Objectif: permettre à tous les utilisateurs connectés de démarrer une conversation
+// sans donner accès aux informations sensibles (email, téléphone, etc.)
+router.get('/users', async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    const where = { actif: true };
+
+    if (q && String(q).trim().length > 0) {
+      const query = String(q).trim();
+      where.OR = [
+        { nom: { contains: query, mode: 'insensitive' } },
+        { prenom: { contains: query, mode: 'insensitive' } }
+      ];
+    }
+
+    const users = await prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        nom: true,
+        prenom: true,
+        role: true,
+        actif: true
+      },
+      orderBy: [{ prenom: 'asc' }, { nom: 'asc' }]
+    });
+
+    res.json({ users });
+  } catch (error) {
+    console.error('Erreur récupération utilisateurs chat:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des utilisateurs.' });
+  }
+});
+
+// ========================================
 // CONVERSATIONS
 // ========================================
 

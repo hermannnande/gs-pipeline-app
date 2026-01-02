@@ -21,7 +21,7 @@ export default function NewConversationModal({ onClose, onCreated }: NewConversa
   const { data: usersData, isLoading } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      const { data } = await api.get('/users');
+      const { data } = await api.get('/chat/users');
       return data;
     }
   });
