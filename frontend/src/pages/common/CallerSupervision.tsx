@@ -21,18 +21,23 @@ export default function CallerSupervision() {
   const { data: ordersData } = useQuery({
     queryKey: ['orders-supervision', dateFilter],
     queryFn: async () => {
-      let startDate;
+      let startDate: Date | undefined;
       const now = new Date();
       
       switch(dateFilter) {
         case 'today':
-          startDate = new Date(now.setHours(0, 0, 0, 0));
+          startDate = new Date();
+          startDate.setHours(0, 0, 0, 0);
           break;
         case 'week':
-          startDate = new Date(now.setDate(now.getDate() - 7));
+          startDate = new Date();
+          startDate.setDate(startDate.getDate() - 7);
+          startDate.setHours(0, 0, 0, 0);
           break;
         case 'month':
-          startDate = new Date(now.setMonth(now.getMonth() - 1));
+          startDate = new Date();
+          startDate.setMonth(startDate.getMonth() - 1);
+          startDate.setHours(0, 0, 0, 0);
           break;
         default:
           startDate = undefined;
@@ -54,19 +59,25 @@ export default function CallerSupervision() {
   const appelantStats = appelants?.users?.map((appelant: any) => {
     const commandesAppelant = ordersData?.orders?.filter((o: any) => o.callerId === appelant.id) || [];
     
+    const nbValidees = commandesAppelant.filter((o: any) => !!o.validatedAt).length;
+    const nbAnnulees = commandesAppelant.filter((o: any) => o.status === 'ANNULEE').length;
+    const nbInjoignables = commandesAppelant.filter((o: any) => o.status === 'INJOIGNABLE').length;
+
     return {
       ...appelant,
       stats: {
         total: commandesAppelant.length,
-        validees: commandesAppelant.filter((o: any) => o.status === 'VALIDEE').length,
-        annulees: commandesAppelant.filter((o: any) => o.status === 'ANNULEE').length,
-        injoignables: commandesAppelant.filter((o: any) => o.status === 'INJOIGNABLE').length,
-        enCours: commandesAppelant.filter((o: any) => ['ASSIGNEE', 'LIVREE'].includes(o.status)).length,
+        // ✅ Compter les validées même si la commande a avancé (ASSIGNEE/LIVREE/etc.)
+        validees: nbValidees,
+        annulees: nbAnnulees,
+        injoignables: nbInjoignables,
+        // "En cours" = en livraison (éviter d'inclure LIVREE)
+        enCours: commandesAppelant.filter((o: any) => ['ASSIGNEE'].includes(o.status)).length,
         montantTotal: commandesAppelant
-          .filter((o: any) => ['VALIDEE', 'ASSIGNEE', 'LIVREE'].includes(o.status))
+          .filter((o: any) => !!o.validatedAt)
           .reduce((sum: number, o: any) => sum + o.montant, 0),
         tauxValidation: commandesAppelant.length > 0 
-          ? Math.round((commandesAppelant.filter((o: any) => o.status === 'VALIDEE').length / commandesAppelant.length) * 100) 
+          ? Math.round((nbValidees / commandesAppelant.length) * 100) 
           : 0
       },
       commandes: commandesAppelant
@@ -77,11 +88,11 @@ export default function CallerSupervision() {
   const statsGlobales = {
     totalAppelants: appelantStats.length,
     totalCommandes: ordersData?.orders?.filter((o: any) => o.callerId)?.length || 0,
-    totalValidees: ordersData?.orders?.filter((o: any) => o.status === 'VALIDEE' && o.callerId)?.length || 0,
+    totalValidees: ordersData?.orders?.filter((o: any) => !!o.validatedAt && o.callerId)?.length || 0,
     totalAnnulees: ordersData?.orders?.filter((o: any) => o.status === 'ANNULEE' && o.callerId)?.length || 0,
     totalInjoignables: ordersData?.orders?.filter((o: any) => o.status === 'INJOIGNABLE' && o.callerId)?.length || 0,
     montantTotal: ordersData?.orders
-      ?.filter((o: any) => ['VALIDEE', 'ASSIGNEE', 'LIVREE'].includes(o.status) && o.callerId)
+      ?.filter((o: any) => !!o.validatedAt && o.callerId)
       .reduce((sum: number, o: any) => sum + o.montant, 0) || 0
   };
 

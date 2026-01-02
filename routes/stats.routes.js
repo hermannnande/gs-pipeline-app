@@ -15,8 +15,10 @@ router.get('/overview', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => 
     const dateFilter = {};
     if (startDate || endDate) {
       dateFilter.createdAt = {};
-      if (startDate) dateFilter.createdAt.gte = new Date(startDate);
-      if (endDate) dateFilter.createdAt.lte = new Date(endDate);
+      // Les dates arrivent souvent au format YYYY-MM-DD (sans heure).
+      // On inclut toute la journée (UTC) pour éviter d'exclure la date de fin.
+      if (startDate) dateFilter.createdAt.gte = new Date(`${startDate}T00:00:00.000Z`);
+      if (endDate) dateFilter.createdAt.lte = new Date(`${endDate}T23:59:59.999Z`);
     }
 
     // Statistiques globales
@@ -94,8 +96,8 @@ router.get('/callers', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
     const where = {};
     if (startDate || endDate) {
       where.date = {};
-      if (startDate) where.date.gte = new Date(startDate);
-      if (endDate) where.date.lte = new Date(endDate);
+      if (startDate) where.date.gte = new Date(`${startDate}T00:00:00.000Z`);
+      if (endDate) where.date.lte = new Date(`${endDate}T23:59:59.999Z`);
     }
     if (callerId) where.userId = parseInt(callerId);
 
@@ -155,19 +157,16 @@ router.get('/callers', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
     });
 
     // Récupérer les statistiques EXPRESS et EXPEDITION depuis les commandes
-    const orderDateFilter = {};
-    if (startDate || endDate) {
-      orderDateFilter.expedieAt = {}; // Utiliser expedieAt au lieu de createdAt car c'est la date de création EXPEDITION/EXPRESS
-      if (startDate) orderDateFilter.expedieAt.gte = new Date(startDate);
-      if (endDate) orderDateFilter.expedieAt.lte = new Date(endDate);
-    }
+    // ⚠️ Bug fixé : on ne doit pas écraser le filtre de date en ajoutant "expedieAt: { not: null }"
+    const expedieAtWhere = { not: null };
+    if (startDate) expedieAtWhere.gte = new Date(`${startDate}T00:00:00.000Z`);
+    if (endDate) expedieAtWhere.lte = new Date(`${endDate}T23:59:59.999Z`);
 
     const orders = await prisma.order.findMany({
       where: {
-        ...orderDateFilter,
         callerId: callerId ? parseInt(callerId) : { not: null },
         deliveryType: { in: ['EXPEDITION', 'EXPRESS'] },
-        expedieAt: { not: null } // S'assurer que c'est bien une EXPEDITION/EXPRESS validée
+        expedieAt: expedieAtWhere // Date d'expédition (EXPEDITION/EXPRESS)
       },
       select: {
         callerId: true,
@@ -212,8 +211,8 @@ router.get('/deliverers', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) =
     const where = {};
     if (startDate || endDate) {
       where.date = {};
-      if (startDate) where.date.gte = new Date(startDate);
-      if (endDate) where.date.lte = new Date(endDate);
+      if (startDate) where.date.gte = new Date(`${startDate}T00:00:00.000Z`);
+      if (endDate) where.date.lte = new Date(`${endDate}T23:59:59.999Z`);
     }
     if (delivererId) where.userId = parseInt(delivererId);
 
@@ -352,8 +351,8 @@ router.get('/export', authorize('ADMIN'), async (req, res) => {
     const dateFilter = {};
     if (startDate || endDate) {
       dateFilter.createdAt = {};
-      if (startDate) dateFilter.createdAt.gte = new Date(startDate);
-      if (endDate) dateFilter.createdAt.lte = new Date(endDate);
+      if (startDate) dateFilter.createdAt.gte = new Date(`${startDate}T00:00:00.000Z`);
+      if (endDate) dateFilter.createdAt.lte = new Date(`${endDate}T23:59:59.999Z`);
     }
 
     let data;

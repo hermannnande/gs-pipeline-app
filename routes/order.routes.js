@@ -524,37 +524,59 @@ router.put('/:id/status', async (req, res) => {
 
 // Fonction helper pour mettre à jour les statistiques
 async function updateStatistics(userId, role, oldStatus, newStatus, montant) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Statistiques journalières (borne du jour)
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const tomorrowStart = new Date(todayStart);
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1);
 
   if (role === 'APPELANT') {
     // Statistiques des appelants
     const stat = await prisma.callStatistic.findFirst({
       where: {
         userId,
-        date: { gte: today }
-      }
+        date: { gte: todayStart, lt: tomorrowStart }
+      },
+      orderBy: { date: 'desc' }
     });
 
-    const updateData = {
-      totalAppels: { increment: 1 }
-    };
+    // On compte un "appel" uniquement quand l'appelant produit un résultat (VALIDEE / ANNULEE / INJOIGNABLE).
+    // Si correction entre résultats, on ajuste (décrément ancien, incrément nouveau) sans re-compter un nouvel appel.
+    const outcomeStatuses = ['VALIDEE', 'ANNULEE', 'INJOIGNABLE'];
+    const updateData = {};
 
-    if (newStatus === 'VALIDEE') updateData.totalValides = { increment: 1 };
-    if (newStatus === 'ANNULEE') updateData.totalAnnules = { increment: 1 };
-    if (newStatus === 'INJOIGNABLE') updateData.totalInjoignables = { increment: 1 };
+    if (oldStatus !== newStatus) {
+      // Décrémenter l'ancien résultat si besoin (correction)
+      if (oldStatus === 'VALIDEE') updateData.totalValides = { increment: -1 };
+      if (oldStatus === 'ANNULEE') updateData.totalAnnules = { increment: -1 };
+      if (oldStatus === 'INJOIGNABLE') updateData.totalInjoignables = { increment: -1 };
+
+      // Incrémenter le nouveau résultat si besoin
+      if (newStatus === 'VALIDEE') updateData.totalValides = { increment: (updateData.totalValides?.increment || 0) + 1 };
+      if (newStatus === 'ANNULEE') updateData.totalAnnules = { increment: (updateData.totalAnnules?.increment || 0) + 1 };
+      if (newStatus === 'INJOIGNABLE') updateData.totalInjoignables = { increment: (updateData.totalInjoignables?.increment || 0) + 1 };
+
+      // Comptabiliser un appel uniquement quand on passe d'un statut non-résultat à un résultat
+      if (!outcomeStatuses.includes(oldStatus) && outcomeStatuses.includes(newStatus)) {
+        updateData.totalAppels = { increment: 1 };
+      }
+    }
 
     if (stat) {
-      await prisma.callStatistic.update({
-        where: { id: stat.id },
-        data: updateData
-      });
+      // Éviter update vide
+      if (Object.keys(updateData).length > 0) {
+        await prisma.callStatistic.update({
+          where: { id: stat.id },
+          data: updateData
+        });
+      }
     } else {
+      const isOutcome = ['VALIDEE', 'ANNULEE', 'INJOIGNABLE'].includes(newStatus);
       await prisma.callStatistic.create({
         data: {
           userId,
-          date: today,
-          totalAppels: 1,
+          date: todayStart,
+          totalAppels: isOutcome ? 1 : 0,
           totalValides: newStatus === 'VALIDEE' ? 1 : 0,
           totalAnnules: newStatus === 'ANNULEE' ? 1 : 0,
           totalInjoignables: newStatus === 'INJOIGNABLE' ? 1 : 0
@@ -566,28 +588,48 @@ async function updateStatistics(userId, role, oldStatus, newStatus, montant) {
     const stat = await prisma.deliveryStatistic.findFirst({
       where: {
         userId,
-        date: { gte: today }
-      }
+        date: { gte: todayStart, lt: tomorrowStart }
+      },
+      orderBy: { date: 'desc' }
     });
 
+    // Ajustements symétriques en cas de correction (ex: LIVREE -> REFUSEE)
     const updateData = {};
-    if (newStatus === 'LIVREE') {
-      updateData.totalLivraisons = { increment: 1 };
-      updateData.montantLivre = { increment: montant };
+
+    if (oldStatus !== newStatus) {
+      // Décrémenter l'ancien statut si besoin
+      if (oldStatus === 'LIVREE') {
+        updateData.totalLivraisons = { increment: -1 };
+        updateData.montantLivre = { increment: -montant };
+      }
+      if (oldStatus === 'REFUSEE') updateData.totalRefusees = { increment: -1 };
+      if (oldStatus === 'ANNULEE_LIVRAISON') updateData.totalAnnulees = { increment: -1 };
+
+      // Incrémenter le nouveau statut si besoin
+      if (newStatus === 'LIVREE') {
+        updateData.totalLivraisons = { increment: (updateData.totalLivraisons?.increment || 0) + 1 };
+        updateData.montantLivre = { increment: (updateData.montantLivre?.increment || 0) + montant };
+      }
+      if (newStatus === 'REFUSEE') {
+        updateData.totalRefusees = { increment: (updateData.totalRefusees?.increment || 0) + 1 };
+      }
+      if (newStatus === 'ANNULEE_LIVRAISON') {
+        updateData.totalAnnulees = { increment: (updateData.totalAnnulees?.increment || 0) + 1 };
+      }
     }
-    if (newStatus === 'REFUSEE') updateData.totalRefusees = { increment: 1 };
-    if (newStatus === 'ANNULEE_LIVRAISON') updateData.totalAnnulees = { increment: 1 };
 
     if (stat) {
-      await prisma.deliveryStatistic.update({
-        where: { id: stat.id },
-        data: updateData
-      });
+      if (Object.keys(updateData).length > 0) {
+        await prisma.deliveryStatistic.update({
+          where: { id: stat.id },
+          data: updateData
+        });
+      }
     } else {
       await prisma.deliveryStatistic.create({
         data: {
           userId,
-          date: today,
+          date: todayStart,
           totalLivraisons: newStatus === 'LIVREE' ? 1 : 0,
           totalRefusees: newStatus === 'REFUSEE' ? 1 : 0,
           totalAnnulees: newStatus === 'ANNULEE_LIVRAISON' ? 1 : 0,

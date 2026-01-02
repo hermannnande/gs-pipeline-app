@@ -167,8 +167,10 @@ router.get('/stats', authenticate, authorize('ADMIN'), async (req, res) => {
     }
 
     // Top livreurs
+    // ⚠️ Pour être exact, on se base uniquement sur les LIVRAISONS LOCALES (LOCAL + LIVREE).
+    // Les EXPEDITIONS/EXPRESS ne reflètent pas un encaissement "livreur" (et l'encaissement est fractionné pour EXPRESS).
     const livreurStats = {};
-    commandes.forEach(c => {
+    livraisonsLocales.forEach(c => {
       if (c.deliverer) {
         const key = `${c.deliverer.prenom} ${c.deliverer.nom}`;
         if (!livreurStats[key]) {
