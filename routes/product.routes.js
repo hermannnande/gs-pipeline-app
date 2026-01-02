@@ -2,6 +2,7 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { body, validationResult } from 'express-validator';
 import { authenticate, authorize } from '../middlewares/auth.middleware.js';
+import { notifyLowStock } from '../utils/notifications.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -363,6 +364,15 @@ router.post('/:id/stock/adjust', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), [
 
       return { product: updatedProduct, movement };
     });
+
+    // 🔔 Vérifier si le stock est faible et envoyer notification
+    try {
+      if (result.product.stockActuel <= result.product.stockAlerte) {
+        notifyLowStock(result.product);
+      }
+    } catch (notifError) {
+      console.error('⚠️ Erreur envoi notification:', notifError);
+    }
 
     res.json({ 
       ...result, 

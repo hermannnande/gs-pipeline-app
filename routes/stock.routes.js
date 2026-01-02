@@ -2,6 +2,7 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { body, validationResult } from 'express-validator';
 import { authenticate, authorize } from '../middlewares/auth.middleware.js';
+import { notifyRemiseConfirmed, notifyRetourConfirmed, notifyLowStock } from '../utils/notifications.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -265,32 +266,32 @@ router.post('/tournees/:id/confirm-remise', authorize('ADMIN', 'GESTIONNAIRE', '
           if (order.productId && order.product) {
             // 📦 LOCAL : Déplacer le stock vers stockLocalReserve
             if (order.deliveryType === 'LOCAL') {
-              const product = order.product;
-              const stockActuelAvant = product.stockActuel;
-              const stockLocalReserveAvant = product.stockLocalReserve;
-              const stockActuelApres = stockActuelAvant - order.quantite;
-              const stockLocalReserveApres = stockLocalReserveAvant + order.quantite;
+            const product = order.product;
+            const stockActuelAvant = product.stockActuel;
+            const stockLocalReserveAvant = product.stockLocalReserve;
+            const stockActuelApres = stockActuelAvant - order.quantite;
+            const stockLocalReserveApres = stockLocalReserveAvant + order.quantite;
 
-              // Mettre à jour les deux stocks
-              await tx.product.update({
-                where: { id: order.productId },
-                data: { 
-                  stockActuel: stockActuelApres,
-                  stockLocalReserve: stockLocalReserveApres
-                }
-              });
+            // Mettre à jour les deux stocks
+            await tx.product.update({
+              where: { id: order.productId },
+              data: { 
+                stockActuel: stockActuelApres,
+                stockLocalReserve: stockLocalReserveApres
+              }
+            });
 
-              // Créer le mouvement de réservation locale
-              const movement = await tx.stockMovement.create({
-                data: {
-                  productId: order.productId,
-                  type: 'RESERVATION_LOCAL',
-                  quantite: order.quantite,
-                  stockAvant: stockActuelAvant,
-                  stockApres: stockActuelApres,
-                  orderId: order.id,
-                  tourneeId: tourneeStock.id,
-                  effectuePar: req.user.id,
+            // Créer le mouvement de réservation locale
+            const movement = await tx.stockMovement.create({
+              data: {
+                productId: order.productId,
+                type: 'RESERVATION_LOCAL',
+                quantite: order.quantite,
+                stockAvant: stockActuelAvant,
+                stockApres: stockActuelApres,
+                orderId: order.id,
+                tourneeId: tourneeStock.id,
+                effectuePar: req.user.id,
                   motif: `Remise colis LOCAL tournée ${deliveryList.nom} - ${order.orderReference} - ${order.clientNom}`
                 }
               });
@@ -311,9 +312,9 @@ router.post('/tournees/:id/confirm-remise', authorize('ADMIN', 'GESTIONNAIRE', '
                   tourneeId: tourneeStock.id,
                   effectuePar: req.user.id,
                   motif: `Remise colis EXPEDITION tournée ${deliveryList.nom} - ${order.orderReference} - ${order.clientNom} - Stock déjà réduit lors du paiement`
-                }
-              });
-              stockMovements.push(movement);
+              }
+            });
+            stockMovements.push(movement);
             }
           }
         }
@@ -321,6 +322,18 @@ router.post('/tournees/:id/confirm-remise', authorize('ADMIN', 'GESTIONNAIRE', '
 
       return { tourneeStock, stockMovements };
     });
+
+    // 🔔 Envoyer la notification de remise confirmée
+    try {
+      const deliverer = await prisma.user.findUnique({
+        where: { id: deliveryList.delivererId }
+      });
+      if (deliverer) {
+        notifyRemiseConfirmed(deliveryList, deliverer, colisRemis);
+      }
+    } catch (notifError) {
+      console.error('⚠️ Erreur envoi notification:', notifError);
+    }
 
     res.json({ 
       tourneeStock: result.tourneeStock, 
@@ -458,6 +471,19 @@ router.post('/tournees/:id/confirm-retour', authorize('ADMIN', 'GESTIONNAIRE', '
 
       return { tourneeStock, movements: stockMovements };
     });
+
+    // 🔔 Envoyer la notification de retour confirmé
+    try {
+      const deliveryListWithDeliverer = await prisma.deliveryList.findUnique({
+        where: { id: parseInt(id) },
+        include: { deliverer: true }
+      });
+      if (deliveryListWithDeliverer?.deliverer) {
+        notifyRetourConfirmed(deliveryListWithDeliverer, deliveryListWithDeliverer.deliverer, colisRetour);
+      }
+    } catch (notifError) {
+      console.error('⚠️ Erreur envoi notification:', notifError);
+    }
 
     res.json({ 
       ...result,

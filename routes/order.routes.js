@@ -2,6 +2,7 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { body, validationResult } from 'express-validator';
 import { authenticate, authorize } from '../middlewares/auth.middleware.js';
+import { notifyOrderValidated, notifyOrderDelivered, notifyOrderRefused } from '../utils/notifications.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -488,6 +489,31 @@ router.put('/:id/status', async (req, res) => {
 
     // Mettre à jour les statistiques
     await updateStatistics(user.id, user.role, order.status, status, order.montant);
+
+    // 🔔 Envoyer les notifications selon le nouveau statut
+    try {
+      // Commande validée par un appelant
+      if (status === 'VALIDEE' && order.status !== 'VALIDEE') {
+        notifyOrderValidated(updatedOrder, user);
+      }
+      
+      // Commande livrée par un livreur
+      if (status === 'LIVREE' && order.status !== 'LIVREE') {
+        if (updatedOrder.deliverer) {
+          notifyOrderDelivered(updatedOrder, updatedOrder.deliverer);
+        }
+      }
+      
+      // Commande refusée par un livreur
+      if (status === 'REFUSEE' && order.status !== 'REFUSEE') {
+        if (updatedOrder.deliverer) {
+          notifyOrderRefused(updatedOrder, updatedOrder.deliverer);
+        }
+      }
+    } catch (notifError) {
+      console.error('⚠️ Erreur envoi notification:', notifError);
+      // Ne pas bloquer la mise à jour si la notification échoue
+    }
 
     res.json({ order: updatedOrder, message: 'Statut mis à jour avec succès.' });
   } catch (error) {

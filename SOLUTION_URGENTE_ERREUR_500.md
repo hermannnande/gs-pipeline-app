@@ -126,3 +126,6 @@ Railway détecte les migrations Prisma et les exécute automatiquement.
 En attendant, je vais vérifier si Railway a bien exécuté `prisma generate`...
 
 
+
+
+

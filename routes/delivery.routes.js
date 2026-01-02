@@ -1,6 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, authorize } from '../middlewares/auth.middleware.js';
+import { notifyOrderAssigned, notifyDeliveryListCreated } from '../utils/notifications.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -149,6 +150,24 @@ router.post('/assign', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
     );
 
     await Promise.all(historyPromises);
+
+    // 🔔 Envoyer les notifications
+    try {
+      // Notifier le livreur de la nouvelle tournée
+      notifyDeliveryListCreated(deliveryList, deliverer, orderIds.length);
+      
+      // Notifier pour chaque commande assignée
+      const assignedOrders = await prisma.order.findMany({
+        where: { id: { in: orderIds.map(id => parseInt(id)) } }
+      });
+      
+      assignedOrders.forEach(order => {
+        notifyOrderAssigned(order, deliverer);
+      });
+    } catch (notifError) {
+      console.error('⚠️ Erreur envoi notification:', notifError);
+      // Ne pas bloquer l'assignation si la notification échoue
+    }
 
     res.json({ 
       deliveryList, 

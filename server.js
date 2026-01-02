@@ -1,4 +1,6 @@
 import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes.js';
@@ -21,7 +23,27 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 const app = express();
+const httpServer = createServer(app);
 const PORT = process.env.PORT || 5000;
+
+// Configuration Socket.io
+const io = new Server(httpServer, {
+  cors: {
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:5000',
+      'https://gs-pipeline-app.vercel.app',
+      'https://obgestion.com',
+      'https://www.obgestion.com',
+      /https:\/\/gs-pipeline-app-.*\.vercel\.app$/
+    ],
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
+
+// Rendre io accessible globalement
+export { io };
 
 // Middlewares
 app.use(cors({
@@ -80,8 +102,30 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
+// Gestion des connexions Socket.io
+io.on('connection', (socket) => {
+  console.log(`✅ Client connecté: ${socket.id}`);
+  
+  // Rejoindre une room basée sur le rôle de l'utilisateur
+  socket.on('join-role', (role) => {
+    socket.join(role);
+    console.log(`👤 Socket ${socket.id} a rejoint la room: ${role}`);
+  });
+  
+  // Rejoindre une room spécifique à un utilisateur
+  socket.on('join-user', (userId) => {
+    socket.join(`user-${userId}`);
+    console.log(`👤 Socket ${socket.id} a rejoint la room: user-${userId}`);
+  });
+  
+  socket.on('disconnect', () => {
+    console.log(`❌ Client déconnecté: ${socket.id}`);
+  });
+});
+
+httpServer.listen(PORT, () => {
   console.log(`🚀 Serveur démarré sur le port ${PORT}`);
   console.log(`📍 http://localhost:${PORT}`);
+  console.log(`🔌 WebSocket prêt pour les notifications en temps réel`);
 });
 

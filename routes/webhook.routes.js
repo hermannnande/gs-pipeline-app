@@ -1,6 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { body, validationResult } from 'express-validator';
+import { notifyNewOrder } from '../utils/notifications.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -126,6 +127,14 @@ router.post('/make', verifyApiKey, [
       customer: customer_name,
       amount: totalAmount
     });
+
+    // 4.5 Envoyer une notification aux appelants
+    try {
+      notifyNewOrder(order);
+    } catch (notifError) {
+      console.error('⚠️ Erreur envoi notification:', notifError);
+      // Ne pas bloquer la création de commande si la notification échoue
+    }
 
     // 5. Optionnel : Enregistrer le payload brut pour debug si fourni
     if (raw_payload) {
