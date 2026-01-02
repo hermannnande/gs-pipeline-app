@@ -130,15 +130,15 @@ export default function Layout({ children }: LayoutProps) {
   const navigationItems = getNavigationItems();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
       {/* Mobile Header with Burger Menu */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-30">
-        <h1 className="text-xl font-bold text-primary-600">GS Pipeline</h1>
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 glass-effect border-b border-white/20 backdrop-blur-xl flex items-center justify-between px-4 z-30 shadow-soft">
+        <h1 className="text-xl font-bold gradient-text font-display">GS Pipeline</h1>
         <div className="flex items-center gap-2">
           <NotificationCenter />
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="p-2 rounded-xl hover:bg-gray-100 transition-all duration-200 active:scale-95"
             aria-label="Toggle menu"
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -147,13 +147,13 @@ export default function Layout({ children }: LayoutProps) {
       </div>
 
       {/* Desktop Header */}
-      <div className="hidden lg:block fixed top-0 right-0 left-64 h-16 bg-white border-b border-gray-200 z-20">
+      <div className="hidden lg:block fixed top-0 right-0 left-64 h-16 glass-effect border-b border-white/20 backdrop-blur-xl z-20 shadow-soft">
         <div className="h-full px-8 flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">
-              Bienvenue, {user?.prenom} !
+          <div className="animate-fade-in">
+            <h2 className="text-xl font-semibold text-gray-900 font-display">
+              Bienvenue, {user?.prenom} ! 👋
             </h2>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 font-medium">
               {new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
           </div>
@@ -171,26 +171,26 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Sidebar */}
       <aside className={`
-        fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 flex flex-col z-50 transition-transform duration-300
+        fixed left-0 top-0 h-full w-64 glass-effect backdrop-blur-xl border-r border-white/20 flex flex-col z-50 transition-all duration-300 shadow-2xl
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0
       `}>
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-primary-600">GS Pipeline</h1>
-              <p className="text-sm text-gray-500 mt-1">
-                {user?.role === 'ADMIN' && 'Administration'}
-                {user?.role === 'GESTIONNAIRE' && 'Gestion'}
-                {user?.role === 'GESTIONNAIRE_STOCK' && 'Gestion de Stock'}
-                {user?.role === 'APPELANT' && 'Appels'}
-                {user?.role === 'LIVREUR' && 'Livraisons'}
+              <h1 className="text-2xl font-bold gradient-text font-display">GS Pipeline</h1>
+              <p className="text-xs font-semibold text-gray-500 mt-1.5 uppercase tracking-wide">
+                {user?.role === 'ADMIN' && '✨ Administration'}
+                {user?.role === 'GESTIONNAIRE' && '🎯 Gestion'}
+                {user?.role === 'GESTIONNAIRE_STOCK' && '📦 Gestion de Stock'}
+                {user?.role === 'APPELANT' && '📞 Appels'}
+                {user?.role === 'LIVREUR' && '🚚 Livraisons'}
               </p>
             </div>
             {/* Close button for mobile */}
             <button
               onClick={() => setIsMobileMenuOpen(false)}
-              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="lg:hidden p-2 rounded-xl hover:bg-gray-100 transition-all duration-200 active:scale-95"
               aria-label="Close menu"
             >
               <X size={20} />
@@ -198,7 +198,7 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         </div>
 
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-thin">
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -209,16 +209,16 @@ export default function Layout({ children }: LayoutProps) {
                 key={item.path}
                 to={item.path}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                   isActive
-                    ? 'bg-primary-50 text-primary-600 font-medium'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/30 font-medium'
+                    : 'text-gray-700 hover:bg-gray-100/80 hover:translate-x-1'
                 }`}
               >
-                <Icon size={20} />
-                <span className="flex-1">{item.label}</span>
+                <Icon size={20} className={isActive ? '' : 'group-hover:scale-110 transition-transform'} />
+                <span className="flex-1 text-sm">{item.label}</span>
                 {isChatLink && totalUnread > 0 && (
-                  <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                  <span className="bg-danger-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg shadow-danger-500/50 animate-pulse">
                     {totalUnread}
                   </span>
                 )}
@@ -227,13 +227,13 @@ export default function Layout({ children }: LayoutProps) {
           })}
         </nav>
 
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-gray-100 bg-gradient-to-br from-gray-50/50 to-transparent">
           <div className="flex items-center gap-3 mb-4 px-2">
-            <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center text-primary-600 font-semibold">
+            <div className="w-11 h-11 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-primary-500/30 text-sm">
               {user?.prenom?.[0]}{user?.nom?.[0]}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
+              <p className="text-sm font-semibold text-gray-900 truncate">
                 {user?.prenom} {user?.nom}
               </p>
               <p className="text-xs text-gray-500 truncate">{user?.email}</p>
@@ -241,7 +241,7 @@ export default function Layout({ children }: LayoutProps) {
           </div>
           <button
             onClick={logout}
-            className="w-full flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-danger-600 hover:text-white hover:bg-gradient-to-r hover:from-danger-500 hover:to-danger-600 rounded-xl transition-all duration-200 font-medium hover:shadow-lg hover:shadow-danger-500/30 active:scale-95"
           >
             <LogOut size={20} />
             <span>Déconnexion</span>

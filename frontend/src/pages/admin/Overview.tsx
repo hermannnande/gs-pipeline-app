@@ -10,10 +10,14 @@ import {
   Users as UsersIcon,
   Calendar,
   Download,
-  FileText
+  FileText,
+  LayoutDashboard,
+  ArrowUpRight,
+  ArrowDownRight
 } from 'lucide-react';
 import { statsApi, ordersApi, usersApi } from '@/lib/api';
 import { formatCurrency, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
+import { StatCard, PageHeader, LoadingState, EmptyState } from '@/components/UIComponents';
 
 export default function Overview() {
   const [period, setPeriod] = useState<'today' | 'week' | 'month' | 'all'>('month');
@@ -60,153 +64,139 @@ export default function Overview() {
 
   const stats = statsData?.overview;
 
-  const statCards = [
-    {
-      title: 'Commandes totales',
-      value: stats?.totalOrders || 0,
-      icon: ShoppingCart,
-      color: 'bg-blue-500',
-    },
-    {
-      title: 'Commandes livrées',
-      value: stats?.deliveredOrders || 0,
-      icon: CheckCircle,
-      color: 'bg-green-500',
-    },
-    {
-      title: 'Nouvelles commandes',
-      value: stats?.newOrders || 0,
-      icon: Package,
-      color: 'bg-yellow-500',
-    },
-    {
-      title: 'Chiffre d\'affaires',
-      value: formatCurrency(stats?.totalRevenue || 0),
-      icon: TrendingUp,
-      color: 'bg-purple-500',
-    },
-  ];
+  if (!stats) {
+    return <LoadingState text="Chargement des statistiques..." />;
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard Administrateur</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-1">Vue d'ensemble de votre activité</p>
-        </div>
-        
-        {/* Filtre de période */}
-        <div className="flex items-center gap-1 sm:gap-2 bg-white rounded-lg shadow-sm p-1 overflow-x-auto">
-          <button
-            onClick={() => setPeriod('today')}
-            className={`px-2 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
-              period === 'today'
-                ? 'bg-primary-600 text-white'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            Aujourd'hui
-          </button>
-          <button
-            onClick={() => setPeriod('week')}
-            className={`px-2 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
-              period === 'week'
-                ? 'bg-primary-600 text-white'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            7 jours
-          </button>
-          <button
-            onClick={() => setPeriod('month')}
-            className={`px-2 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
-              period === 'month'
-                ? 'bg-primary-600 text-white'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            30 jours
-          </button>
-          <button
-            onClick={() => setPeriod('all')}
-            className={`px-2 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
-              period === 'all'
-                ? 'bg-primary-600 text-white'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            Tout
-          </button>
-        </div>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title="Dashboard Administrateur"
+        subtitle="Vue d'ensemble de votre activité en temps réel"
+        icon={LayoutDashboard}
+        actions={
+          <div className="flex items-center gap-2 bg-white rounded-xl shadow-card p-1.5 border border-gray-100">
+            {['today', 'week', 'month', 'all'].map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p as any)}
+                className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                  period === p
+                    ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/30'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {p === 'today' && "Aujourd'hui"}
+                {p === 'week' && '7 jours'}
+                {p === 'month' && '30 jours'}
+                {p === 'all' && 'Tout'}
+              </button>
+            ))}
+          </div>
+        }
+      />
 
       {/* Cartes statistiques */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statCards.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <div key={stat.title} className="card">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-2">{stat.value}</p>
-                </div>
-                <div className={`${stat.color} p-3 rounded-lg text-white`}>
-                  <Icon size={24} />
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        <StatCard
+          title="Commandes totales"
+          value={stats.totalOrders || 0}
+          icon={ShoppingCart}
+          variant="primary"
+        />
+        <StatCard
+          title="Commandes livrées"
+          value={stats.deliveredOrders || 0}
+          icon={CheckCircle}
+          variant="success"
+          trend={{
+            value: `${stats.conversionRate || 0}% de conversion`,
+            isPositive: true
+          }}
+        />
+        <StatCard
+          title="Nouvelles commandes"
+          value={stats.newOrders || 0}
+          icon={Package}
+          variant="warning"
+        />
+        <StatCard
+          title="Chiffre d'affaires"
+          value={formatCurrency(stats.totalRevenue || 0)}
+          icon={TrendingUp}
+          variant="primary"
+        />
       </div>
 
-      {/* Taux de conversion */}
-      {stats && (
-        <div className="card">
-          <h3 className="text-lg font-semibold mb-4">Performance globale</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <p className="text-sm text-gray-600">Taux de conversion</p>
-              <p className="text-3xl font-bold text-green-600 mt-2">{stats.conversionRate}%</p>
-            </div>
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-gray-600">Commandes validées</p>
-              <p className="text-3xl font-bold text-blue-600 mt-2">{stats.validatedOrders}</p>
-            </div>
-            <div className="text-center p-4 bg-red-50 rounded-lg">
-              <p className="text-sm text-gray-600">Commandes annulées</p>
-              <p className="text-3xl font-bold text-red-600 mt-2">{stats.cancelledOrders}</p>
-            </div>
+      {/* Performance globale */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="stat-card-success">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Taux de conversion</p>
+            <ArrowUpRight className="text-success-600" size={20} />
           </div>
+          <p className="text-4xl font-bold text-gray-900 font-display">{stats.conversionRate}%</p>
+          <p className="text-sm text-success-600 mt-2 font-medium">Performance excellente</p>
         </div>
-      )}
+        
+        <div className="stat-card-primary">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Commandes validées</p>
+            <CheckCircle className="text-primary-600" size={20} />
+          </div>
+          <p className="text-4xl font-bold text-gray-900 font-display">{stats.validatedOrders}</p>
+          <p className="text-sm text-primary-600 mt-2 font-medium">Prêtes à expédier</p>
+        </div>
+        
+        <div className="stat-card-danger">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Commandes annulées</p>
+            <XCircle className="text-danger-600" size={20} />
+          </div>
+          <p className="text-4xl font-bold text-gray-900 font-display">{stats.cancelledOrders}</p>
+          <p className="text-sm text-danger-600 mt-2 font-medium">À analyser</p>
+        </div>
+      </div>
 
       {/* Commandes récentes */}
       <div className="card">
-        <h3 className="text-lg font-semibold mb-4">Commandes récentes</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-bold text-gray-900 font-display">Commandes récentes</h3>
+          <button 
+            onClick={() => navigate('/admin/orders')}
+            className="btn btn-secondary btn-sm"
+          >
+            Voir tout
+          </button>
+        </div>
+        <div className="table-responsive">
+          <table className="table-modern">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Référence</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Client</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Ville</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Produit</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Montant</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Statut</th>
+              <tr>
+                <th>Référence</th>
+                <th>Client</th>
+                <th>Ville</th>
+                <th>Produit</th>
+                <th>Montant</th>
+                <th>Statut</th>
               </tr>
             </thead>
             <tbody>
               {recentOrders?.orders?.slice(0, 5).map((order: any) => (
-                <tr key={order.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-3 px-4 text-sm">{order.orderReference}</td>
-                  <td className="py-3 px-4 text-sm">{order.clientNom}</td>
-                  <td className="py-3 px-4 text-sm">{order.clientVille}</td>
-                  <td className="py-3 px-4 text-sm">{order.produitNom}</td>
-                  <td className="py-3 px-4 text-sm font-medium">{formatCurrency(order.montant)}</td>
-                  <td className="py-3 px-4 text-sm">
-                    <span className={`badge ${order.status === 'LIVREE' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                      {order.status}
+                <tr key={order.id}>
+                  <td className="font-mono font-semibold">{order.orderReference}</td>
+                  <td className="font-medium">{order.clientNom}</td>
+                  <td>{order.clientVille}</td>
+                  <td className="text-gray-600">{order.produitNom}</td>
+                  <td className="font-bold text-gray-900">{formatCurrency(order.montant)}</td>
+                  <td>
+                    <span className={`badge ${
+                      order.status === 'LIVREE' ? 'badge-success' :
+                      order.status === 'VALIDEE' ? 'badge-primary' :
+                      order.status === 'ANNULEE' ? 'badge-danger' :
+                      'badge-warning'
+                    }`}>
+                      {getStatusLabel(order.status)}
                     </span>
                   </td>
                 </tr>
@@ -216,17 +206,28 @@ export default function Overview() {
         </div>
       </div>
 
-      {/* Utilisateurs actifs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Utilisateurs et Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card">
-          <h3 className="text-lg font-semibold mb-4">Utilisateurs par rôle</h3>
+          <h3 className="text-xl font-bold text-gray-900 mb-6 font-display">Utilisateurs par rôle</h3>
           <div className="space-y-3">
             {['APPELANT', 'LIVREUR', 'GESTIONNAIRE'].map(role => {
               const count = usersData?.users?.filter((u: any) => u.role === role && u.actif).length || 0;
+              const icons: Record<string, string> = {
+                APPELANT: '📞',
+                LIVREUR: '🚚',
+                GESTIONNAIRE: '🎯'
+              };
               return (
-                <div key={role} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm font-medium text-gray-700">{role}</span>
-                  <span className="text-lg font-bold text-primary-600">{count}</span>
+                <div 
+                  key={role} 
+                  className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-transparent rounded-xl border border-gray-100 hover:border-primary-200 hover:shadow-md transition-all duration-200"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{icons[role]}</span>
+                    <span className="text-sm font-semibold text-gray-700">{role}</span>
+                  </div>
+                  <span className="text-2xl font-bold text-primary-600 font-display">{count}</span>
                 </div>
               );
             })}
@@ -234,28 +235,28 @@ export default function Overview() {
         </div>
 
         <div className="card">
-          <h3 className="text-lg font-semibold mb-4">Actions rapides</h3>
+          <h3 className="text-xl font-bold text-gray-900 mb-6 font-display">Actions rapides</h3>
           <div className="space-y-3">
             <button 
               onClick={() => navigate('/admin/users')}
-              className="w-full btn btn-primary flex items-center justify-center gap-2"
+              className="w-full btn btn-primary"
             >
               <UsersIcon size={20} />
-              Créer un nouveau compte
+              <span>Créer un nouveau compte</span>
             </button>
             <button 
               onClick={() => navigate('/admin/orders')}
-              className="w-full btn btn-secondary flex items-center justify-center gap-2"
+              className="w-full btn btn-secondary"
             >
               <Download size={20} />
-              Exporter les données
+              <span>Exporter les données</span>
             </button>
             <button 
               onClick={() => navigate('/admin/stats')}
-              className="w-full btn btn-secondary flex items-center justify-center gap-2"
+              className="w-full btn btn-secondary"
             >
               <FileText size={20} />
-              Voir les rapports détaillés
+              <span>Voir les rapports détaillés</span>
             </button>
           </div>
         </div>
