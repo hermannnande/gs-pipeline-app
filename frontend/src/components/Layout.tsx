@@ -76,6 +76,7 @@ export default function Layout({ children }: LayoutProps) {
         ];
       case 'GESTIONNAIRE':
         return [
+          { icon: MessageSquare, label: 'Chat', path: '/gestionnaire/chat', badge: totalUnread > 0 ? totalUnread : undefined },
           { icon: LayoutDashboard, label: 'Dashboard', path: '/gestionnaire' },
           { icon: Phone, label: 'À appeler', path: '/gestionnaire/to-call' },
           { icon: Calendar, label: 'RDV Programmés', path: '/gestionnaire/rdv' },
@@ -88,10 +89,10 @@ export default function Layout({ children }: LayoutProps) {
           { icon: Database, label: 'Base Clients', path: '/gestionnaire/database' },
           { icon: Eye, label: 'Supervision Appelants', path: '/gestionnaire/supervision' },
           { icon: BarChart3, label: 'Statistiques', path: '/gestionnaire/stats' },
-          { icon: MessageSquare, label: 'Chat', path: '/gestionnaire/chat' },
         ];
       case 'GESTIONNAIRE_STOCK':
         return [
+          { icon: MessageSquare, label: 'Chat', path: '/stock/chat', badge: totalUnread > 0 ? totalUnread : undefined },
           { icon: LayoutDashboard, label: 'Dashboard', path: '/stock' },
           { icon: Truck, label: 'Tournées', path: '/stock/tournees' },
           { icon: Zap, label: 'Expéditions & EXPRESS', path: '/stock/expeditions' },
@@ -99,10 +100,10 @@ export default function Layout({ children }: LayoutProps) {
           { icon: Package, label: 'Produits', path: '/stock/products' },
           { icon: History, label: 'Mouvements', path: '/stock/movements' },
           { icon: Database, label: 'Base Clients', path: '/stock/database' },
-          { icon: MessageSquare, label: 'Chat', path: '/stock/chat' },
         ];
       case 'APPELANT':
         return [
+          { icon: MessageSquare, label: 'Chat', path: '/appelant/chat', badge: totalUnread > 0 ? totalUnread : undefined },
           { icon: LayoutDashboard, label: 'Dashboard', path: '/appelant' },
           { icon: Phone, label: 'À appeler', path: '/appelant/orders' },
           { icon: Calendar, label: 'RDV Programmés', path: '/appelant/rdv' },
@@ -113,14 +114,13 @@ export default function Layout({ children }: LayoutProps) {
           { icon: CheckCircle, label: 'Mes commandes traitées', path: '/appelant/processed' },
           { icon: Database, label: 'Base Clients', path: '/appelant/database' },
           { icon: BarChart3, label: 'Mes statistiques', path: '/appelant/stats' },
-          { icon: MessageSquare, label: 'Chat', path: '/appelant/chat' },
         ];
       case 'LIVREUR':
         return [
+          { icon: MessageSquare, label: 'Chat', path: '/livreur/chat', badge: totalUnread > 0 ? totalUnread : undefined },
           { icon: LayoutDashboard, label: 'Dashboard', path: '/livreur' },
           { icon: Package, label: 'Mes livraisons', path: '/livreur/deliveries' },
           { icon: BarChart3, label: 'Mes statistiques', path: '/livreur/stats' },
-          { icon: MessageSquare, label: 'Chat', path: '/livreur/chat' },
         ];
       default:
         return [];

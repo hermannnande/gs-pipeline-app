@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft } from 'lucide-react';
 import { chatApi } from '../../lib/chatApi';
 import { useAuthStore } from '@/store/authStore';
 import MessageInput from './MessageInput';
@@ -8,9 +9,10 @@ import MessageBubble from './MessageBubble';
 interface MessageAreaProps {
   conversationId: number;
   chatSocket: any;
+  onBack?: () => void;
 }
 
-export default function MessageArea({ conversationId, chatSocket }: MessageAreaProps) {
+export default function MessageArea({ conversationId, chatSocket, onBack }: MessageAreaProps) {
   const { user } = useAuthStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -151,20 +153,33 @@ export default function MessageArea({ conversationId, chatSocket }: MessageAreaP
     <div className="flex-1 flex flex-col bg-white">
       {/* Header */}
       <div className="p-4 border-b border-gray-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">
-              {getConversationTitle()}
-            </h2>
-            <p className="text-sm text-gray-500">
-              {getParticipantsCount()} participant{getParticipantsCount() > 1 ? 's' : ''}
-            </p>
-          </div>
-          {conversation?.type === 'GROUP' && (
-            <button className="text-gray-600 hover:text-gray-900 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors">
-              ⚙️ Gérer
+        <div className="flex items-center gap-3">
+          {/* Bouton retour sur mobile */}
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="Retour"
+            >
+              <ArrowLeft size={20} className="text-gray-700" />
             </button>
           )}
+          
+          <div className="flex-1 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">
+                {getConversationTitle()}
+              </h2>
+              <p className="text-sm text-gray-500">
+                {getParticipantsCount()} participant{getParticipantsCount() > 1 ? 's' : ''}
+              </p>
+            </div>
+            {conversation?.type === 'GROUP' && (
+              <button className="hidden md:block text-gray-600 hover:text-gray-900 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors">
+                ⚙️ Gérer
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

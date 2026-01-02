@@ -177,10 +177,13 @@ export default function Chat() {
   return (
     <div className="h-[calc(100vh-4rem)] flex bg-gray-50">
       {/* Liste des conversations - Sidebar gauche */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-900">💬 Chat</h1>
+      <div className={`
+        ${selectedConversationId ? 'hidden md:flex' : 'flex'}
+        w-full md:w-80 bg-white border-r border-gray-200 flex-col
+      `}>
+        <div className="p-3 md:p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between mb-3 md:mb-4">
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">💬 Chat</h1>
             {totalUnread > 0 && (
               <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
                 {totalUnread}
@@ -188,7 +191,7 @@ export default function Chat() {
             )}
           </div>
           {/* Onglets style WhatsApp */}
-          <div className="mb-3 flex gap-2">
+          <div className="mb-3 flex gap-1 md:gap-2 overflow-x-auto">
             {[
               { id: 'ALL', label: 'Tous' },
               { id: 'PRIVATE', label: 'Privé' },
@@ -213,16 +216,17 @@ export default function Chat() {
             <input
               value={searchConversation}
               onChange={(e) => setSearchConversation(e.target.value)}
-              placeholder="Rechercher une conversation..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="Rechercher..."
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
           <button
             onClick={() => setShowNewConversation(true)}
-            className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-indigo-600 text-white px-3 md:px-4 py-2 text-sm md:text-base rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
           >
             <span className="text-xl">+</span>
-            Nouvelle conversation
+            <span className="hidden sm:inline">Nouvelle conversation</span>
+            <span className="sm:hidden">Nouveau</span>
           </button>
           <div className="mt-2 text-xs text-gray-500">
             Statut: {chatSocket.isConnected ? '🟢 Connecté' : '🟠 Connexion...'}
@@ -240,20 +244,24 @@ export default function Chat() {
       </div>
 
       {/* Zone de messages - Partie principale */}
-      <div className="flex-1 flex flex-col">
+      <div className={`
+        ${selectedConversationId ? 'flex' : 'hidden md:flex'}
+        flex-1 flex-col
+      `}>
         {selectedConversationId ? (
           <MessageArea
             conversationId={selectedConversationId}
             chatSocket={chatSocket}
+            onBack={() => setSelectedConversationId(null)}
           />
         ) : (
           <div className="flex-1 flex items-center justify-center bg-gray-50">
-            <div className="text-center">
+            <div className="text-center px-4">
               <div className="text-6xl mb-4">💬</div>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+              <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-2">
                 Bienvenue sur le Chat Entreprise
               </h2>
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-sm md:text-base">
                 Sélectionnez une conversation ou créez-en une nouvelle pour commencer
               </p>
             </div>
