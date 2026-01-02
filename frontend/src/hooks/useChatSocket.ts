@@ -6,6 +6,7 @@ const SOCKET_URL = API_URL.replace('/api', '');
 
 export function useChatSocket() {
   const socketRef = useRef<Socket | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
@@ -13,29 +14,36 @@ export function useChatSocket() {
     if (!token) return;
 
     // Créer la connexion Socket.io pour le chat
-    const socket = io(`${SOCKET_URL}/chat`, {
+    const newSocket = io(`${SOCKET_URL}/chat`, {
       auth: { token },
       transports: ['websocket', 'polling']
     });
 
-    socket.on('connect', () => {
+    newSocket.on('connect', () => {
       console.log('💬 Connecté au chat Socket.io');
       setIsConnected(true);
     });
 
-    socket.on('disconnect', () => {
+    newSocket.on('disconnect', () => {
       console.log('💬 Déconnecté du chat Socket.io');
       setIsConnected(false);
     });
 
-    socket.on('error', (error) => {
+    newSocket.on('error', (error) => {
       console.error('💬 Erreur Socket.io chat:', error);
     });
 
-    socketRef.current = socket;
+    socketRef.current = newSocket;
+    setSocket(newSocket);
 
     return () => {
-      socket.disconnect();
+      try {
+        newSocket.disconnect();
+      } finally {
+        socketRef.current = null;
+        setSocket(null);
+        setIsConnected(false);
+      }
     };
   }, []);
 
@@ -121,7 +129,7 @@ export function useChatSocket() {
   };
 
   return {
-    socket: socketRef.current,
+    socket,
     isConnected,
     sendMessage,
     editMessage,

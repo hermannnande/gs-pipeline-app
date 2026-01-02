@@ -9,6 +9,7 @@ import NewConversationModal from '../../components/chat/NewConversationModal';
 export default function Chat() {
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
   const [showNewConversation, setShowNewConversation] = useState(false);
+  const [searchConversation, setSearchConversation] = useState('');
   const queryClient = useQueryClient();
   const chatSocket = useChatSocket();
 
@@ -22,9 +23,19 @@ export default function Chat() {
   const conversations = conversationsData?.conversations || [];
   const totalUnread = conversations.reduce((sum: number, conv: any) => sum + (conv.unreadCount || 0), 0);
 
+  const filteredConversations = conversations.filter((conv: any) => {
+    const q = searchConversation.trim().toLowerCase();
+    if (!q) return true;
+    const name = (conv.type === 'PRIVATE'
+      ? (conv.participants?.map((p: any) => `${p.user?.prenom || ''} ${p.user?.nom || ''}`.trim()).join(' ') || '')
+      : (conv.name || '')
+    ).toLowerCase();
+    return name.includes(q);
+  });
+
   // Écouter les nouveaux messages en temps réel
   useEffect(() => {
-    if (!chatSocket.socket) return;
+    if (!chatSocket.socket || !chatSocket.isConnected) return;
 
     const handleNewMessage = (message: any) => {
       // Mettre à jour la liste des conversations
@@ -108,7 +119,7 @@ export default function Chat() {
       chatSocket.off('reaction:added', handleReactionAdded);
       chatSocket.off('reaction:removed', handleReactionRemoved);
     };
-  }, [chatSocket, queryClient, selectedConversationId]);
+  }, [chatSocket.socket, chatSocket.isConnected, queryClient, selectedConversationId]);
 
   return (
     <div className="h-[calc(100vh-4rem)] flex bg-gray-50">
@@ -123,6 +134,14 @@ export default function Chat() {
               </span>
             )}
           </div>
+          <div className="mb-3">
+            <input
+              value={searchConversation}
+              onChange={(e) => setSearchConversation(e.target.value)}
+              placeholder="Rechercher une conversation..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
           <button
             onClick={() => setShowNewConversation(true)}
             className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
@@ -130,10 +149,13 @@ export default function Chat() {
             <span className="text-xl">+</span>
             Nouvelle conversation
           </button>
+          <div className="mt-2 text-xs text-gray-500">
+            Statut: {chatSocket.isConnected ? '🟢 Connecté' : '🟠 Connexion...'}
+          </div>
         </div>
 
         <ConversationList
-          conversations={conversations}
+          conversations={filteredConversations}
           selectedConversationId={selectedConversationId}
           onSelectConversation={setSelectedConversationId}
           isLoading={isLoading}

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { chatApi } from '../../lib/chatApi';
 import { useAuthStore } from '@/store/authStore';
 import MessageInput from './MessageInput';
@@ -36,7 +36,7 @@ export default function MessageArea({ conversationId, chatSocket }: MessageAreaP
 
   // Rejoindre la conversation Socket.io
   useEffect(() => {
-    if (conversationId && chatSocket.socket) {
+    if (conversationId && chatSocket.socket && chatSocket.isConnected) {
       chatSocket.joinConversation(conversationId);
       chatSocket.markAsRead(conversationId);
 
@@ -44,11 +44,11 @@ export default function MessageArea({ conversationId, chatSocket }: MessageAreaP
         chatSocket.leaveConversation(conversationId);
       };
     }
-  }, [conversationId, chatSocket]);
+  }, [conversationId, chatSocket.socket, chatSocket.isConnected]);
 
   // Écouter l'indicateur "en train d'écrire"
   useEffect(() => {
-    if (!chatSocket.socket) return;
+    if (!chatSocket.socket || !chatSocket.isConnected) return;
 
     const handleTypingUpdate = (data: any) => {
       if (data.conversationId !== conversationId) return;
@@ -67,7 +67,7 @@ export default function MessageArea({ conversationId, chatSocket }: MessageAreaP
     return () => {
       chatSocket.off('typing:update', handleTypingUpdate);
     };
-  }, [chatSocket, conversationId]);
+  }, [chatSocket.socket, chatSocket.isConnected, conversationId]);
 
   // Scroller vers le bas automatiquement
   useEffect(() => {
