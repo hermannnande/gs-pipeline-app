@@ -12,8 +12,11 @@ interface MessageAreaProps {
 
 export default function MessageArea({ conversationId, chatSocket }: MessageAreaProps) {
   const { user } = useAuthStore();
+  const containerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [typingUsers, setTypingUsers] = useState<any[]>([]);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [showNewMsgBanner, setShowNewMsgBanner] = useState(false);
 
   // Récupérer la conversation
   const { data: conversationData } = useQuery({
@@ -68,10 +71,45 @@ export default function MessageArea({ conversationId, chatSocket }: MessageAreaP
     };
   }, [chatSocket.socket, chatSocket.isConnected, conversationId]);
 
-  // Scroller vers le bas automatiquement
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+    setShowNewMsgBanner(false);
+  };
+
+  // Scroll intelligent (style WhatsApp):
+  // - si l'utilisateur est en bas -> auto scroll
+  // - sinon -> afficher un bouton "Nouveaux messages"
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (messages.length === 0) return;
+    if (isAtBottom) {
+      scrollToBottom('smooth');
+    } else {
+      setShowNewMsgBanner(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages.length]);
+
+  // Gestion du scroll utilisateur
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const onScroll = () => {
+      const threshold = 120; // px
+      const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      const atBottom = distanceToBottom < threshold;
+      setIsAtBottom(atBottom);
+      if (atBottom) setShowNewMsgBanner(false);
+    };
+
+    el.addEventListener('scroll', onScroll, { passive: true });
+    // Init
+    onScroll();
+
+    return () => {
+      el.removeEventListener('scroll', onScroll);
+    };
+  }, [conversationId]);
 
   // Marquer comme lu quand on voit les messages
   useEffect(() => {
@@ -131,7 +169,7 @@ export default function MessageArea({ conversationId, chatSocket }: MessageAreaP
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+      <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 relative">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center text-gray-500">
@@ -152,6 +190,19 @@ export default function MessageArea({ conversationId, chatSocket }: MessageAreaP
             ))}
             <div ref={messagesEndRef} />
           </>
+        )}
+
+        {/* Banner nouveaux messages (quand l'utilisateur lit plus haut) */}
+        {showNewMsgBanner && (
+          <div className="sticky bottom-3 w-full flex justify-center pointer-events-none">
+            <button
+              type="button"
+              onClick={() => scrollToBottom('smooth')}
+              className="pointer-events-auto bg-indigo-600 text-white px-4 py-2 rounded-full shadow-lg hover:bg-indigo-700 transition-colors"
+            >
+              ⬇️ Nouveaux messages
+            </button>
+          </div>
         )}
 
         {/* Indicateur "en train d'écrire" */}

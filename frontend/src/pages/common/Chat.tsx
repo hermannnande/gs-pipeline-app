@@ -10,6 +10,7 @@ export default function Chat() {
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
   const [showNewConversation, setShowNewConversation] = useState(false);
   const [searchConversation, setSearchConversation] = useState('');
+  const [activeTab, setActiveTab] = useState<'ALL' | 'PRIVATE' | 'GROUP' | 'BROADCAST'>('ALL');
   const [onlineUserIds, setOnlineUserIds] = useState<Set<number>>(new Set());
   const [typingByConversation, setTypingByConversation] = useState<Record<number, string>>({});
   const queryClient = useQueryClient();
@@ -25,7 +26,12 @@ export default function Chat() {
   const conversations = conversationsData?.conversations || [];
   const totalUnread = conversations.reduce((sum: number, conv: any) => sum + (conv.unreadCount || 0), 0);
 
-  const filteredConversations = conversations.filter((conv: any) => {
+  const filteredConversations = conversations
+    .filter((conv: any) => {
+      if (activeTab === 'ALL') return true;
+      return conv.type === activeTab;
+    })
+    .filter((conv: any) => {
     const q = searchConversation.trim().toLowerCase();
     if (!q) return true;
     const name = (conv.type === 'PRIVATE'
@@ -180,6 +186,28 @@ export default function Chat() {
                 {totalUnread}
               </span>
             )}
+          </div>
+          {/* Onglets style WhatsApp */}
+          <div className="mb-3 flex gap-2">
+            {[
+              { id: 'ALL', label: 'Tous' },
+              { id: 'PRIVATE', label: 'Privé' },
+              { id: 'GROUP', label: 'Groupes' },
+              { id: 'BROADCAST', label: 'Annonces' },
+            ].map((t: any) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setActiveTab(t.id)}
+                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                  activeTab === t.id
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
           </div>
           <div className="mb-3">
             <input

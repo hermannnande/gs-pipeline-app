@@ -143,7 +143,15 @@ export default function ConversationList({
               </div>
 
               <div className="flex items-center justify-between">
-                <p className={`text-sm truncate ${typingByConversation?.[conversation.id] ? 'text-indigo-600 italic' : 'text-gray-600'}`}>
+                <p
+                  className={`text-sm truncate ${
+                    typingByConversation?.[conversation.id]
+                      ? 'text-indigo-600 italic'
+                      : conversation.unreadCount > 0
+                        ? 'text-gray-900 font-semibold'
+                        : 'text-gray-600'
+                  }`}
+                >
                   {getLastMessagePreview(conversation)}
                 </p>
                 {conversation.unreadCount > 0 && (
