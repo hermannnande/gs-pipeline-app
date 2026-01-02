@@ -1,11 +1,97 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, authorize } from '../middlewares/auth.middleware.js';
+import { computeTotalAmount } from '../utils/pricing.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
 router.use(authenticate);
+
+// POST /api/maintenance/fix-order-amounts - Recalculer les montants selon packs quantité
+// Admin uniquement. Utile pour corriger les commandes déjà existantes.
+// Body:
+// - dryRun: boolean (default true) -> si true, ne modifie pas la BDD
+// - statuses: string[] (optionnel) -> limiter aux statuts (ex: ['NOUVELLE','A_APPELER','VALIDEE'])
+router.post('/fix-order-amounts', authorize('ADMIN'), async (req, res) => {
+  try {
+    const dryRun = req.body?.dryRun !== undefined ? !!req.body.dryRun : true;
+    const statuses = Array.isArray(req.body?.statuses) ? req.body.statuses : null;
+
+    const where = {
+      productId: { not: null },
+    };
+    if (statuses?.length) where.status = { in: statuses };
+
+    const orders = await prisma.order.findMany({
+      where,
+      include: { product: true },
+      orderBy: { createdAt: 'desc' },
+      take: 5000,
+    });
+
+    const changes = [];
+
+    for (const order of orders) {
+      const unitPrice = Number(order.product?.prixUnitaire) || 0;
+      const expected = computeTotalAmount(unitPrice, order.quantite || 1);
+
+      if (Number(order.montant) !== Number(expected)) {
+        const newMontantRestant =
+          order.montantRestant != null
+            ? Math.max(0, expected - (order.montantPaye || 0))
+            : null;
+
+        changes.push({
+          id: order.id,
+          ref: order.orderReference,
+          produit: order.produitNom,
+          quantite: order.quantite,
+          avant: order.montant,
+          apres: expected,
+        });
+
+        if (!dryRun) {
+          await prisma.order.update({
+            where: { id: order.id },
+            data: {
+              montant: expected,
+              montantRestant: newMontantRestant,
+            },
+          });
+
+          await prisma.statusHistory.create({
+            data: {
+              orderId: order.id,
+              oldStatus: order.status,
+              newStatus: order.status,
+              changedBy: req.user.id,
+              comment: `Correction automatique montant (packs quantité): ${order.montant} → ${expected} (qte=${order.quantite}, prixU=${unitPrice})`,
+            },
+          });
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      dryRun,
+      totalChecked: orders.length,
+      totalToFix: changes.length,
+      changes: changes.slice(0, 200),
+      message: dryRun
+        ? `Dry-run: ${changes.length} commande(s) détectée(s) à corriger (affichage).`
+        : `✅ ${changes.length} commande(s) corrigée(s) en base.`,
+    });
+  } catch (error) {
+    console.error('Erreur recalcul montants commandes:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erreur lors du recalcul des montants.',
+      details: error.message,
+    });
+  }
+});
 
 // POST /api/maintenance/fix-stock-local-reserve - Recalculer le stock en livraison
 router.post('/fix-stock-local-reserve', authorize('ADMIN'), async (req, res) => {

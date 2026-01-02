@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { body, validationResult } from 'express-validator';
 import { authenticate, authorize } from '../middlewares/auth.middleware.js';
 import { notifyOrderValidated, notifyOrderDelivered, notifyOrderRefused } from '../utils/notifications.js';
+import { computeTotalAmount } from '../utils/pricing.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -787,9 +788,15 @@ router.put('/:id/quantite', authorize('ADMIN', 'GESTIONNAIRE'), [
       });
     }
 
-    // Calculer le nouveau montant basé sur le prix unitaire
-    const prixUnitaire = order.montant / order.quantite;
-    const nouveauMontant = prixUnitaire * quantite;
+    // Calculer le nouveau montant:
+    // - Si le produit est lié -> utiliser le prix unitaire officiel + packs quantité
+    // - Sinon -> fallback sur l'ancien calcul (proportionnel)
+    const prixUnitaire =
+      order.product?.prixUnitaire != null
+        ? Number(order.product.prixUnitaire)
+        : (order.quantite ? Number(order.montant) / Number(order.quantite) : Number(order.montant));
+
+    const nouveauMontant = computeTotalAmount(prixUnitaire, quantite);
 
     // Pas de vérification de stock - on autorise les modifications même avec stock insuffisant
     // Le stock sera renouvelé plus tard

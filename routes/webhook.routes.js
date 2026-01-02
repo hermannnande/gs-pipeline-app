@@ -2,6 +2,7 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { body, validationResult } from 'express-validator';
 import { notifyNewOrder } from '../utils/notifications.js';
+import { computeTotalAmount } from '../utils/pricing.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -88,7 +89,7 @@ router.post('/make', verifyApiKey, [
     // 2. Calculer les montants
     const orderQuantity = parseInt(quantity) || 1;
     const unitPrice = product.prixUnitaire;
-    const totalAmount = unitPrice * orderQuantity;
+    const totalAmount = computeTotalAmount(unitPrice, orderQuantity);
 
     // 3. Créer la commande dans la base de données
     const order = await prisma.order.create({
