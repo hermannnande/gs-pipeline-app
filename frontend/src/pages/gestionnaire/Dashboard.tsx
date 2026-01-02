@@ -11,6 +11,7 @@ import ExpressAgence from './ExpressAgence';
 import AllOrders from '../admin/Orders';
 import Users from '../admin/Users';
 import RDV from '../appelant/RDV';
+import Chat from '../common/Chat';
 
 export default function GestionnaireDashboard() {
   return (
@@ -27,6 +28,7 @@ export default function GestionnaireDashboard() {
       <Route path="database" element={<ClientDatabase />} />
       <Route path="supervision" element={<CallerSupervision />} />
       <Route path="stats" element={<Stats />} />
+      <Route path="chat" element={<Chat />} />
     </Routes>
   );
 }

@@ -7,6 +7,7 @@ import LiveraisonEnCours from './LiveraisonEnCours';
 import ClientDatabase from '../common/ClientDatabase';
 import ExpeditionsExpress from '../admin/ExpeditionsExpress';
 import Deliveries from '../gestionnaire/Deliveries';
+import Chat from '../common/Chat';
 // Stock management dashboard
 
 export default function StockDashboard() {
@@ -20,6 +21,7 @@ export default function StockDashboard() {
       <Route path="products" element={<Products />} />
       <Route path="movements" element={<Movements />} />
       <Route path="database" element={<ClientDatabase />} />
+      <Route path="chat" element={<Chat />} />
     </Routes>
   );
 }

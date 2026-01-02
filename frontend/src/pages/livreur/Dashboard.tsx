@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import Overview from './Overview';
 import Deliveries from './Deliveries';
 import Stats from './Stats';
+import Chat from '../common/Chat';
 
 export default function LivreurDashboard() {
   return (
@@ -9,6 +10,7 @@ export default function LivreurDashboard() {
       <Route index element={<Overview />} />
       <Route path="deliveries" element={<Deliveries />} />
       <Route path="stats" element={<Stats />} />
+      <Route path="chat" element={<Chat />} />
     </Routes>
   );
 }
