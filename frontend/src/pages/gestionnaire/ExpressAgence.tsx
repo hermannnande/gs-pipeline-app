@@ -478,6 +478,14 @@ export default function ExpressAgence() {
                         Arrivé le {formatDateTime(order.arriveAt || order.expedieAt)}
                       </span>
                     </div>
+                    {order.status === 'EXPRESS_LIVRE' && order.deliveredAt && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <CheckCircle2 size={14} className="text-green-600" />
+                        <span className="text-green-700 font-medium">
+                          Retiré le {formatDateTime(order.deliveredAt)}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -572,9 +580,16 @@ export default function ExpressAgence() {
                       </button>
                     </>
                   ) : (
-                    <div className="flex items-center justify-center gap-2 text-green-600">
-                      <CheckCircle2 size={20} />
-                      <span className="text-sm font-medium">Retiré</span>
+                    <div className="text-center">
+                      <div className="flex items-center justify-center gap-2 text-green-600 mb-1">
+                        <CheckCircle2 size={20} />
+                        <span className="text-sm font-medium">Retiré</span>
+                      </div>
+                      {order.deliveredAt && (
+                        <p className="text-xs text-gray-500">
+                          {formatDateTime(order.deliveredAt)}
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
