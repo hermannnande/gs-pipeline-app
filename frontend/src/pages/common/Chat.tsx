@@ -10,6 +10,8 @@ export default function Chat() {
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
   const [showNewConversation, setShowNewConversation] = useState(false);
   const [searchConversation, setSearchConversation] = useState('');
+  const [onlineUserIds, setOnlineUserIds] = useState<Set<number>>(new Set());
+  const [typingByConversation, setTypingByConversation] = useState<Record<number, string>>({});
   const queryClient = useQueryClient();
   const chatSocket = useChatSocket();
 
@@ -121,6 +123,51 @@ export default function Chat() {
     };
   }, [chatSocket.socket, chatSocket.isConnected, queryClient, selectedConversationId]);
 
+  // Statut en ligne/hors ligne + typing preview (style WhatsApp)
+  useEffect(() => {
+    if (!chatSocket.socket || !chatSocket.isConnected) return;
+
+    const handleOnline = (data: any) => {
+      const id = Number(data?.userId);
+      if (!id) return;
+      setOnlineUserIds((prev) => new Set([...Array.from(prev), id]));
+    };
+
+    const handleOffline = (data: any) => {
+      const id = Number(data?.userId);
+      if (!id) return;
+      setOnlineUserIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    };
+
+    const handleTypingUpdate = (data: any) => {
+      const convId = Number(data?.conversationId);
+      const isTyping = !!data?.isTyping;
+      const prenom = data?.user?.prenom || '';
+      if (!convId) return;
+
+      setTypingByConversation((prev) => {
+        const next = { ...prev };
+        if (isTyping) next[convId] = prenom ? `${prenom} écrit...` : 'Écrit...';
+        else delete next[convId];
+        return next;
+      });
+    };
+
+    chatSocket.on('user:online', handleOnline);
+    chatSocket.on('user:offline', handleOffline);
+    chatSocket.on('typing:update', handleTypingUpdate);
+
+    return () => {
+      chatSocket.off('user:online', handleOnline);
+      chatSocket.off('user:offline', handleOffline);
+      chatSocket.off('typing:update', handleTypingUpdate);
+    };
+  }, [chatSocket.socket, chatSocket.isConnected]);
+
   return (
     <div className="h-[calc(100vh-4rem)] flex bg-gray-50">
       {/* Liste des conversations - Sidebar gauche */}
@@ -159,6 +206,8 @@ export default function Chat() {
           selectedConversationId={selectedConversationId}
           onSelectConversation={setSelectedConversationId}
           isLoading={isLoading}
+          onlineUserIds={onlineUserIds}
+          typingByConversation={typingByConversation}
         />
       </div>
 

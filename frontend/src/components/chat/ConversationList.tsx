@@ -8,21 +8,28 @@ interface ConversationListProps {
   selectedConversationId: number | null;
   onSelectConversation: (id: number) => void;
   isLoading: boolean;
+  onlineUserIds?: Set<number>;
+  typingByConversation?: Record<number, string>;
 }
 
 export default function ConversationList({
   conversations,
   selectedConversationId,
   onSelectConversation,
-  isLoading
+  isLoading,
+  onlineUserIds,
+  typingByConversation
 }: ConversationListProps) {
   const { user } = useAuthStore();
 
+  const getOtherParticipant = (conversation: any) => {
+    if (conversation.type !== 'PRIVATE') return null;
+    return conversation.participants?.find((p: any) => p.userId !== user?.id) || null;
+  };
+
   const getConversationName = (conversation: any) => {
     if (conversation.type === 'PRIVATE') {
-      const otherParticipant = conversation.participants.find(
-        (p: any) => p.userId !== user?.id
-      );
+      const otherParticipant = getOtherParticipant(conversation);
       if (otherParticipant) {
         return `${otherParticipant.user.prenom} ${otherParticipant.user.nom}`;
       }
@@ -36,15 +43,28 @@ export default function ConversationList({
 
   const getConversationAvatar = (conversation: any) => {
     if (conversation.type === 'PRIVATE') {
-      return '👤';
+      const other = getOtherParticipant(conversation);
+      const prenom = other?.user?.prenom?.[0] || '';
+      const nom = other?.user?.nom?.[0] || '';
+      const initials = `${prenom}${nom}`.toUpperCase() || 'U';
+      return initials;
     }
-    if (conversation.type === 'BROADCAST') {
-      return '📢';
-    }
+    if (conversation.type === 'BROADCAST') return '📢';
     return '👥';
   };
 
+  const isOnline = (conversation: any) => {
+    if (conversation.type !== 'PRIVATE') return false;
+    const other = getOtherParticipant(conversation);
+    const id = other?.userId;
+    if (!id || !onlineUserIds) return false;
+    return onlineUserIds.has(Number(id));
+  };
+
   const getLastMessagePreview = (conversation: any) => {
+    const typingText = typingByConversation?.[conversation.id];
+    if (typingText) return typingText;
+
     const lastMessage = conversation.lastMessage;
     if (!lastMessage) return 'Aucun message';
 
@@ -91,14 +111,19 @@ export default function ConversationList({
         <button
           key={conversation.id}
           onClick={() => onSelectConversation(conversation.id)}
-          className={`w-full p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left ${
+          className={`w-full px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left ${
             selectedConversationId === conversation.id ? 'bg-indigo-50 border-l-4 border-l-indigo-600' : ''
           }`}
         >
-          <div className="flex items-start gap-3">
-            {/* Avatar */}
-            <div className="text-3xl flex-shrink-0">
-              {getConversationAvatar(conversation)}
+          <div className="flex items-center gap-3">
+            {/* Avatar style Messenger/WhatsApp */}
+            <div className="relative flex-shrink-0">
+              <div className="w-12 h-12 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold">
+                {getConversationAvatar(conversation)}
+              </div>
+              {isOnline(conversation) && (
+                <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full" />
+              )}
             </div>
 
             {/* Contenu */}
@@ -118,7 +143,7 @@ export default function ConversationList({
               </div>
 
               <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-600 truncate">
+                <p className={`text-sm truncate ${typingByConversation?.[conversation.id] ? 'text-indigo-600 italic' : 'text-gray-600'}`}>
                   {getLastMessagePreview(conversation)}
                 </p>
                 {conversation.unreadCount > 0 && (

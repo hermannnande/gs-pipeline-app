@@ -12,7 +12,6 @@ interface MessageAreaProps {
 
 export default function MessageArea({ conversationId, chatSocket }: MessageAreaProps) {
   const { user } = useAuthStore();
-  const queryClient = useQueryClient();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [typingUsers, setTypingUsers] = useState<any[]>([]);
 
