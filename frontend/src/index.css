@@ -47,24 +47,24 @@
   }
   
   .btn-danger {
-    @apply bg-gradient-to-r from-danger-500 to-danger-600 text-white;
-    @apply hover:from-danger-600 hover:to-danger-700;
-    @apply shadow-lg shadow-danger-500/30 hover:shadow-xl hover:shadow-danger-600/40;
-    @apply focus:ring-danger-500;
+    @apply bg-gradient-to-r from-red-500 to-red-600 text-white;
+    @apply hover:from-red-600 hover:to-red-700;
+    @apply shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-600/40;
+    @apply focus:ring-red-500;
   }
   
   .btn-success {
-    @apply bg-gradient-to-r from-success-500 to-success-600 text-white;
-    @apply hover:from-success-600 hover:to-success-700;
-    @apply shadow-lg shadow-success-500/30 hover:shadow-xl hover:shadow-success-600/40;
-    @apply focus:ring-success-500;
+    @apply bg-gradient-to-r from-green-500 to-green-600 text-white;
+    @apply hover:from-green-600 hover:to-green-700;
+    @apply shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-600/40;
+    @apply focus:ring-green-500;
   }
 
   .btn-warning {
-    @apply bg-gradient-to-r from-warning-500 to-warning-600 text-white;
-    @apply hover:from-warning-600 hover:to-warning-700;
-    @apply shadow-lg shadow-warning-500/30 hover:shadow-xl hover:shadow-warning-600/40;
-    @apply focus:ring-warning-500;
+    @apply bg-gradient-to-r from-orange-500 to-orange-600 text-white;
+    @apply hover:from-orange-600 hover:to-orange-700;
+    @apply shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-600/40;
+    @apply focus:ring-orange-500;
   }
 
   .btn-ghost {
@@ -86,7 +86,7 @@
   }
 
   .input-error {
-    @apply border-danger-300 focus:border-danger-500 focus:ring-danger-500/20;
+    @apply border-red-300 focus:border-red-500 focus:ring-red-500/20;
   }
   
   /* Cards Modernes */
@@ -120,19 +120,19 @@
   }
 
   .badge-primary {
-    @apply bg-primary-100 text-primary-700 ring-1 ring-primary-200;
+    @apply bg-blue-100 text-blue-700 ring-1 ring-blue-200;
   }
 
   .badge-success {
-    @apply bg-success-100 text-success-700 ring-1 ring-success-200;
+    @apply bg-green-100 text-green-700 ring-1 ring-green-200;
   }
 
   .badge-warning {
-    @apply bg-warning-100 text-warning-700 ring-1 ring-warning-200;
+    @apply bg-orange-100 text-orange-700 ring-1 ring-orange-200;
   }
 
   .badge-danger {
-    @apply bg-danger-100 text-danger-700 ring-1 ring-danger-200;
+    @apply bg-red-100 text-red-700 ring-1 ring-red-200;
   }
 
   .badge-gray {
@@ -148,19 +148,19 @@
   }
 
   .stat-card-primary {
-    @apply from-primary-50 to-white border-primary-100;
+    @apply from-blue-50 to-white border-blue-100;
   }
 
   .stat-card-success {
-    @apply from-success-50 to-white border-success-100;
+    @apply from-green-50 to-white border-green-100;
   }
 
   .stat-card-warning {
-    @apply from-warning-50 to-white border-warning-100;
+    @apply from-orange-50 to-white border-orange-100;
   }
 
   .stat-card-danger {
-    @apply from-danger-50 to-white border-danger-100;
+    @apply from-red-50 to-white border-red-100;
   }
 
   /* Table Moderne */
