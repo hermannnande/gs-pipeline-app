@@ -173,20 +173,35 @@ export function OrderCard({
 
       {/* Actions rapides */}
       {showActions === 'toCall' && (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-2 relative z-10">
           {onNotify && (
             <button
-              onClick={() => onNotify(order.id)}
-              className="btn bg-blue-600 text-white hover:bg-blue-700 text-sm py-2"
-              title="Notifier le client"
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onNotify(order.id);
+              }}
+              className="btn bg-blue-600 text-white hover:bg-blue-700 text-sm py-2 relative cursor-pointer"
+              title={order.nombreAppels && order.nombreAppels > 0 ? `Notifier (déjà ${order.nombreAppels})` : 'Notifier le client'}
             >
-              🔔
+              <span aria-hidden>🔔</span>
+              {!!order.nombreAppels && order.nombreAppels > 0 && (
+                <span className="pointer-events-none absolute -top-2 -right-2 min-w-5 h-5 px-1 rounded-full bg-orange-500 text-white text-[11px] font-bold flex items-center justify-center shadow-md">
+                  {order.nombreAppels > 9 ? '9+' : order.nombreAppels}
+                </span>
+              )}
             </button>
           )}
           {onCall && (
             <button
-              onClick={() => onCall(order)}
-              className="btn btn-primary text-sm py-2"
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onCall(order);
+              }}
+              className="btn btn-primary text-sm py-2 cursor-pointer"
             >
               <Phone size={16} />
               Traiter
@@ -194,8 +209,13 @@ export function OrderCard({
           )}
           {onScheduleRdv && (
             <button
-              onClick={() => onScheduleRdv(order)}
-              className="btn bg-purple-600 text-white hover:bg-purple-700 text-sm py-2"
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onScheduleRdv(order);
+              }}
+              className="btn bg-purple-600 text-white hover:bg-purple-700 text-sm py-2 cursor-pointer"
             >
               <Calendar size={16} />
               RDV
