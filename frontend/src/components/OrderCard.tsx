@@ -79,9 +79,14 @@ export function OrderCard({
           )}
           
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h3 className="font-bold text-lg text-gray-900">{order.clientNom}</h3>
               {getStatusBadge(order.status)}
+              {order.enAttentePaiement && (
+                <span className="badge bg-purple-100 text-purple-700 ring-1 ring-purple-200">
+                  ⏳ Attente paiement
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <Clock size={14} />
