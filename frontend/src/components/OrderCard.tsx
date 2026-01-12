@@ -1,4 +1,4 @@
-import { Phone, MapPin, Package, Calendar, DollarSign, Clock, Edit2, CheckSquare, Square, MoreVertical } from 'lucide-react';
+import { Phone, MapPin, Package, Calendar, DollarSign, Clock, Edit2, CheckSquare, Square, MoreVertical, ArrowUp } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '@/utils/statusHelpers';
 import type { Order } from '@/types';
 import { useState } from 'react';
@@ -18,6 +18,8 @@ interface OrderCardProps {
   onEditQuantity?: (order: Order) => void;
   canEditQuantity?: boolean;
   showActions?: 'toCall' | 'manage';
+  onTogglePriorite?: (orderId: number) => void;
+  canTogglePriorite?: boolean;
 }
 
 export function OrderCard({
@@ -35,6 +37,8 @@ export function OrderCard({
   onEditQuantity,
   canEditQuantity,
   showActions = 'toCall',
+  onTogglePriorite,
+  canTogglePriorite,
 }: OrderCardProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -63,7 +67,15 @@ export function OrderCard({
   };
 
   return (
-    <div className={`card-compact relative group hover:shadow-card-hover transition-all duration-300 ${isSelected ? 'ring-2 ring-primary-500 shadow-lg shadow-primary-500/20' : ''}`}>
+    <div className={`card-compact relative group hover:shadow-card-hover transition-all duration-300 ${isSelected ? 'ring-2 ring-primary-500 shadow-lg shadow-primary-500/20' : ''} ${order.priorite ? 'ring-2 ring-orange-400 bg-orange-50/30' : ''}`}>
+      {/* Badge priorité en haut */}
+      {order.priorite && (
+        <div className="absolute -top-2 -right-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1 z-20 animate-pulse">
+          <ArrowUp size={12} />
+          PRIORITÉ
+        </div>
+      )}
+      
       {/* Header avec sélection */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-start gap-3 flex-1">
@@ -98,42 +110,57 @@ export function OrderCard({
         </div>
 
         {/* Actions menu */}
-        <div className="relative">
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <MoreVertical size={18} className="text-gray-400" />
-          </button>
-          
-          {isMenuOpen && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-10 animate-slide-down">
-              {canEditQuantity && onEditQuantity && (
-                <button
-                  onClick={() => {
-                    onEditQuantity(order);
-                    setIsMenuOpen(false);
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-gray-700"
-                >
-                  <Edit2 size={16} />
-                  Modifier la quantité
-                </button>
-              )}
-              {onScheduleRdv && (
-                <button
-                  onClick={() => {
-                    onScheduleRdv(order);
-                    setIsMenuOpen(false);
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-gray-700"
-                >
-                  <Calendar size={16} />
-                  Programmer un RDV
-                </button>
-              )}
-            </div>
+        <div className="flex items-center gap-2">
+          {canTogglePriorite && onTogglePriorite && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onTogglePriorite(order.id);
+              }}
+              className={`p-2 rounded-lg transition-colors ${order.priorite ? 'bg-orange-100 text-orange-600 hover:bg-orange-200' : 'hover:bg-gray-100 text-gray-400'}`}
+              title={order.priorite ? 'Retirer la priorité' : 'Faire remonter'}
+            >
+              <ArrowUp size={18} className={order.priorite ? 'animate-bounce' : ''} />
+            </button>
           )}
+          
+          <div className="relative">
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <MoreVertical size={18} className="text-gray-400" />
+            </button>
+            
+            {isMenuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-10 animate-slide-down">
+                {canEditQuantity && onEditQuantity && (
+                  <button
+                    onClick={() => {
+                      onEditQuantity(order);
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-gray-700"
+                  >
+                    <Edit2 size={16} />
+                    Modifier la quantité
+                  </button>
+                )}
+                {onScheduleRdv && (
+                  <button
+                    onClick={() => {
+                      onScheduleRdv(order);
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-gray-700"
+                  >
+                    <Calendar size={16} />
+                    Programmer un RDV
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

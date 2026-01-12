@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Phone, Search, RefreshCw, Truck, Zap, Clock, Calendar, Edit2, Trash2, CheckSquare, Square, PhoneCall, Filter } from 'lucide-react';
+import { Phone, Search, RefreshCw, Truck, Zap, Clock, Calendar, Edit2, Trash2, CheckSquare, Square, PhoneCall, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ordersApi, rdvApi } from '@/lib/api';
 import { formatCurrency, formatDateTime, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
@@ -25,6 +25,8 @@ export default function Orders() {
   const [newQuantite, setNewQuantite] = useState(1);
   const [selectedOrderIds, setSelectedOrderIds] = useState<number[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 50;
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
 
@@ -33,8 +35,8 @@ export default function Orders() {
   const isAdmin = user?.role === 'ADMIN';
 
   const { data: ordersData, isLoading, isFetching, refetch } = useQuery({
-    queryKey: ['appelant-orders'],
-    queryFn: () => ordersApi.getAll({ limit: 1000 }), // Limite augmentée pour voir TOUTES les commandes à traiter
+    queryKey: ['appelant-orders', currentPage],
+    queryFn: () => ordersApi.getAll({ page: currentPage, limit: ITEMS_PER_PAGE }),
     refetchInterval: 30000, // Actualisation automatique toutes les 30 secondes
     refetchIntervalInBackground: true, // Continue même si l'onglet n'est pas actif
   });
@@ -152,6 +154,21 @@ export default function Orders() {
     notifierClientMutation.mutate(orderId);
   };
 
+  const togglePrioriteMutation = useMutation({
+    mutationFn: (orderId: number) => ordersApi.togglePriorite(orderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appelant-orders'] });
+      toast.success('✅ Priorité mise à jour');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Erreur lors de la mise à jour');
+    },
+  });
+
+  const handleTogglePriorite = (orderId: number) => {
+    togglePrioriteMutation.mutate(orderId);
+  };
+
   const handleProgrammerRdv = (order: Order) => {
     setSelectedOrder(order);
     // Définir la date/heure par défaut à demain à 9h
@@ -254,11 +271,10 @@ export default function Orders() {
         order.clientTelephone.includes(searchTerm);
       const matchesStatus = !statusFilter || order.status === statusFilter;
       return matchesSearch && matchesStatus;
-    })
-    .sort((a, b) => {
-      // Trier par date de création : Les plus RÉCENTES en PREMIER
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
+
+  const totalFilteredCount = filteredOrders?.length || 0;
+  const totalPages = ordersData?.pagination?.totalPages || 1;
 
   // Détecter les nouvelles commandes
   useEffect(() => {
@@ -370,23 +386,84 @@ export default function Orders() {
           description="Toutes les commandes ont été traitées ou aucune ne correspond aux filtres"
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredOrders?.map((order: Order) => (
-            <OrderCard
-              key={order.id}
-              order={order}
-              isSelected={selectedOrderIds.includes(order.id)}
-              showCheckbox={isAdmin}
-              onSelect={handleSelectOrder}
-              onNotify={handleNotifierClient}
-              onCall={setSelectedOrder}
-              onScheduleRdv={handleProgrammerRdv}
-              onEditQuantity={canEditQuantite ? handleEditQuantite : undefined}
-              canEditQuantity={canEditQuantite}
-              showActions="toCall"
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredOrders?.map((order: Order) => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                isSelected={selectedOrderIds.includes(order.id)}
+                showCheckbox={isAdmin}
+                onSelect={handleSelectOrder}
+                onCall={setSelectedOrder}
+                onScheduleRdv={handleProgrammerRdv}
+                onEditQuantity={canEditQuantite ? handleEditQuantite : undefined}
+                canEditQuantity={canEditQuantite}
+                showActions="toCall"
+                onTogglePriorite={isAdmin ? handleTogglePriorite : undefined}
+                canTogglePriorite={isAdmin}
+              />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-8 p-4 bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="text-sm text-gray-600">
+                Page {currentPage} sur {totalPages} • {ordersData?.pagination?.total || 0} commande(s) au total
+              </div>
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="btn btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft size={18} />
+                  Précédent
+                </button>
+                
+                <div className="flex items-center gap-1">
+                  {[...Array(Math.min(5, totalPages))].map((_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`px-3 py-2 rounded-lg font-medium transition-colors ${
+                          currentPage === pageNum
+                            ? 'bg-primary-600 text-white'
+                            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="btn btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Suivant
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Modal de traitement */}

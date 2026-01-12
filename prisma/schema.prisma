@@ -148,6 +148,11 @@ model Order {
   rdvProgramme    Boolean   @default(false) // RDV programmé pour rappeler le client
   rdvDate         DateTime? // Date et heure du RDV
   rdvNote         String? // Note sur le RDV (client occupé, en voyage, etc.)
+
+  // Gestion de la priorité (faire remonter des commandes)
+  priorite   Boolean   @default(false) // Commande prioritaire (remonte en haut de la liste)
+  prioriteAt DateTime? // Date de mise en priorité
+  prioritePar Int? // Admin qui a mis en priorité
   rdvProgrammePar Int? // ID de l'appelant qui a programmé le RDV
   rdvRappele      Boolean   @default(false) // RDV traité (client rappelé)
 

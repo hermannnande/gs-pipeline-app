@@ -89,6 +89,11 @@ export interface Order {
   // Attente paiement
   enAttentePaiement?: boolean;
   attentePaiementAt?: string;
+  
+  // Priorité (faire remonter)
+  priorite?: boolean;
+  prioriteAt?: string;
+  prioritePar?: number;
 }
 
 export interface StatusHistory {

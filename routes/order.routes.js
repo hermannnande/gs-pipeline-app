@@ -66,7 +66,10 @@ router.get('/', async (req, res) => {
             select: { id: true, nom: true, prenom: true }
           }
         },
-        orderBy: { createdAt: 'desc' }, // Les plus récentes en premier par défaut
+        orderBy: [
+          { priorite: 'desc' }, // Priorité d'abord
+          { createdAt: 'desc' } // Puis les plus récentes
+        ],
         skip,
         take: parseInt(limit)
       }),
@@ -215,6 +218,40 @@ router.post('/:id/marquer-appel', authorize('ADMIN', 'GESTIONNAIRE', 'APPELANT')
   } catch (error) {
     console.error('Erreur marquer appel:', error);
     res.status(500).json({ error: 'Erreur lors du marquage de l\'appel.' });
+  }
+});
+
+// POST /api/orders/:id/toggle-priorite - Basculer la priorité d'une commande (ADMIN uniquement)
+router.post('/:id/toggle-priorite', authorize('ADMIN'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = req.user;
+
+    const order = await prisma.order.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!order) {
+      return res.status(404).json({ error: 'Commande non trouvée.' });
+    }
+
+    // Basculer la priorité
+    const updatedOrder = await prisma.order.update({
+      where: { id: parseInt(id) },
+      data: {
+        priorite: !order.priorite,
+        prioriteAt: !order.priorite ? new Date() : null,
+        prioritePar: !order.priorite ? user.id : null
+      }
+    });
+
+    res.json({ 
+      order: updatedOrder, 
+      message: updatedOrder.priorite ? 'Commande mise en priorité.' : 'Priorité retirée.'
+    });
+  } catch (error) {
+    console.error('Erreur toggle priorité:', error);
+    res.status(500).json({ error: 'Erreur lors de la modification de la priorité.' });
   }
 });
 

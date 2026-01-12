@@ -106,6 +106,11 @@ export const ordersApi = {
     return data;
   },
 
+  togglePriorite: async (id: number) => {
+    const { data } = await api.post(`/orders/${id}/toggle-priorite`);
+    return data;
+  },
+
   updateQuantite: async (id: number, quantite: number) => {
     const { data } = await api.put(`/orders/${id}/quantite`, { quantite });
     return data;
