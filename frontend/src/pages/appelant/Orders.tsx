@@ -26,7 +26,7 @@ export default function Orders() {
   const [selectedOrderIds, setSelectedOrderIds] = useState<number[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 50;
+  const ITEMS_PER_PAGE = 200;
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
 
