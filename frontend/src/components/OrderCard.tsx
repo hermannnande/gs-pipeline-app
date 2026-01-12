@@ -50,14 +50,16 @@ export function OrderCard({
     return <span className={badge.className}>{badge.label}</span>;
   };
 
-  const timeSinceCreation = () => {
-    const now = new Date().getTime();
-    const created = new Date(order.createdAt).getTime();
-    const diffMinutes = Math.floor((now - created) / 1000 / 60);
-    
-    if (diffMinutes < 60) return `Il y a ${diffMinutes} min`;
-    if (diffMinutes < 1440) return `Il y a ${Math.floor(diffMinutes / 60)} h`;
-    return `Il y a ${Math.floor(diffMinutes / 1440)} j`;
+  const formatCreationDate = () => {
+    const date = new Date(order.createdAt);
+    const options: Intl.DateTimeFormatOptions = {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    };
+    return date.toLocaleDateString('fr-FR', options).replace(':', 'h');
   };
 
   return (
@@ -90,7 +92,7 @@ export function OrderCard({
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <Clock size={14} />
-              <span>{timeSinceCreation()}</span>
+              <span>{formatCreationDate()}</span>
             </div>
           </div>
         </div>
@@ -178,26 +180,7 @@ export function OrderCard({
 
       {/* Actions rapides */}
       {showActions === 'toCall' && (
-        <div className="grid grid-cols-3 gap-2 relative z-10">
-          {onNotify && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onNotify(order.id);
-              }}
-              className="btn bg-blue-600 text-white hover:bg-blue-700 text-sm py-2 relative cursor-pointer"
-              title={order.nombreAppels && order.nombreAppels > 0 ? `Notifier (déjà ${order.nombreAppels})` : 'Notifier le client'}
-            >
-              <span aria-hidden>🔔</span>
-              {!!order.nombreAppels && order.nombreAppels > 0 && (
-                <span className="pointer-events-none absolute -top-2 -right-2 min-w-5 h-5 px-1 rounded-full bg-orange-500 text-white text-[11px] font-bold flex items-center justify-center shadow-md">
-                  {order.nombreAppels > 9 ? '9+' : order.nombreAppels}
-                </span>
-              )}
-            </button>
-          )}
+        <div className="grid grid-cols-2 gap-2 relative z-10">
           {onCall && (
             <button
               type="button"
