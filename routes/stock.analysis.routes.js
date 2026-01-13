@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 router.use(authenticate);
 
 // GET /api/stock-analysis/local-reserve - Analyse complète du stock en livraison locale
-router.get('/local-reserve', authorize('ADMIN'), async (req, res) => {
+router.get('/local-reserve', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STOCK'), async (req, res) => {
   try {
     // 1. Récupérer toutes les commandes qui sont physiquement avec les livreurs
     // ASSIGNEE = En cours de livraison

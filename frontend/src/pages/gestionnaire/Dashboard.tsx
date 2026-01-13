@@ -12,6 +12,7 @@ import AllOrders from '../admin/Orders';
 import Users from '../admin/Users';
 import RDV from '../appelant/RDV';
 import Chat from '../common/Chat';
+import LiveraisonEnCours from '../stock/LiveraisonEnCours';
 
 export default function GestionnaireDashboard() {
   return (
@@ -23,6 +24,7 @@ export default function GestionnaireDashboard() {
       <Route path="validated" element={<ValidatedOrders />} />
       <Route path="expeditions" element={<ExpeditionsExpress />} />
       <Route path="express-agence" element={<ExpressAgence />} />
+      <Route path="livraisons-en-cours" element={<LiveraisonEnCours />} />
       <Route path="deliveries" element={<Deliveries />} />
       <Route path="users" element={<Users />} />
       <Route path="database" element={<ClientDatabase />} />
