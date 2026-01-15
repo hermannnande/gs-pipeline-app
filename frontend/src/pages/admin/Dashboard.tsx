@@ -18,6 +18,7 @@ import ExpressAgence from '../gestionnaire/ExpressAgence';
 import RDV from '../appelant/RDV';
 import Chat from '../common/Chat';
 import ChatSupervision from './ChatSupervision';
+import ProductAnalytics from './ProductAnalytics';
 
 export default function AdminDashboard() {
   return (
@@ -41,6 +42,7 @@ export default function AdminDashboard() {
       <Route path="accounting" element={<Accounting />} />
       <Route path="chat" element={<Chat />} />
       <Route path="chat-supervision" element={<ChatSupervision />} />
+      <Route path="product-analytics" element={<ProductAnalytics />} />
     </Routes>
   );
 }

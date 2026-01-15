@@ -21,7 +21,8 @@ import {
   DollarSign,
   Bell,
   Calendar,
-  MessageSquare
+  MessageSquare,
+  PieChart
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import NotificationCenter from './NotificationCenter';
@@ -49,8 +50,6 @@ export default function Layout({ children }: LayoutProps) {
     chatConvData?.conversations?.reduce((sum: number, c: any) => sum + (c.unreadCount || 0), 0) || 0;
 
   const getNavigationItems = () => {
-    const baseUrl = `/${user?.role?.toLowerCase()}`;
-    
     switch (user?.role) {
       case 'ADMIN':
         return [
@@ -70,6 +69,7 @@ export default function Layout({ children }: LayoutProps) {
           { icon: Database, label: 'Base Clients', path: '/admin/database' },
           { icon: Eye, label: 'Supervision Appelants', path: '/admin/supervision' },
           { icon: BarChart3, label: 'Statistiques', path: '/admin/stats' },
+          { icon: PieChart, label: '📊 Analyse Produits', path: '/admin/product-analytics' },
           { icon: DollarSign, label: 'Comptabilité', path: '/admin/accounting' },
           { icon: MessageSquare, label: 'Chat', path: '/admin/chat' },
           { icon: MessageSquare, label: 'Supervision Chat', path: '/admin/chat-supervision' },

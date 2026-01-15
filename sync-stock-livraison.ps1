@@ -1,21 +1,37 @@
 # Script de synchronisation du stock en livraison
 # Ce script analyse toutes les commandes avec les livreurs et synchronise le stockLocalReserve
+#
+# Modes:
+# - Interactif (par défaut): demande email/mot de passe + confirmation
+# - Non-interactif: passer -Email/-Password et -AutoConfirm
+param(
+    [string]$Email = $env:GS_ADMIN_EMAIL,
+    [string]$Password = $env:GS_ADMIN_PASSWORD,
+    [switch]$AutoConfirm
+)
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  SYNCHRONISATION STOCK EN LIVRAISON" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
-# URL de votre API (Railway)
-$API_URL = "https://gs-cursor-production.up.railway.app/api"
+# URL de votre API (Railway - PRODUCTION)
+# Backend prod (référence docs) : https://gs-pipeline-app-production.up.railway.app
+$API_URL = "https://gs-pipeline-app-production.up.railway.app/api"
 
 # Demander le token d'authentification
 Write-Host "Veuillez vous connecter avec vos identifiants ADMIN ou GESTIONNAIRE_STOCK:" -ForegroundColor Yellow
 Write-Host ""
-$email = Read-Host "Email"
-$password = Read-Host "Mot de passe" -AsSecureString
-$BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($password)
-$password_plain = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+
+if (-not $Email) {
+    $Email = Read-Host "Email"
+}
+
+if (-not $Password) {
+    $passwordSecure = Read-Host "Mot de passe" -AsSecureString
+    $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($passwordSecure)
+    $Password = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+}
 
 Write-Host ""
 Write-Host "Connexion en cours..." -ForegroundColor Yellow
@@ -23,8 +39,8 @@ Write-Host "Connexion en cours..." -ForegroundColor Yellow
 # Se connecter pour obtenir le token
 try {
     $loginBody = @{
-        email = $email
-        password = $password_plain
+        email = $Email
+        password = $Password
     } | ConvertTo-Json
 
     $loginResponse = Invoke-RestMethod -Uri "$API_URL/auth/login" -Method Post -Body $loginBody -ContentType "application/json"
@@ -89,14 +105,19 @@ Write-Host "ETAPE 2: Synchronisation" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Cette operation va corriger le stock en livraison (stockLocalReserve) pour tous les produits." -ForegroundColor Yellow
 Write-Host ""
-$confirmation = Read-Host "Voulez-vous continuer? (O/N)"
 
-if ($confirmation -ne "O" -and $confirmation -ne "o") {
-    Write-Host ""
-    Write-Host "Synchronisation annulee." -ForegroundColor Yellow
-    Write-Host ""
-    Read-Host "Appuyez sur Entree pour quitter"
-    exit 0
+if (-not $AutoConfirm) {
+    $confirmation = Read-Host "Voulez-vous continuer? (O/N)"
+
+    if ($confirmation -ne "O" -and $confirmation -ne "o") {
+        Write-Host ""
+        Write-Host "Synchronisation annulee." -ForegroundColor Yellow
+        Write-Host ""
+        Read-Host "Appuyez sur Entree pour quitter"
+        exit 0
+    }
+} else {
+    Write-Host "AutoConfirm actif: synchronisation lancee sans prompt." -ForegroundColor Yellow
 }
 
 Write-Host ""

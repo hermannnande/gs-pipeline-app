@@ -17,6 +17,7 @@ import stockAnalysisRoutes from './routes/stock.analysis.routes.js';
 import rdvRoutes from './routes/rdv.routes.js';
 import maintenanceRoutes from './routes/maintenance.routes.js';
 import chatRoutes from './routes/chat.routes.js';
+import analyticsRoutes from './routes/analytics.routes.js';
 import { scheduleCleanupJob } from './jobs/cleanupPhotos.js';
 import { initializeChatSocket } from './utils/chatSocket.js';
 import { setSocketServers } from './utils/socket.js';
@@ -85,6 +86,7 @@ app.use('/api/express', expressRoutes);
 app.use('/api/rdv', rdvRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Servir les fichiers uploadés
 app.use('/uploads', express.static('uploads'));
