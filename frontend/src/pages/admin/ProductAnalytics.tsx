@@ -117,6 +117,10 @@ export default function ProductAnalytics() {
       const { data } = await api.get(`/analytics/products?${params.toString()}`);
       return data;
     },
+    // Pour “temps réel” (ex: aujourd’hui), on rafraîchit automatiquement
+    refetchInterval: 30000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
   });
 
   const formatCurrency = (amount: number) => {

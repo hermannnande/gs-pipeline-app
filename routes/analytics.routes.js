@@ -16,13 +16,24 @@ router.get('/products', authorize('ADMIN'), async (req, res) => {
     // IMPORTANT: on inclut aussi les anciennes commandes (productId null) via produitNom
     const whereClause = {};
 
+    // Helpers dates: les inputs <input type="date"> arrivent en YYYY-MM-DD.
+    // On veut inclure TOUTE la journée sélectionnée:
+    // - startDate: >= YYYY-MM-DD 00:00:00Z
+    // - endDate:   < (YYYY-MM-DD + 1 jour) 00:00:00Z  (évite le bug lte à minuit)
+    const parseUtcDayStart = (dateStr) => new Date(`${dateStr}T00:00:00.000Z`);
+    const parseUtcNextDayStart = (dateStr) => {
+      const d = parseUtcDayStart(dateStr);
+      d.setUTCDate(d.getUTCDate() + 1);
+      return d;
+    };
+
     if (startDate) {
-      whereClause.createdAt = { gte: new Date(startDate) };
+      whereClause.createdAt = { gte: parseUtcDayStart(startDate) };
     }
     if (endDate) {
       whereClause.createdAt = {
         ...whereClause.createdAt,
-        lte: new Date(endDate),
+        lt: parseUtcNextDayStart(endDate),
       };
     }
     if (deliveryType && deliveryType !== 'ALL') {
@@ -336,13 +347,20 @@ router.get('/products/:id', authorize('ADMIN'), async (req, res) => {
       productId,
     };
 
+    const parseUtcDayStart = (dateStr) => new Date(`${dateStr}T00:00:00.000Z`);
+    const parseUtcNextDayStart = (dateStr) => {
+      const d = parseUtcDayStart(dateStr);
+      d.setUTCDate(d.getUTCDate() + 1);
+      return d;
+    };
+
     if (startDate) {
-      whereClause.createdAt = { gte: new Date(startDate) };
+      whereClause.createdAt = { gte: parseUtcDayStart(startDate) };
     }
     if (endDate) {
       whereClause.createdAt = {
         ...whereClause.createdAt,
-        lte: new Date(endDate),
+        lt: parseUtcNextDayStart(endDate),
       };
     }
 
