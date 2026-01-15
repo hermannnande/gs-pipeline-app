@@ -26,40 +26,44 @@ interface ProductStats {
     chiffreAffairesTotal: number;
   };
   topCommandes: Array<{
+    productKey: string;
     product: {
-      id: number;
-      code: string;
+      id: number | null;
+      code: string | null;
       nom: string;
-      prixUnitaire: number;
+      prixUnitaire: number | null;
     };
     totalCommandes: number;
     totalQuantite: number;
     totalMontant: number;
   }>;
   topValides: Array<{
+    productKey: string;
     product: {
-      id: number;
-      code: string;
+      id: number | null;
+      code: string | null;
       nom: string;
     };
     totalValidees: number;
     totalQuantite: number;
   }>;
   topLivres: Array<{
+    productKey: string;
     product: {
-      id: number;
-      code: string;
+      id: number | null;
+      code: string | null;
       nom: string;
-      prixUnitaire: number;
+      prixUnitaire: number | null;
     };
     totalLivrees: number;
     totalQuantite: number;
     totalChiffreAffaires: number;
   }>;
   topExpedies: Array<{
+    productKey: string;
     product: {
-      id: number;
-      code: string;
+      id: number | null;
+      code: string | null;
       nom: string;
     };
     totalExpeditions: number;
@@ -67,9 +71,10 @@ interface ProductStats {
     totalQuantite: number;
   }>;
   conversionRates: Array<{
+    productKey: string;
     product: {
-      id: number;
-      code: string;
+      id: number | null;
+      code: string | null;
       nom: string;
     };
     totalCommandes: number;
@@ -80,9 +85,8 @@ interface ProductStats {
     tauxConversionGlobal: string;
   }>;
   topAppelantsValidation: Array<{
-    product: {
-      nom: string;
-    };
+    productKey: string;
+    product: { id: number | null; code: string | null; nom: string };
     caller: {
       nom: string;
       prenom: string;
@@ -357,7 +361,7 @@ export default function ProductAnalytics() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {data?.topCommandes.map((item, index) => (
-                    <tr key={item.product.id} className="hover:bg-gray-50">
+                    <tr key={item.productKey} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           {index < 3 ? (
@@ -375,7 +379,7 @@ export default function ProductAnalytics() {
                         <div className="text-sm font-medium text-gray-900">{item.product.nom}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-500">{item.product.code}</span>
+                        <span className="text-sm text-gray-500">{item.product.code || '—'}</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <span className="text-sm font-semibold text-blue-600">
@@ -422,7 +426,7 @@ export default function ProductAnalytics() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {data?.topValides.map((item, index) => (
-                    <tr key={item.product.id} className="hover:bg-gray-50">
+                    <tr key={item.productKey} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           {index < 3 ? (
@@ -440,7 +444,7 @@ export default function ProductAnalytics() {
                         <div className="text-sm font-medium text-gray-900">{item.product.nom}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-500">{item.product.code}</span>
+                        <span className="text-sm text-gray-500">{item.product.code || '—'}</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <span className="text-sm font-semibold text-green-600">
@@ -485,7 +489,7 @@ export default function ProductAnalytics() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {data?.topLivres.map((item, index) => (
-                    <tr key={item.product.id} className="hover:bg-gray-50">
+                    <tr key={item.productKey} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           {index < 3 ? (
@@ -503,7 +507,7 @@ export default function ProductAnalytics() {
                         <div className="text-sm font-medium text-gray-900">{item.product.nom}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-500">{item.product.code}</span>
+                        <span className="text-sm text-gray-500">{item.product.code || '—'}</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <span className="text-sm font-semibold text-purple-600">
@@ -553,7 +557,7 @@ export default function ProductAnalytics() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {data?.topExpedies.map((item, index) => (
-                    <tr key={item.product.id} className="hover:bg-gray-50">
+                    <tr key={item.productKey} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           {index < 3 ? (
@@ -571,7 +575,7 @@ export default function ProductAnalytics() {
                         <div className="text-sm font-medium text-gray-900">{item.product.nom}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-500">{item.product.code}</span>
+                        <span className="text-sm text-gray-500">{item.product.code || '—'}</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <span className="text-sm text-blue-600">{item.totalExpeditions}</span>
@@ -620,10 +624,10 @@ export default function ProductAnalytics() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {data?.conversionRates.map((item) => (
-                    <tr key={item.product.id} className="hover:bg-gray-50">
+                    <tr key={item.productKey} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
                         <div className="text-sm font-medium text-gray-900">{item.product.nom}</div>
-                        <div className="text-xs text-gray-500">{item.product.code}</div>
+                        <div className="text-xs text-gray-500">{item.product.code || '—'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <span className="text-sm text-gray-900">{item.totalCommandes}</span>
@@ -696,7 +700,7 @@ export default function ProductAnalytics() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {data?.topAppelantsValidation.map((item, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
+                    <tr key={`${item.productKey}-${item.caller.prenom}-${item.caller.nom}-${index}`} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-gray-500 font-semibold">#{index + 1}</span>
                       </td>

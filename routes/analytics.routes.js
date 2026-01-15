@@ -10,12 +10,11 @@ router.use(authenticate);
 // GET /api/analytics/products - Statistiques détaillées des produits
 router.get('/products', authorize('ADMIN'), async (req, res) => {
   try {
-    const { startDate, endDate, deliveryType, groupBy = 'product' } = req.query;
+    const { startDate, endDate, deliveryType } = req.query;
 
     // Construire les filtres
-    const whereClause = {
-      productId: { not: null },
-    };
+    // IMPORTANT: on inclut aussi les anciennes commandes (productId null) via produitNom
+    const whereClause = {};
 
     if (startDate) {
       whereClause.createdAt = { gte: new Date(startDate) };
@@ -30,10 +29,40 @@ router.get('/products', authorize('ADMIN'), async (req, res) => {
       whereClause.deliveryType = deliveryType;
     }
 
+    const toProductView = (order) => {
+      // Si le produit relationnel existe, on l'utilise. Sinon on retombe sur produitNom (legacy).
+      if (order?.product?.id) {
+        return {
+          productKey: `p:${order.product.id}`,
+          product: order.product,
+        };
+      }
+
+      const legacyName = (order?.produitNom || 'Produit (ancien)').trim();
+      return {
+        productKey: `legacy:${legacyName.toLowerCase()}`,
+        product: {
+          id: null,
+          code: null,
+          nom: legacyName,
+          prixUnitaire: null,
+        },
+      };
+    };
+
     // 1. TOP PRODUITS COMMANDÉS (toutes commandes créées)
     const allOrders = await prisma.order.findMany({
       where: whereClause,
-      include: {
+      select: {
+        id: true,
+        productId: true,
+        produitNom: true,
+        quantite: true,
+        montant: true,
+        createdAt: true,
+        deliveryType: true,
+        status: true,
+        callerId: true,
         product: {
           select: {
             id: true,
@@ -47,18 +76,19 @@ router.get('/products', authorize('ADMIN'), async (req, res) => {
 
     const topCommandes = {};
     allOrders.forEach((order) => {
-      const productId = order.productId;
-      if (!topCommandes[productId]) {
-        topCommandes[productId] = {
-          product: order.product,
+      const { productKey, product } = toProductView(order);
+      if (!topCommandes[productKey]) {
+        topCommandes[productKey] = {
+          productKey,
+          product,
           totalCommandes: 0,
           totalQuantite: 0,
           totalMontant: 0,
         };
       }
-      topCommandes[productId].totalCommandes++;
-      topCommandes[productId].totalQuantite += order.quantite || 0;
-      topCommandes[productId].totalMontant += order.montant || 0;
+      topCommandes[productKey].totalCommandes++;
+      topCommandes[productKey].totalQuantite += order.quantite || 0;
+      topCommandes[productKey].totalMontant += order.montant || 0;
     });
 
     // 2. TOP PRODUITS VALIDÉS (par les appelants)
@@ -67,19 +97,28 @@ router.get('/products', authorize('ADMIN'), async (req, res) => {
         ...whereClause,
         status: { in: ['VALIDEE', 'ASSIGNEE', 'LIVREE', 'EXPRESS', 'EXPRESS_ARRIVE', 'EXPRESS_LIVRE', 'EXPEDITION'] },
       },
-      include: {
-        product: {
-          select: {
-            id: true,
-            code: true,
-            nom: true,
-          },
-        },
+      select: {
+        id: true,
+        productId: true,
+        produitNom: true,
+        quantite: true,
+        montant: true,
+        createdAt: true,
+        deliveryType: true,
+        status: true,
+        callerId: true,
         caller: {
           select: {
             id: true,
             nom: true,
             prenom: true,
+          },
+        },
+        product: {
+          select: {
+            id: true,
+            code: true,
+            nom: true,
           },
         },
       },
@@ -88,23 +127,25 @@ router.get('/products', authorize('ADMIN'), async (req, res) => {
     const topValides = {};
     const topAppelantsValidation = {};
     validatedOrders.forEach((order) => {
-      const productId = order.productId;
-      if (!topValides[productId]) {
-        topValides[productId] = {
-          product: order.product,
+      const { productKey, product } = toProductView(order);
+      if (!topValides[productKey]) {
+        topValides[productKey] = {
+          productKey,
+          product,
           totalValidees: 0,
           totalQuantite: 0,
         };
       }
-      topValides[productId].totalValidees++;
-      topValides[productId].totalQuantite += order.quantite || 0;
+      topValides[productKey].totalValidees++;
+      topValides[productKey].totalQuantite += order.quantite || 0;
 
       // Par appelant
       if (order.callerId) {
-        const callerKey = `${productId}-${order.callerId}`;
+        const callerKey = `${productKey}-caller:${order.callerId}`;
         if (!topAppelantsValidation[callerKey]) {
           topAppelantsValidation[callerKey] = {
-            product: order.product,
+            productKey,
+            product,
             caller: order.caller,
             totalValidees: 0,
           };
@@ -119,7 +160,15 @@ router.get('/products', authorize('ADMIN'), async (req, res) => {
         ...whereClause,
         status: { in: ['LIVREE', 'EXPRESS_LIVRE'] },
       },
-      include: {
+      select: {
+        id: true,
+        productId: true,
+        produitNom: true,
+        quantite: true,
+        montant: true,
+        createdAt: true,
+        deliveryType: true,
+        status: true,
         product: {
           select: {
             id: true,
@@ -133,18 +182,19 @@ router.get('/products', authorize('ADMIN'), async (req, res) => {
 
     const topLivres = {};
     deliveredOrders.forEach((order) => {
-      const productId = order.productId;
-      if (!topLivres[productId]) {
-        topLivres[productId] = {
-          product: order.product,
+      const { productKey, product } = toProductView(order);
+      if (!topLivres[productKey]) {
+        topLivres[productKey] = {
+          productKey,
+          product,
           totalLivrees: 0,
           totalQuantite: 0,
           totalChiffreAffaires: 0,
         };
       }
-      topLivres[productId].totalLivrees++;
-      topLivres[productId].totalQuantite += order.quantite || 0;
-      topLivres[productId].totalChiffreAffaires += order.montant || 0;
+      topLivres[productKey].totalLivrees++;
+      topLivres[productKey].totalQuantite += order.quantite || 0;
+      topLivres[productKey].totalChiffreAffaires += order.montant || 0;
     });
 
     // 4. TOP PRODUITS EXPÉDIÉS (EXPEDITION + EXPRESS)
@@ -154,7 +204,15 @@ router.get('/products', authorize('ADMIN'), async (req, res) => {
         deliveryType: { in: ['EXPEDITION', 'EXPRESS'] },
         status: { in: ['LIVREE', 'EXPRESS_LIVRE', 'EXPRESS_ARRIVE', 'EXPEDITION', 'ASSIGNEE'] },
       },
-      include: {
+      select: {
+        id: true,
+        productId: true,
+        produitNom: true,
+        quantite: true,
+        montant: true,
+        createdAt: true,
+        deliveryType: true,
+        status: true,
         product: {
           select: {
             id: true,
@@ -167,32 +225,34 @@ router.get('/products', authorize('ADMIN'), async (req, res) => {
 
     const topExpedies = {};
     shippedOrders.forEach((order) => {
-      const productId = order.productId;
-      if (!topExpedies[productId]) {
-        topExpedies[productId] = {
-          product: order.product,
+      const { productKey, product } = toProductView(order);
+      if (!topExpedies[productKey]) {
+        topExpedies[productKey] = {
+          productKey,
+          product,
           totalExpeditions: 0,
           totalExpress: 0,
           totalQuantite: 0,
         };
       }
       if (order.deliveryType === 'EXPEDITION') {
-        topExpedies[productId].totalExpeditions++;
+        topExpedies[productKey].totalExpeditions++;
       } else {
-        topExpedies[productId].totalExpress++;
+        topExpedies[productKey].totalExpress++;
       }
-      topExpedies[productId].totalQuantite += order.quantite || 0;
+      topExpedies[productKey].totalQuantite += order.quantite || 0;
     });
 
     // 5. TAUX DE CONVERSION (Commandé → Validé → Livré)
     const conversionRates = {};
-    Object.keys(topCommandes).forEach((productId) => {
-      const commandes = topCommandes[productId].totalCommandes;
-      const valides = topValides[productId]?.totalValidees || 0;
-      const livres = topLivres[productId]?.totalLivrees || 0;
+    Object.keys(topCommandes).forEach((productKey) => {
+      const commandes = topCommandes[productKey].totalCommandes;
+      const valides = topValides[productKey]?.totalValidees || 0;
+      const livres = topLivres[productKey]?.totalLivrees || 0;
 
-      conversionRates[productId] = {
-        product: topCommandes[productId].product,
+      conversionRates[productKey] = {
+        productKey,
+        product: topCommandes[productKey].product,
         totalCommandes: commandes,
         totalValidees: valides,
         totalLivrees: livres,
