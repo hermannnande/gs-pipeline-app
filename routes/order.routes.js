@@ -1799,5 +1799,68 @@ router.post('/bulk-delete', authorize('ADMIN'), [
   }
 });
 
+// PUT /api/orders/:id/note-appelant - Modifier la note appelant d'une commande
+// Accessible uniquement par ADMIN et GESTIONNAIRE (gestionnaire principal)
+router.put('/:id/note-appelant', authorize('ADMIN', 'GESTIONNAIRE'), [
+  body('noteAppelant')
+    .optional({ nullable: true })
+    .isString()
+    .withMessage('La note appelant doit être une chaîne de caractères'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { id } = req.params;
+    const { noteAppelant } = req.body;
+
+    const order = await prisma.order.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!order) {
+      return res.status(404).json({ error: 'Commande non trouvée.' });
+    }
+
+    const normalizedNote =
+      typeof noteAppelant === 'string'
+        ? (noteAppelant.trim() === '' ? null : noteAppelant.trim())
+        : null;
+
+    const updatedOrder = await prisma.$transaction(async (tx) => {
+      const updated = await tx.order.update({
+        where: { id: parseInt(id) },
+        data: { noteAppelant: normalizedNote },
+        include: {
+          caller: { select: { id: true, nom: true, prenom: true } },
+          deliverer: { select: { id: true, nom: true, prenom: true } }
+        }
+      });
+
+      await tx.statusHistory.create({
+        data: {
+          orderId: parseInt(id),
+          oldStatus: order.status,
+          newStatus: order.status,
+          changedBy: req.user.id,
+          comment: `Note appelant modifiée par ${req.user.prenom} ${req.user.nom}`
+        }
+      });
+
+      return updated;
+    });
+
+    res.json({
+      order: updatedOrder,
+      message: 'Note appelant modifiée avec succès.'
+    });
+  } catch (error) {
+    console.error('Erreur modification note appelant:', error);
+    res.status(500).json({ error: 'Erreur lors de la modification de la note appelant.' });
+  }
+});
+
 export default router;
 

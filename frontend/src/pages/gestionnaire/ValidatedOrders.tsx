@@ -12,17 +12,20 @@ export default function ValidatedOrders() {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showQuantiteModal, setShowQuantiteModal] = useState(false);
   const [showAdresseModal, setShowAdresseModal] = useState(false);
+  const [showNoteAppelantModal, setShowNoteAppelantModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [newQuantite, setNewQuantite] = useState(1);
   const [newVille, setNewVille] = useState('');
   const [newCommune, setNewCommune] = useState('');
   const [newAdresse, setNewAdresse] = useState('');
+  const [newNoteAppelant, setNewNoteAppelant] = useState('');
   const [searchVille, setSearchVille] = useState('');
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
 
   // Vérifier si l'utilisateur peut modifier la quantité (Admin ou Gestionnaire)
   const canEditQuantite = user?.role === 'ADMIN' || user?.role === 'GESTIONNAIRE';
+  const canEditNoteAppelant = user?.role === 'ADMIN' || user?.role === 'GESTIONNAIRE';
 
   const { data: ordersData, isLoading } = useQuery({
     queryKey: ['validated-orders', searchVille],
@@ -79,6 +82,20 @@ export default function ValidatedOrders() {
     },
   });
 
+  const updateNoteAppelantMutation = useMutation({
+    mutationFn: ({ orderId, noteAppelant }: { orderId: number; noteAppelant?: string | null }) =>
+      ordersApi.updateNoteAppelant(orderId, noteAppelant),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['validated-orders'] });
+      setShowNoteAppelantModal(false);
+      setSelectedOrder(null);
+      toast.success('✅ Note appelant modifiée avec succès');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Erreur lors de la modification');
+    },
+  });
+
   const handleAssign = (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget as HTMLFormElement);
@@ -125,6 +142,12 @@ export default function ValidatedOrders() {
     setShowAdresseModal(true);
   };
 
+  const handleEditNoteAppelant = (order: Order) => {
+    setSelectedOrder(order);
+    setNewNoteAppelant(order.noteAppelant || '');
+    setShowNoteAppelantModal(true);
+  };
+
   const handleUpdateAdresse = () => {
     if (!selectedOrder) return;
     if (!newVille.trim()) {
@@ -136,6 +159,14 @@ export default function ValidatedOrders() {
       clientVille: newVille.trim(),
       clientCommune: newCommune.trim() || undefined,
       clientAdresse: newAdresse.trim() || undefined,
+    });
+  };
+
+  const handleUpdateNoteAppelant = () => {
+    if (!selectedOrder) return;
+    updateNoteAppelantMutation.mutate({
+      orderId: selectedOrder.id,
+      noteAppelant: newNoteAppelant.trim() ? newNoteAppelant.trim() : null,
     });
   };
 
@@ -266,6 +297,15 @@ export default function ValidatedOrders() {
                           >
                             <MapPin size={18} />
                           </button>
+                          {canEditNoteAppelant && (
+                            <button
+                              onClick={() => handleEditNoteAppelant(order)}
+                              className="text-purple-600 hover:text-purple-800 transition-colors p-1 hover:bg-purple-50 rounded"
+                              title="Modifier la note appelant"
+                            >
+                              <MessageSquare size={18} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     )}
@@ -497,6 +537,67 @@ export default function ValidatedOrders() {
                 }}
                 className="btn btn-secondary flex-1"
                 disabled={updateAdresseMutation.isPending}
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de modification de note appelant */}
+      {showNoteAppelantModal && selectedOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <MessageSquare className="text-purple-600" size={24} />
+              Modifier la note appelant
+            </h2>
+
+            <div className="bg-gray-50 p-4 rounded-lg mb-4">
+              <p className="text-sm text-gray-600 mb-1">Commande</p>
+              <p className="font-semibold">{selectedOrder.orderReference}</p>
+
+              <p className="text-sm text-gray-600 mt-2 mb-1">Client</p>
+              <p className="font-semibold">{selectedOrder.clientNom}</p>
+
+              <p className="text-sm text-gray-600 mt-2 mb-1">Produit</p>
+              <p className="font-semibold">{selectedOrder.produitNom}</p>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Note appelant
+              </label>
+              <textarea
+                value={newNoteAppelant}
+                onChange={(e) => setNewNoteAppelant(e.target.value)}
+                placeholder="Ajouter ou modifier la note appelant..."
+                className="input w-full"
+                rows={4}
+                autoFocus
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Laisser vide pour supprimer la note.
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleUpdateNoteAppelant}
+                disabled={updateNoteAppelantMutation.isPending}
+                className="btn btn-primary flex-1"
+              >
+                {updateNoteAppelantMutation.isPending ? 'Modification...' : '✓ Confirmer'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowNoteAppelantModal(false);
+                  setSelectedOrder(null);
+                }}
+                className="btn btn-secondary flex-1"
+                disabled={updateNoteAppelantMutation.isPending}
               >
                 Annuler
               </button>

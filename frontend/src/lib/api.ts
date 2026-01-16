@@ -120,6 +120,11 @@ export const ordersApi = {
     return data;
   },
 
+  updateNoteAppelant: async (id: number, noteAppelant?: string | null) => {
+    const { data } = await api.put(`/orders/${id}/note-appelant`, { noteAppelant });
+    return data;
+  },
+
   marquerAttentePaiement: async (id: number, note?: string) => {
     const { data } = await api.post(`/orders/${id}/attente-paiement`, { note });
     return data;
