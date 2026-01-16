@@ -40,7 +40,18 @@ export default function Movements() {
       LIVRAISON: 'Livraison',
       RETOUR: 'Retour',
       CORRECTION: 'Correction',
-      PERTE: 'Perte/Casse'
+      PERTE: 'Perte/Casse',
+      RESERVATION: 'Réservation (EXPÉDITION)',
+      RESERVATION_EXPRESS: 'Réservation (EXPRESS)',
+      RETRAIT_EXPRESS: 'Retrait client (EXPRESS)',
+      ANNULATION_EXPRESS: 'Annulation (EXPRESS)',
+      RESERVATION_LOCAL: 'Remise au livreur (LOCAL)',
+      LIVRAISON_LOCAL: 'Livrée (LOCAL)',
+      RETOUR_LOCAL: 'Retour au magasin (LOCAL)',
+      CORRECTION_LIVRAISON_LOCAL: 'Correction ≤ 24h (LOCAL)',
+      RETOUR_EXPEDITION: 'Correction ≤ 24h (EXPÉDITION)',
+      CORRECTION_EXPRESS: 'Correction ≤ 24h (EXPRESS)',
+      AJUSTEMENT: 'Ajustement inventaire'
     };
     return labels[type] || type;
   };
@@ -51,7 +62,18 @@ export default function Movements() {
       LIVRAISON: 'bg-red-100 text-red-800',
       RETOUR: 'bg-blue-100 text-blue-800',
       CORRECTION: 'bg-yellow-100 text-yellow-800',
-      PERTE: 'bg-gray-100 text-gray-800'
+      PERTE: 'bg-gray-100 text-gray-800',
+      RESERVATION: 'bg-blue-500 text-white',
+      RESERVATION_EXPRESS: 'bg-amber-500 text-white',
+      RETRAIT_EXPRESS: 'bg-teal-100 text-teal-800',
+      ANNULATION_EXPRESS: 'bg-orange-100 text-orange-800',
+      RESERVATION_LOCAL: 'bg-indigo-100 text-indigo-800',
+      LIVRAISON_LOCAL: 'bg-emerald-100 text-emerald-800',
+      RETOUR_LOCAL: 'bg-sky-100 text-sky-800',
+      CORRECTION_LIVRAISON_LOCAL: 'bg-purple-100 text-purple-800',
+      RETOUR_EXPEDITION: 'bg-cyan-100 text-cyan-800',
+      CORRECTION_EXPRESS: 'bg-pink-100 text-pink-800',
+      AJUSTEMENT: 'bg-yellow-100 text-yellow-800'
     };
     return colors[type] || 'bg-gray-100 text-gray-800';
   };
@@ -146,6 +168,17 @@ export default function Movements() {
               <option value="RETOUR">Retour</option>
               <option value="CORRECTION">Correction</option>
               <option value="PERTE">Perte/Casse</option>
+              <option value="AJUSTEMENT">Ajustement inventaire</option>
+              <option value="RESERVATION">Réservation (EXPÉDITION)</option>
+              <option value="RESERVATION_EXPRESS">Réservation (EXPRESS)</option>
+              <option value="RETRAIT_EXPRESS">Retrait client (EXPRESS)</option>
+              <option value="ANNULATION_EXPRESS">Annulation (EXPRESS)</option>
+              <option value="RESERVATION_LOCAL">Remise au livreur (LOCAL)</option>
+              <option value="LIVRAISON_LOCAL">Livrée (LOCAL)</option>
+              <option value="RETOUR_LOCAL">Retour au magasin (LOCAL)</option>
+              <option value="CORRECTION_LIVRAISON_LOCAL">Correction ≤ 24h (LOCAL)</option>
+              <option value="RETOUR_EXPEDITION">Correction ≤ 24h (EXPÉDITION)</option>
+              <option value="CORRECTION_EXPRESS">Correction ≤ 24h (EXPRESS)</option>
             </select>
           </div>
 
