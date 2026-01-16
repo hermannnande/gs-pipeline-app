@@ -495,6 +495,105 @@ router.post('/tournees/:id/confirm-retour', authorize('ADMIN', 'GESTIONNAIRE', '
   }
 });
 
+// POST /api/stock/tournees/:id/cloturer-expedition - Clôturer une tournée EXPEDITION (sans retour stock)
+// Objectif: marquer la tournée "terminée" côté UI quand toutes les expéditions sont réglées/livrées,
+// sans exiger un retour physique (contrairement au LOCAL).
+router.post('/tournees/:id/cloturer-expedition', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STOCK'), [
+  body('ecartMotif').optional({ nullable: true }).isString().withMessage('Motif invalide'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { id } = req.params;
+    const { ecartMotif } = req.body;
+
+    const deliveryList = await prisma.deliveryList.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        orders: true,
+        tourneeStock: true,
+        deliverer: { select: { id: true, nom: true, prenom: true } },
+      },
+    });
+
+    if (!deliveryList) {
+      return res.status(404).json({ error: 'Tournée non trouvée.' });
+    }
+
+    const hasLocal = deliveryList.orders.some((o) => o.deliveryType === 'LOCAL');
+    if (hasLocal) {
+      return res.status(400).json({
+        error: 'Cette tournée contient des commandes LOCAL. Utilisez la confirmation de retour classique.',
+      });
+    }
+
+    const totalOrders = deliveryList.orders.length;
+    const colisLivres = deliveryList.orders.filter((o) => o.status === 'LIVREE').length;
+    const colisRemis = deliveryList.tourneeStock?.colisRemis ?? totalOrders;
+    const ecart = colisRemis - (colisLivres + 0);
+
+    if (ecart !== 0 && !ecartMotif) {
+      return res.status(400).json({
+        error: 'Veuillez expliquer l’écart pour clôturer cette tournée EXPEDITION.',
+      });
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      // Upsert TourneeStock pour pouvoir clôturer même si REMISE n'a pas été confirmée
+      const tourneeStock = await tx.tourneeStock.upsert({
+        where: { deliveryListId: parseInt(id) },
+        create: {
+          deliveryListId: parseInt(id),
+          colisRemis,
+          colisRemisConfirme: true,
+          colisRemisAt: new Date(),
+          colisRemisBy: req.user.id,
+          colisLivres,
+          colisRetour: 0,
+          colisRetourConfirme: true,
+          colisRetourAt: new Date(),
+          colisRetourBy: req.user.id,
+          ecart,
+          ecartResolu: ecart === 0,
+          ecartMotif: ecart !== 0 ? ecartMotif : null,
+        },
+        update: {
+          // On ne touche pas au stock: seulement clôture
+          colisLivres,
+          colisRetour: 0,
+          colisRetourConfirme: true,
+          colisRetourAt: new Date(),
+          colisRetourBy: req.user.id,
+          ecart,
+          ecartResolu: ecart === 0,
+          ecartMotif: ecart !== 0 ? ecartMotif : null,
+          // Si jamais il n'y avait pas eu de remise confirmée, on marque au moins un "remis"
+          colisRemis: deliveryList.tourneeStock?.colisRemis ?? colisRemis,
+          colisRemisConfirme: deliveryList.tourneeStock?.colisRemisConfirme ?? true,
+          colisRemisAt: deliveryList.tourneeStock?.colisRemisAt ?? new Date(),
+          colisRemisBy: deliveryList.tourneeStock?.colisRemisBy ?? req.user.id,
+        },
+      });
+
+      return { tourneeStock };
+    });
+
+    res.json({
+      ...result,
+      message:
+        ecart === 0
+          ? 'Tournée EXPEDITION clôturée avec succès.'
+          : `Tournée EXPEDITION clôturée avec un écart de ${ecart} colis.`,
+    });
+  } catch (error) {
+    console.error('Erreur clôture expédition:', error);
+    res.status(500).json({ error: 'Erreur lors de la clôture de la tournée EXPEDITION.' });
+  }
+});
+
 // GET /api/stock/movements - Historique des mouvements de stock
 router.get('/movements', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), async (req, res) => {
   try {

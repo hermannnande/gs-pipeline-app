@@ -22,7 +22,7 @@ export default function Tournees() {
   const [colisRemis, setColisRemis] = useState('');
   const [colisRetour, setColisRetour] = useState('');
   const [ecartMotif, setEcartMotif] = useState('');
-  const [modalType, setModalType] = useState<'remise' | 'retour' | 'detail' | null>(null);
+  const [modalType, setModalType] = useState<'remise' | 'retour' | 'clotureExpedition' | 'detail' | null>(null);
   const [raisonsRetour, setRaisonsRetour] = useState<Record<number, string>>({});
   
   // Filtres et recherche
@@ -198,6 +198,33 @@ export default function Tournees() {
     },
   });
 
+  const clotureExpeditionMutation = useMutation({
+    mutationFn: async ({ tourneeId, ecartMotif }: any) => {
+      const { data } = await api.post(`/stock/tournees/${tourneeId}/cloturer-expedition`, {
+        ecartMotif: ecartMotif || undefined
+      });
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['stock-tournees'] });
+      queryClient.invalidateQueries({ queryKey: ['stock-stats'] });
+      setModalType(null);
+      setSelectedTournee(null);
+      setColisRetour('');
+      setEcartMotif('');
+      toast.success(data.message || 'Tournée EXPEDITION clôturée');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Erreur lors de la clôture');
+    }
+  });
+
+  const isExpeditionTournee = (tournee: any) => {
+    const expeditionCount = tournee?.orders?.filter((o: any) => o.deliveryType === 'EXPEDITION')?.length || 0;
+    const localCount = tournee?.orders?.filter((o: any) => o.deliveryType === 'LOCAL')?.length || 0;
+    return expeditionCount > 0 && localCount === 0;
+  };
+
   const handleConfirmRemise = () => {
     if (!selectedTournee || !colisRemis) return;
     confirmRemiseMutation.mutate({
@@ -236,6 +263,18 @@ export default function Tournees() {
     });
   };
 
+  const handleCloturerExpedition = () => {
+    if (!selectedTournee) return;
+    if (selectedTournee.stats.colisRestants > 0 && !ecartMotif) {
+      toast.error('Veuillez expliquer l\'écart de colis avant de clôturer cette expédition');
+      return;
+    }
+    clotureExpeditionMutation.mutate({
+      tourneeId: selectedTournee.id,
+      ecartMotif: ecartMotif || null
+    });
+  };
+
   const openRemiseModal = (tournee: any) => {
     setSelectedTournee(tournee);
     setColisRemis(tournee.stats.totalOrders.toString());
@@ -244,10 +283,16 @@ export default function Tournees() {
 
   const openRetourModal = (tournee: any) => {
     setSelectedTournee(tournee);
-    const colisNonLivres = tournee.stats.totalOrders - tournee.stats.livrees;
-    setColisRetour(colisNonLivres.toString());
+    setEcartMotif('');
     setRaisonsRetour({});
-    setTimeout(() => setModalType('retour'), 100);
+    if (isExpeditionTournee(tournee)) {
+      setColisRetour('0');
+      setTimeout(() => setModalType('clotureExpedition'), 100);
+    } else {
+      const colisNonLivres = tournee.stats.totalOrders - tournee.stats.livrees;
+      setColisRetour(colisNonLivres.toString());
+      setTimeout(() => setModalType('retour'), 100);
+    }
   };
 
   const setRaisonForOrder = (orderId: number, raison: string) => {
@@ -692,9 +737,9 @@ export default function Tournees() {
                         <button
                           onClick={() => openRetourModal(tournee)}
                           className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
-                          title="Confirmer le retour"
+                          title={isExpeditionTournee(tournee) ? 'Clôturer la tournée EXPEDITION' : 'Confirmer le retour'}
                         >
-                          Retour
+                          {isExpeditionTournee(tournee) ? 'Clôturer' : 'Retour'}
                         </button>
                       ) : null}
                       <button
@@ -801,7 +846,7 @@ export default function Tournees() {
                     className="btn btn-primary flex-1 flex items-center justify-center gap-2"
                   >
                     <CheckCircle size={18} />
-                    Confirmer le retour
+                    {isExpeditionTournee(tournee) ? 'Clôturer (EXPEDITION)' : 'Confirmer le retour'}
                   </button>
                 ) : (
                   <div className="flex-1 p-3 bg-green-50 border border-green-200 rounded-lg text-center">
@@ -1045,6 +1090,67 @@ export default function Tournees() {
                 className="btn btn-primary flex-1"
               >
                 {confirmRetourMutation.isPending ? 'Confirmation...' : 'Confirmer le retour'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de clôture EXPEDITION */}
+      {modalType === 'clotureExpedition' && selectedTournee && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full">
+            <h2 className="text-xl font-bold mb-2">Clôturer la tournée EXPEDITION</h2>
+
+            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="font-medium text-gray-900">{selectedTournee.nom}</p>
+              <p className="text-sm text-gray-600">
+                Livreur: {selectedTournee.deliverer.prenom} {selectedTournee.deliverer.nom}
+              </p>
+              <p className="text-xs text-gray-600 mt-2">
+                Pour les EXPÉDITIONS, le stock est déjà réduit au paiement. Cette action sert à clôturer la tournée (pas de retour stock).
+              </p>
+            </div>
+
+            {selectedTournee.stats.colisRestants > 0 && (
+              <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-sm text-amber-800">
+                  ⚠️ Il reste <strong>{selectedTournee.stats.colisRestants}</strong> colis non livrés. Un motif est obligatoire.
+                </p>
+              </div>
+            )}
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Motif d’écart (si nécessaire)
+              </label>
+              <textarea
+                value={ecartMotif}
+                onChange={(e) => setEcartMotif(e.target.value)}
+                placeholder="Expliquez la raison (obligatoire s’il reste des colis)"
+                className="input min-h-[80px]"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setModalType(null);
+                  setSelectedTournee(null);
+                  setColisRetour('');
+                  setEcartMotif('');
+                }}
+                className="btn btn-secondary flex-1"
+                disabled={clotureExpeditionMutation.isPending}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleCloturerExpedition}
+                className="btn btn-primary flex-1"
+                disabled={clotureExpeditionMutation.isPending}
+              >
+                {clotureExpeditionMutation.isPending ? 'Clôture...' : 'Clôturer'}
               </button>
             </div>
           </div>

@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Package, Truck, AlertCircle, RefreshCw, ChevronDown, ChevronUp, User, Calendar, Clock, XCircle, RotateCcw } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/utils/statusHelpers';
+import toast from 'react-hot-toast';
+import { useAuthStore } from '@/store/authStore';
 
 // Helper pour afficher le badge de statut
 const getStatusBadge = (status: string) => {
@@ -34,6 +36,10 @@ export default function LiveraisonEnCours() {
   const [expandedProduct, setExpandedProduct] = useState<number | null>(null);
   const [expandedDeliverer, setExpandedDeliverer] = useState<number | null>(null);
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
+  const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+
+  const canSync = user?.role === 'ADMIN';
 
   // Récupérer l'analyse complète
   const { data: analysisData, isLoading, refetch } = useQuery({
@@ -42,6 +48,20 @@ export default function LiveraisonEnCours() {
       const { data } = await api.get('/stock-analysis/local-reserve');
       return data;
     },
+  });
+
+  const syncMutation = useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post('/stock-analysis/recalculate-local-reserve');
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || 'Synchronisation terminée');
+      queryClient.invalidateQueries({ queryKey: ['stock-analysis-local'] });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Erreur lors de la synchronisation');
+    }
   });
 
   // Filtrer les données par date
@@ -132,6 +152,24 @@ export default function LiveraisonEnCours() {
             <RefreshCw size={18} />
             Actualiser
           </button>
+          {canSync && (
+            <button
+              onClick={() => {
+                const ok = confirm(
+                  'Synchroniser le stock "en livraison" (stockLocalReserve) avec la réalité des commandes en cours ?\n\n' +
+                  'Cela corrige les valeurs négatives/erronées et crée des mouvements de type CORRECTION.\n' +
+                  'Aucun stock magasin (stockActuel) ni EXPRESS ne sera modifié.'
+                );
+                if (ok) syncMutation.mutate();
+              }}
+              className="btn btn-primary flex items-center gap-2"
+              disabled={syncMutation.isPending}
+              title="Synchroniser stock en livraison"
+            >
+              <RotateCcw size={18} className={syncMutation.isPending ? 'animate-spin' : ''} />
+              {syncMutation.isPending ? 'Synchronisation...' : 'Synchroniser'}
+            </button>
+          )}
         </div>
       </div>
 

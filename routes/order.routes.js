@@ -294,6 +294,27 @@ router.put('/:id/status', async (req, res) => {
       if (order.delivererId !== user.id) {
         return res.status(403).json({ error: 'Cette commande ne vous est pas assignée.' });
       }
+
+      // ✅ Garde-fou anti désynchronisation:
+      // Pour LOCAL, on force la confirmation de REMISE avant que le livreur puisse changer le statut.
+      // Sinon le stockLocalReserve n'a jamais été alimenté -> LIVREE peut le rendre négatif.
+      if (order.deliveryType === 'LOCAL') {
+        if (!order.deliveryListId) {
+          return res.status(400).json({
+            error: 'Commande LOCAL sans tournée associée. Veuillez contacter le gestionnaire.'
+          });
+        }
+
+        const tourneeStock = await prisma.tourneeStock.findUnique({
+          where: { deliveryListId: order.deliveryListId }
+        });
+
+        if (!tourneeStock?.colisRemisConfirme) {
+          return res.status(400).json({
+            error: 'Remise non confirmée. Le gestionnaire de stock doit confirmer la REMISE avant toute mise à jour par le livreur.'
+          });
+        }
+      }
     }
 
     // Transaction pour gérer le statut + stock de manière cohérente
