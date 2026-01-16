@@ -297,7 +297,7 @@ export default function Products() {
                 <div className="space-y-3">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-gray-600">Stock disponible</span>
+                      <span className="text-sm text-gray-600">Stock magasin (disponible)</span>
                       <span className={`text-2xl font-bold ${
                         isLowStock ? 'text-red-600' : 'text-green-600'
                       }`}>
@@ -373,11 +373,14 @@ export default function Products() {
                     {/* Stock total */}
                     <div className="mt-2 pt-2 border-t border-gray-200">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-600 font-medium">📊 Stock total (physique)</span>
+                        <span className="text-xs text-gray-600 font-medium">📊 Stock total (magasin + transit/agence + livreurs)</span>
                         <span className="text-sm font-bold text-primary-600">
                           {product.stockActuel + (product.stockExpress || 0) + (product.stockLocalReserve || 0)}
                         </span>
                       </div>
+                      <p className="text-[11px] text-gray-500 mt-1">
+                        Formule: magasin ({product.stockActuel}) + express ({product.stockExpress || 0}) + livraison ({product.stockLocalReserve || 0})
+                      </p>
                     </div>
                     
                     <p className="text-xs text-gray-500 mt-1">
