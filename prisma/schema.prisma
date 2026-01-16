@@ -32,6 +32,7 @@ enum OrderStatus {
   RETOURNE // Retourné par le livreur (client absent, etc.)
   EXPEDITION // Paiement total 100% - Envoi vers autre ville
   EXPRESS // Paiement partiel 10% - Retrait en agence
+  EXPRESS_ENVOYE // Colis EXPRESS envoyé vers l'agence (en transit)
   EXPRESS_ARRIVE // Colis arrivé en agence - En attente paiement 90%
   EXPRESS_LIVRE // Express livré après paiement des 90%
 }
@@ -139,6 +140,13 @@ model Order {
   notifieAt     DateTime? // Date de notification du client
   notifiePar    Int? // Appelant qui a notifié
   agenceRetrait String? // Nom de l'agence de retrait
+
+  // EXPRESS - Envoi vers agence (par livreur)
+  expressEnvoyeAt DateTime? // Date d'envoi vers l'agence
+  expressEnvoyePar Int? // ID du livreur (ou admin) qui a confirmé l'envoi
+  codeExpress      String? // Code / référence d'envoi (agence)
+  photoRecuExpress String? // Photo du reçu d'envoi (base64 ou URL)
+  photoRecuExpressUploadedAt DateTime? // Date d'upload (suppression auto après 7j)
 
   // Statut paiement EXPEDITION
   enAttentePaiement Boolean   @default(false) // Commande en attente de paiement (pour EXPEDITION)

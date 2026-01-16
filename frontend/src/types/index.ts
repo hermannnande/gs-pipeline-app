@@ -13,6 +13,7 @@ export type OrderStatus =
   | 'RETOURNE'
   | 'EXPEDITION'
   | 'EXPRESS'
+  | 'EXPRESS_ENVOYE'
   | 'EXPRESS_ARRIVE'
   | 'EXPRESS_LIVRE';
 

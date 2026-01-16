@@ -9,13 +9,14 @@ import type { Order } from '@/types';
 import { VILLES_AGENCES_EXPRESS } from '@/constants/cities';
 
 export default function ExpeditionsExpress() {
-  const [activeTab, setActiveTab] = useState<'expeditions' | 'express-pending' | 'express-arrived' | 'history'>('expeditions');
+  const [activeTab, setActiveTab] = useState<'expeditions' | 'express-pending' | 'express-shipped' | 'express-arrived' | 'history'>('expeditions');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showDeliverModal, setShowDeliverModal] = useState(false);
   const [showArriveModal, setShowArriveModal] = useState(false);
   const [showFinalizeModal, setShowFinalizeModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedDelivererId, setSelectedDelivererId] = useState<number | null>(null);
+  const [assignMode, setAssignMode] = useState<'EXPEDITION' | 'EXPRESS'>('EXPEDITION');
   const [finalizeData, setFinalizeData] = useState({
     montantPaye: 0,
     modePaiement: '',
@@ -70,6 +71,12 @@ export default function ExpeditionsExpress() {
   const { data: expressData, isLoading: loadingExpress } = useQuery({
     queryKey: ['express-pending'],
     queryFn: () => ordersApi.getAll({ status: 'EXPRESS', limit: 100 }),
+    refetchInterval: 30000,
+  });
+
+  const { data: expressShippedData, isLoading: loadingExpressShipped } = useQuery({
+    queryKey: ['express-shipped'],
+    queryFn: () => ordersApi.getAll({ status: 'EXPRESS_ENVOYE', limit: 100 }),
     refetchInterval: 30000,
   });
 
@@ -144,6 +151,22 @@ export default function ExpeditionsExpress() {
     },
   });
 
+  const assignExpressDelivererMutation = useMutation({
+    mutationFn: ({ orderId, delivererId }: { orderId: number; delivererId: number }) =>
+      ordersApi.assignExpressDeliverer(orderId, delivererId),
+    onSuccess: () => {
+      toast.success('✅ Livreur assigné (EXPRESS) avec succès');
+      queryClient.invalidateQueries({ queryKey: ['express-pending'] });
+      queryClient.invalidateQueries({ queryKey: ['express-shipped'] });
+      setShowAssignModal(false);
+      setSelectedOrder(null);
+      setSelectedDelivererId(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Erreur lors de l\'assignation');
+    },
+  });
+
   const handleFinalizeExpress = () => {
     if (!selectedOrder) return;
     finalizeExpressMutation.mutate({
@@ -157,10 +180,17 @@ export default function ExpeditionsExpress() {
       toast.error('Veuillez sélectionner un livreur');
       return;
     }
-    assignDelivererMutation.mutate({
-      orderId: selectedOrder.id,
-      delivererId: selectedDelivererId,
-    });
+    if (assignMode === 'EXPRESS') {
+      assignExpressDelivererMutation.mutate({
+        orderId: selectedOrder.id,
+        delivererId: selectedDelivererId,
+      });
+    } else {
+      assignDelivererMutation.mutate({
+        orderId: selectedOrder.id,
+        delivererId: selectedDelivererId,
+      });
+    }
   };
 
   // Fonction de filtrage générique
@@ -264,6 +294,7 @@ export default function ExpeditionsExpress() {
   // Appliquer les filtres
   const filteredExpeditions = useMemo(() => filterOrders(allExpeditions), [allExpeditions, searchTerm, filterVille, filterProduit, filterLivreur, filterPaiement, filterStartDate, filterEndDate]);
   const filteredExpress = useMemo(() => filterOrders(expressData?.orders || []), [expressData, searchTerm, filterVille, filterProduit, filterAgence, filterPaiement, filterStartDate, filterEndDate]);
+  const filteredExpressShipped = useMemo(() => filterOrders(expressShippedData?.orders || []), [expressShippedData, searchTerm, filterVille, filterProduit, filterAgence, filterPaiement, filterStartDate, filterEndDate]);
   const filteredExpressArrived = useMemo(() => filterOrders(expressArrivedData?.orders || []), [expressArrivedData, searchTerm, filterVille, filterProduit, filterAgence, filterPaiement, filterStartDate, filterEndDate]);
   const filteredHistory = useMemo(() => filterOrders(historyData?.orders || []), [historyData, searchTerm, filterVille, filterProduit, filterAgence, filterLivreur, filterPaiement, filterStartDate, filterEndDate]);
 
@@ -272,9 +303,15 @@ export default function ExpeditionsExpress() {
   const uniqueAgences = [...VILLES_AGENCES_EXPRESS];
 
   const uniquePaiements = useMemo(() => {
-    const allOrders = [...allExpeditions, ...(expressData?.orders || []), ...(expressArrivedData?.orders || []), ...(historyData?.orders || [])];
+    const allOrders = [
+      ...allExpeditions,
+      ...(expressData?.orders || []),
+      ...(expressShippedData?.orders || []),
+      ...(expressArrivedData?.orders || []),
+      ...(historyData?.orders || [])
+    ];
     return Array.from(new Set(allOrders.map(o => o.modePaiement).filter(Boolean))).sort();
-  }, [allExpeditions, expressData, expressArrivedData, historyData]);
+  }, [allExpeditions, expressData, expressShippedData, expressArrivedData, historyData]);
 
   // Réinitialiser les filtres
   const resetFilters = () => {
@@ -291,6 +328,7 @@ export default function ExpeditionsExpress() {
   const tabs = [
     { id: 'expeditions', label: 'Expéditions', icon: Truck, count: filteredExpeditions.length },
     { id: 'express-pending', label: 'EXPRESS - À expédier', icon: Zap, count: filteredExpress.length },
+    { id: 'express-shipped', label: 'EXPRESS - En transit', icon: Truck, count: filteredExpressShipped.length },
     { id: 'express-arrived', label: 'EXPRESS - En agence', icon: Package, count: filteredExpressArrived.length },
     { id: 'history', label: 'Historique', icon: CheckCircle, count: filteredHistory.length },
   ];
@@ -375,7 +413,7 @@ export default function ExpeditionsExpress() {
               </div>
 
               {/* Filtre par agence (pour EXPRESS) */}
-              {(activeTab === 'express-pending' || activeTab === 'express-arrived' || activeTab === 'history') && (
+              {(activeTab === 'express-pending' || activeTab === 'express-shipped' || activeTab === 'express-arrived' || activeTab === 'history') && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     🏢 Agence de retrait
@@ -750,6 +788,103 @@ export default function ExpeditionsExpress() {
                           </span>
                         </td>
                         <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            {canAssignDeliverer && !order.delivererId && (
+                              <button
+                                onClick={() => {
+                                  setAssignMode('EXPRESS');
+                                  setSelectedOrder(order);
+                                  setSelectedDelivererId(null);
+                                  setShowAssignModal(true);
+                                }}
+                                className="btn btn-secondary btn-sm flex items-center gap-1"
+                              >
+                                <Users size={14} />
+                                Assigner
+                              </button>
+                            )}
+                            <button
+                              onClick={() => {
+                                setSelectedOrder(order);
+                                setShowArriveModal(true);
+                              }}
+                              className="btn btn-primary btn-sm"
+                            >
+                              Marquer arrivé
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ONGLET 3 : EXPRESS EN TRANSIT */}
+        {activeTab === 'express-shipped' && (
+          <div>
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <Truck className="text-indigo-600" />
+              EXPRESS - En transit ({filteredExpressShipped.length})
+              {filteredExpressShipped.length !== (expressShippedData?.orders?.length || 0) && (
+                <span className="text-sm font-normal text-gray-500">
+                  (sur {expressShippedData?.orders?.length || 0} total)
+                </span>
+              )}
+            </h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Colis envoyés vers agence par un livreur, en attente d'arrivée
+            </p>
+
+            {loadingExpressShipped ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+              </div>
+            ) : filteredExpressShipped.length === 0 ? (
+              <div className="text-center py-12">
+                <Truck size={48} className="mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500">
+                  {(expressShippedData?.orders?.length || 0) === 0
+                    ? 'Aucun EXPRESS en transit'
+                    : 'Aucun résultat ne correspond aux filtres'}
+                </p>
+                {(expressShippedData?.orders?.length || 0) > 0 && (
+                  <button onClick={resetFilters} className="btn btn-secondary mt-4">
+                    Réinitialiser les filtres
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Référence</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Client</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Produit</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Agence</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredExpressShipped.map((order: Order) => (
+                      <tr key={order.id} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-3 px-4 text-sm font-medium">{order.orderReference}</td>
+                        <td className="py-3 px-4">
+                          <div className="text-sm font-medium">{order.clientNom}</div>
+                          <div className="text-xs text-gray-500">{order.clientTelephone}</div>
+                        </td>
+                        <td className="py-3 px-4 text-sm">{order.produitNom} (x{order.quantite})</td>
+                        <td className="py-3 px-4 text-sm">
+                          <span className="inline-flex items-center gap-1">
+                            <MapPin size={14} />
+                            {order.agenceRetrait}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
                           <button
                             onClick={() => {
                               setSelectedOrder(order);
@@ -769,7 +904,7 @@ export default function ExpeditionsExpress() {
           </div>
         )}
 
-        {/* ONGLET 3 : EXPRESS EN AGENCE */}
+        {/* ONGLET 4 : EXPRESS EN AGENCE */}
         {activeTab === 'express-arrived' && (
           <div>
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -961,7 +1096,9 @@ export default function ExpeditionsExpress() {
       {showAssignModal && selectedOrder && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold mb-4">Assigner un livreur</h3>
+            <h3 className="text-xl font-bold mb-4">
+              {assignMode === 'EXPRESS' ? 'Assigner un livreur (EXPRESS)' : 'Assigner un livreur'}
+            </h3>
             
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
               <p className="text-sm text-blue-800 mb-1">
@@ -1016,9 +1153,9 @@ export default function ExpeditionsExpress() {
               <button
                 onClick={handleAssignDeliverer}
                 className="btn btn-primary flex-1"
-                disabled={assignDelivererMutation.isPending || !selectedDelivererId}
+                disabled={(assignDelivererMutation.isPending || assignExpressDelivererMutation.isPending) || !selectedDelivererId}
               >
-                {assignDelivererMutation.isPending ? 'Assignation...' : 'Assigner'}
+                {(assignDelivererMutation.isPending || assignExpressDelivererMutation.isPending) ? 'Assignation...' : 'Assigner'}
               </button>
             </div>
           </div>

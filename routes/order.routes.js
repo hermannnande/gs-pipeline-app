@@ -1301,8 +1301,8 @@ router.put('/:id/express/arrive', authorize('ADMIN', 'GESTIONNAIRE', 'APPELANT')
       return res.status(404).json({ error: 'Commande non trouvée.' });
     }
 
-    if (order.status !== 'EXPRESS') {
-      return res.status(400).json({ error: 'Cette commande n\'est pas un EXPRESS en attente.' });
+    if (!['EXPRESS', 'EXPRESS_ENVOYE'].includes(order.status)) {
+      return res.status(400).json({ error: 'Cette commande n\'est pas un EXPRESS en attente d\'arrivée.' });
     }
 
     const updatedOrder = await prisma.order.update({
@@ -1316,7 +1316,7 @@ router.put('/:id/express/arrive', authorize('ADMIN', 'GESTIONNAIRE', 'APPELANT')
     await prisma.statusHistory.create({
       data: {
         orderId: parseInt(id),
-        oldStatus: 'EXPRESS',
+        oldStatus: order.status,
         newStatus: 'EXPRESS_ARRIVE',
         changedBy: req.user.id,
         comment: `Colis arrivé en agence: ${order.agenceRetrait}`,
@@ -1330,6 +1330,120 @@ router.put('/:id/express/arrive', authorize('ADMIN', 'GESTIONNAIRE', 'APPELANT')
   } catch (error) {
     console.error('Erreur:', error);
     res.status(500).json({ error: 'Erreur lors de la mise à jour.' });
+  }
+});
+
+// POST /api/orders/:id/express/assign - Assigner un livreur à un EXPRESS (envoi vers agence)
+router.post('/:id/express/assign', authorize('ADMIN', 'GESTIONNAIRE'), [
+  body('delivererId').isInt().withMessage('Livreur invalide'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { id } = req.params;
+    const { delivererId } = req.body;
+    const orderId = parseInt(id);
+
+    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) return res.status(404).json({ error: 'Commande non trouvée.' });
+
+    if (order.deliveryType !== 'EXPRESS' || order.status !== 'EXPRESS') {
+      return res.status(400).json({ error: 'Seules les commandes EXPRESS (statut EXPRESS) peuvent être assignées.' });
+    }
+
+    const deliverer = await prisma.user.findUnique({ where: { id: parseInt(delivererId) } });
+    if (!deliverer || deliverer.role !== 'LIVREUR') {
+      return res.status(400).json({ error: 'Livreur invalide.' });
+    }
+
+    const updatedOrder = await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        delivererId: parseInt(delivererId),
+      },
+    });
+
+    await prisma.statusHistory.create({
+      data: {
+        orderId: orderId,
+        oldStatus: order.status,
+        newStatus: order.status, // pas de changement de statut
+        changedBy: req.user.id,
+        comment: `EXPRESS assigné au livreur ${deliverer.prenom} ${deliverer.nom} pour envoi à l'agence ${order.agenceRetrait || ''}`.trim(),
+      },
+    });
+
+    res.json({
+      order: updatedOrder,
+      message: 'Livreur assigné à l’EXPRESS avec succès.',
+    });
+  } catch (error) {
+    console.error('Erreur assignation EXPRESS:', error);
+    res.status(500).json({ error: 'Erreur lors de l’assignation de l’EXPRESS.' });
+  }
+});
+
+// POST /api/orders/:id/express/expedier - Livreur confirme l'envoi du colis vers l'agence
+router.post('/:id/express/expedier', authorize('LIVREUR', 'ADMIN'), [
+  body('codeExpress').notEmpty().withMessage('Le code / référence d’envoi est obligatoire'),
+  body('note').optional({ nullable: true }).isString().withMessage('Note invalide'),
+  body('photoRecuExpress').optional({ nullable: true }).isString().withMessage('Photo invalide'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { id } = req.params;
+    const { codeExpress, note, photoRecuExpress } = req.body;
+
+    const order = await prisma.order.findUnique({ where: { id: parseInt(id) } });
+    if (!order) return res.status(404).json({ error: 'Commande non trouvée.' });
+
+    if (order.deliveryType !== 'EXPRESS' || order.status !== 'EXPRESS') {
+      return res.status(400).json({ error: 'Cette commande n’est pas un EXPRESS en attente d’envoi.' });
+    }
+
+    if (req.user.role === 'LIVREUR') {
+      if (!order.delivererId || order.delivererId !== req.user.id) {
+        return res.status(403).json({ error: 'Cet EXPRESS ne vous est pas assigné.' });
+      }
+    }
+
+    const updatedOrder = await prisma.order.update({
+      where: { id: parseInt(id) },
+      data: {
+        status: 'EXPRESS_ENVOYE',
+        expressEnvoyeAt: new Date(),
+        expressEnvoyePar: req.user.id,
+        codeExpress: String(codeExpress).trim(),
+        noteLivreur: note ? String(note).trim() : order.noteLivreur,
+        photoRecuExpress: photoRecuExpress ? String(photoRecuExpress).trim() : null,
+        photoRecuExpressUploadedAt: photoRecuExpress ? new Date() : null,
+      },
+    });
+
+    await prisma.statusHistory.create({
+      data: {
+        orderId: parseInt(id),
+        oldStatus: order.status,
+        newStatus: 'EXPRESS_ENVOYE',
+        changedBy: req.user.id,
+        comment: `EXPRESS envoyé vers agence ${order.agenceRetrait || ''} | Code: ${String(codeExpress).trim()}`.trim(),
+      },
+    });
+
+    res.json({
+      order: updatedOrder,
+      message: 'EXPRESS marqué comme envoyé vers l’agence.',
+    });
+  } catch (error) {
+    console.error('Erreur expédier EXPRESS:', error);
+    res.status(500).json({ error: 'Erreur lors de la confirmation d’envoi EXPRESS.' });
   }
 });
 

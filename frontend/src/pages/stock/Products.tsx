@@ -314,7 +314,7 @@ export default function Products() {
                       />
                     </div>
                     
-                    {/* Stock EXPRESS réservé - Toujours afficher */}
+                    {/* Stock EXPRESS - Toujours afficher */}
                     <div className={`mt-2 p-2 rounded-md ${
                       (product.stockExpress || 0) > 0 
                         ? 'bg-amber-50 border border-amber-200' 
@@ -324,7 +324,7 @@ export default function Products() {
                         <span className={`text-xs flex items-center gap-1 ${
                           (product.stockExpress || 0) > 0 ? 'text-amber-700' : 'text-gray-600'
                         }`}>
-                          ⚡ Stock EXPRESS (réservé)
+                          ⚡ Stock EXPRESS (en transit / agence)
                         </span>
                         <span className={`text-sm font-bold ${
                           (product.stockExpress || 0) > 0 ? 'text-amber-900' : 'text-gray-500'
@@ -336,7 +336,7 @@ export default function Products() {
                         (product.stockExpress || 0) > 0 ? 'text-amber-600' : 'text-gray-500'
                       }`}>
                         {(product.stockExpress || 0) > 0 
-                          ? 'Clients ayant payé 10%, en attente retrait'
+                          ? 'Colis EXPRESS payés (10%) et envoyés / en cours vers agence'
                           : 'Aucune réservation EXPRESS'
                         }
                       </p>

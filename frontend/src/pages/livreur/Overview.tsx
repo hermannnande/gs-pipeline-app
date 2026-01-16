@@ -12,6 +12,9 @@ export default function Overview() {
   const [selectedExpedition, setSelectedExpedition] = useState<any>(null);
   const [codeExpedition, setCodeExpedition] = useState('');
   const [photoRecuExpedition, setPhotoRecuExpedition] = useState('');
+  const [selectedExpress, setSelectedExpress] = useState<any>(null);
+  const [codeExpress, setCodeExpress] = useState('');
+  const [photoRecuExpress, setPhotoRecuExpress] = useState('');
 
   const { data: stats } = useQuery({
     queryKey: ['livreur-my-stats'],
@@ -37,6 +40,19 @@ export default function Overview() {
     refetchInterval: 30000,
   });
 
+  // Récupérer les EXPRESS assignés au livreur (à envoyer vers agence)
+  const { data: expressToShipData } = useQuery({
+    queryKey: ['livreur-express-to-ship'],
+    queryFn: () => ordersApi.getAll({
+      delivererId: user?.id,
+      deliveryType: 'EXPRESS',
+      status: 'EXPRESS',
+      limit: 100
+    }),
+    enabled: !!user?.id,
+    refetchInterval: 30000,
+  });
+
   // Mutation pour marquer une expédition comme livrée
   const deliverExpeditionMutation = useMutation({
     mutationFn: ({ orderId, codeExpedition, photoRecuExpedition }: { orderId: number; codeExpedition: string; photoRecuExpedition: string }) => 
@@ -54,8 +70,28 @@ export default function Overview() {
     },
   });
 
+  const expedierExpressMutation = useMutation({
+    mutationFn: ({ orderId, codeExpress, photoRecuExpress }: { orderId: number; codeExpress: string; photoRecuExpress: string }) =>
+      ordersApi.expedierExpress(orderId, codeExpress, undefined, photoRecuExpress),
+    onSuccess: () => {
+      toast.success('✅ EXPRESS marqué comme envoyé vers l’agence');
+      queryClient.invalidateQueries({ queryKey: ['livreur-express-to-ship'] });
+      queryClient.invalidateQueries({ queryKey: ['livreur-my-stats'] });
+      setSelectedExpress(null);
+      setCodeExpress('');
+      setPhotoRecuExpress('');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Erreur lors de la confirmation');
+    },
+  });
+
   const handleDeliverExpedition = (order: any) => {
     setSelectedExpedition(order);
+  };
+
+  const handleShipExpress = (order: any) => {
+    setSelectedExpress(order);
   };
 
   const confirmDeliverExpedition = () => {
@@ -68,6 +104,18 @@ export default function Overview() {
       orderId: selectedExpedition.id,
       codeExpedition: codeExpedition.trim(),
       photoRecuExpedition: photoRecuExpedition.trim()
+    });
+  };
+
+  const confirmShipExpress = () => {
+    if (!codeExpress.trim()) {
+      toast.error('Veuillez saisir le code / référence d’envoi');
+      return;
+    }
+    expedierExpressMutation.mutate({
+      orderId: selectedExpress.id,
+      codeExpress: codeExpress.trim(),
+      photoRecuExpress: photoRecuExpress.trim()
     });
   };
 
@@ -90,7 +138,9 @@ export default function Overview() {
     // Convertir en base64
     const reader = new FileReader();
     reader.onloadend = () => {
-      setPhotoRecuExpedition(reader.result as string);
+      // Réutilisé pour expédition et express selon le modal ouvert
+      if (selectedExpress) setPhotoRecuExpress(reader.result as string);
+      else setPhotoRecuExpedition(reader.result as string);
     };
     reader.readAsDataURL(file);
   };
@@ -130,6 +180,7 @@ export default function Overview() {
     o.status === 'LIVREE' && o.deliveryType !== 'EXPEDITION'
   ) || [];
   const expeditions = expeditionsData?.orders || [];
+  const expressToShip = expressToShipData?.orders || [];
 
   return (
     <div className="space-y-6">
@@ -222,6 +273,61 @@ export default function Overview() {
                   disabled={deliverExpeditionMutation.isPending}
                 >
                   {deliverExpeditionMutation.isPending ? 'Confirmation...' : '✓ Marquer comme expédié/livré'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* EXPRESS assignés (à envoyer vers agence) */}
+      {expressToShip.length > 0 && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Truck className="text-amber-600" size={20} />
+              Mes EXPRESS à envoyer en agence
+            </h3>
+            <span className="badge bg-amber-100 text-amber-800">
+              {expressToShip.length} express
+            </span>
+          </div>
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+            <p className="text-sm text-amber-800">
+              <strong>Process :</strong> le client a payé 10%. Vous envoyez le colis à l’agence de retrait.
+              Ensuite l’équipe marque “Arrivé en agence”.
+            </p>
+          </div>
+          <div className="space-y-3">
+            {expressToShip.map((order: any) => (
+              <div key={order.id} className="p-4 bg-amber-50 border border-amber-300 rounded-lg">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900 text-lg">{order.clientNom}</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      📍 Ville: {order.clientVille} • Agence: <strong>{order.agenceRetrait || '—'}</strong>
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      📞 {order.clientTelephone}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-gray-500 mb-1">Réf: {order.orderReference}</p>
+                    <p className="font-bold text-amber-700">{formatCurrency(order.montant)}</p>
+                    <p className="text-xs text-amber-700">Acompte 10% ✓</p>
+                  </div>
+                </div>
+                <div className="border-t border-amber-200 pt-2 mt-2">
+                  <p className="text-sm text-gray-700">
+                    <strong>Produit :</strong> {order.produitNom} (x{order.quantite})
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleShipExpress(order)}
+                  className="btn btn-primary w-full mt-3"
+                  disabled={expedierExpressMutation.isPending}
+                >
+                  {expedierExpressMutation.isPending ? 'Confirmation...' : '🚚 Marquer comme envoyé en agence'}
                 </button>
               </div>
             ))}
@@ -375,6 +481,101 @@ export default function Overview() {
               >
                 {deliverExpeditionMutation.isPending ? 'Confirmation...' : '✓ Confirmer'}
               </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmation envoi EXPRESS */}
+      {selectedExpress && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] flex flex-col">
+            <div className="p-6 border-b border-gray-200">
+              <h3 className="text-lg font-bold text-gray-900">
+                ⚡ Confirmer l’envoi EXPRESS vers agence
+              </h3>
+            </div>
+
+            <div className="p-6 overflow-y-auto flex-1">
+              <div className="space-y-3 mb-6">
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600">Client</p>
+                  <p className="font-medium text-gray-900">{selectedExpress.clientNom}</p>
+                  <p className="text-sm text-gray-600">{selectedExpress.clientTelephone}</p>
+                </div>
+
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600">Agence</p>
+                  <p className="font-medium text-gray-900">{selectedExpress.agenceRetrait || '—'}</p>
+                </div>
+
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600">Produit</p>
+                  <p className="font-medium text-gray-900">{selectedExpress.produitNom} (x{selectedExpress.quantite})</p>
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Code / Référence d’envoi <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={codeExpress}
+                  onChange={(e) => setCodeExpress(e.target.value)}
+                  placeholder="Ex: TRK789, RCPT123..."
+                  className="input w-full"
+                  autoFocus
+                  required
+                />
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Photo du reçu (optionnel)
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handlePhotoChange}
+                  className="input w-full"
+                />
+
+                {photoRecuExpress && (
+                  <div className="mt-3 p-2 bg-gray-50 rounded-lg">
+                    <p className="text-xs text-gray-600 mb-2">Prévisualisation :</p>
+                    <img
+                      src={photoRecuExpress}
+                      alt="Reçu EXPRESS"
+                      className="w-full h-32 object-contain rounded border border-gray-200"
+                    />
+                    <p className="text-xs text-green-600 mt-1 text-center">✓ Photo ajoutée</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setSelectedExpress(null);
+                    setCodeExpress('');
+                    setPhotoRecuExpress('');
+                  }}
+                  className="btn btn-secondary flex-1"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={confirmShipExpress}
+                  disabled={!codeExpress.trim() || expedierExpressMutation.isPending}
+                  className="btn btn-primary flex-1"
+                >
+                  {expedierExpressMutation.isPending ? 'Confirmation...' : '✓ Confirmer'}
+                </button>
               </div>
             </div>
           </div>

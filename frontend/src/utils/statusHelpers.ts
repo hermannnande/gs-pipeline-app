@@ -14,6 +14,7 @@ export const getStatusLabel = (status: OrderStatus): string => {
     RETOURNE: 'Retourné',
     EXPEDITION: 'Expédition',
     EXPRESS: 'Express',
+    EXPRESS_ENVOYE: 'Express envoyé',
     EXPRESS_ARRIVE: 'Express arrivé',
     EXPRESS_LIVRE: 'Express livré',
   };
@@ -34,6 +35,7 @@ export const getStatusColor = (status: OrderStatus): string => {
     RETOURNE: 'bg-orange-100 text-orange-800',
     EXPEDITION: 'bg-blue-500 text-white',
     EXPRESS: 'bg-amber-500 text-white',
+    EXPRESS_ENVOYE: 'bg-indigo-500 text-white',
     EXPRESS_ARRIVE: 'bg-cyan-500 text-white',
     EXPRESS_LIVRE: 'bg-teal-100 text-teal-800',
   };
