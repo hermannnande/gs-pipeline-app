@@ -537,6 +537,7 @@ model Attendance {
   latitudeArrivee   Float
   longitudeArrivee  Float
   distanceArrivee   Float    // Distance en mètres
+  storeLocationId   Int?     // Bureau utilisé pour le pointage
 
   // Géolocalisation départ
   latitudeDepart    Float?
@@ -562,7 +563,7 @@ model Attendance {
   @@map("attendances")
 }
 
-// Configuration du magasin/bureau
+// Configuration du magasin/bureau (support multi-sites)
 model StoreConfig {
   id              Int       @id @default(autoincrement())
   nom             String    @default("Magasin Principal")
@@ -581,6 +582,9 @@ model StoreConfig {
 
   // Tolérance de retard (en minutes)
   toleranceRetard Int       @default(15)
+
+  // Actif/Inactif (pour désactiver temporairement un bureau)
+  actif           Boolean   @default(true)
 
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

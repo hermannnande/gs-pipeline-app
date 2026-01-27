@@ -58,36 +58,57 @@ router.post('/mark-arrival',
         });
       }
 
-      // Récupérer la config du magasin
-      const storeConfig = await prisma.storeConfig.findFirst();
+      // Récupérer TOUTES les configurations de bureaux actifs
+      const storeConfigs = await prisma.storeConfig.findMany({
+        where: { actif: true },
+        orderBy: { id: 'asc' }
+      });
       
-      if (!storeConfig) {
+      if (!storeConfigs || storeConfigs.length === 0) {
         return res.status(500).json({ 
-          error: 'Configuration du magasin non trouvée. Veuillez contacter l\'administrateur.' 
+          error: 'Aucune configuration de bureau trouvée. Veuillez contacter l\'administrateur.' 
         });
       }
 
-      // Calculer la distance
-      const distance = calculateDistance(
-        latitude, 
-        longitude, 
-        storeConfig.latitude, 
-        storeConfig.longitude
-      );
+      // Calculer la distance pour CHAQUE bureau et trouver le plus proche
+      let closestStore = null;
+      let minDistance = Infinity;
+      
+      for (const store of storeConfigs) {
+        const dist = calculateDistance(
+          latitude, 
+          longitude, 
+          store.latitude, 
+          store.longitude
+        );
+        
+        if (dist < minDistance) {
+          minDistance = dist;
+          closestStore = store;
+        }
+      }
 
-      // Vérifier si dans la zone
+      const distance = minDistance;
+      const storeConfig = closestStore;
+
+      // Vérifier si dans la zone (du bureau le plus proche)
       const validee = distance <= storeConfig.rayonTolerance;
       
       // ❌ REJETER si hors zone
       if (!validee) {
-        console.log(`❌ Pointage REFUSÉ - ${req.user.prenom} ${req.user.nom} - Distance: ${Math.round(distance)}m (max ${storeConfig.rayonTolerance}m)`);
+        console.log(`❌ Pointage REFUSÉ - ${req.user.prenom} ${req.user.nom} - Distance: ${Math.round(distance)}m du bureau "${storeConfig.nom}" (max ${storeConfig.rayonTolerance}m)`);
+        
+        // Afficher tous les bureaux disponibles
+        const bureauList = storeConfigs.map(s => `${s.nom} (${s.rayonTolerance}m)`).join(', ');
         
         return res.status(400).json({
           success: false,
           error: 'HORS_ZONE',
-          message: `❌ Vous êtes ABSENT - Vous êtes à ${Math.round(distance)}m du magasin. Vous devez être à moins de ${storeConfig.rayonTolerance}m pour pointer.`,
+          message: `❌ Vous êtes ABSENT - Vous êtes à ${Math.round(distance)}m du bureau le plus proche "${storeConfig.nom}". Vous devez être à moins de ${storeConfig.rayonTolerance}m de l'un des bureaux : ${bureauList}`,
           distance: Math.round(distance),
           rayonTolerance: storeConfig.rayonTolerance,
+          closestStore: storeConfig.nom,
+          availableStores: storeConfigs.map(s => s.nom),
           validee: false,
           status: 'ABSENT'
         });
@@ -116,6 +137,7 @@ router.post('/mark-arrival',
           latitudeArrivee: latitude,
           longitudeArrivee: longitude,
           distanceArrivee: distance,
+          storeLocationId: storeConfig.id,  // Bureau utilisé
           validee,
           validation,
           ipAddress: req.ip || req.headers['x-forwarded-for'] || 'unknown',
@@ -133,16 +155,17 @@ router.post('/mark-arrival',
         }
       });
 
-      console.log(`✅ Pointage VALIDE - ${req.user.prenom} ${req.user.nom} - Distance: ${Math.round(distance)}m - ${validation}`);
+      console.log(`✅ Pointage VALIDE - ${req.user.prenom} ${req.user.nom} - Bureau: ${storeConfig.nom} - Distance: ${Math.round(distance)}m - ${validation}`);
 
       res.json({
         success: true,
         message: validation === 'RETARD'
-          ? `⚠️ Présence enregistrée avec retard à ${new Date().toLocaleTimeString('fr-FR')}`
-          : `✅ Présence enregistrée à ${new Date().toLocaleTimeString('fr-FR')}`,
+          ? `⚠️ Présence enregistrée avec retard à ${new Date().toLocaleTimeString('fr-FR')} (Bureau: ${storeConfig.nom})`
+          : `✅ Présence enregistrée à ${new Date().toLocaleTimeString('fr-FR')} (Bureau: ${storeConfig.nom})`,
         attendance,
         distance: Math.round(distance),
         rayonTolerance: storeConfig.rayonTolerance,
+        storeName: storeConfig.nom,
         validee: true,
         validation,
         status: 'PRESENT'
@@ -197,16 +220,30 @@ router.post('/mark-departure',
         });
       }
 
-      // Récupérer la config
-      const storeConfig = await prisma.storeConfig.findFirst();
+      // Récupérer toutes les configs de bureaux actifs
+      const storeConfigs = await prisma.storeConfig.findMany({
+        where: { actif: true }
+      });
       
-      // Calculer la distance
-      const distance = calculateDistance(
-        latitude, 
-        longitude, 
-        storeConfig.latitude, 
-        storeConfig.longitude
-      );
+      // Trouver le bureau le plus proche
+      let closestStore = null;
+      let minDistance = Infinity;
+      
+      for (const store of storeConfigs) {
+        const dist = calculateDistance(
+          latitude, 
+          longitude, 
+          store.latitude, 
+          store.longitude
+        );
+        
+        if (dist < minDistance) {
+          minDistance = dist;
+          closestStore = store;
+        }
+      }
+      
+      const distance = minDistance;
 
       // Mettre à jour
       const updatedAttendance = await prisma.attendance.update({
