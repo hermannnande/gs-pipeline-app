@@ -24,7 +24,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 // 📍 Marquer l'arrivée
 router.post('/mark-arrival',
   authenticate,
-  authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STOCK', 'APPELANT'),
+  authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STOCK', 'APPELANT', 'LIVREUR'),
   [
     body('latitude').isFloat().withMessage('Latitude requise'),
     body('longitude').isFloat().withMessage('Longitude requise'),
@@ -181,7 +181,7 @@ router.post('/mark-arrival',
 // 📍 Marquer le départ
 router.post('/mark-departure',
   authenticate,
-  authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STOCK', 'APPELANT'),
+  authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STOCK', 'APPELANT', 'LIVREUR'),
   [
     body('latitude').isFloat().withMessage('Latitude requise'),
     body('longitude').isFloat().withMessage('Longitude requise'),

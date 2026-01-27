@@ -5,6 +5,7 @@ import { statsApi, deliveryApi, ordersApi } from '@/lib/api';
 import { formatCurrency } from '@/utils/statusHelpers';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
+import AttendanceButton from '@/components/attendance/AttendanceButton';
 
 export default function Overview() {
   const { user } = useAuthStore();
@@ -188,6 +189,9 @@ export default function Overview() {
         <h1 className="text-3xl font-bold text-gray-900">Dashboard Livreur</h1>
         <p className="text-gray-600 mt-1">Vos livraisons du jour</p>
       </div>
+
+      {/* Pointage GPS */}
+      <AttendanceButton />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {cards.map((card) => {
