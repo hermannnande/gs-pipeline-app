@@ -72,6 +72,9 @@ model User {
   messageReads             MessageRead[]             @relation("MessageReads")
   messageReactions         MessageReaction[]         @relation("MessageReactions")
 
+  // Géolocalisation / Pointage
+  attendances              Attendance[]
+
   @@map("users")
 }
 
@@ -514,4 +517,73 @@ model TourneeStock {
   @@index([colisRemisConfirme])
   @@index([colisRetourConfirme])
   @@map("tournees_stock")
+}
+
+// ========================================
+// SYSTÈME DE GÉOLOCALISATION ET POINTAGE
+// ========================================
+
+// Pointages des employés (arrivée/départ)
+model Attendance {
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  user            User      @relation(fields: [userId], references: [id])
+
+  date            DateTime  @default(now()) @db.Date
+  heureArrivee    DateTime  @default(now())
+  heureDepart     DateTime?
+
+  // Géolocalisation arrivée
+  latitudeArrivee   Float
+  longitudeArrivee  Float
+  distanceArrivee   Float    // Distance en mètres
+
+  // Géolocalisation départ
+  latitudeDepart    Float?
+  longitudeDepart   Float?
+  distanceDepart    Float?
+
+  // Validation
+  validee         Boolean   @default(false)
+  validation      String?   // "VALIDE", "HORS_ZONE", "RETARD"
+
+  // Métadonnées
+  note            String?
+  ipAddress       String?
+  deviceInfo      String?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([userId, date])  // Un seul pointage par jour
+  @@index([userId])
+  @@index([date])
+  @@index([validee])
+  @@map("attendances")
+}
+
+// Configuration du magasin/bureau
+model StoreConfig {
+  id              Int       @id @default(autoincrement())
+  nom             String    @default("Magasin Principal")
+  adresse         String?
+
+  // Coordonnées GPS
+  latitude        Float     // Ex: 5.353021
+  longitude       Float     // Ex: -3.870182
+  
+  // Rayon de tolérance (en mètres)
+  rayonTolerance  Int       @default(50)
+
+  // Horaires de travail
+  heureOuverture  String    @default("08:00")
+  heureFermeture  String    @default("18:00")
+
+  // Tolérance de retard (en minutes)
+  toleranceRetard Int       @default(15)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("store_config")
 }
