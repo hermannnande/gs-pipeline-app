@@ -33,8 +33,10 @@ router.post('/fix-order-amounts', authorize('ADMIN'), async (req, res) => {
     const changes = [];
 
     for (const order of orders) {
-      const unitPrice = Number(order.product?.prixUnitaire) || 0;
-      const expected = computeTotalAmount(unitPrice, order.quantite || 1);
+      // ⚠️ IMPORTANT:
+      // On passe le PRODUIT COMPLET à computeTotalAmount pour appliquer
+      // les prix par paliers (prix2Unites / prix3Unites) si définis.
+      const expected = computeTotalAmount(order.product, order.quantite || 1);
 
       if (Number(order.montant) !== Number(expected)) {
         const newMontantRestant =
@@ -66,7 +68,7 @@ router.post('/fix-order-amounts', authorize('ADMIN'), async (req, res) => {
               oldStatus: order.status,
               newStatus: order.status,
               changedBy: req.user.id,
-              comment: `Correction automatique montant (packs quantité): ${order.montant} → ${expected} (qte=${order.quantite}, prixU=${unitPrice})`,
+              comment: `Correction automatique montant (tarification par paliers): ${order.montant} → ${expected} (qte=${order.quantite}, prixU=${Number(order.product?.prixUnitaire) || 0})`,
             },
           });
         }
