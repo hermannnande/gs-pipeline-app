@@ -22,6 +22,8 @@ export default function Products() {
     nom: '',
     description: '',
     prix: '',
+    prix2: '',
+    prix3: '',
     stockActuel: '',
     stockAlerte: '10'
   });
@@ -30,6 +32,8 @@ export default function Products() {
     nom: '',
     description: '',
     prix: '',
+    prix2: '',
+    prix3: '',
     stockAlerte: ''
   });
   const queryClient = useQueryClient();
@@ -55,6 +59,8 @@ export default function Products() {
         nom: productData.nom,
         description: productData.description || '',
         prixUnitaire: parseFloat(productData.prix),
+        prix2Unites: productData.prix2 ? parseFloat(productData.prix2) : null,
+        prix3Unites: productData.prix3 ? parseFloat(productData.prix3) : null,
         stockActuel: parseInt(productData.stockActuel),
         stockAlerte: parseInt(productData.stockAlerte)
       });
@@ -68,6 +74,8 @@ export default function Products() {
         nom: '',
         description: '',
         prix: '',
+        prix2: '',
+        prix3: '',
         stockActuel: '',
         stockAlerte: '10'
       });
@@ -108,6 +116,8 @@ export default function Products() {
         nom: productData.nom,
         description: productData.description || '',
         prixUnitaire: parseFloat(productData.prix),
+        prix2Unites: productData.prix2 ? parseFloat(productData.prix2) : null,
+        prix3Unites: productData.prix3 ? parseFloat(productData.prix3) : null,
         stockAlerte: parseInt(productData.stockAlerte)
       });
       return data;
@@ -174,6 +184,8 @@ export default function Products() {
       nom: product.nom,
       description: product.description || '',
       prix: product.prixUnitaire.toString(),
+      prix2: product.prix2Unites ? product.prix2Unites.toString() : '',
+      prix3: product.prix3Unites ? product.prix3Unites.toString() : '',
       stockAlerte: product.stockAlerte.toString()
     });
     setShowEditProductModal(true);
@@ -187,6 +199,16 @@ export default function Products() {
   const handleUpdateProduct = () => {
     if (!editProduct.code || !editProduct.nom || !editProduct.prix || !editProduct.stockAlerte) {
       toast.error('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+
+    // Validation des prix (prix2 et prix3 doivent être <= au prix correspondant)
+    if (editProduct.prix2 && parseFloat(editProduct.prix2) > parseFloat(editProduct.prix) * 2) {
+      toast.error('Le prix pour 2 unités semble trop élevé');
+      return;
+    }
+    if (editProduct.prix3 && parseFloat(editProduct.prix3) > parseFloat(editProduct.prix) * 3) {
+      toast.error('Le prix pour 3 unités semble trop élevé');
       return;
     }
 
@@ -394,11 +416,29 @@ export default function Products() {
                     </p>
                   )}
 
-                  <div className="flex items-center justify-between pt-3 border-t">
-                    <span className="text-sm text-gray-600">Prix unitaire</span>
-                    <span className="font-medium text-gray-900">
-                      {formatCurrency(product.prixUnitaire)}
-                    </span>
+                  <div className="pt-3 border-t space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">💰 Prix x1</span>
+                      <span className="font-medium text-gray-900">
+                        {formatCurrency(product.prixUnitaire)}
+                      </span>
+                    </div>
+                    {(product as any).prix2Unites && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-green-600">💰 Prix x2</span>
+                        <span className="font-medium text-green-600">
+                          {formatCurrency((product as any).prix2Unites)}
+                        </span>
+                      </div>
+                    )}
+                    {(product as any).prix3Unites && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-blue-600">💰 Prix x3</span>
+                        <span className="font-medium text-blue-600">
+                          {formatCurrency((product as any).prix3Unites)}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -582,20 +622,62 @@ export default function Products() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Prix unitaire (XOF) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  value={editProduct.prix}
-                  onChange={(e) => setEditProduct({ ...editProduct, prix: e.target.value })}
-                  className="input"
-                  placeholder="Ex: 45000"
-                  required
-                  min="0"
-                  step="100"
-                />
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-semibold text-sm text-blue-900 mb-3">💰 Tarification par paliers</h3>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Prix pour 1 unité (XOF) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={editProduct.prix}
+                      onChange={(e) => setEditProduct({ ...editProduct, prix: e.target.value })}
+                      className="input"
+                      placeholder="Ex: 9900"
+                      required
+                      min="0"
+                      step="100"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Prix pour 2 unités (XOF) - Optionnel
+                    </label>
+                    <input
+                      type="number"
+                      value={editProduct.prix2}
+                      onChange={(e) => setEditProduct({ ...editProduct, prix2: e.target.value })}
+                      className="input"
+                      placeholder="Ex: 18000 (réduction)"
+                      min="0"
+                      step="100"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Prix total si le client commande 2 unités. Laissez vide pour utiliser prix x 2
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Prix pour 3 unités (XOF) - Optionnel
+                    </label>
+                    <input
+                      type="number"
+                      value={editProduct.prix3}
+                      onChange={(e) => setEditProduct({ ...editProduct, prix3: e.target.value })}
+                      className="input"
+                      placeholder="Ex: 25000 (réduction)"
+                      min="0"
+                      step="100"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Prix total si le client commande 3 unités ou plus. Laissez vide pour utiliser prix x 3
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div>
@@ -747,20 +829,62 @@ export default function Products() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Prix unitaire (XOF) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  value={newProduct.prix}
-                  onChange={(e) => setNewProduct({ ...newProduct, prix: e.target.value })}
-                  className="input"
-                  placeholder="Ex: 45000"
-                  required
-                  min="0"
-                  step="100"
-                />
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-semibold text-sm text-blue-900 mb-3">💰 Tarification par paliers</h3>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Prix pour 1 unité (XOF) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={newProduct.prix}
+                      onChange={(e) => setNewProduct({ ...newProduct, prix: e.target.value })}
+                      className="input"
+                      placeholder="Ex: 9900"
+                      required
+                      min="0"
+                      step="100"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Prix pour 2 unités (XOF) - Optionnel
+                    </label>
+                    <input
+                      type="number"
+                      value={newProduct.prix2}
+                      onChange={(e) => setNewProduct({ ...newProduct, prix2: e.target.value })}
+                      className="input"
+                      placeholder="Ex: 18000 (réduction)"
+                      min="0"
+                      step="100"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Prix total si le client commande 2 unités. Laissez vide pour utiliser prix x 2
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Prix pour 3 unités (XOF) - Optionnel
+                    </label>
+                    <input
+                      type="number"
+                      value={newProduct.prix3}
+                      onChange={(e) => setNewProduct({ ...newProduct, prix3: e.target.value })}
+                      className="input"
+                      placeholder="Ex: 25000 (réduction)"
+                      min="0"
+                      step="100"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Prix total si le client commande 3 unités ou plus. Laissez vide pour utiliser prix x 3
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div>
@@ -813,6 +937,8 @@ export default function Products() {
                     nom: '',
                     description: '',
                     prix: '',
+                    prix2: '',
+                    prix3: '',
                     stockActuel: '',
                     stockAlerte: '10'
                   });

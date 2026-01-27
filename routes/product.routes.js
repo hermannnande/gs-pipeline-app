@@ -195,7 +195,7 @@ router.post('/', authorize('ADMIN'), [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { code, nom, description, prixUnitaire, stockActuel, stockAlerte } = req.body;
+    const { code, nom, description, prixUnitaire, prix2Unites, prix3Unites, stockActuel, stockAlerte } = req.body;
 
     // Vérifier si le code existe déjà
     const existing = await prisma.product.findUnique({
@@ -212,6 +212,8 @@ router.post('/', authorize('ADMIN'), [
         nom,
         description,
         prixUnitaire: parseFloat(prixUnitaire),
+        prix2Unites: prix2Unites ? parseFloat(prix2Unites) : null,
+        prix3Unites: prix3Unites ? parseFloat(prix3Unites) : null,
         stockActuel: parseInt(stockActuel) || 0,
         stockAlerte: parseInt(stockAlerte) || 10
       }
@@ -243,13 +245,15 @@ router.post('/', authorize('ADMIN'), [
 router.put('/:id', authorize('ADMIN'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { nom, description, prixUnitaire, stockAlerte, actif, code } = req.body;
+    const { nom, description, prixUnitaire, prix2Unites, prix3Unites, stockAlerte, actif, code } = req.body;
 
     const updateData = {};
     if (code) updateData.code = code;
     if (nom) updateData.nom = nom;
     if (description !== undefined) updateData.description = description;
     if (prixUnitaire) updateData.prixUnitaire = parseFloat(prixUnitaire);
+    if (prix2Unites !== undefined) updateData.prix2Unites = prix2Unites ? parseFloat(prix2Unites) : null;
+    if (prix3Unites !== undefined) updateData.prix3Unites = prix3Unites ? parseFloat(prix3Unites) : null;
     if (stockAlerte !== undefined) updateData.stockAlerte = parseInt(stockAlerte);
     if (actif !== undefined) updateData.actif = actif;
 

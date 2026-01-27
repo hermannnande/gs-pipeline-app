@@ -4,6 +4,7 @@ import { Phone, Search, RefreshCw, Truck, Zap, Clock, Calendar, Edit2, Trash2, C
 import toast from 'react-hot-toast';
 import { ordersApi, rdvApi } from '@/lib/api';
 import { formatCurrency, formatDateTime, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
+import { calculatePriceByQuantity, getPriceLabel } from '@/utils/pricingHelpers';
 import type { Order } from '@/types';
 import ExpeditionModal from '@/components/modals/ExpeditionModal';
 import ExpressModal from '@/components/modals/ExpressModal';
@@ -484,6 +485,11 @@ export default function Orders() {
               <p className="text-sm">
                 <strong>Montant:</strong> {formatCurrency(selectedOrder.montant)}
               </p>
+              {(selectedOrder as any).product && selectedOrder.quantite > 1 && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {getPriceLabel((selectedOrder as any).product, selectedOrder.quantite)}
+                </p>
+              )}
             </div>
 
             <div className="mb-6">
@@ -707,10 +713,33 @@ export default function Orders() {
                 className="input"
                 autoFocus
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Prix unitaire: {formatCurrency(selectedOrder.montant / selectedOrder.quantite)}
-              </p>
-              {newQuantite !== selectedOrder.quantite && (
+              {(selectedOrder as any).product && (
+                <>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Prix unitaire: {formatCurrency((selectedOrder as any).product.prixUnitaire)}
+                  </p>
+                  {(selectedOrder as any).product.prix2Unites && (
+                    <p className="text-xs text-green-600">
+                      Prix x2: {formatCurrency((selectedOrder as any).product.prix2Unites)}
+                    </p>
+                  )}
+                  {(selectedOrder as any).product.prix3Unites && (
+                    <p className="text-xs text-blue-600">
+                      Prix x3+: {formatCurrency((selectedOrder as any).product.prix3Unites)}
+                    </p>
+                  )}
+                  {newQuantite !== selectedOrder.quantite && (
+                    <p className="text-sm text-primary-600 mt-2 font-semibold">
+                      → Nouveau montant: {formatCurrency(calculatePriceByQuantity((selectedOrder as any).product, newQuantite))}
+                      <br />
+                      <span className="text-xs font-normal">
+                        {getPriceLabel((selectedOrder as any).product, newQuantite)}
+                      </span>
+                    </p>
+                  )}
+                </>
+              )}
+              {!(selectedOrder as any).product && newQuantite !== selectedOrder.quantite && (
                 <p className="text-sm text-primary-600 mt-2 font-semibold">
                   → Nouveau montant: {formatCurrency((selectedOrder.montant / selectedOrder.quantite) * newQuantite)}
                 </p>

@@ -64,6 +64,16 @@ router.get('/', async (req, res) => {
           },
           deliverer: {
             select: { id: true, nom: true, prenom: true }
+          },
+          product: {
+            select: { 
+              id: true, 
+              code: true, 
+              nom: true, 
+              prixUnitaire: true,
+              prix2Unites: true,
+              prix3Unites: true
+            }
           }
         },
         orderBy: [
@@ -847,14 +857,17 @@ router.put('/:id/quantite', authorize('ADMIN', 'GESTIONNAIRE'), [
     }
 
     // Calculer le nouveau montant:
-    // - Si le produit est lié -> utiliser le prix unitaire officiel + packs quantité
+    // - Si le produit est lié -> utiliser le produit complet (avec prix par paliers)
     // - Sinon -> fallback sur l'ancien calcul (proportionnel)
-    const prixUnitaire =
-      order.product?.prixUnitaire != null
-        ? Number(order.product.prixUnitaire)
-        : (order.quantite ? Number(order.montant) / Number(order.quantite) : Number(order.montant));
-
-    const nouveauMontant = computeTotalAmount(prixUnitaire, quantite);
+    let nouveauMontant;
+    if (order.product) {
+      // Passer le produit complet pour prendre en compte prix2Unites et prix3Unites
+      nouveauMontant = computeTotalAmount(order.product, quantite);
+    } else {
+      // Fallback : calcul proportionnel si pas de produit lié
+      const prixUnitaire = order.quantite ? Number(order.montant) / Number(order.quantite) : Number(order.montant);
+      nouveauMontant = computeTotalAmount(prixUnitaire, quantite);
+    }
 
     // Pas de vérification de stock - on autorise les modifications même avec stock insuffisant
     // Le stock sera renouvelé plus tard

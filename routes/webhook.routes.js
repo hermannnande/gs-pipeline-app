@@ -86,10 +86,9 @@ router.post('/make', verifyApiKey, [
       });
     }
 
-    // 2. Calculer les montants
+    // 2. Calculer les montants (avec prix par paliers si définis)
     const orderQuantity = parseInt(quantity) || 1;
-    const unitPrice = product.prixUnitaire;
-    const totalAmount = computeTotalAmount(unitPrice, orderQuantity);
+    const totalAmount = computeTotalAmount(product, orderQuantity);
 
     // 3. Créer la commande dans la base de données
     const order = await prisma.order.create({
@@ -185,6 +184,8 @@ router.get('/products', verifyApiKey, async (req, res) => {
         code: true,
         nom: true,
         prixUnitaire: true,
+        prix2Unites: true,
+        prix3Unites: true,
         stockActuel: true
       },
       orderBy: {
@@ -197,7 +198,9 @@ router.get('/products', verifyApiKey, async (req, res) => {
       products: products.map(p => ({
         product_key: p.code,
         name: p.nom,
-        price: p.prixUnitaire,
+        price_1: p.prixUnitaire,
+        price_2: p.prix2Unites || (p.prixUnitaire * 2),
+        price_3: p.prix3Unites || (p.prixUnitaire * 3),
         stock: p.stockActuel
       })),
       count: products.length

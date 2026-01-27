@@ -1,29 +1,61 @@
 /**
  * Règles de tarification par quantité.
  *
- * Objectif: appliquer automatiquement les prix "pack" (ex: 9900 x2 = 16.900).
- *
- * IMPORTANT:
- * - Par défaut, on applique les packs uniquement pour les produits dont le prix unitaire
- *   correspond exactement à la clé (ex: 9900).
- * - Si une quantité n'est pas définie dans les packs, on retombe sur prixUnitaire * quantite.
- *
- * TODO (si vous confirmez la grille complète):
- * - Ajouter q=4,5,... ou permettre une configuration par produit/code.
+ * Système de tarification à 3 niveaux :
+ * 1. Si le produit a des prix personnalisés (prix2Unites, prix3Unites), les utiliser
+ * 2. Sinon, utiliser les packs par défaut (PACK_PRICING_BY_UNIT_PRICE)
+ * 3. Sinon, utiliser prixUnitaire * quantite
  */
 
 const PACK_PRICING_BY_UNIT_PRICE = {
-  // Produits à 9.900 FCFA
+  // Produits à 9.900 FCFA (pour rétrocompatibilité)
   9900: {
     2: 16900,
     3: 24900,
   },
 };
 
-export function computeTotalAmount(prixUnitaire, quantite) {
-  const unit = Number(prixUnitaire) || 0;
+/**
+ * Calcule le montant total selon la quantité et les paliers de prix du produit
+ * @param {number|object} prixUnitaireOrProduct - Prix unitaire OU objet produit complet
+ * @param {number} quantite - Quantité commandée
+ * @returns {number} Montant total
+ */
+export function computeTotalAmount(prixUnitaireOrProduct, quantite) {
   const qty = Math.max(1, Number(quantite) || 1);
-
+  
+  // Si c'est un objet produit avec des prix personnalisés
+  if (typeof prixUnitaireOrProduct === 'object' && prixUnitaireOrProduct !== null) {
+    const product = prixUnitaireOrProduct;
+    const unit = Number(product.prixUnitaire) || 0;
+    
+    // Quantité = 1 : toujours le prix unitaire
+    if (qty === 1) {
+      return unit;
+    }
+    
+    // Quantité = 2 : utiliser prix2Unites si défini
+    if (qty === 2 && product.prix2Unites != null) {
+      return Number(product.prix2Unites);
+    }
+    
+    // Quantité >= 3 : utiliser prix3Unites si défini
+    if (qty >= 3 && product.prix3Unites != null) {
+      return Number(product.prix3Unites);
+    }
+    
+    // Fallback sur les packs par défaut
+    const pack = PACK_PRICING_BY_UNIT_PRICE?.[unit]?.[qty];
+    if (typeof pack === 'number') return pack;
+    
+    // Fallback final : prix unitaire * quantité
+    return unit * qty;
+  }
+  
+  // Si c'est juste un prix unitaire (mode ancien)
+  const unit = Number(prixUnitaireOrProduct) || 0;
+  
+  // Vérifier les packs par défaut
   const pack = PACK_PRICING_BY_UNIT_PRICE?.[unit]?.[qty];
   if (typeof pack === 'number') return pack;
 
