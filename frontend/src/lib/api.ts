@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AuthResponse, LoginCredentials, User, Order, DeliveryList } from '@/types';
+import type { AuthResponse, LoginCredentials, User, Order } from '@/types';
 
 const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const API_URL = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
@@ -230,6 +230,17 @@ export const statsApi = {
 
   getDeliverers: async (params?: any) => {
     const { data } = await api.get('/stats/deliverers', { params });
+    return data;
+  },
+
+  getPrepaidExpeditions: async (params?: {
+    startDate?: string;
+    endDate?: string;
+    search?: string;
+    callerId?: number;
+    onlyExpedied?: boolean;
+  }) => {
+    const { data } = await api.get('/stats/prepaid-expeditions', { params });
     return data;
   },
 

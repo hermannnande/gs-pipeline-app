@@ -203,6 +203,70 @@ router.get('/callers', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
   }
 });
 
+// GET /api/stats/prepaid-expeditions - Détail des commandes EXPEDITION payées en avance (Admin/Gestionnaire)
+router.get('/prepaid-expeditions', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
+  try {
+    const { startDate, endDate, search, callerId, onlyExpedied } = req.query;
+
+    const where = {
+      deliveryType: 'EXPEDITION',
+      callerId: { not: null },
+      validatedAt: { not: null },
+      enAttentePaiement: false,
+      montantPaye: { not: null }
+    };
+
+    if (callerId) {
+      where.callerId = parseInt(callerId);
+    }
+
+    if (startDate || endDate) {
+      where.validatedAt = {};
+      if (startDate) where.validatedAt.gte = new Date(`${startDate}T00:00:00.000Z`);
+      if (endDate) where.validatedAt.lte = new Date(`${endDate}T23:59:59.999Z`);
+    }
+
+    if (onlyExpedied === 'true') {
+      where.expedieAt = { not: null };
+    }
+
+    if (search) {
+      where.OR = [
+        { clientNom: { contains: search, mode: 'insensitive' } },
+        { clientTelephone: { contains: search } },
+        { clientVille: { contains: search, mode: 'insensitive' } },
+        { clientCommune: { contains: search, mode: 'insensitive' } },
+        { clientAdresse: { contains: search, mode: 'insensitive' } },
+        { produitNom: { contains: search, mode: 'insensitive' } },
+        { orderReference: { contains: search, mode: 'insensitive' } },
+        { referencePayment: { contains: search, mode: 'insensitive' } },
+        { codeExpedition: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+
+    const [total, orders] = await Promise.all([
+      prisma.order.count({ where }),
+      prisma.order.findMany({
+        where,
+        include: {
+          caller: { select: { id: true, nom: true, prenom: true } },
+          deliverer: { select: { id: true, nom: true, prenom: true } }
+        },
+        orderBy: [
+          { validatedAt: 'desc' },
+          { createdAt: 'desc' }
+        ],
+        take: 500
+      })
+    ]);
+
+    res.json({ total, orders });
+  } catch (error) {
+    console.error('Erreur récupération prepaid expeditions:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des expéditions payées.' });
+  }
+});
+
 // GET /api/stats/deliverers - Statistiques des livreurs (Admin/Gestionnaire)
 router.get('/deliverers', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
   try {
