@@ -21,10 +21,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install PostgreSQL client
+      - name: Prepare PostgreSQL client (v17)
+        shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
+          set -euo pipefail
+          docker --version
+          docker pull postgres:17
 
       - name: Validate inputs / files
         shell: bash
@@ -61,9 +63,18 @@ jobs:
           echo "Supabase (sanitized): $(sanitize_url "${SUPABASE_DATABASE_URL}")"
 
           echo "Testing Railway..."
-          psql "${RAILWAY_DATABASE_URL}" -v ON_ERROR_STOP=1 -c "SELECT 1;"
+          docker run --rm \
+            -e RAILWAY_DATABASE_URL \
+            -v "$PWD:/work" -w /work \
+            postgres:17 \
+            bash -lc 'psql "$RAILWAY_DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT 1;"'
           echo "Testing Supabase..."
-          PGSSLMODE=require psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -c "SELECT 1;"
+          docker run --rm \
+            -e SUPABASE_DATABASE_URL \
+            -e PGSSLMODE=require \
+            -v "$PWD:/work" -w /work \
+            postgres:17 \
+            bash -lc 'psql "$SUPABASE_DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT 1;"'
 
       - name: Migrate (schema + data)
         if: ${{ inputs.mode == 'migrate' }}
@@ -73,30 +84,40 @@ jobs:
           SUPABASE_DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
         run: |
           set -euo pipefail
-          echo "1) Nettoyage Supabase..."
-          PGSSLMODE=require psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -f "supabase-cleanup.sql"
+          docker run --rm \
+            -e RAILWAY_DATABASE_URL \
+            -e SUPABASE_DATABASE_URL \
+            -e PGSSLMODE=require \
+            -e PGOPTIONS='-c statement_timeout=0' \
+            -v "$PWD:/work" -w /work \
+            postgres:17 \
+            bash -lc '
+              set -euo pipefail
 
-          echo "2) Création schéma Supabase..."
-          PGSSLMODE=require psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -f "supabase-schema-utf8.sql"
+              echo "1) Nettoyage Supabase..."
+              psql "$SUPABASE_DATABASE_URL" -v ON_ERROR_STOP=1 -f "supabase-cleanup.sql"
 
-          echo "3) Préparation import (FK deferrable + truncate/restart)..."
-          PGSSLMODE=require psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -f "backups/prepare-import-supabase.sql"
+              echo "2) Création schéma Supabase..."
+              psql "$SUPABASE_DATABASE_URL" -v ON_ERROR_STOP=1 -f "supabase-schema-utf8.sql"
 
-          echo "4) Copie des données Railway -> Supabase (pg_dump | psql)..."
-          # Important: on utilise INSERTs (compatible pooler) et on évite les éléments de schéma.
-          # --column-inserts facilite la compatibilité si l'ordre des colonnes change.
-          # --data-only évite les CREATE TYPE/TABLE.
-          pg_dump "${RAILWAY_DATABASE_URL}" \
-            --data-only \
-            --inserts \
-            --column-inserts \
-            --no-owner \
-            --no-privileges \
-            --verbose \
-          | PGSSLMODE=require psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -1
+              echo "3) Préparation import (FK deferrable + truncate/restart)..."
+              psql "$SUPABASE_DATABASE_URL" -v ON_ERROR_STOP=1 -f "backups/prepare-import-supabase.sql"
 
-          echo "5) Recalage des séquences (SERIAL)..."
-          PGSSLMODE=require psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -f "supabase-reset-sequences.sql"
+              echo "4) Copie des données Railway -> Supabase (pg_dump | psql)..."
+              pg_dump "$RAILWAY_DATABASE_URL" \
+                --data-only \
+                --inserts \
+                --column-inserts \
+                --no-owner \
+                --no-privileges \
+                --verbose \
+              | psql "$SUPABASE_DATABASE_URL" -v ON_ERROR_STOP=1 -1
+
+              echo "5) Recalage des séquences (SERIAL)..."
+              psql "$SUPABASE_DATABASE_URL" -v ON_ERROR_STOP=1 -f "supabase-reset-sequences.sql"
+
+              echo "✅ Migration terminée."
+            '
 
           echo "✅ Migration terminée."
 
@@ -112,7 +133,15 @@ jobs:
             exit 1
           fi
           echo "Comptages rapides:"
-          PGSSLMODE=require psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -c "SELECT 'users' as table, COUNT(*)::bigint as count FROM public.users;"
-          PGSSLMODE=require psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -c "SELECT 'products' as table, COUNT(*)::bigint as count FROM public.products;"
-          PGSSLMODE=require psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -c "SELECT 'orders' as table, COUNT(*)::bigint as count FROM public.orders;"
+          docker run --rm \
+            -e SUPABASE_DATABASE_URL \
+            -e PGSSLMODE=require \
+            -v "$PWD:/work" -w /work \
+            postgres:17 \
+            bash -lc '
+              set -euo pipefail
+              psql "$SUPABASE_DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT '\''users'\'' as table, COUNT(*)::bigint as count FROM public.users;"
+              psql "$SUPABASE_DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT '\''products'\'' as table, COUNT(*)::bigint as count FROM public.products;"
+              psql "$SUPABASE_DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT '\''orders'\'' as table, COUNT(*)::bigint as count FROM public.orders;"
+            '
 

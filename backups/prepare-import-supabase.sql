@@ -46,5 +46,7 @@ BEGIN
 END $$;
 
 -- Les contraintes seront vérifiées au COMMIT (dans la transaction unique)
-SET CONSTRAINTS ALL DEFERRED;
+-- Note: cette commande nécessite d'être dans une transaction.
+-- Elle n'est pas indispensable si les contraintes sont INITIALLY DEFERRED.
+-- SET CONSTRAINTS ALL DEFERRED;
 
