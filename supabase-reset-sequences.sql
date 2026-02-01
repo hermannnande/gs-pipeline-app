@@ -23,8 +23,13 @@ BEGIN
     EXECUTE format('SELECT COALESCE(MAX(%I), 0) FROM %I.%I', r.column_name, r.schema_name, r.table_name)
       INTO max_id;
 
-    -- setval(seq, max, is_called=true) pour que nextval() rende max+1
-    EXECUTE format('SELECT setval(%L, %s, true)', format('%I.%I', r.schema_name, r.sequence_name), max_id);
+    -- Si la table est vide (max_id = 0), on met la séquence à 1 (non appelée)
+    -- Sinon on met la séquence à max_id (appelée) pour que nextval() rende max_id+1
+    IF max_id = 0 THEN
+      EXECUTE format('SELECT setval(%L, 1, false)', format('%I.%I', r.schema_name, r.sequence_name));
+    ELSE
+      EXECUTE format('SELECT setval(%L, %s, true)', format('%I.%I', r.schema_name, r.sequence_name), max_id);
+    END IF;
   END LOOP;
 END $$;
 
