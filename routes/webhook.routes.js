@@ -170,11 +170,28 @@ router.post('/make', verifyApiKey, [
     });
 
   } catch (error) {
-    console.error('❌ Erreur création commande depuis Make:', error);
-    res.status(500).json({ 
+    const err = error instanceof Error ? error : new Error(String(error));
+    // Prisma fournit souvent un code (ex: P2002, P2003, etc.)
+    const prismaCode = error?.code;
+    const prismaMeta = error?.meta;
+
+    console.error('❌ Erreur création commande depuis Make:', {
+      name: err.name,
+      message: err.message,
+      code: prismaCode,
+      meta: prismaMeta,
+    });
+
+    // Réponse de debug minimale (endpoint protégé par X-API-KEY)
+    res.status(500).json({
       success: false,
       error: 'Erreur serveur lors de la création de la commande',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      debug: {
+        name: err.name,
+        code: prismaCode || null,
+        message: (err.message || '').slice(0, 240),
+        meta: prismaMeta || null,
+      },
     });
   }
 });
