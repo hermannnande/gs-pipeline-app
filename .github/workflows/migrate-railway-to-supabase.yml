@@ -33,6 +33,7 @@ jobs:
           test -f "supabase-cleanup.sql"
           test -f "supabase-schema-utf8.sql"
           test -f "backups/prepare-import-supabase.sql"
+          test -f "supabase-reset-sequences.sql"
           echo "OK: fichiers SQL présents"
 
       - name: Verify connections (quick)
@@ -53,7 +54,7 @@ jobs:
           echo "Testing Railway..."
           psql "${RAILWAY_DATABASE_URL}" -v ON_ERROR_STOP=1 -c "SELECT 1;"
           echo "Testing Supabase..."
-          psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -c "SELECT 1;"
+          PGSSLMODE=require psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -c "SELECT 1;"
 
       - name: Migrate (schema + data)
         if: ${{ inputs.mode == 'migrate' }}
@@ -64,13 +65,13 @@ jobs:
         run: |
           set -euo pipefail
           echo "1) Nettoyage Supabase..."
-          psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -f "supabase-cleanup.sql"
+          PGSSLMODE=require psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -f "supabase-cleanup.sql"
 
           echo "2) Création schéma Supabase..."
-          psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -f "supabase-schema-utf8.sql"
+          PGSSLMODE=require psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -f "supabase-schema-utf8.sql"
 
           echo "3) Préparation import (FK deferrable + truncate/restart)..."
-          psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -f "backups/prepare-import-supabase.sql"
+          PGSSLMODE=require psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -f "backups/prepare-import-supabase.sql"
 
           echo "4) Copie des données Railway -> Supabase (pg_dump | psql)..."
           # Important: on utilise INSERTs (compatible pooler) et on évite les éléments de schéma.
@@ -83,7 +84,10 @@ jobs:
             --no-owner \
             --no-privileges \
             --verbose \
-          | psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -1
+          | PGSSLMODE=require psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -1
+
+          echo "5) Recalage des séquences (SERIAL)..."
+          PGSSLMODE=require psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -f "supabase-reset-sequences.sql"
 
           echo "✅ Migration terminée."
 
@@ -99,7 +103,7 @@ jobs:
             exit 1
           fi
           echo "Comptages rapides:"
-          psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -c "SELECT 'users' as table, COUNT(*)::bigint as count FROM public.users;"
-          psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -c "SELECT 'products' as table, COUNT(*)::bigint as count FROM public.products;"
-          psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -c "SELECT 'orders' as table, COUNT(*)::bigint as count FROM public.orders;"
+          PGSSLMODE=require psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -c "SELECT 'users' as table, COUNT(*)::bigint as count FROM public.users;"
+          PGSSLMODE=require psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -c "SELECT 'products' as table, COUNT(*)::bigint as count FROM public.products;"
+          PGSSLMODE=require psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -c "SELECT 'orders' as table, COUNT(*)::bigint as count FROM public.orders;"
 
