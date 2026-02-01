@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Dependencies
 node_modules/
 frontend/node_modules/
@@ -13,36 +12,11 @@ frontend/dist/
 frontend/build/
 
 # Logs
-=======
-# Logs
 logs
->>>>>>> f8b8a43c5862e2115860b3a918d7520a8fb6a234
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-<<<<<<< HEAD
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Prisma
-prisma/.env
-
-# Temporary files
-*.tmp
-.cache/
-
-# Railway
-.railway/
-=======
 lerna-debug.log*
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
@@ -176,4 +150,37 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
->>>>>>> f8b8a43c5862e2115860b3a918d7520a8fb6a234
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Prisma
+prisma/.env
+
+# Temporary files
+*.tmp
+.cache/
+
+# Railway
+.railway/
+
+# PostgreSQL Portable (dev uniquement - NE PAS COMMITER)
+postgresql-portable/
+postgresql-portable.zip
+*.zip
+
+# Scripts de migration Supabase (temporaires)
+MIGRER-MAINTENANT.ps1
+migration-supabase-cli.ps1
+migrer-vers-supabase.ps1
+GUIDE_MIGRATION_RAILWAY_VERS_SUPABASE.md
+
+# Pack géolocalisation (documentation source)
+PACK_GEOLOCALISATION/
