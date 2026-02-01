@@ -22,7 +22,8 @@ import {
   Bell,
   Calendar,
   MessageSquare,
-  PieChart
+  PieChart,
+  MapPin
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import NotificationCenter from './NotificationCenter';
@@ -61,6 +62,7 @@ export default function Layout({ children }: LayoutProps) {
           { icon: Zap, label: 'Expéditions & EXPRESS', path: '/admin/expeditions' },
           { icon: Bell, label: 'EXPRESS - En agence', path: '/admin/express-agence' },
           { icon: Users, label: 'Utilisateurs', path: '/admin/users' },
+          { icon: MapPin, label: 'Présences (GPS)', path: '/admin/presences' },
           { icon: Truck, label: 'Gestion des Tournées', path: '/admin/tournees' },
           { icon: TrendingUp, label: 'Listes de livraison', path: '/admin/deliveries' },
           { icon: Package, label: 'Gestion des Produits', path: '/admin/products' },

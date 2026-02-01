@@ -19,6 +19,7 @@ import RDV from '../appelant/RDV';
 import Chat from '../common/Chat';
 import ChatSupervision from './ChatSupervision';
 import ProductAnalytics from './ProductAnalytics';
+import Attendances from './Attendances';
 
 export default function AdminDashboard() {
   return (
@@ -38,6 +39,7 @@ export default function AdminDashboard() {
       <Route path="movements" element={<Movements />} />
       <Route path="database" element={<ClientDatabase />} />
       <Route path="supervision" element={<CallerSupervision />} />
+      <Route path="presences" element={<Attendances />} />
       <Route path="stats" element={<Stats />} />
       <Route path="accounting" element={<Accounting />} />
       <Route path="chat" element={<Chat />} />
