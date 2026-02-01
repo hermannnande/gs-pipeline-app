@@ -108,6 +108,7 @@ jobs:
                 --data-only \
                 --inserts \
                 --column-inserts \
+                --exclude-table=public._prisma_migrations \
                 --no-owner \
                 --no-privileges \
                 --verbose \
