@@ -37,10 +37,7 @@ export default function Orders() {
 
   const { data: ordersData, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['appelant-orders', currentPage],
-    // Important: si on récupère "toutes" les commandes puis on filtre côté frontend,
-    // les NOUVELLE peuvent ne jamais apparaître dans les 200 premières (tri global).
-    // On filtre donc côté API: status=A_APPELER => (NOUVELLE + A_APPELER) pour rôle APPELANT.
-    queryFn: () => ordersApi.getAll({ status: 'A_APPELER', page: currentPage, limit: ITEMS_PER_PAGE }),
+    queryFn: () => ordersApi.getAll({ page: currentPage, limit: ITEMS_PER_PAGE }),
     refetchInterval: 30000, // Actualisation automatique toutes les 30 secondes
     refetchIntervalInBackground: true, // Continue même si l'onglet n'est pas actif
   });

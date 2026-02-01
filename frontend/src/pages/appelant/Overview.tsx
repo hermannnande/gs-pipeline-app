@@ -11,9 +11,9 @@ export default function Overview() {
 
   const { data: ordersData } = useQuery({
     queryKey: ['appelant-pending-orders'],
+    // Important: les nouvelles commandes arrivent en général en NOUVELLE (via webhook Make).
     // "À appeler" = NOUVELLE + A_APPELER (hors RDV programmés).
-    // On filtre côté API pour éviter que les commandes à appeler soient noyées dans le tri global.
-    queryFn: () => ordersApi.getAll({ status: 'A_APPELER', limit: 50 }),
+    queryFn: () => ordersApi.getAll({ limit: 200 }),
   });
 
   const pendingToCallOrders =
