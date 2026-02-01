@@ -83,7 +83,7 @@ jobs:
             --no-owner \
             --no-privileges \
             --verbose \
-          | psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1
+          | psql "${SUPABASE_DATABASE_URL}" -v ON_ERROR_STOP=1 -1
 
           echo "✅ Migration terminée."
 
