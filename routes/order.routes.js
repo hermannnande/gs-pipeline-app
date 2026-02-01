@@ -39,7 +39,15 @@ router.get('/', async (req, res) => {
     }
 
     // Filtres supplémentaires
-    if (status) where.status = status;
+    // Compat: pour un APPELANT, "À appeler" = NOUVELLE + A_APPELER.
+    // (Sinon, un filtre status=A_APPELER masque toutes les NOUVELLE.)
+    if (status) {
+      if (user.role === 'APPELANT' && status === 'A_APPELER') {
+        where.status = { in: ['NOUVELLE', 'A_APPELER'] };
+      } else {
+        where.status = status;
+      }
+    }
     if (ville) where.clientVille = { contains: ville, mode: 'insensitive' };
     if (produit) where.produitNom = { contains: produit, mode: 'insensitive' };
     if (callerId) where.callerId = parseInt(callerId);

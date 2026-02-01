@@ -11,8 +11,19 @@ export default function Overview() {
 
   const { data: ordersData } = useQuery({
     queryKey: ['appelant-pending-orders'],
-    queryFn: () => ordersApi.getAll({ status: 'A_APPELER', limit: 10 }),
+    // Important: les nouvelles commandes arrivent en général en NOUVELLE (via webhook Make).
+    // "À appeler" = NOUVELLE + A_APPELER (hors RDV programmés).
+    queryFn: () => ordersApi.getAll({ limit: 200 }),
   });
+
+  const pendingToCallOrders =
+    ordersData?.orders
+      ?.filter((order: any) => {
+        const isToCall = ['NOUVELLE', 'A_APPELER'].includes(order.status);
+        const hasRdv = Boolean(order.rdvProgramme);
+        return isToCall && !hasRdv;
+      })
+      .slice(0, 5) || [];
 
   const cards = [
     {
@@ -106,7 +117,7 @@ export default function Overview() {
           </a>
         </div>
         <div className="space-y-3">
-          {ordersData?.orders?.slice(0, 5).map((order: any) => (
+          {pendingToCallOrders.map((order: any) => (
             <div key={order.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
               <div>
                 <p className="font-medium text-gray-900">{order.clientNom}</p>

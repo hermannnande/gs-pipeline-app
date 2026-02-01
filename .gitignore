@@ -182,5 +182,10 @@ migration-supabase-cli.ps1
 migrer-vers-supabase.ps1
 GUIDE_MIGRATION_RAILWAY_VERS_SUPABASE.md
 
+# Import Railway → Supabase (contient des secrets : NE PAS COMMITER)
+import-railway-vers-supabase-*.sql
+verifier-schema-railway.sql
+copie-railway-supabase.sql
+
 # Pack géolocalisation (documentation source)
 PACK_GEOLOCALISATION/
