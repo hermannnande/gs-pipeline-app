@@ -8,17 +8,14 @@ import {
   TrendingUp,
   Package,
   Users as UsersIcon,
-  Calendar,
   Download,
   FileText,
   LayoutDashboard,
   ArrowUpRight,
-  ArrowDownRight
 } from 'lucide-react';
 import { statsApi, ordersApi, usersApi } from '@/lib/api';
-import { formatCurrency, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
-import { StatCard, PageHeader, LoadingState, EmptyState } from '@/components/UIComponents';
-import AttendanceButton from '@/components/attendance/AttendanceButton';
+import { formatCurrency, getStatusLabel } from '@/utils/statusHelpers';
+import { StatCard, PageHeader, LoadingState } from '@/components/UIComponents';
 
 export default function Overview() {
   const [period, setPeriod] = useState<'today' | 'week' | 'month' | 'all'>('month');
@@ -96,9 +93,6 @@ export default function Overview() {
           </div>
         }
       />
-
-      {/* Pointage GPS */}
-      <AttendanceButton />
 
       {/* Cartes statistiques */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
