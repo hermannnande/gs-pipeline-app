@@ -4,6 +4,7 @@ import { authenticate, authorize } from '../middlewares/auth.middleware.js';
 import { notifyOrderValidated, notifyOrderDelivered, notifyOrderRefused } from '../utils/notifications.js';
 import { computeTotalAmount } from '../utils/pricing.js';
 import { prisma } from '../utils/prisma.js';
+import { randomUUID } from 'crypto';
 
 const router = express.Router();
 
@@ -156,6 +157,9 @@ router.post('/', authorize('ADMIN', 'GESTIONNAIRE'), [
     }
 
     const orderData = {
+      // IMPORTANT: générer la référence côté serveur pour éviter toute dépendance
+      // à un DEFAULT SQL (pgcrypto/gen_random_uuid) côté Supabase.
+      orderReference: randomUUID(),
       clientNom: req.body.clientNom,
       clientTelephone: req.body.clientTelephone,
       clientVille: req.body.clientVille,

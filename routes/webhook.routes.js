@@ -3,6 +3,7 @@ import { prisma } from '../utils/prisma.js';
 import { body, validationResult } from 'express-validator';
 import { notifyNewOrder } from '../utils/notifications.js';
 import { computeTotalAmount } from '../utils/pricing.js';
+import { randomUUID } from 'crypto';
 
 const router = express.Router();
 
@@ -102,6 +103,9 @@ router.post('/make', verifyApiKey, [
     // 3. Créer la commande dans la base de données
     const order = await prisma.order.create({
       data: {
+        // IMPORTANT: générer la référence côté serveur pour éviter toute dépendance
+        // à un DEFAULT SQL (pgcrypto/gen_random_uuid) côté Supabase.
+        orderReference: randomUUID(),
         // Informations client
         clientNom: customer_name,
         clientTelephone: customer_phone,
