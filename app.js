@@ -18,7 +18,7 @@ import maintenanceRoutes from './routes/maintenance.routes.js';
 import chatRoutes from './routes/chat.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
 import attendanceRoutes from './routes/attendance.routes.js';
-import { prismaInitError } from './utils/prisma.js';
+import { prisma, prismaInitError } from './utils/prisma.js';
 
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config();
@@ -94,9 +94,31 @@ export function createApp() {
   });
 
   app.get('/api/health', async (req, res) => {
+    let dbStatus = {
+      configured: !!process.env.DATABASE_URL,
+      reachable: false,
+      error: null,
+    };
+
+    if (dbStatus.configured && !prismaInitError) {
+      try {
+        // Test minimal de connexion DB via Prisma
+        // (permet d’identifier mauvais user/password/host/pooler)
+        await prisma.$queryRaw`SELECT 1`;
+        dbStatus.reachable = true;
+      } catch (e) {
+        const err = e instanceof Error ? e : new Error(String(e));
+        dbStatus.error = {
+          name: e?.name || err.name,
+          code: e?.code,
+          message: (e?.message || err.message || '').slice(0, 220),
+        };
+      }
+    }
+
     res.json({
       status: 'healthy',
-      database: process.env.DATABASE_URL ? 'configured' : 'not configured',
+      database: dbStatus,
       prisma: prismaInitError ? `error: ${prismaInitError.message}` : 'ok',
       supabase: {
         url: process.env.SUPABASE_URL ? 'configured' : 'not configured',

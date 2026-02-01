@@ -95,7 +95,17 @@ router.post('/login', [
     });
   } catch (error) {
     console.error('Erreur login:', error);
-    res.status(500).json({ error: 'Erreur lors de la connexion.', code: 'LOGIN_INTERNAL_ERROR' });
+    const err = error instanceof Error ? error : new Error(String(error));
+    // Prisma remonte souvent des codes (P1000/P1001/...)
+    const prismaCode = error?.code;
+    res.status(500).json({
+      error: 'Erreur lors de la connexion.',
+      code: prismaCode || 'LOGIN_INTERNAL_ERROR',
+      details: {
+        name: error?.name || err.name,
+        message: (error?.message || err.message || '').slice(0, 220),
+      },
+    });
   }
 });
 
