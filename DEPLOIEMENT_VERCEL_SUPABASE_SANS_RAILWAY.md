@@ -37,8 +37,9 @@ Dans Vercel → Project → Settings → Environment Variables:
   - **Transaction pooler Supabase** (port 6543)
   - Username format: `postgres.<projectRef>`
   - Ajoute `?pgbouncer=true` (recommandé en pooler)
+  - Ajoute aussi `sslmode=require` (TLS)
   - Exemple:
-    - `postgresql://postgres.<projectRef>:<PASSWORD>@aws-1-eu-west-2.pooler.supabase.com:6543/postgres?pgbouncer=true`
+    - `postgresql://postgres.<projectRef>:<PASSWORD>@aws-1-eu-west-2.pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require`
 - `DIRECT_URL`
   - **Direct connection Supabase** (port 5432) pour Prisma migrate (si besoin)
   - Exemple:
