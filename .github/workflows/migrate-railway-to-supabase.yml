@@ -51,6 +51,15 @@ jobs:
             echo "Missing secret: SUPABASE_DATABASE_URL" >&2
             exit 1
           fi
+
+          # Afficher les URLs sans fuite de mot de passe (debug)
+          sanitize_url() {
+            # remplace password par ***
+            echo "$1" | sed -E 's#(postgres(ql)?://[^:]+):[^@]+@#\1:***@#'
+          }
+          echo "Railway (sanitized): $(sanitize_url "${RAILWAY_DATABASE_URL}")"
+          echo "Supabase (sanitized): $(sanitize_url "${SUPABASE_DATABASE_URL}")"
+
           echo "Testing Railway..."
           psql "${RAILWAY_DATABASE_URL}" -v ON_ERROR_STOP=1 -c "SELECT 1;"
           echo "Testing Supabase..."
