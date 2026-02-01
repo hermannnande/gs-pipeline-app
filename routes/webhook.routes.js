@@ -9,6 +9,7 @@ const router = express.Router();
 // Middleware pour vérifier l'API Key (sécurité webhook Make)
 const verifyApiKey = (req, res, next) => {
   const apiKey = req.headers['x-api-key'];
+  const expectedApiKey = process.env.MAKE_WEBHOOK_API_KEY || process.env.WEBHOOK_API_KEY;
   
   if (!apiKey) {
     return res.status(401).json({ 
@@ -17,8 +18,17 @@ const verifyApiKey = (req, res, next) => {
     });
   }
   
-  if (apiKey !== process.env.MAKE_WEBHOOK_API_KEY) {
-    console.error('❌ Tentative d\'accès avec API Key invalide:', apiKey);
+  if (!expectedApiKey) {
+    return res.status(500).json({
+      success: false,
+      error: 'Webhook non configuré (MAKE_WEBHOOK_API_KEY manquante côté serveur).'
+    });
+  }
+
+  if (apiKey !== expectedApiKey) {
+    // Ne jamais loguer la clé complète
+    const masked = String(apiKey).length > 6 ? `${String(apiKey).slice(0, 3)}***${String(apiKey).slice(-2)}` : '***';
+    console.error('❌ Tentative d\'accès avec API Key invalide (masquée):', masked);
     return res.status(401).json({ 
       success: false,
       error: 'API Key invalide.' 
