@@ -16,6 +16,7 @@ import {
 import { statsApi, ordersApi, usersApi } from '@/lib/api';
 import { formatCurrency, getStatusLabel } from '@/utils/statusHelpers';
 import { StatCard, PageHeader, LoadingState } from '@/components/UIComponents';
+import AttendanceButton from '@/components/attendance/AttendanceButton';
 
 export default function Overview() {
   const [period, setPeriod] = useState<'today' | 'week' | 'month' | 'all'>('month');
@@ -93,6 +94,9 @@ export default function Overview() {
           </div>
         }
       />
+
+      {/* Pointage GPS */}
+      <AttendanceButton />
 
       {/* Cartes statistiques */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

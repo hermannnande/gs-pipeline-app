@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Package, TrendingUp, AlertTriangle, Truck } from 'lucide-react';
 import { api } from '@/lib/api';
+import AttendanceButton from '@/components/attendance/AttendanceButton';
 
 export default function Overview() {
   const { data: stockStats } = useQuery({
@@ -66,6 +67,9 @@ export default function Overview() {
         <h1 className="text-3xl font-bold text-gray-900">Gestion du Stock</h1>
         <p className="text-gray-600 mt-1">Vue d'ensemble de votre inventaire et tournées</p>
       </div>
+
+      {/* Pointage GPS */}
+      <AttendanceButton />
 
       {/* Cartes statistiques */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

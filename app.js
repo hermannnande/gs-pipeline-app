@@ -17,6 +17,7 @@ import rdvRoutes from './routes/rdv.routes.js';
 import maintenanceRoutes from './routes/maintenance.routes.js';
 import chatRoutes from './routes/chat.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
+import attendanceRoutes from './routes/attendance.routes.js';
 import { prisma, prismaInitError } from './utils/prisma.js';
 
 if (process.env.NODE_ENV !== 'production') {
@@ -81,6 +82,7 @@ export function createApp() {
   app.use('/api/maintenance', maintenanceRoutes);
   app.use('/api/chat', chatRoutes);
   app.use('/api/analytics', analyticsRoutes);
+  app.use('/api/attendance', attendanceRoutes);
 
   // Routes de test
   app.get('/', (req, res) => {

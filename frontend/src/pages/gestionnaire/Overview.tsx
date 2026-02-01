@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Package, CheckCircle, Truck, Clock } from 'lucide-react';
 import { statsApi, deliveryApi } from '@/lib/api';
+import AttendanceButton from '@/components/attendance/AttendanceButton';
 
 export default function Overview() {
   const { data: statsData } = useQuery({
@@ -52,6 +53,9 @@ export default function Overview() {
         <h1 className="text-3xl font-bold text-gray-900">Dashboard Gestionnaire</h1>
         <p className="text-gray-600 mt-1">Gestion des livraisons et assignations</p>
       </div>
+
+      {/* Pointage GPS */}
+      <AttendanceButton />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {cards.map((card) => {
