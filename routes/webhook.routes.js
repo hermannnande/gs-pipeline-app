@@ -7,6 +7,30 @@ import { randomUUID } from 'crypto';
 
 const router = express.Router();
 
+async function repairOrdersIdSequenceIfNeeded(error) {
+  // Cas classique après import SQL : la séquence orders.id n'est plus alignée avec MAX(id)
+  // => nextval() retourne un id déjà existant => P2002 sur (id)
+  if (error?.code !== 'P2002') return false;
+  const target = error?.meta?.target;
+  const isIdTarget =
+    Array.isArray(target) ? target.includes('id') : String(target || '').includes('id');
+  if (!isIdTarget) return false;
+
+  try {
+    await prisma.$executeRawUnsafe(`
+      SELECT setval(
+        pg_get_serial_sequence('orders', 'id'),
+        COALESCE((SELECT MAX(id) FROM orders), 0)
+      );
+    `);
+    console.log('🔧 Séquence orders.id réparée (setval sur MAX(id)).');
+    return true;
+  } catch (e) {
+    console.error('❌ Échec réparation séquence orders.id:', e);
+    return false;
+  }
+}
+
 // Middleware pour vérifier l'API Key (sécurité webhook Make)
 const verifyApiKey = (req, res, next) => {
   const apiKey = req.headers['x-api-key'];
@@ -101,36 +125,47 @@ router.post('/make', verifyApiKey, [
     const totalAmount = computeTotalAmount(product, orderQuantity);
 
     // 3. Créer la commande dans la base de données
-    const order = await prisma.order.create({
-      data: {
-        // IMPORTANT: générer la référence côté serveur pour éviter toute dépendance
-        // à un DEFAULT SQL (pgcrypto/gen_random_uuid) côté Supabase.
-        orderReference: randomUUID(),
-        // Informations client
-        clientNom: customer_name,
-        clientTelephone: customer_phone,
-        clientVille: customer_city,
-        clientCommune: customer_commune || null,
-        clientAdresse: customer_address || null,
-        
-        // Informations produit
-        produitNom: product.nom,
-        produitPage: page_url || source || null,
-        productId: product.id,
-        quantite: orderQuantity,
-        montant: totalAmount,
-        
-        // Informations marketing
-        sourceCampagne: campaign_source || campaign_name || make_scenario_name || 'Make',
-        sourcePage: source || page_url || make_scenario_name || null,
-        
-        // Statut initial
-        status: 'NOUVELLE'
-      },
-      include: {
-        product: true
-      }
-    });
+    const createData = {
+      // IMPORTANT: générer la référence côté serveur pour éviter toute dépendance
+      // à un DEFAULT SQL (pgcrypto/gen_random_uuid) côté Supabase.
+      orderReference: randomUUID(),
+      // Informations client
+      clientNom: customer_name,
+      clientTelephone: customer_phone,
+      clientVille: customer_city,
+      clientCommune: customer_commune || null,
+      clientAdresse: customer_address || null,
+
+      // Informations produit
+      produitNom: product.nom,
+      produitPage: page_url || source || null,
+      productId: product.id,
+      quantite: orderQuantity,
+      montant: totalAmount,
+
+      // Informations marketing
+      sourceCampagne: campaign_source || campaign_name || make_scenario_name || 'Make',
+      sourcePage: source || page_url || make_scenario_name || null,
+
+      // Statut initial
+      status: 'NOUVELLE',
+    };
+
+    let order;
+    try {
+      order = await prisma.order.create({
+        data: createData,
+        include: { product: true },
+      });
+    } catch (e) {
+      const repaired = await repairOrdersIdSequenceIfNeeded(e);
+      if (!repaired) throw e;
+      // Retenter une fois après réparation séquence
+      order = await prisma.order.create({
+        data: createData,
+        include: { product: true },
+      });
+    }
 
     // 4. Log pour traçabilité
     console.log('✅ Commande créée depuis Make:', {

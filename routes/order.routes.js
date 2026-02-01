@@ -8,6 +8,28 @@ import { randomUUID } from 'crypto';
 
 const router = express.Router();
 
+async function repairOrdersIdSequenceIfNeeded(error) {
+  if (error?.code !== 'P2002') return false;
+  const target = error?.meta?.target;
+  const isIdTarget =
+    Array.isArray(target) ? target.includes('id') : String(target || '').includes('id');
+  if (!isIdTarget) return false;
+
+  try {
+    await prisma.$executeRawUnsafe(`
+      SELECT setval(
+        pg_get_serial_sequence('orders', 'id'),
+        COALESCE((SELECT MAX(id) FROM orders), 0)
+      );
+    `);
+    console.log('🔧 Séquence orders.id réparée (setval sur MAX(id)).');
+    return true;
+  } catch (e) {
+    console.error('❌ Échec réparation séquence orders.id:', e);
+    return false;
+  }
+}
+
 // Toutes les routes nécessitent authentification
 router.use(authenticate);
 
@@ -174,9 +196,14 @@ router.post('/', authorize('ADMIN', 'GESTIONNAIRE'), [
       status: 'NOUVELLE'
     };
 
-    const order = await prisma.order.create({
-      data: orderData
-    });
+    let order;
+    try {
+      order = await prisma.order.create({ data: orderData });
+    } catch (e) {
+      const repaired = await repairOrdersIdSequenceIfNeeded(e);
+      if (!repaired) throw e;
+      order = await prisma.order.create({ data: orderData });
+    }
 
     // Créer l'historique initial
     await prisma.statusHistory.create({
