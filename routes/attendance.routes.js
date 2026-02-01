@@ -404,27 +404,18 @@ router.get('/history',
   }
 );
 
-// 🔧 Récupérer la configuration des magasins (multi-sites)
+// 🔧 Récupérer la configuration du magasin
 router.get('/store-config', authenticate, async (req, res) => {
   try {
-    // Récupérer TOUS les magasins actifs
-    const storeConfigs = await prisma.storeConfig.findMany({
-      where: { actif: true },
-      orderBy: { id: 'asc' }
-    });
+    const storeConfig = await prisma.storeConfig.findFirst();
     
-    if (!storeConfigs || storeConfigs.length === 0) {
+    if (!storeConfig) {
       return res.status(404).json({ 
-        error: 'Aucune configuration trouvée. Veuillez contacter l\'administrateur.' 
+        error: 'Configuration non trouvée' 
       });
     }
 
-    // Retourner tous les magasins + le premier par défaut (pour compatibilité)
-    res.json({ 
-      config: storeConfigs[0],  // Premier magasin (compatibilité)
-      stores: storeConfigs,     // TOUS les magasins
-      totalStores: storeConfigs.length
-    });
+    res.json({ config: storeConfig });
 
   } catch (error) {
     console.error('Erreur récupération config:', error);

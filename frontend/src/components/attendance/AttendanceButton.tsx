@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { MapPin, Check, X, Clock, LogOut, Loader2, AlertCircle, Building2 } from 'lucide-react';
+import { MapPin, Check, X, Clock, LogOut, Loader2, AlertCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import toast from 'react-hot-toast';
 
@@ -19,19 +19,7 @@ export default function AttendanceButton() {
     refetchInterval: 60000 // Rafraîchir chaque minute
   });
 
-  // Récupérer les configurations des magasins
-  const { data: storeData } = useQuery({
-    queryKey: ['store-config'],
-    queryFn: async () => {
-      const { data } = await api.get('/attendance/store-config');
-      return data;
-    },
-    staleTime: 300000 // Cache 5 minutes
-  });
-
   const attendance = attendanceData?.attendance;
-  const stores = storeData?.stores || [];
-  const totalStores = storeData?.totalStores || 0;
 
   // Mutation pour marquer l'arrivée
   const markArrivalMutation = useMutation({
@@ -55,17 +43,10 @@ export default function AttendanceButton() {
       const errorData = error.response?.data;
       
       if (errorData?.error === 'HORS_ZONE') {
-        // Message amélioré avec info multi-magasins
-        let message = `❌ POINTAGE REFUSÉ\n\nVous êtes à ${errorData.distance}m du magasin le plus proche "${errorData.closestStore}" (max ${errorData.rayonTolerance}m).`;
-        
-        if (errorData.availableStores && errorData.availableStores.length > 1) {
-          message += `\n\n🏢 Magasins disponibles : ${errorData.availableStores.join(', ')}`;
-        }
-        
-        message += `\n\n🚶‍♂️ Rapprochez-vous d'un des magasins et réessayez !`;
+        const message = `❌ POINTAGE REFUSÉ\n\nVous êtes à ${errorData.distance}m du magasin (max ${errorData.rayonTolerance}m).\n\n🚶‍♂️ Rapprochez-vous du magasin et réessayez !`;
         
         toast.error(message, { 
-          duration: 12000, 
+          duration: 10000, 
           icon: '🚫',
           style: {
             background: '#FEE2E2',
@@ -274,57 +255,19 @@ export default function AttendanceButton() {
         </div>
       )}
 
-      {/* Message d'information avec liste des magasins */}
+      {/* Message d'information pour les absents */}
       {!attendance && (
-        <div className="mb-4 space-y-3">
-          {/* Info générale */}
-          <div className="p-3 bg-blue-50 border-2 border-blue-200 rounded-lg">
-            <div className="flex items-start gap-2">
-              <AlertCircle size={16} className="text-blue-600 flex-shrink-0 mt-0.5" />
-              <div className="text-xs sm:text-sm text-blue-800">
-                <p className="font-bold mb-1">📍 Vous devez être dans un des magasins</p>
-                <p className="mb-2">Le système détecte automatiquement le magasin le plus proche.</p>
-                <p className="text-xs bg-white px-2 py-1 rounded border border-blue-300">
-                  💡 <span className="font-bold">Astuce :</span> Si votre pointage est refusé, <span className="font-bold text-green-600">rapprochez-vous et réessayez</span> !
-                </p>
-              </div>
+        <div className="mb-4 p-3 bg-blue-50 border-2 border-blue-200 rounded-lg">
+          <div className="flex items-start gap-2">
+            <AlertCircle size={16} className="text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="text-xs sm:text-sm text-blue-800">
+              <p className="font-bold mb-1">📍 Vous devez être au magasin</p>
+              <p className="mb-2">Pour pointer, vous devez être à <span className="font-bold">moins de 50m</span> du magasin.</p>
+              <p className="text-xs bg-white px-2 py-1 rounded border border-blue-300">
+                💡 <span className="font-bold">Astuce :</span> Si votre pointage est refusé (hors zone), <span className="font-bold text-green-600">rapprochez-vous et réessayez</span> !
+              </p>
             </div>
           </div>
-
-          {/* Liste des magasins disponibles */}
-          {totalStores > 0 && (
-            <div className="p-3 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg">
-              <div className="flex items-start gap-2 mb-2">
-                <Building2 size={16} className="text-green-600 flex-shrink-0 mt-0.5" />
-                <p className="text-xs sm:text-sm font-bold text-green-800">
-                  {totalStores === 1 ? '🏢 Magasin' : `🏢 ${totalStores} Magasins disponibles`}
-                </p>
-              </div>
-              <div className="space-y-2 ml-6">
-                {stores.map((store: any, index: number) => (
-                  <div 
-                    key={store.id} 
-                    className="p-2 bg-white rounded-lg border border-green-200 shadow-sm"
-                  >
-                    <p className="text-xs font-bold text-gray-800 mb-1">
-                      {index + 1}. {store.nom}
-                    </p>
-                    {store.adresse && (
-                      <p className="text-xs text-gray-600 mb-1">📍 {store.adresse}</p>
-                    )}
-                    <div className="flex flex-wrap gap-2 text-xs text-gray-500">
-                      <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-medium">
-                        📏 {store.rayonTolerance}m
-                      </span>
-                      <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
-                        🕐 {store.heureOuverture} - {store.heureFermeture}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
 
