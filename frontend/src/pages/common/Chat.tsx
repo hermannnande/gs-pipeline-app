@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { chatApi } from '../../lib/chatApi';
-import { useChatSocket } from '../../hooks/useChatSocket';
 import ConversationList from '../../components/chat/ConversationList';
 import MessageArea from '../../components/chat/MessageArea';
 import NewConversationModal from '../../components/chat/NewConversationModal';
@@ -11,16 +10,15 @@ export default function Chat() {
   const [showNewConversation, setShowNewConversation] = useState(false);
   const [searchConversation, setSearchConversation] = useState('');
   const [activeTab, setActiveTab] = useState<'ALL' | 'PRIVATE' | 'GROUP' | 'BROADCAST'>('ALL');
-  const [onlineUserIds, setOnlineUserIds] = useState<Set<number>>(new Set());
-  const [typingByConversation, setTypingByConversation] = useState<Record<number, string>>({});
   const queryClient = useQueryClient();
-  const chatSocket = useChatSocket();
 
   // Récupérer les conversations
   const { data: conversationsData, isLoading } = useQuery({
     queryKey: ['conversations'],
     queryFn: chatApi.getConversations,
-    refetchOnWindowFocus: true
+    refetchOnWindowFocus: true,
+    // Remplace le temps réel (Socket.io) par un rafraîchissement périodique
+    refetchInterval: 5000
   });
 
   const conversations = conversationsData?.conversations || [];
@@ -40,139 +38,6 @@ export default function Chat() {
     ).toLowerCase();
     return name.includes(q);
   });
-
-  // Écouter les nouveaux messages en temps réel
-  useEffect(() => {
-    if (!chatSocket.socket || !chatSocket.isConnected) return;
-
-    const handleNewMessage = (message: any) => {
-      // Mettre à jour la liste des conversations
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
-      
-      // Si la conversation est ouverte, ajouter le message
-      if (selectedConversationId === message.conversationId) {
-        queryClient.setQueryData(
-          ['messages', message.conversationId],
-          (old: any) => {
-            if (!old) return { messages: [message] };
-            const messageExists = old.messages.some((m: any) => m.id === message.id);
-            if (messageExists) return old;
-            return { messages: [...old.messages, message] };
-          }
-        );
-        
-        // Marquer comme lu
-        chatSocket.markAsRead(message.conversationId);
-      }
-    };
-
-    const handleMessageEdited = (message: any) => {
-      queryClient.setQueryData(
-        ['messages', message.conversationId],
-        (old: any) => {
-          if (!old) return old;
-          return {
-            messages: old.messages.map((m: any) => 
-              m.id === message.id ? message : m
-            )
-          };
-        }
-      );
-    };
-
-    const handleMessageDeleted = (data: any) => {
-      queryClient.setQueryData(
-        ['messages', data.conversationId],
-        (old: any) => {
-          if (!old) return old;
-          return {
-            messages: old.messages.filter((m: any) => m.id !== data.messageId)
-          };
-        }
-      );
-    };
-
-    const handleReactionAdded = (data: any) => {
-      queryClient.setQueryData(
-        ['messages', data.reaction.message.conversationId],
-        (old: any) => {
-          if (!old) return old;
-          return {
-            messages: old.messages.map((m: any) => {
-              if (m.id === data.messageId) {
-                const reactions = m.reactions || [];
-                return { ...m, reactions: [...reactions, data.reaction] };
-              }
-              return m;
-            })
-          };
-        }
-      );
-    };
-
-    const handleReactionRemoved = (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ['messages'] });
-    };
-
-    chatSocket.on('message:new', handleNewMessage);
-    chatSocket.on('message:edited', handleMessageEdited);
-    chatSocket.on('message:deleted', handleMessageDeleted);
-    chatSocket.on('reaction:added', handleReactionAdded);
-    chatSocket.on('reaction:removed', handleReactionRemoved);
-
-    return () => {
-      chatSocket.off('message:new', handleNewMessage);
-      chatSocket.off('message:edited', handleMessageEdited);
-      chatSocket.off('message:deleted', handleMessageDeleted);
-      chatSocket.off('reaction:added', handleReactionAdded);
-      chatSocket.off('reaction:removed', handleReactionRemoved);
-    };
-  }, [chatSocket.socket, chatSocket.isConnected, queryClient, selectedConversationId]);
-
-  // Statut en ligne/hors ligne + typing preview (style WhatsApp)
-  useEffect(() => {
-    if (!chatSocket.socket || !chatSocket.isConnected) return;
-
-    const handleOnline = (data: any) => {
-      const id = Number(data?.userId);
-      if (!id) return;
-      setOnlineUserIds((prev) => new Set([...Array.from(prev), id]));
-    };
-
-    const handleOffline = (data: any) => {
-      const id = Number(data?.userId);
-      if (!id) return;
-      setOnlineUserIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-    };
-
-    const handleTypingUpdate = (data: any) => {
-      const convId = Number(data?.conversationId);
-      const isTyping = !!data?.isTyping;
-      const prenom = data?.user?.prenom || '';
-      if (!convId) return;
-
-      setTypingByConversation((prev) => {
-        const next = { ...prev };
-        if (isTyping) next[convId] = prenom ? `${prenom} écrit...` : 'Écrit...';
-        else delete next[convId];
-        return next;
-      });
-    };
-
-    chatSocket.on('user:online', handleOnline);
-    chatSocket.on('user:offline', handleOffline);
-    chatSocket.on('typing:update', handleTypingUpdate);
-
-    return () => {
-      chatSocket.off('user:online', handleOnline);
-      chatSocket.off('user:offline', handleOffline);
-      chatSocket.off('typing:update', handleTypingUpdate);
-    };
-  }, [chatSocket.socket, chatSocket.isConnected]);
 
   return (
     <div className="h-[calc(100vh-4rem)] flex bg-gray-50">
@@ -228,9 +93,7 @@ export default function Chat() {
             <span className="hidden sm:inline">Nouvelle conversation</span>
             <span className="sm:hidden">Nouveau</span>
           </button>
-          <div className="mt-2 text-xs text-gray-500">
-            Statut: {chatSocket.isConnected ? '🟢 Connecté' : '🟠 Connexion...'}
-          </div>
+          <div className="mt-2 text-xs text-gray-500">Mode: rafraîchissement auto (sans WebSocket)</div>
         </div>
 
         <ConversationList
@@ -238,8 +101,6 @@ export default function Chat() {
           selectedConversationId={selectedConversationId}
           onSelectConversation={setSelectedConversationId}
           isLoading={isLoading}
-          onlineUserIds={onlineUserIds}
-          typingByConversation={typingByConversation}
         />
       </div>
 
@@ -251,7 +112,6 @@ export default function Chat() {
         {selectedConversationId ? (
           <MessageArea
             conversationId={selectedConversationId}
-            chatSocket={chatSocket}
             onBack={() => setSelectedConversationId(null)}
           />
         ) : (

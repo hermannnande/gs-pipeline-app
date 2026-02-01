@@ -37,6 +37,7 @@ const RoleTargets = {
  * @param {object} notification - Objet notification
  */
 export const sendToUser = (userId, notification) => {
+  if (!io) return;
   const room = `user-${userId}`;
   io.to(room).emit('notification', {
     id: Date.now(),
@@ -53,6 +54,7 @@ export const sendToUser = (userId, notification) => {
  * @param {object} notification - Objet notification
  */
 export const sendToRole = (role, notification) => {
+  if (!io) return;
   io.to(role).emit('notification', {
     id: Date.now(),
     timestamp: new Date().toISOString(),
@@ -67,6 +69,7 @@ export const sendToRole = (role, notification) => {
  * @param {object} notification - Objet notification
  */
 export const sendToAll = (notification) => {
+  if (!io) return;
   io.emit('notification', {
     id: Date.now(),
     timestamp: new Date().toISOString(),

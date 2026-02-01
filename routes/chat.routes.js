@@ -1,37 +1,15 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import multer from 'multer';
 import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-import { chatIo } from '../utils/socket.js';
+import { prisma } from '../utils/prisma.js';
+import { supabaseAdmin } from '../utils/supabaseAdmin.js';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
-// Configuration multer pour upload fichiers
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const uploadDir = path.join(__dirname, '../uploads/chat');
-
-// Créer le dossier s'il n'existe pas
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
+// Upload (Vercel serverless) : stockage en mémoire + upload vers Supabase Storage
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB max
   },
@@ -54,6 +32,42 @@ const upload = multer({
 });
 
 router.use(authenticate);
+
+function requireSupabaseStorage(res) {
+  if (!supabaseAdmin) {
+    res.status(500).json({
+      error:
+        "Supabase Storage non configuré. Configure SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY côté serveur.",
+    });
+    return false;
+  }
+  return true;
+}
+
+async function uploadToSupabaseStorage({ userId, conversationId, file }) {
+  const bucket = process.env.SUPABASE_CHAT_BUCKET || 'chat';
+  const ext = path.extname(file.originalname || '') || '';
+  const safeExt = ext.length <= 12 ? ext : '';
+  const objectName = `${conversationId || 'misc'}/${userId}/${Date.now()}-${Math.round(
+    Math.random() * 1e9
+  )}${safeExt}`;
+
+  const { error: uploadError } = await supabaseAdmin.storage
+    .from(bucket)
+    .upload(objectName, file.buffer, {
+      contentType: file.mimetype,
+      upsert: false,
+    });
+
+  if (uploadError) throw uploadError;
+
+  const { data } = supabaseAdmin.storage.from(bucket).getPublicUrl(objectName);
+  return {
+    bucket,
+    objectName,
+    publicUrl: data?.publicUrl,
+  };
+}
 
 // ========================================
 // UTILISATEURS (pour créer des conversations)
@@ -665,11 +679,6 @@ router.post('/conversations/:id/messages', async (req, res) => {
       data: { lastMessageAt: new Date() }
     });
 
-    // Temps réel (namespace /chat) - utile si un client envoie via REST
-    if (chatIo) {
-      chatIo.to(`conversation:${id}`).emit('message:new', message);
-    }
-
     res.json({ message });
   } catch (error) {
     console.error('Erreur envoi message:', error);
@@ -683,11 +692,19 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ error: 'Aucun fichier fourni.' });
     }
+    if (!requireSupabaseStorage(res)) return;
 
-    const fileUrl = `/uploads/chat/${req.file.filename}`;
+    const uploaded = await uploadToSupabaseStorage({
+      userId: req.user.id,
+      conversationId: null,
+      file: req.file,
+    });
+    if (!uploaded.publicUrl) {
+      return res.status(500).json({ error: "Impossible d'obtenir l'URL publique du fichier." });
+    }
     
     res.json({
-      fileUrl,
+      fileUrl: uploaded.publicUrl,
       fileName: req.file.originalname,
       fileSize: req.file.size,
       fileMimeType: req.file.mimetype
@@ -720,8 +737,18 @@ router.post('/conversations/:id/messages/file', upload.single('file'), async (re
     if (!participant) {
       return res.status(403).json({ error: 'Vous ne faites pas partie de cette conversation.' });
     }
+    if (!requireSupabaseStorage(res)) return;
 
-    const fileUrl = `/uploads/chat/${req.file.filename}`;
+    const uploaded = await uploadToSupabaseStorage({
+      userId,
+      conversationId: parseInt(id),
+      file: req.file,
+    });
+    if (!uploaded.publicUrl) {
+      return res.status(500).json({ error: "Impossible d'obtenir l'URL publique du fichier." });
+    }
+
+    const fileUrl = uploaded.publicUrl;
     const messageType = req.file.mimetype.startsWith('image/') ? 'IMAGE' : 'FILE';
 
     const message = await prisma.message.create({
@@ -752,11 +779,6 @@ router.post('/conversations/:id/messages/file', upload.single('file'), async (re
       where: { id: parseInt(id) },
       data: { lastMessageAt: new Date() }
     });
-
-    // Temps réel (namespace /chat) - IMPORTANT pour les messages fichier/image
-    if (chatIo) {
-      chatIo.to(`conversation:${id}`).emit('message:new', message);
-    }
 
     res.json({ message });
   } catch (error) {

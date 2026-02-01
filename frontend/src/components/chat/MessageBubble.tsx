@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useAuthStore } from '@/store/authStore';
+import { useQueryClient } from '@tanstack/react-query';
+import { chatApi } from '@/lib/chatApi';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const BASE_URL = API_URL.replace('/api', '');
@@ -9,32 +11,48 @@ const BASE_URL = API_URL.replace('/api', '');
 interface MessageBubbleProps {
   message: any;
   isOwn: boolean;
-  chatSocket: any;
 }
 
-export default function MessageBubble({ message, isOwn, chatSocket }: MessageBubbleProps) {
+export default function MessageBubble({ message, isOwn }: MessageBubbleProps) {
   const { user } = useAuthStore();
+  const queryClient = useQueryClient();
   const [showReactions, setShowReactions] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
 
   const commonEmojis = ['👍', '❤️', '😂', '😮', '😢', '🔥', '👏', '✅'];
 
-  const handleReaction = (emoji: string) => {
+  const handleReaction = async (emoji: string) => {
     const existingReaction = message.reactions?.find(
       (r: any) => r.userId === user?.id && r.emoji === emoji
     );
 
-    if (existingReaction) {
-      chatSocket.removeReaction(message.id, emoji);
-    } else {
-      chatSocket.addReaction(message.id, emoji);
+    try {
+      if (existingReaction) {
+        await chatApi.removeReaction(message.id, emoji);
+      } else {
+        await chatApi.addReaction(message.id, emoji);
+      }
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['messages', message.conversationId] }),
+        queryClient.invalidateQueries({ queryKey: ['conversations'] }),
+      ]);
+    } catch (e) {
+      // silencieux (l'UI reste utilisable)
+      console.error('Erreur reaction:', e);
     }
     setShowReactions(false);
   };
 
-  const handleDelete = () => {
-    if (window.confirm('Supprimer ce message ?')) {
-      chatSocket.deleteMessage(message.id);
+  const handleDelete = async () => {
+    if (!window.confirm('Supprimer ce message ?')) return;
+    try {
+      await chatApi.deleteMessage(message.id);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['messages', message.conversationId] }),
+        queryClient.invalidateQueries({ queryKey: ['conversations'] }),
+      ]);
+    } catch (e) {
+      console.error('Erreur suppression message:', e);
     }
     setShowOptions(false);
   };
@@ -49,6 +67,10 @@ export default function MessageBubble({ message, isOwn, chatSocket }: MessageBub
   };
 
   const reactionGroups = groupReactions();
+  const resolveFileUrl = (url: string | undefined | null) => {
+    if (!url) return '';
+    return url.startsWith('http') ? url : `${BASE_URL}${url}`;
+  };
 
   if (message.type === 'SYSTEM') {
     return (
@@ -100,7 +122,7 @@ export default function MessageBubble({ message, isOwn, chatSocket }: MessageBub
           {message.type === 'IMAGE' && (
             <div>
               <img
-                src={`${BASE_URL}${message.fileUrl}`}
+                src={resolveFileUrl(message.fileUrl)}
                 alt="Image"
                 className="max-w-full rounded-lg mb-2"
               />
@@ -115,7 +137,7 @@ export default function MessageBubble({ message, isOwn, chatSocket }: MessageBub
               <div className="text-3xl">📎</div>
               <div className="flex-1">
                 <a
-                  href={`${BASE_URL}${message.fileUrl}`}
+                  href={resolveFileUrl(message.fileUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={`font-semibold underline ${isOwn ? 'text-white' : 'text-indigo-600'}`}

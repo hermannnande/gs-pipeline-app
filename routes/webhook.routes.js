@@ -1,11 +1,10 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/prisma.js';
 import { body, validationResult } from 'express-validator';
 import { notifyNewOrder } from '../utils/notifications.js';
 import { computeTotalAmount } from '../utils/pricing.js';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Middleware pour vérifier l'API Key (sécurité webhook Make)
 const verifyApiKey = (req, res, next) => {

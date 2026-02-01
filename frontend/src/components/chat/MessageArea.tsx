@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import { chatApi } from '../../lib/chatApi';
@@ -8,15 +8,13 @@ import MessageBubble from './MessageBubble';
 
 interface MessageAreaProps {
   conversationId: number;
-  chatSocket: any;
   onBack?: () => void;
 }
 
-export default function MessageArea({ conversationId, chatSocket, onBack }: MessageAreaProps) {
+export default function MessageArea({ conversationId, onBack }: MessageAreaProps) {
   const { user } = useAuthStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [typingUsers, setTypingUsers] = useState<any[]>([]);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [showNewMsgBanner, setShowNewMsgBanner] = useState(false);
 
@@ -33,45 +31,14 @@ export default function MessageArea({ conversationId, chatSocket, onBack }: Mess
   const { data: messagesData, isLoading } = useQuery({
     queryKey: ['messages', conversationId],
     queryFn: () => chatApi.getMessages(conversationId),
-    enabled: !!conversationId
+    enabled: !!conversationId,
+    // Remplace le temps réel (Socket.io) par un rafraîchissement périodique
+    refetchInterval: 3000
   });
 
   const messages = messagesData?.messages || [];
 
-  // Rejoindre la conversation Socket.io
-  useEffect(() => {
-    if (conversationId && chatSocket.socket && chatSocket.isConnected) {
-      chatSocket.joinConversation(conversationId);
-      chatSocket.markAsRead(conversationId);
-
-      return () => {
-        chatSocket.leaveConversation(conversationId);
-      };
-    }
-  }, [conversationId, chatSocket.socket, chatSocket.isConnected]);
-
-  // Écouter l'indicateur "en train d'écrire"
-  useEffect(() => {
-    if (!chatSocket.socket || !chatSocket.isConnected) return;
-
-    const handleTypingUpdate = (data: any) => {
-      if (data.conversationId !== conversationId) return;
-      
-      setTypingUsers((prev) => {
-        const filtered = prev.filter((u) => u.userId !== data.userId);
-        if (data.isTyping) {
-          return [...filtered, data];
-        }
-        return filtered;
-      });
-    };
-
-    chatSocket.on('typing:update', handleTypingUpdate);
-
-    return () => {
-      chatSocket.off('typing:update', handleTypingUpdate);
-    };
-  }, [chatSocket.socket, chatSocket.isConnected, conversationId]);
+  // NOTE: Sans WebSocket, l'indicateur "typing" est désactivé.
 
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
     messagesEndRef.current?.scrollIntoView({ behavior });
@@ -113,12 +80,7 @@ export default function MessageArea({ conversationId, chatSocket, onBack }: Mess
     };
   }, [conversationId]);
 
-  // Marquer comme lu quand on voit les messages
-  useEffect(() => {
-    if (conversationId && messages.length > 0) {
-      chatSocket.markAsRead(conversationId);
-    }
-  }, [conversationId, messages, chatSocket]);
+  // NOTE: Le backend marque déjà "lu" au moment du GET /messages.
 
   const getConversationTitle = () => {
     if (!conversation) return 'Chargement...';
@@ -200,7 +162,6 @@ export default function MessageArea({ conversationId, chatSocket, onBack }: Mess
                 key={message.id}
                 message={message}
                 isOwn={message.senderId === user?.id}
-                chatSocket={chatSocket}
               />
             ))}
             <div ref={messagesEndRef} />
@@ -220,25 +181,11 @@ export default function MessageArea({ conversationId, chatSocket, onBack }: Mess
           </div>
         )}
 
-        {/* Indicateur "en train d'écrire" */}
-        {typingUsers.length > 0 && (
-          <div className="flex items-center gap-2 text-sm text-gray-500 px-4 py-2 bg-gray-100 rounded-lg w-fit">
-            <div className="flex gap-1">
-              <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-              <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-              <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-            </div>
-            <span>
-              {typingUsers.map((u) => `${u.user.prenom}`).join(', ')} {typingUsers.length > 1 ? 'écrivent' : 'écrit'}...
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Input message */}
       <MessageInput
         conversationId={conversationId}
-        chatSocket={chatSocket}
       />
     </div>
   );

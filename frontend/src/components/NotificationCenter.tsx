@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Bell, X, Check, CheckCheck } from 'lucide-react';
-import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
 
@@ -21,82 +20,14 @@ interface Notification {
 
 export default function NotificationCenter() {
   const { user } = useAuthStore();
-  const [socket, setSocket] = useState<Socket | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showPanel, setShowPanel] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Connexion Socket.io
+  // NOTE: Les notifications temps réel via Socket.io sont désactivées en mode Vercel serverless.
+  // Le composant reste affiché pour permettre une évolution future (Supabase Realtime / polling).
   useEffect(() => {
     if (!user) return;
-
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    const socketUrl = API_URL.replace('/api', '');
-    
-    const newSocket = io(socketUrl, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionAttempts: 5
-    });
-
-    newSocket.on('connect', () => {
-      console.log('✅ WebSocket connecté');
-      
-      // Rejoindre les rooms appropriées
-      if (user.role) {
-        newSocket.emit('join-role', user.role);
-      }
-      if (user.id) {
-        newSocket.emit('join-user', user.id);
-      }
-    });
-
-    newSocket.on('notification', (notification: Notification) => {
-      console.log('📬 Notification reçue:', notification);
-      
-      // Ajouter la notification à la liste
-      setNotifications(prev => [notification, ...prev]);
-      setUnreadCount(prev => prev + 1);
-      
-      // Afficher un toast pour les notifications prioritaires
-      if (notification.priority === 'high') {
-        toast.success(
-          <div className="flex flex-col">
-            <strong>{notification.title}</strong>
-            <span className="text-sm">{notification.message}</span>
-          </div>,
-          {
-            duration: 5000,
-            icon: '🔔'
-          }
-        );
-      } else {
-        toast(
-          <div className="flex flex-col">
-            <strong>{notification.title}</strong>
-            <span className="text-sm">{notification.message}</span>
-          </div>,
-          {
-            duration: 3000,
-            icon: '📨'
-          }
-        );
-      }
-      
-      // Jouer un son (optionnel)
-      playNotificationSound();
-    });
-
-    newSocket.on('disconnect', () => {
-      console.log('❌ WebSocket déconnecté');
-    });
-
-    setSocket(newSocket);
-
-    return () => {
-      newSocket.close();
-    };
   }, [user]);
 
   // Jouer un son de notification

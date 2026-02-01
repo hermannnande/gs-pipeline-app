@@ -6,49 +6,16 @@ import toast from 'react-hot-toast';
 
 interface MessageInputProps {
   conversationId: number;
-  chatSocket: any;
 }
 
-export default function MessageInput({ conversationId, chatSocket }: MessageInputProps) {
+export default function MessageInput({ conversationId }: MessageInputProps) {
   const [message, setMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queryClient = useQueryClient();
-
-  // Gérer l'indicateur "en train d'écrire"
-  useEffect(() => {
-    if (message.trim().length > 0 && !isTyping) {
-      setIsTyping(true);
-      chatSocket.startTyping(conversationId);
-    }
-
-    if (message.trim().length === 0 && isTyping) {
-      setIsTyping(false);
-      chatSocket.stopTyping(conversationId);
-    }
-
-    // Reset du timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-
-    if (message.trim().length > 0) {
-      typingTimeoutRef.current = setTimeout(() => {
-        setIsTyping(false);
-        chatSocket.stopTyping(conversationId);
-      }, 3000);
-    }
-
-    return () => {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-    };
-  }, [message, conversationId, chatSocket]);
+  // NOTE: Sans WebSocket, l'indicateur "typing" est désactivé.
 
   // Mutation pour envoyer un fichier
   const sendFileMutation = useMutation({
@@ -110,10 +77,6 @@ export default function MessageInput({ conversationId, chatSocket }: MessageInpu
       // Envoyer le message texte via API REST (plus fiable que le socket seul)
       sendTextMutation.mutate(message.trim());
     }
-
-    // Arrêter l'indicateur "en train d'écrire"
-    setIsTyping(false);
-    chatSocket.stopTyping(conversationId);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
