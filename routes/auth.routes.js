@@ -13,6 +13,13 @@ router.post('/login', [
   body('password').notEmpty().withMessage('Mot de passe requis')
 ], async (req, res) => {
   try {
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({
+        error: 'Configuration serveur invalide (JWT_SECRET manquant).',
+        code: 'CONFIG_JWT_SECRET_MISSING'
+      });
+    }
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -34,7 +41,37 @@ router.post('/login', [
     }
 
     // Vérifier le mot de passe
-    const isValidPassword = await bcrypt.compare(password, user.password);
+    // - Supporte migration depuis mots de passe non-hashés (auto-conversion en bcrypt)
+    // - Évite les 500 en cas de hash invalide
+    const stored = user.password || '';
+    const looksBcrypt = typeof stored === 'string' && stored.startsWith('$2');
+
+    let isValidPassword = false;
+    if (looksBcrypt) {
+      try {
+        isValidPassword = await bcrypt.compare(password, stored);
+      } catch (e) {
+        // Hash invalide -> on traite comme mot de passe incorrect (au lieu d'un 500)
+        console.error('Erreur bcrypt.compare (hash invalide?) pour user', user.id, e);
+        isValidPassword = false;
+      }
+    } else {
+      // Fallback plaintext (migration)
+      isValidPassword = password === stored;
+      if (isValidPassword) {
+        // Auto-migration: convertir en bcrypt pour la suite
+        try {
+          const hashed = await bcrypt.hash(password, 10);
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { password: hashed }
+          });
+        } catch (e) {
+          console.error('Impossible de migrer le password en bcrypt pour user', user.id, e);
+        }
+      }
+    }
+
     if (!isValidPassword) {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect.' });
     }
@@ -58,7 +95,7 @@ router.post('/login', [
     });
   } catch (error) {
     console.error('Erreur login:', error);
-    res.status(500).json({ error: 'Erreur lors de la connexion.' });
+    res.status(500).json({ error: 'Erreur lors de la connexion.', code: 'LOGIN_INTERNAL_ERROR' });
   }
 });
 
