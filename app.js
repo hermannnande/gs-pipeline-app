@@ -18,6 +18,7 @@ import maintenanceRoutes from './routes/maintenance.routes.js';
 import chatRoutes from './routes/chat.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
 import attendanceRoutes from './routes/attendance.routes.js';
+import { prismaInitError } from './utils/prisma.js';
 
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config();
@@ -92,10 +93,16 @@ export function createApp() {
     });
   });
 
-  app.get('/api/health', (req, res) => {
+  app.get('/api/health', async (req, res) => {
     res.json({
       status: 'healthy',
       database: process.env.DATABASE_URL ? 'configured' : 'not configured',
+      prisma: prismaInitError ? `error: ${prismaInitError.message}` : 'ok',
+      supabase: {
+        url: process.env.SUPABASE_URL ? 'configured' : 'not configured',
+        serviceRole: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'configured' : 'not configured',
+        chatBucket: process.env.SUPABASE_CHAT_BUCKET || 'chat',
+      },
       timestamp: new Date().toISOString(),
     });
   });
