@@ -1,17 +1,20 @@
 # 📚 INDEX COMPLET DU PROJET GS PIPELINE
 
 > **⭐ FICHIER PRINCIPAL - POINT D'ENTRÉE POUR TOUT COMPRENDRE**
-> Dernière mise à jour : 16 décembre 2025
+> Dernière mise à jour : 1er février 2026
+> 
+> ⚠️ **IMPORTANT :** Le projet utilise maintenant **SUPABASE** (PostgreSQL) et est déployé sur **VERCEL** (frontend + backend)
 
 ---
 
 ## 🎯 POUR COMPRENDRE LE PROJET EN 5 MINUTES
 
-**Lisez ces 3 fichiers dans l'ordre :**
+**Lisez ces 4 fichiers dans l'ordre :**
 
 1. 📖 **[README.md](./README.md)** - Vue d'ensemble du projet (5 min)
-2. ⭐ **[ARCHITECTURE_ET_REGLES_METIER.md](./ARCHITECTURE_ET_REGLES_METIER.md)** - **LA BIBLE DU PROJET** (20 min)
-3. 🚀 **[GUIDE_DEMARRAGE_RAPIDE.md](./GUIDE_DEMARRAGE_RAPIDE.md)** - Commandes et workflow (5 min)
+2. ⭐ **[ETAT_ACTUEL_PROJET_SUPABASE.md](./ETAT_ACTUEL_PROJET_SUPABASE.md)** - **ÉTAT ACTUEL avec Supabase** (10 min)
+3. 🎯 **[ARCHITECTURE_ET_REGLES_METIER.md](./ARCHITECTURE_ET_REGLES_METIER.md)** - **LA BIBLE DU PROJET** (20 min)
+4. 🚀 **[GUIDE_DEMARRAGE_RAPIDE.md](./GUIDE_DEMARRAGE_RAPIDE.md)** - Commandes et workflow (5 min)
 
 ---
 
@@ -21,9 +24,11 @@
 
 | Fichier | Description | Importance |
 |---------|-------------|------------|
+| **[ETAT_ACTUEL_PROJET_SUPABASE.md](./ETAT_ACTUEL_PROJET_SUPABASE.md)** | **⭐⭐⭐ ÉTAT ACTUEL** - Architecture Supabase, configuration, dernières modifications | **CRITIQUE** |
 | **[ARCHITECTURE_ET_REGLES_METIER.md](./ARCHITECTURE_ET_REGLES_METIER.md)** | **⭐⭐⭐ RÉFÉRENCE ABSOLUE** - Tous les rôles, flux, règles de stock, routes API, exemples | **CRITIQUE** |
 | [README.md](./README.md) | Vue d'ensemble, fonctionnalités, installation, déploiement | Important |
 | [GUIDE_DEMARRAGE_RAPIDE.md](./GUIDE_DEMARRAGE_RAPIDE.md) | Commandes rapides, débogage, checklist | Pratique |
+| [DEPLOIEMENT_VERCEL_SUPABASE.md](./DEPLOIEMENT_VERCEL_SUPABASE.md) | Guide complet déploiement Vercel + Supabase | Important |
 | [INDEX_PROJET.md](./INDEX_PROJET.md) | Ce fichier - Navigation dans le projet | Utile |
 
 ---
@@ -377,11 +382,12 @@ https://github.com/hermannnande/gs-pipeline-app.git
 
 ## 🎯 EN RÉSUMÉ
 
-### **Les 3 fichiers à retenir absolument :**
+### **Les 4 fichiers à retenir absolument :**
 
 1. **[INDEX_PROJET.md](./INDEX_PROJET.md)** ← Ce fichier (navigation)
-2. **[ARCHITECTURE_ET_REGLES_METIER.md](./ARCHITECTURE_ET_REGLES_METIER.md)** ← ⭐⭐⭐ LA BIBLE
-3. **[GUIDE_DEMARRAGE_RAPIDE.md](./GUIDE_DEMARRAGE_RAPIDE.md)** ← Commandes pratiques
+2. **[ETAT_ACTUEL_PROJET_SUPABASE.md](./ETAT_ACTUEL_PROJET_SUPABASE.md)** ← ⭐⭐⭐ ÉTAT ACTUEL (Supabase)
+3. **[ARCHITECTURE_ET_REGLES_METIER.md](./ARCHITECTURE_ET_REGLES_METIER.md)** ← ⭐⭐⭐ LA BIBLE
+4. **[GUIDE_DEMARRAGE_RAPIDE.md](./GUIDE_DEMARRAGE_RAPIDE.md)** ← Commandes pratiques
 
 ### **Les 2 routes API à ne JAMAIS toucher sans comprendre :**
 
@@ -397,11 +403,14 @@ https://github.com/hermannnande/gs-pipeline-app.git
 
 ## 📚 HISTORIQUE DES MODIFICATIONS MAJEURES
 
+- **1 fév 2026** : ✅ **Migration Railway → Supabase terminée**
+- **1 fév 2026** : ✅ **Système de pointage GPS ajouté**
+- **1 fév 2026** : ✅ **Page admin "Présences" créée**
+- **1 fév 2026** : ✅ Configuration domaine obgestion.com (proxy API)
+- **1 fév 2026** : ✅ Correction séquence orders.id (auto-réparation)
 - **16 déc 2025** : Système de notification (bouton "Notifier")
 - **16 déc 2025** : Correction finale stock (REMIS et RETOUR)
 - **16 déc 2025** : Documentation complète créée
-- **16 déc 2025** : Suppression bloc rouge d'écarts (trompeur)
-- **Avant** : Mise en place système de stock complet
 
 ---
 
@@ -417,7 +426,9 @@ https://github.com/hermannnande/gs-pipeline-app.git
 
 ---
 
-**Dernière mise à jour : 16 décembre 2025**
+**Dernière mise à jour : 1er février 2026**
 **Projet : GS Pipeline - Gestion de commandes e-commerce**
-**Tech Stack : Node.js + Express + Prisma + PostgreSQL + React + TypeScript**
+**Tech Stack : Node.js + Express + Prisma + PostgreSQL (Supabase) + React + TypeScript**
+**Hébergement : Vercel (Full-stack) + Supabase (Database)**
+**Domaine : https://obgestion.com**
 

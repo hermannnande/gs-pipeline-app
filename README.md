@@ -98,10 +98,11 @@ GS Pipeline/
 
 ### Backend
 - **Node.js** + **Express** - Serveur API REST
-- **PostgreSQL** - Base de données relationnelle
+- **PostgreSQL** (Supabase) - Base de données relationnelle
 - **Prisma** - ORM moderne et type-safe
 - **JWT** - Authentification sécurisée
 - **bcrypt** - Hashage des mots de passe
+- **Vercel Serverless** - Déploiement backend
 
 ### Frontend
 - **React 18** + **TypeScript** - Interface utilisateur
@@ -228,50 +229,55 @@ Body (JSON):
 
 ## 🚀 Déploiement en production
 
-### Backend
+### Architecture actuelle
 
-1. **Serveur** : VPS, DigitalOcean, AWS, etc.
-2. **Base de données** : PostgreSQL hébergé
+**Backend :** Vercel Serverless  
+**Frontend :** Vercel  
+**Base de données :** Supabase (PostgreSQL)  
+**Domaine :** https://obgestion.com
+
+### Backend (Vercel)
+
+1. **Plateforme** : Vercel Serverless Functions
+2. **Base de données** : Supabase PostgreSQL
 3. **Variables d'environnement** :
    ```env
    NODE_ENV=production
-   DATABASE_URL="postgresql://..."
+   DATABASE_URL="postgresql://postgres:[PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+   DIRECT_URL="postgresql://postgres:[PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:5432/postgres"
    JWT_SECRET="secret_tres_securise"
    WEBHOOK_API_KEY="cle_api_securisee"
+   SUPABASE_URL="https://xxxxx.supabase.co"
+   SUPABASE_SERVICE_ROLE_KEY="votre_service_role_key"
    ```
-4. **Process manager** : PM2 recommandé
-   ```bash
-   pm2 start server.js --name gs-pipeline-api
+4. **Déploiement** : Automatique via Git push
+
+### Frontend (Vercel)
+
+1. **Plateforme** : Vercel
+2. **Configuration** :
+   ```env
+   VITE_API_URL=https://gs-pipeline-app-2.vercel.app
    ```
+3. **Domaine custom** : https://obgestion.com
+4. **Déploiement** : Automatique via Git push
 
-### Frontend
+### Configuration Domaine Custom
 
-1. **Build** :
-   ```bash
-   npm run build
-   ```
-2. **Hébergement** : Vercel, Netlify, ou serveur statique
-3. **Configuration** : Pointer `VITE_API_URL` vers l'API en production
+Le domaine `obgestion.com` est configuré avec un proxy API via `frontend/vercel.json` :
 
-### Reverse Proxy (nginx)
-
-```nginx
-# API Backend
-location /api {
-    proxy_pass http://localhost:5000;
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection 'upgrade';
-    proxy_set_header Host $host;
-    proxy_cache_bypass $http_upgrade;
-}
-
-# Frontend
-location / {
-    root /var/www/gs-pipeline/frontend/dist;
-    try_files $uri /index.html;
+```json
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://gs-pipeline-app-2.vercel.app/api/$1"
+    }
+  ]
 }
 ```
+
+Cela permet d'accéder à l'API via `https://obgestion.com/api/*`
 
 ## 📊 Statuts des commandes
 

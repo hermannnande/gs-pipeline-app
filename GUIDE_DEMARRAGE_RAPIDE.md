@@ -13,9 +13,9 @@
 - 🚚 [GUIDE_GESTIONNAIRE_STOCK_EXPEDITIONS.md](./GUIDE_GESTIONNAIRE_STOCK_EXPEDITIONS.md) - Expéditions et Express
 
 ### **Déploiement**
-- Backend : https://railway.app (à configurer)
-- Frontend : https://vercel.com (à configurer)
-- Base de données : PostgreSQL sur Railway
+- Backend : https://gs-pipeline-app-2.vercel.app (Vercel)
+- Frontend : https://obgestion.com (Vercel)
+- Base de données : PostgreSQL sur Supabase
 
 ---
 
@@ -56,7 +56,7 @@ git add -A
 git commit -m "Description des changements"
 git push
 
-# Railway et Vercel déploient automatiquement
+# Vercel déploie automatiquement le frontend et le backend
 ```
 
 ---
@@ -167,11 +167,11 @@ npx prisma studio
 ### **Problème : Le déploiement échoue**
 
 ```bash
-# 1. Vérifier les logs Railway
-railway logs
+# 1. Vérifier les logs Vercel
+# Dashboard Vercel → Deployments → View Logs
 
 # 2. Vérifier les variables d'environnement
-railway variables
+# Dashboard Vercel → Settings → Environment Variables
 
 # 3. Tester localement d'abord
 npm run dev
@@ -244,7 +244,7 @@ git add prisma/migrations/
 git commit -m "db: Description des changements DB"
 git push
 
-# 5. Railway appliquera automatiquement la migration
+# 5. Vercel appliquera automatiquement la migration
 ```
 
 ---
@@ -277,7 +277,7 @@ git push
 - TailwindCSS : https://tailwindcss.com/docs
 
 ### **Déploiement**
-- Railway : https://docs.railway.app
+- Supabase : https://supabase.com/docs
 - Vercel : https://vercel.com/docs
 
 ---
@@ -287,24 +287,24 @@ git push
 ### **Le site est down**
 
 ```bash
-# 1. Vérifier le statut de Railway
-railway status
+# 1. Vérifier le statut sur Vercel Dashboard
+# https://vercel.com/dashboard
 
 # 2. Voir les logs
-railway logs
+# Vercel Dashboard → Deployments → View Logs
 
-# 3. Redémarrer le service
-railway restart
+# 3. Redéployer
+# Vercel Dashboard → Deployments → Redeploy
 
 # 4. Si ça ne marche pas, rollback
-railway rollback
+# Vercel Dashboard → Deployments → Promote to Production (version précédente)
 ```
 
 ### **Les données sont corrompues**
 
 ```bash
-# 1. Se connecter à la DB de production
-railway connect
+# 1. Se connecter à la DB de production Supabase
+# Supabase Dashboard → SQL Editor
 
 # 2. Vérifier l'intégrité
 SELECT COUNT(*) FROM orders WHERE status IS NULL;

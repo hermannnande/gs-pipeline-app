@@ -7,9 +7,11 @@
 Créez un fichier `.env` à la racine avec ce contenu :
 
 ```env
-# Base de données PostgreSQL
-# ⚠️ Remplacez USER, PASSWORD et si nécessaire le nom de la base
-DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/gs_pipeline?schema=public"
+# Base de données PostgreSQL (Supabase)
+# ⚠️ En développement local, utilisez l'URL de connexion Supabase
+# Dashboard Supabase → Project Settings → Database → Connection String
+DATABASE_URL="postgresql://postgres:[PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+DIRECT_URL="postgresql://postgres:[PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:5432/postgres"
 
 # JWT Secret 
 # ⚠️ IMPORTANT : Changez cette valeur avec une chaîne aléatoire sécurisée
@@ -44,7 +46,7 @@ VITE_API_URL=http://localhost:5000/api
 
 **En production**, changez l'URL pour pointer vers votre API :
 ```env
-VITE_API_URL=https://api.votre-domaine.com/api
+VITE_API_URL=https://gs-pipeline-app-2.vercel.app
 ```
 
 ## 🗄️ Configuration PostgreSQL
@@ -67,31 +69,32 @@ sudo systemctl start postgresql
 #### Windows
 Téléchargez et installez depuis [postgresql.org](https://www.postgresql.org/download/windows/)
 
-### Créer la base de données
+### Utiliser Supabase (Recommandé en production)
 
-```bash
-# Se connecter à PostgreSQL
-psql -U postgres
-
-# Créer la base de données
-CREATE DATABASE gs_pipeline;
-
-# Créer un utilisateur (optionnel)
-CREATE USER gs_user WITH PASSWORD 'mot_de_passe';
-GRANT ALL PRIVILEGES ON DATABASE gs_pipeline TO gs_user;
-
-# Quitter
-\q
-```
-
-Ensuite, mettez à jour votre `DATABASE_URL` dans `.env` :
+1. Créez un compte sur https://supabase.com
+2. Créez un nouveau projet
+3. Allez dans **Project Settings** → **Database**
+4. Copiez les "Connection strings" :
+   - **Transaction pooler** (pour DATABASE_URL avec Prisma)
+   - **Direct connection** (pour DIRECT_URL)
 
 ```env
-# Avec l'utilisateur postgres
-DATABASE_URL="postgresql://postgres:votre_mot_de_passe@localhost:5432/gs_pipeline?schema=public"
+DATABASE_URL="postgresql://postgres:[PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+DIRECT_URL="postgresql://postgres:[PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:5432/postgres"
+```
 
-# Ou avec l'utilisateur créé
-DATABASE_URL="postgresql://gs_user:mot_de_passe@localhost:5432/gs_pipeline?schema=public"
+### Base de données locale (Optionnel - développement)
+
+```bash
+# Installer PostgreSQL localement
+# macOS
+brew install postgresql@14
+
+# Créer la base de données
+createdb gs_pipeline
+
+# URL locale
+DATABASE_URL="postgresql://postgres:password@localhost:5432/gs_pipeline"
 ```
 
 ## 🔧 Variables d'environnement détaillées
@@ -114,22 +117,25 @@ DATABASE_URL="postgresql://gs_user:mot_de_passe@localhost:5432/gs_pipeline?schem
 
 ## 🚀 Configuration pour la production
 
-### Backend en production
+### Backend en production (Vercel)
 
 ```env
-# .env (production)
-DATABASE_URL="postgresql://user:password@db-host:5432/gs_pipeline?schema=public"
+# Variables d'environnement Vercel
+DATABASE_URL="postgresql://postgres:[PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+DIRECT_URL="postgresql://postgres:[PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:5432/postgres"
 JWT_SECRET="cle_tres_securisee_generee_aleatoirement_64_caracteres_minimum"
-PORT=5000
 NODE_ENV=production
 WEBHOOK_API_KEY="cle_api_webhook_securisee"
+MAKE_WEBHOOK_API_KEY="cle_api_webhook_securisee"
+SUPABASE_URL="https://xxxxx.supabase.co"
+SUPABASE_SERVICE_ROLE_KEY="votre_service_role_key"
 ```
 
-### Frontend en production
+### Frontend en production (Vercel)
 
 ```env
-# frontend/.env (production)
-VITE_API_URL=https://api.votre-domaine.com/api
+# Variables d'environnement Vercel
+VITE_API_URL=https://gs-pipeline-app-2.vercel.app
 ```
 
 ## 🔒 Sécurité - Checklist
@@ -147,13 +153,19 @@ Avant de déployer en production :
 
 ## 📊 Configuration avancée
 
-### Connexion PostgreSQL distante
+### Connexion Supabase
 
-Si votre base de données est hébergée (AWS RDS, DigitalOcean, etc.) :
+Pour connecter Prisma à Supabase :
 
 ```env
-DATABASE_URL="postgresql://user:password@db-host.region.provider.com:5432/gs_pipeline?schema=public&sslmode=require"
+# Transaction pooler (pour les fonctions serverless)
+DATABASE_URL="postgresql://postgres:[PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+
+# Direct connection (pour les migrations)
+DIRECT_URL="postgresql://postgres:[PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:5432/postgres"
 ```
+
+**Note :** Supabase utilise PgBouncer en mode transaction pooler, donc utilisez DIRECT_URL pour les migrations Prisma.
 
 ### CORS en production
 
