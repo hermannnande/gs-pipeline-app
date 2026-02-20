@@ -329,7 +329,7 @@ export const accountingApi = {
 };
 
 export const expressApi = {
-  getEnAgence: async (params?: { search?: string; agence?: string; statut?: string; nonRetires?: string }) => {
+  getEnAgence: async (params?: { search?: string; agence?: string; statut?: string; nonRetires?: string; startDate?: string; endDate?: string }) => {
     const { data } = await api.get('/express/en-agence', { params });
     return data;
   },

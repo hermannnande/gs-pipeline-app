@@ -42,11 +42,49 @@ router.get('/en-agence', authenticate, authorize('ADMIN', 'GESTIONNAIRE', 'APPEL
       where.status = 'EXPRESS_ARRIVE';
     }
 
-    // Filtre par dates (utiliser arriveAt pour les dates d'arrivée en agence)
+    // Filtre par dates :
+    // - EXPRESS_LIVRE : filtrer par deliveredAt (jour du retrait = jour d'encaissement)
+    // - EXPRESS_ARRIVE : filtrer par arriveAt (jour d'arrivée en agence)
     if (startDate || endDate) {
-      where.arriveAt = {};
-      if (startDate) where.arriveAt.gte = new Date(startDate + 'T00:00:00.000Z');
-      if (endDate) where.arriveAt.lte = new Date(endDate + 'T23:59:59.999Z');
+      const dateGte = startDate ? new Date(startDate + 'T00:00:00.000Z') : undefined;
+      const dateLte = endDate ? new Date(endDate + 'T23:59:59.999Z') : undefined;
+
+      const deliveredAtFilter = {};
+      if (dateGte) deliveredAtFilter.gte = dateGte;
+      if (dateLte) deliveredAtFilter.lte = dateLte;
+
+      const arriveAtFilter = {};
+      if (dateGte) arriveAtFilter.gte = dateGte;
+      if (dateLte) arriveAtFilter.lte = dateLte;
+
+      // Remplacer le filtre de statut par un OR combinant date + statut
+      delete where.status;
+      where.AND = [
+        {
+          OR: [
+            { status: 'EXPRESS_LIVRE', deliveredAt: deliveredAtFilter },
+            { status: 'EXPRESS_ARRIVE', arriveAt: arriveAtFilter }
+          ]
+        }
+      ];
+
+      // Respecter les filtres de statut/nonRetires déjà appliqués
+      if (statut && statut !== 'all') {
+        if (statut === 'EXPRESS_LIVRE') {
+          delete where.AND;
+          where.status = 'EXPRESS_LIVRE';
+          where.deliveredAt = deliveredAtFilter;
+        } else if (statut === 'EXPRESS_ARRIVE') {
+          delete where.AND;
+          where.status = 'EXPRESS_ARRIVE';
+          where.arriveAt = arriveAtFilter;
+        }
+      }
+      if (nonRetires === 'true') {
+        delete where.AND;
+        where.status = 'EXPRESS_ARRIVE';
+        where.arriveAt = arriveAtFilter;
+      }
     }
 
     // Récupérer les commandes avec notifications
@@ -80,13 +118,14 @@ router.get('/en-agence', authenticate, authorize('ADMIN', 'GESTIONNAIRE', 'APPEL
     }));
 
     // Stats globales
+    const retiresOrders = ordersWithStats.filter(o => o.status === 'EXPRESS_LIVRE');
+    const nonRetiresOrders = ordersWithStats.filter(o => o.status === 'EXPRESS_ARRIVE');
     const stats = {
       total: ordersWithStats.length,
-      nonRetires: ordersWithStats.filter(o => o.status === 'EXPRESS_ARRIVE').length,
-      retires: ordersWithStats.filter(o => o.status === 'EXPRESS_LIVRE').length,
-      montantEnAttente: ordersWithStats
-        .filter(o => o.status === 'EXPRESS_ARRIVE')
-        .reduce((sum, o) => sum + (o.montant * 0.90), 0),
+      nonRetires: nonRetiresOrders.length,
+      retires: retiresOrders.length,
+      montantEncaisse: retiresOrders.reduce((sum, o) => sum + (o.montant * 0.90), 0),
+      montantEnAttente: nonRetiresOrders.reduce((sum, o) => sum + (o.montant * 0.90), 0),
       nombreNotificationsTotal: ordersWithStats.reduce((sum, o) => sum + o.nombreNotifications, 0),
       agences: [...new Set(ordersWithStats.map(o => o.agenceRetrait))].filter(Boolean)
     };

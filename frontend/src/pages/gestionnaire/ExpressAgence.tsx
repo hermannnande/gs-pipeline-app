@@ -146,11 +146,11 @@ export default function ExpressAgence() {
       </div>
 
       {/* Stats rapides */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="card bg-blue-50 border-blue-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total en agence</p>
+              <p className="text-sm text-gray-600">Total</p>
               <p className="text-2xl font-bold text-blue-600">{stats.total || 0}</p>
             </div>
             <Package className="text-blue-600" size={32} />
@@ -162,6 +162,7 @@ export default function ExpressAgence() {
             <div>
               <p className="text-sm text-gray-600">Non retirés</p>
               <p className="text-2xl font-bold text-orange-600">{stats.nonRetires || 0}</p>
+              <p className="text-xs text-orange-500 mt-1">{formatCurrency(stats.montantEnAttente || 0)}</p>
             </div>
             <AlertCircle className="text-orange-600" size={32} />
           </div>
@@ -177,10 +178,21 @@ export default function ExpressAgence() {
           </div>
         </div>
 
+        <div className="card bg-emerald-50 border-emerald-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Montant encaissé</p>
+              <p className="text-2xl font-bold text-emerald-600">{formatCurrency(stats.montantEncaisse || 0)}</p>
+              <p className="text-xs text-emerald-500 mt-1">{stats.retires || 0} colis retirés</p>
+            </div>
+            <span className="text-emerald-600 text-2xl">💰</span>
+          </div>
+        </div>
+
         <div className="card bg-purple-50 border-purple-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Notifications totales</p>
+              <p className="text-sm text-gray-600">Notifications</p>
               <p className="text-2xl font-bold text-purple-600">{stats.nombreNotificationsTotal || 0}</p>
             </div>
             <Bell className="text-purple-600" size={32} />
@@ -212,7 +224,7 @@ export default function ExpressAgence() {
 
         {/* Raccourcis de dates */}
         <div className="mb-4 pb-4 border-b">
-          <p className="text-sm font-medium text-gray-700 mb-2">📅 Filtrer par période :</p>
+          <p className="text-sm font-medium text-gray-700 mb-2">📅 Filtrer par période (retrait pour les retirés, arrivée pour les en attente) :</p>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => setDateRaccourci('aujourdhui')} className="btn btn-sm btn-secondary">
               Aujourd'hui
