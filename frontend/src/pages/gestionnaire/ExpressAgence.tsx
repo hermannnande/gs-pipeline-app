@@ -153,125 +153,173 @@ export default function ExpressAgence() {
       ? `Période : ${startDate ? new Date(startDate).toLocaleDateString('fr-FR') : '...'} au ${endDate ? new Date(endDate).toLocaleDateString('fr-FR') : '...'}`
       : 'Toutes les périodes';
 
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('EXPRESS - Rapport en agence', pageWidth / 2, 15, { align: 'center' });
-
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(periodeText, pageWidth / 2, 22, { align: 'center' });
-
-    const agenceText = agenceFilter !== 'all' ? `Agence : ${agenceFilter}` : 'Toutes les agences';
-    doc.text(agenceText, pageWidth / 2, 27, { align: 'center' });
-
-    doc.setFontSize(9);
-    doc.text([
-      `Total : ${stats.total || 0} colis`,
-      `Retirés : ${stats.retires || 0}`,
-      `Non retirés : ${stats.nonRetires || 0}`,
-      `Montant encaissé : ${formatCurrency(stats.montantEncaisse || 0)}`,
-      `Montant en attente : ${formatCurrency(stats.montantEnAttente || 0)}`,
-    ].join('  |  '), pageWidth / 2, 33, { align: 'center' });
-
     const formatDateShort = (d: string | null) => {
       if (!d) return '-';
       return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
     };
 
-    const tableData = sortedOrders.map((order: any, i: number) => [
-      i + 1,
-      order.clientNom || '-',
-      order.clientTelephone || '-',
-      order.product?.nom || order.produitNom || '-',
-      order.quantite,
-      order.agenceRetrait || '-',
-      order.status === 'EXPRESS_LIVRE' ? 'Retiré' : 'En attente',
-      formatDateShort(order.arriveAt),
-      formatDateShort(order.deliveredAt),
-      `${(order.montant * 0.90).toLocaleString('fr-FR')}`,
-    ]);
+    // --- PAGE 1 : Résumé global ---
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('EXPRESS - Rapport en agence', pageWidth / 2, 18, { align: 'center' });
 
-    autoTable(doc, {
-      startY: 38,
-      head: [['#', 'Client', 'Téléphone', 'Produit', 'Qté', 'Agence', 'Statut', 'Arrivée', 'Retrait', 'Encaissé (FCFA)']],
-      body: tableData,
-      styles: { fontSize: 7, cellPadding: 1.5 },
-      headStyles: { fillColor: [34, 97, 94], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
-      alternateRowStyles: { fillColor: [245, 245, 245] },
-      columnStyles: {
-        0: { cellWidth: 8, halign: 'center' },
-        1: { cellWidth: 35 },
-        2: { cellWidth: 28 },
-        3: { cellWidth: 35 },
-        4: { cellWidth: 10, halign: 'center' },
-        5: { cellWidth: 28 },
-        6: { cellWidth: 20, halign: 'center' },
-        7: { cellWidth: 30 },
-        8: { cellWidth: 30 },
-        9: { cellWidth: 25, halign: 'right' },
-      },
-      didParseCell: (data: any) => {
-        if (data.section === 'body' && data.column.index === 6) {
-          if (data.cell.raw === 'Retiré') {
-            data.cell.styles.textColor = [22, 101, 52];
-            data.cell.styles.fontStyle = 'bold';
-          } else {
-            data.cell.styles.textColor = [194, 65, 12];
-          }
-        }
-      },
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text(periodeText, pageWidth / 2, 26, { align: 'center' });
+
+    const agenceText = agenceFilter !== 'all' ? `Agence : ${agenceFilter}` : 'Toutes les agences';
+    doc.text(agenceText, pageWidth / 2, 32, { align: 'center' });
+
+    // Stats encadrées
+    const boxY = 38;
+    const boxH = 18;
+    const boxW = (pageWidth - 30) / 4;
+    const statsData = [
+      { label: 'Total colis', value: `${stats.total || 0}`, color: [219, 234, 254] },
+      { label: 'Retirés', value: `${stats.retires || 0}`, color: [209, 250, 229] },
+      { label: 'Non retirés', value: `${stats.nonRetires || 0}`, color: [254, 235, 200] },
+      { label: 'Montant encaissé', value: formatCurrency(stats.montantEncaisse || 0), color: [209, 250, 229] },
+    ];
+    statsData.forEach((s: any, i: number) => {
+      const x = 10 + i * (boxW + 3.3);
+      doc.setFillColor(s.color[0], s.color[1], s.color[2]);
+      doc.roundedRect(x, boxY, boxW, boxH, 2, 2, 'F');
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80);
+      doc.text(s.label, x + boxW / 2, boxY + 6, { align: 'center' });
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30);
+      doc.text(s.value, x + boxW / 2, boxY + 14, { align: 'center' });
     });
+    doc.setTextColor(0);
 
-    // Résumé par agence sur une nouvelle page
-    const agenceStats: Record<string, { count: number; montant: number }> = {};
+    // Tableau résumé par agence
+    const agenceGroups: Record<string, any[]> = {};
     sortedOrders.forEach((order: any) => {
       const ag = order.agenceRetrait || 'Inconnu';
-      if (!agenceStats[ag]) agenceStats[ag] = { count: 0, montant: 0 };
-      agenceStats[ag].count++;
-      if (order.status === 'EXPRESS_LIVRE') {
-        agenceStats[ag].montant += order.montant * 0.90;
-      }
+      if (!agenceGroups[ag]) agenceGroups[ag] = [];
+      agenceGroups[ag].push(order);
+    });
+    const agenceEntries = Object.entries(agenceGroups).sort((a, b) => b[1].length - a[1].length);
+
+    const summaryBody = agenceEntries.map(([agence, orders], i) => {
+      const retires = orders.filter((o: any) => o.status === 'EXPRESS_LIVRE');
+      const enAttente = orders.filter((o: any) => o.status === 'EXPRESS_ARRIVE');
+      const montantEnc = Math.round(retires.reduce((s: number, o: any) => s + o.montant * 0.90, 0));
+      return [i + 1, agence, orders.length, retires.length, enAttente.length, `${montantEnc.toLocaleString('fr-FR')}`];
     });
 
-    const agenceSorted = Object.entries(agenceStats).sort((a, b) => b[1].count - a[1].count);
-
-    doc.addPage();
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Résumé par agence', pageWidth / 2, 15, { align: 'center' });
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(periodeText, pageWidth / 2, 22, { align: 'center' });
+    const totalRetires = sortedOrders.filter((o: any) => o.status === 'EXPRESS_LIVRE');
+    const totalEnAttente = sortedOrders.filter((o: any) => o.status === 'EXPRESS_ARRIVE');
+    const totalEnc = Math.round(totalRetires.reduce((s: number, o: any) => s + o.montant * 0.90, 0));
+    summaryBody.push(['', 'TOTAL', sortedOrders.length, totalRetires.length, totalEnAttente.length, `${totalEnc.toLocaleString('fr-FR')}`]);
 
     autoTable(doc, {
-      startY: 28,
-      head: [['#', 'Agence', 'Nombre de colis', 'Montant encaissé (FCFA)']],
-      body: [
-        ...agenceSorted.map(([agence, s], i) => [
-          i + 1,
-          agence,
-          s.count,
-          `${Math.round(s.montant).toLocaleString('fr-FR')}`,
-        ]),
-        ['', 'TOTAL', sortedOrders.length, `${Math.round(sortedOrders.filter((o: any) => o.status === 'EXPRESS_LIVRE').reduce((sum: number, o: any) => sum + o.montant * 0.90, 0)).toLocaleString('fr-FR')}`],
-      ],
+      startY: boxY + boxH + 6,
+      head: [['#', 'Agence', 'Total', 'Retirés', 'En attente', 'Encaissé (FCFA)']],
+      body: summaryBody,
       styles: { fontSize: 9, cellPadding: 3 },
       headStyles: { fillColor: [34, 97, 94], textColor: 255, fontStyle: 'bold' },
       alternateRowStyles: { fillColor: [245, 245, 245] },
       columnStyles: {
-        0: { cellWidth: 15, halign: 'center' },
-        1: { cellWidth: 60 },
-        2: { cellWidth: 40, halign: 'center' },
-        3: { cellWidth: 50, halign: 'right' },
+        0: { cellWidth: 12, halign: 'center' },
+        1: { cellWidth: 55 },
+        2: { cellWidth: 25, halign: 'center' },
+        3: { cellWidth: 25, halign: 'center' },
+        4: { cellWidth: 25, halign: 'center' },
+        5: { cellWidth: 45, halign: 'right' },
       },
       didParseCell: (data: any) => {
-        if (data.section === 'body' && data.row.index === agenceSorted.length) {
+        if (data.section === 'body' && data.row.index === agenceEntries.length) {
           data.cell.styles.fontStyle = 'bold';
           data.cell.styles.fillColor = [209, 250, 229];
         }
       },
     });
 
+    // --- PAGES SUIVANTES : Détail par agence ---
+    agenceEntries.forEach(([agence, agOrders]) => {
+      doc.addPage();
+
+      const retires = agOrders.filter((o: any) => o.status === 'EXPRESS_LIVRE');
+      const enAttente = agOrders.filter((o: any) => o.status === 'EXPRESS_ARRIVE');
+      const montantEnc = Math.round(retires.reduce((s: number, o: any) => s + o.montant * 0.90, 0));
+      const montantAtt = Math.round(enAttente.reduce((s: number, o: any) => s + o.montant * 0.90, 0));
+
+      // En-tête agence
+      doc.setFillColor(34, 97, 94);
+      doc.rect(0, 0, pageWidth, 22, 'F');
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(255);
+      doc.text(`${agence}`, 15, 14);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text(periodeText, pageWidth - 15, 10, { align: 'right' });
+      doc.text(
+        `${agOrders.length} colis  |  ${retires.length} retirés  |  ${enAttente.length} en attente  |  Encaissé : ${montantEnc.toLocaleString('fr-FR')} FCFA  |  En attente : ${montantAtt.toLocaleString('fr-FR')} FCFA`,
+        pageWidth - 15, 17, { align: 'right' }
+      );
+      doc.setTextColor(0);
+
+      const tableRows = agOrders.map((order: any, i: number) => [
+        i + 1,
+        order.clientNom || '-',
+        order.clientTelephone || '-',
+        order.product?.nom || order.produitNom || '-',
+        order.quantite,
+        order.status === 'EXPRESS_LIVRE' ? 'Retiré' : 'En attente',
+        formatDateShort(order.arriveAt),
+        formatDateShort(order.deliveredAt),
+        `${Math.round(order.montant * 0.90).toLocaleString('fr-FR')}`,
+      ]);
+
+      // Ligne sous-total agence
+      tableRows.push([
+        '', '', '', '', '', '',
+        '', `SOUS-TOTAL ${agence.toUpperCase()}`,
+        `${montantEnc.toLocaleString('fr-FR')}`,
+      ]);
+
+      autoTable(doc, {
+        startY: 26,
+        head: [['#', 'Client', 'Téléphone', 'Produit', 'Qté', 'Statut', 'Arrivée', 'Retrait', 'Encaissé (FCFA)']],
+        body: tableRows,
+        styles: { fontSize: 7.5, cellPadding: 2 },
+        headStyles: { fillColor: [55, 65, 81], textColor: 255, fontStyle: 'bold', fontSize: 8 },
+        alternateRowStyles: { fillColor: [249, 250, 251] },
+        columnStyles: {
+          0: { cellWidth: 8, halign: 'center' },
+          1: { cellWidth: 40 },
+          2: { cellWidth: 30 },
+          3: { cellWidth: 40 },
+          4: { cellWidth: 10, halign: 'center' },
+          5: { cellWidth: 22, halign: 'center' },
+          6: { cellWidth: 32 },
+          7: { cellWidth: 32 },
+          8: { cellWidth: 28, halign: 'right' },
+        },
+        didParseCell: (data: any) => {
+          if (data.section === 'body' && data.column.index === 5) {
+            if (data.cell.raw === 'Retiré') {
+              data.cell.styles.textColor = [22, 101, 52];
+              data.cell.styles.fontStyle = 'bold';
+            } else if (data.cell.raw === 'En attente') {
+              data.cell.styles.textColor = [194, 65, 12];
+            }
+          }
+          if (data.section === 'body' && data.row.index === agOrders.length) {
+            data.cell.styles.fontStyle = 'bold';
+            data.cell.styles.fillColor = [209, 250, 229];
+            data.cell.styles.fontSize = 8.5;
+          }
+        },
+      });
+    });
+
+    // Pied de page sur toutes les pages
     const now = new Date();
     const totalPages = doc.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
