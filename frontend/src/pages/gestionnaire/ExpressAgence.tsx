@@ -11,9 +11,12 @@ import {
   CheckCircle2,
   AlertCircle,
   Calendar,
-  MessageSquare
+  MessageSquare,
+  FileDown
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { expressApi } from '@/lib/api';
 import { formatCurrency, formatDateTime } from '@/utils/statusHelpers';
 
@@ -135,6 +138,157 @@ export default function ExpressAgence() {
         setEndDate('');
         break;
     }
+  };
+
+  const exportPDF = () => {
+    if (sortedOrders.length === 0) {
+      toast.error('Aucune donnée à exporter');
+      return;
+    }
+
+    const doc = new jsPDF('landscape', 'mm', 'a4');
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    const periodeText = startDate || endDate
+      ? `Période : ${startDate ? new Date(startDate).toLocaleDateString('fr-FR') : '...'} au ${endDate ? new Date(endDate).toLocaleDateString('fr-FR') : '...'}`
+      : 'Toutes les périodes';
+
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('EXPRESS - Rapport en agence', pageWidth / 2, 15, { align: 'center' });
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(periodeText, pageWidth / 2, 22, { align: 'center' });
+
+    const agenceText = agenceFilter !== 'all' ? `Agence : ${agenceFilter}` : 'Toutes les agences';
+    doc.text(agenceText, pageWidth / 2, 27, { align: 'center' });
+
+    doc.setFontSize(9);
+    doc.text([
+      `Total : ${stats.total || 0} colis`,
+      `Retirés : ${stats.retires || 0}`,
+      `Non retirés : ${stats.nonRetires || 0}`,
+      `Montant encaissé : ${formatCurrency(stats.montantEncaisse || 0)}`,
+      `Montant en attente : ${formatCurrency(stats.montantEnAttente || 0)}`,
+    ].join('  |  '), pageWidth / 2, 33, { align: 'center' });
+
+    const formatDateShort = (d: string | null) => {
+      if (!d) return '-';
+      return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+    };
+
+    const tableData = sortedOrders.map((order: any, i: number) => [
+      i + 1,
+      order.clientNom || '-',
+      order.clientTelephone || '-',
+      order.product?.nom || order.produitNom || '-',
+      order.quantite,
+      order.agenceRetrait || '-',
+      order.status === 'EXPRESS_LIVRE' ? 'Retiré' : 'En attente',
+      formatDateShort(order.arriveAt),
+      formatDateShort(order.deliveredAt),
+      `${(order.montant * 0.90).toLocaleString('fr-FR')}`,
+    ]);
+
+    autoTable(doc, {
+      startY: 38,
+      head: [['#', 'Client', 'Téléphone', 'Produit', 'Qté', 'Agence', 'Statut', 'Arrivée', 'Retrait', 'Encaissé (FCFA)']],
+      body: tableData,
+      styles: { fontSize: 7, cellPadding: 1.5 },
+      headStyles: { fillColor: [34, 97, 94], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      columnStyles: {
+        0: { cellWidth: 8, halign: 'center' },
+        1: { cellWidth: 35 },
+        2: { cellWidth: 28 },
+        3: { cellWidth: 35 },
+        4: { cellWidth: 10, halign: 'center' },
+        5: { cellWidth: 28 },
+        6: { cellWidth: 20, halign: 'center' },
+        7: { cellWidth: 30 },
+        8: { cellWidth: 30 },
+        9: { cellWidth: 25, halign: 'right' },
+      },
+      didParseCell: (data: any) => {
+        if (data.section === 'body' && data.column.index === 6) {
+          if (data.cell.raw === 'Retiré') {
+            data.cell.styles.textColor = [22, 101, 52];
+            data.cell.styles.fontStyle = 'bold';
+          } else {
+            data.cell.styles.textColor = [194, 65, 12];
+          }
+        }
+      },
+    });
+
+    // Résumé par agence sur une nouvelle page
+    const agenceStats: Record<string, { count: number; montant: number }> = {};
+    sortedOrders.forEach((order: any) => {
+      const ag = order.agenceRetrait || 'Inconnu';
+      if (!agenceStats[ag]) agenceStats[ag] = { count: 0, montant: 0 };
+      agenceStats[ag].count++;
+      if (order.status === 'EXPRESS_LIVRE') {
+        agenceStats[ag].montant += order.montant * 0.90;
+      }
+    });
+
+    const agenceSorted = Object.entries(agenceStats).sort((a, b) => b[1].count - a[1].count);
+
+    doc.addPage();
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Résumé par agence', pageWidth / 2, 15, { align: 'center' });
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(periodeText, pageWidth / 2, 22, { align: 'center' });
+
+    autoTable(doc, {
+      startY: 28,
+      head: [['#', 'Agence', 'Nombre de colis', 'Montant encaissé (FCFA)']],
+      body: [
+        ...agenceSorted.map(([agence, s], i) => [
+          i + 1,
+          agence,
+          s.count,
+          `${Math.round(s.montant).toLocaleString('fr-FR')}`,
+        ]),
+        ['', 'TOTAL', sortedOrders.length, `${Math.round(sortedOrders.filter((o: any) => o.status === 'EXPRESS_LIVRE').reduce((sum: number, o: any) => sum + o.montant * 0.90, 0)).toLocaleString('fr-FR')}`],
+      ],
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [34, 97, 94], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      columnStyles: {
+        0: { cellWidth: 15, halign: 'center' },
+        1: { cellWidth: 60 },
+        2: { cellWidth: 40, halign: 'center' },
+        3: { cellWidth: 50, halign: 'right' },
+      },
+      didParseCell: (data: any) => {
+        if (data.section === 'body' && data.row.index === agenceSorted.length) {
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.fillColor = [209, 250, 229];
+        }
+      },
+    });
+
+    const now = new Date();
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(7);
+      doc.setTextColor(150);
+      doc.text(
+        `GS Pipeline - Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR')} - Page ${i}/${totalPages}`,
+        pageWidth / 2,
+        doc.internal.pageSize.getHeight() - 5,
+        { align: 'center' }
+      );
+    }
+
+    const fileName = `express-agence${startDate ? `-du-${startDate}` : ''}${endDate ? `-au-${endDate}` : ''}.pdf`;
+    doc.save(fileName);
+    toast.success(`PDF exporté : ${fileName}`);
   };
 
   return (
@@ -413,13 +567,22 @@ export default function ExpressAgence() {
               <p className="text-sm font-medium text-gray-700">
                 📋 {sortedOrders.length} colis {sortedOrders.length !== orders.length && `sur ${orders.length}`}
               </p>
-              <p className="text-xs text-gray-600">
-                Trié par: <strong>
-                  {triPar === 'jours' ? 'Jours en agence (urgent)' : 
-                   triPar === 'notifications' ? 'Notifications (à relancer)' : 
-                   'Date d\'arrivée (récent)'}
-                </strong>
-              </p>
+              <div className="flex items-center gap-4">
+                <p className="text-xs text-gray-600">
+                  Trié par: <strong>
+                    {triPar === 'jours' ? 'Jours en agence (urgent)' : 
+                     triPar === 'notifications' ? 'Notifications (à relancer)' : 
+                     'Date d\'arrivée (récent)'}
+                  </strong>
+                </p>
+                <button
+                  onClick={exportPDF}
+                  className="btn btn-primary btn-sm flex items-center gap-2"
+                >
+                  <FileDown size={16} />
+                  Exporter PDF
+                </button>
+              </div>
             </div>
           </div>
 
