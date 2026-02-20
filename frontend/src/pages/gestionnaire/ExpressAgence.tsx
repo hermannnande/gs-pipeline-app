@@ -146,6 +146,8 @@ export default function ExpressAgence() {
       return;
     }
 
+    const fmtNum = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+
     const doc = new jsPDF('landscape', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
 
@@ -178,7 +180,7 @@ export default function ExpressAgence() {
       { label: 'Total colis', value: `${stats.total || 0}`, color: [219, 234, 254] },
       { label: 'Retirés', value: `${stats.retires || 0}`, color: [209, 250, 229] },
       { label: 'Non retirés', value: `${stats.nonRetires || 0}`, color: [254, 235, 200] },
-      { label: 'Montant encaissé', value: formatCurrency(stats.montantEncaisse || 0), color: [209, 250, 229] },
+      { label: 'Montant encaissé', value: `${fmtNum(stats.montantEncaisse || 0)} FCFA`, color: [209, 250, 229] },
     ];
     statsData.forEach((s: any, i: number) => {
       const x = 10 + i * (boxW + 3.3);
@@ -208,13 +210,13 @@ export default function ExpressAgence() {
       const retires = orders.filter((o: any) => o.status === 'EXPRESS_LIVRE');
       const enAttente = orders.filter((o: any) => o.status === 'EXPRESS_ARRIVE');
       const montantEnc = Math.round(retires.reduce((s: number, o: any) => s + o.montant * 0.90, 0));
-      return [i + 1, agence, orders.length, retires.length, enAttente.length, `${montantEnc.toLocaleString('fr-FR')}`];
+      return [i + 1, agence, orders.length, retires.length, enAttente.length, fmtNum(montantEnc)];
     });
 
     const totalRetires = sortedOrders.filter((o: any) => o.status === 'EXPRESS_LIVRE');
     const totalEnAttente = sortedOrders.filter((o: any) => o.status === 'EXPRESS_ARRIVE');
     const totalEnc = Math.round(totalRetires.reduce((s: number, o: any) => s + o.montant * 0.90, 0));
-    summaryBody.push(['', 'TOTAL', sortedOrders.length, totalRetires.length, totalEnAttente.length, `${totalEnc.toLocaleString('fr-FR')}`]);
+    summaryBody.push(['', 'TOTAL', sortedOrders.length, totalRetires.length, totalEnAttente.length, fmtNum(totalEnc)]);
 
     autoTable(doc, {
       startY: boxY + boxH + 6,
@@ -259,7 +261,7 @@ export default function ExpressAgence() {
       doc.setFont('helvetica', 'normal');
       doc.text(periodeText, pageWidth - 15, 10, { align: 'right' });
       doc.text(
-        `${agOrders.length} colis  |  ${retires.length} retirés  |  ${enAttente.length} en attente  |  Encaissé : ${montantEnc.toLocaleString('fr-FR')} FCFA  |  En attente : ${montantAtt.toLocaleString('fr-FR')} FCFA`,
+        `${agOrders.length} colis  |  ${retires.length} retirés  |  ${enAttente.length} en attente  |  Encaissé : ${fmtNum(montantEnc)} FCFA  |  En attente : ${fmtNum(montantAtt)} FCFA`,
         pageWidth - 15, 17, { align: 'right' }
       );
       doc.setTextColor(0);
@@ -273,14 +275,14 @@ export default function ExpressAgence() {
         order.status === 'EXPRESS_LIVRE' ? 'Retiré' : 'En attente',
         formatDateShort(order.arriveAt),
         formatDateShort(order.deliveredAt),
-        `${Math.round(order.montant * 0.90).toLocaleString('fr-FR')}`,
+        fmtNum(order.montant * 0.90),
       ]);
 
       // Ligne sous-total agence
       tableRows.push([
         '', '', '', '', '', '',
         '', `SOUS-TOTAL ${agence.toUpperCase()}`,
-        `${montantEnc.toLocaleString('fr-FR')}`,
+        fmtNum(montantEnc),
       ]);
 
       autoTable(doc, {
