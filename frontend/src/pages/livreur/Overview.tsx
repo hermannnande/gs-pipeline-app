@@ -38,7 +38,7 @@ export default function Overview() {
       status: 'ASSIGNEE',
       limit: 100
     }),
-    refetchInterval: 30000,
+    refetchInterval: 60000,
   });
 
   // Récupérer les EXPRESS assignés au livreur (à envoyer vers agence)
@@ -51,7 +51,7 @@ export default function Overview() {
       limit: 100
     }),
     enabled: !!user?.id,
-    refetchInterval: 30000,
+    refetchInterval: 60000,
   });
 
   // Mutation pour marquer une expédition comme livrée

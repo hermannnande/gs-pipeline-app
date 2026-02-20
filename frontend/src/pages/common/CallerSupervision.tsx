@@ -46,13 +46,13 @@ export default function CallerSupervision() {
       const { data } = await api.get('/orders', {
         params: {
           page: 1,
-          limit: 1000,
+          limit: 50,
           startDate: startDate?.toISOString()
         }
       });
       return data;
     },
-    refetchInterval: 5000 // Actualisation toutes les 5 secondes
+    refetchInterval: 30000
   });
 
   // Calculer les stats par appelant

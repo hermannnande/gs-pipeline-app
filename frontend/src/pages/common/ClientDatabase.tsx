@@ -22,7 +22,7 @@ export default function ClientDatabase() {
       const { data } = await api.get('/orders', {
         params: {
           page: 1,
-          limit: 1000,
+          limit: 50,
           search: searchTerm || undefined,
           status: filterStatus !== 'ALL' ? filterStatus : undefined,
           ville: filterVille || undefined,
@@ -33,7 +33,7 @@ export default function ClientDatabase() {
       });
       return data;
     },
-    refetchInterval: 5000 // Actualisation toutes les 5 secondes
+    refetchOnWindowFocus: true
   });
 
   // Requête pour récupérer les appelants

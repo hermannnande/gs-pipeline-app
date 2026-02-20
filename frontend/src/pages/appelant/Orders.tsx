@@ -38,8 +38,7 @@ export default function Orders() {
   const { data: ordersData, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['appelant-orders', currentPage],
     queryFn: () => ordersApi.getAll({ page: currentPage, limit: ITEMS_PER_PAGE }),
-    refetchInterval: 30000, // Actualisation automatique toutes les 30 secondes
-    refetchIntervalInBackground: true, // Continue même si l'onglet n'est pas actif
+    refetchInterval: 60000,
   });
 
   // Compteur pour afficher le temps écoulé depuis la dernière actualisation

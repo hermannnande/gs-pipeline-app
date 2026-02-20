@@ -40,7 +40,7 @@ export default function ExpressAgence() {
       startDate: startDate || undefined,
       endDate: endDate || undefined
     }),
-    refetchInterval: 30000, // Refresh toutes les 30 secondes
+    refetchInterval: 60000,
   });
 
   const notifierMutation = useMutation({

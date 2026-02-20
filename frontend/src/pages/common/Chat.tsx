@@ -17,8 +17,7 @@ export default function Chat() {
     queryKey: ['conversations'],
     queryFn: chatApi.getConversations,
     refetchOnWindowFocus: true,
-    // Remplace le temps réel (Socket.io) par un rafraîchissement périodique
-    refetchInterval: 5000
+    enabled: false
   });
 
   const conversations = conversationsData?.conversations || [];

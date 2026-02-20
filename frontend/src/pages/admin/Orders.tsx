@@ -43,8 +43,7 @@ export default function Orders() {
       startDate: startDate || undefined,
       endDate: endDate || undefined
     }),
-    refetchInterval: 30000, // Actualisation automatique toutes les 30 secondes
-    refetchIntervalInBackground: true, // Continue même si l'onglet n'est pas actif
+    refetchInterval: 60000,
   });
 
   // Compteur pour afficher le temps écoulé depuis la dernière actualisation

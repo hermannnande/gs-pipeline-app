@@ -32,8 +32,6 @@ export default function MessageArea({ conversationId, onBack }: MessageAreaProps
     queryKey: ['messages', conversationId],
     queryFn: () => chatApi.getMessages(conversationId),
     enabled: !!conversationId,
-    // Remplace le temps réel (Socket.io) par un rafraîchissement périodique
-    refetchInterval: 3000
   });
 
   const messages = messagesData?.messages || [];

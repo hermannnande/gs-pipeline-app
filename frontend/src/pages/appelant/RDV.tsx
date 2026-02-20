@@ -32,7 +32,7 @@ export default function RDV() {
       rappele: filterRappele === 'tous' ? undefined : filterRappele === 'oui',
       search: searchTerm || undefined
     }),
-    refetchInterval: 30000, // Rafraîchir toutes les 30 secondes
+    refetchInterval: 60000,
   });
 
   const rappelerMutation = useMutation({

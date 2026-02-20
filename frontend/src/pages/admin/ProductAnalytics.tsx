@@ -118,8 +118,7 @@ export default function ProductAnalytics() {
       return data;
     },
     // Pour “temps réel” (ex: aujourd’hui), on rafraîchit automatiquement
-    refetchInterval: 30000,
-    refetchIntervalInBackground: true,
+    refetchInterval: 120000,
     refetchOnWindowFocus: true,
   });
 

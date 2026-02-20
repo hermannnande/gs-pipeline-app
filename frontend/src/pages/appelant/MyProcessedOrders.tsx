@@ -18,7 +18,7 @@ export default function MyProcessedOrders() {
       const { data } = await api.get('/orders', {
         params: {
           page: 1,
-          limit: 500,
+          limit: 50,
           callerId: user?.id,
           search: searchTerm || undefined,
           status: filterStatus !== 'ALL' ? filterStatus : undefined,
@@ -28,7 +28,7 @@ export default function MyProcessedOrders() {
       });
       return data;
     },
-    refetchInterval: 5000 // Actualisation toutes les 5 secondes
+    refetchInterval: 60000
   });
 
   // Filtrer uniquement les commandes TRAITÉES par moi

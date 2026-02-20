@@ -108,8 +108,10 @@ router.get('/', async (req, res) => {
       prisma.order.count({ where })
     ]);
 
+    const ordersLight = orders.map(({ photoRecuExpedition, photoRecuExpress, ...rest }) => rest);
+
     res.json({
-      orders,
+      orders: ordersLight,
       pagination: {
         total,
         page: parseInt(page),

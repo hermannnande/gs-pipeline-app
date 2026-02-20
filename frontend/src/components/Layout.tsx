@@ -27,8 +27,6 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import NotificationCenter from './NotificationCenter';
-import { useQuery } from '@tanstack/react-query';
-import { chatApi } from '@/lib/chatApi';
 
 interface LayoutProps {
   children: ReactNode;
@@ -39,16 +37,8 @@ export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Badge messages non lus (simple) - on récupère les conversations et on somme unreadCount
-  const { data: chatConvData } = useQuery({
-    queryKey: ['chat-unread-count'],
-    queryFn: chatApi.getConversations,
-    enabled: !!user,
-    refetchInterval: 30000
-  });
-
-  const totalUnread =
-    chatConvData?.conversations?.reduce((sum: number, c: any) => sum + (c.unreadCount || 0), 0) || 0;
+  // Chat et notifications désactivés pour le moment
+  const totalUnread = 0;
 
   const getNavigationItems = () => {
     switch (user?.role) {

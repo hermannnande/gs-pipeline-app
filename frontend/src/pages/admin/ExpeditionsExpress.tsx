@@ -52,14 +52,14 @@ export default function ExpeditionsExpress() {
   const { data: expeditionsData, isLoading: loadingExpeditions } = useQuery({
     queryKey: ['expeditions'],
     queryFn: () => ordersApi.getAll({ status: 'EXPEDITION', limit: 100 }),
-    refetchInterval: 30000,
+    refetchInterval: 60000,
   });
 
   // Récupérer les commandes EXPÉDITION assignées
   const { data: assignedData, isLoading: loadingAssigned } = useQuery({
     queryKey: ['expeditions-assigned'],
     queryFn: () => ordersApi.getAll({ status: 'ASSIGNEE', deliveryType: 'EXPEDITION', limit: 100 }),
-    refetchInterval: 30000,
+    refetchInterval: 60000,
   });
 
   // Fusionner les expéditions non assignées et assignées
@@ -71,19 +71,19 @@ export default function ExpeditionsExpress() {
   const { data: expressData, isLoading: loadingExpress } = useQuery({
     queryKey: ['express-pending'],
     queryFn: () => ordersApi.getAll({ status: 'EXPRESS', limit: 100 }),
-    refetchInterval: 30000,
+    refetchInterval: 60000,
   });
 
   const { data: expressShippedData, isLoading: loadingExpressShipped } = useQuery({
     queryKey: ['express-shipped'],
     queryFn: () => ordersApi.getAll({ status: 'EXPRESS_ENVOYE', limit: 100 }),
-    refetchInterval: 30000,
+    refetchInterval: 60000,
   });
 
   const { data: expressArrivedData, isLoading: loadingArrived } = useQuery({
     queryKey: ['express-arrived'],
     queryFn: () => ordersApi.getAll({ status: 'EXPRESS_ARRIVE', limit: 100 }),
-    refetchInterval: 30000,
+    refetchInterval: 60000,
   });
 
   const { data: historyData, isLoading: loadingHistory } = useQuery({
