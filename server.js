@@ -19,6 +19,7 @@ import maintenanceRoutes from './routes/maintenance.routes.js';
 import chatRoutes from './routes/chat.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
 import attendanceRoutes from './routes/attendance.routes.js';
+import publicRoutes from './routes/public.routes.js';
 import { scheduleCleanupJob } from './jobs/cleanupPhotos.js';
 import { initializeChatSocket } from './utils/chatSocket.js';
 import { setSocketServers } from './utils/socket.js';
@@ -89,6 +90,7 @@ app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/public', publicRoutes);
 
 // Servir les fichiers uploadés
 app.use('/uploads', express.static('uploads'));
