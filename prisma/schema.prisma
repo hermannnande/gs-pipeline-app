@@ -423,6 +423,7 @@ model Product {
   stockExpress      Int      @default(0) // Stock réservé EXPRESS (payé 10%, en attente retrait)
   stockLocalReserve Int      @default(0) // Stock réservé en livraison locale (avec livreurs)
   stockAlerte       Int      @default(10) // Seuil d'alerte
+  imageUrl          String?
   actif             Boolean  @default(true)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt

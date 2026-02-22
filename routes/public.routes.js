@@ -38,6 +38,7 @@ router.get('/products', async (req, res) => {
         prixUnitaire: true,
         prix2Unites: true,
         prix3Unites: true,
+        imageUrl: true,
       },
       orderBy: { nom: 'asc' },
     });

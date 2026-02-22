@@ -244,7 +244,7 @@ router.post('/', authorize('ADMIN'), [
 router.put('/:id', authorize('ADMIN'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { nom, description, prixUnitaire, prix2Unites, prix3Unites, stockAlerte, actif, code } = req.body;
+    const { nom, description, prixUnitaire, prix2Unites, prix3Unites, stockAlerte, actif, code, imageUrl } = req.body;
 
     const updateData = {};
     if (code) updateData.code = code;
@@ -255,6 +255,7 @@ router.put('/:id', authorize('ADMIN'), async (req, res) => {
     if (prix3Unites !== undefined) updateData.prix3Unites = prix3Unites ? parseFloat(prix3Unites) : null;
     if (stockAlerte !== undefined) updateData.stockAlerte = parseInt(stockAlerte);
     if (actif !== undefined) updateData.actif = actif;
+    if (imageUrl !== undefined) updateData.imageUrl = imageUrl || null;
 
     const product = await prisma.product.update({
       where: { id: parseInt(id) },
