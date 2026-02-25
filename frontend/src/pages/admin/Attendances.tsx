@@ -16,6 +16,8 @@ type AttendanceRow = {
   validee?: boolean;
   ipAddress?: string | null;
   deviceInfo?: string | null;
+  storeLocationId?: number | null;
+  storeName?: string | null;
   user: { id: number; nom: string; prenom: string; role: string };
 };
 
@@ -102,6 +104,7 @@ export default function Attendances() {
         'Date',
         'Employé',
         'Rôle',
+        'Bureau',
         'Arrivée',
         'Départ',
         'Statut',
@@ -114,6 +117,7 @@ export default function Attendances() {
         formatDate(a.date),
         `${a.user?.prenom || ''} ${a.user?.nom || ''}`.trim(),
         a.user?.role || '',
+        a.storeName || '',
         formatTime(a.heureArrivee),
         formatTime(a.heureDepart),
         formatStatus(a),
@@ -257,6 +261,7 @@ export default function Attendances() {
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Date</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Employé</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Rôle</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Bureau</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Arrivée</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Départ</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Statut</th>
@@ -275,6 +280,15 @@ export default function Attendances() {
                       </td>
                       <td className="py-3 px-4 text-sm">
                         <span className="badge badge-gray">{a.user?.role}</span>
+                      </td>
+                      <td className="py-3 px-4 text-sm">
+                        {a.storeName ? (
+                          <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-lg">
+                            {a.storeName}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
                       </td>
                       <td className="py-3 px-4 text-sm">{formatTime(a.heureArrivee)}</td>
                       <td className="py-3 px-4 text-sm">{formatTime(a.heureDepart)}</td>

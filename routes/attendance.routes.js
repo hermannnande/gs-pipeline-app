@@ -240,7 +240,7 @@ router.get('/history', authenticate, authorize('ADMIN', 'GESTIONNAIRE'), async (
     const take = Math.min(200, Math.max(1, parseInt(String(limit), 10) || 30));
     const skip = (Math.max(1, parseInt(String(page), 10) || 1) - 1) * take;
 
-    const [attendances, total] = await Promise.all([
+    const [attendances, total, storeConfigs] = await Promise.all([
       prisma.attendance.findMany({
         where,
         include: {
@@ -251,10 +251,17 @@ router.get('/history', authenticate, authorize('ADMIN', 'GESTIONNAIRE'), async (
         take,
       }),
       prisma.attendance.count({ where }),
+      prisma.storeConfig.findMany({ select: { id: true, nom: true } }),
     ]);
 
+    const storeMap = Object.fromEntries(storeConfigs.map((s) => [s.id, s.nom]));
+    const enriched = attendances.map((a) => ({
+      ...a,
+      storeName: a.storeLocationId ? storeMap[a.storeLocationId] || null : null,
+    }));
+
     return res.json({
-      attendances,
+      attendances: enriched,
       pagination: { total, page: Math.max(1, parseInt(String(page), 10) || 1), limit: take, totalPages: Math.ceil(total / take) },
     });
   } catch (e) {
