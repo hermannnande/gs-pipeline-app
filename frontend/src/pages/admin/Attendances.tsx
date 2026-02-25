@@ -14,6 +14,8 @@ type AttendanceRow = {
   distanceDepart?: number | null;
   validation?: string | null;
   validee?: boolean;
+  ipAddress?: string | null;
+  deviceInfo?: string | null;
   user: { id: number; nom: string; prenom: string; role: string };
 };
 
@@ -80,6 +82,20 @@ export default function Attendances() {
   const attendances = data?.attendances || [];
   const pagination = data?.pagination;
 
+  const duplicateIps = useMemo(() => {
+    const ipCount = new Map<string, number>();
+    for (const a of attendances) {
+      if (a.ipAddress && a.ipAddress !== 'unknown') {
+        ipCount.set(a.ipAddress, (ipCount.get(a.ipAddress) || 0) + 1);
+      }
+    }
+    const dupes = new Set<string>();
+    for (const [ip, count] of ipCount) {
+      if (count > 1) dupes.add(ip);
+    }
+    return dupes;
+  }, [attendances]);
+
   const handleExportCsv = () => {
     try {
       const header = [
@@ -91,6 +107,8 @@ export default function Attendances() {
         'Statut',
         'Distance arrivée (m)',
         'Distance départ (m)',
+        'Adresse IP',
+        'Appareil',
       ];
       const rows = attendances.map((a) => [
         formatDate(a.date),
@@ -101,6 +119,8 @@ export default function Attendances() {
         formatStatus(a),
         typeof a.distanceArrivee === 'number' ? Math.round(a.distanceArrivee).toString() : '',
         typeof a.distanceDepart === 'number' ? Math.round(a.distanceDepart).toString() : '',
+        a.ipAddress || '',
+        a.deviceInfo || '',
       ]);
       const csv = [header, ...rows].map((r) => r.map((c) => `"${String(c).replaceAll('"', '""')}"`).join(',')).join('\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
@@ -241,6 +261,7 @@ export default function Attendances() {
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Départ</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Statut</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Distance</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Adresse IP</th>
                 </tr>
               </thead>
               <tbody>
@@ -262,6 +283,27 @@ export default function Attendances() {
                       </td>
                       <td className="py-3 px-4 text-sm text-gray-700">
                         {typeof a.distanceArrivee === 'number' ? `${Math.round(a.distanceArrivee)}m` : '—'}
+                      </td>
+                      <td className="py-3 px-4 text-sm">
+                        {a.ipAddress && a.ipAddress !== 'unknown' ? (
+                          <span
+                            className={`font-mono text-xs px-2 py-1 rounded-lg inline-flex items-center gap-1 ${
+                              duplicateIps.has(a.ipAddress)
+                                ? 'bg-red-100 text-red-700 ring-1 ring-red-300'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}
+                            title={duplicateIps.has(a.ipAddress) ? 'IP utilisée par plusieurs employés ce jour' : ''}
+                          >
+                            {duplicateIps.has(a.ipAddress) && (
+                              <svg className="w-3.5 h-3.5 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                              </svg>
+                            )}
+                            {a.ipAddress}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
                       </td>
                     </tr>
                   );
