@@ -40,6 +40,7 @@ export function createApp() {
     'https://gs-pipeline-app.vercel.app',
     'https://obgestion.com',
     'https://www.obgestion.com',
+    'https://bf.obgestion.com',
     ...extraOrigins,
   ]);
 
@@ -58,7 +59,7 @@ export function createApp() {
         return cb(new Error('Origin non autorisée par CORS'));
       },
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-API-KEY'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-API-KEY', 'X-Company-Slug'],
       credentials: true,
     })
   );

@@ -62,10 +62,11 @@ app.use(cors({
     'https://gs-pipeline-app.vercel.app',
     'https://obgestion.com',
     'https://www.obgestion.com',
+    'https://bf.obgestion.com',
     /https:\/\/gs-pipeline-app-.*\.vercel\.app$/
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-KEY'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-KEY', 'X-Company-Slug'],
   credentials: true,
 }));
 

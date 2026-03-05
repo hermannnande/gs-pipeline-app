@@ -491,16 +491,6 @@ router.post('/conversations/:id/participants', async (req, res) => {
       return res.status(404).json({ error: 'Conversation non trouvée.' });
     }
 
-    const usersInCompany = await prisma.user.count({
-      where: {
-        id: { in: userIds.map((uid) => parseInt(uid)) },
-        companyId: req.user.companyId,
-      },
-    });
-    if (usersInCompany !== userIds.length) {
-      return res.status(400).json({ error: 'Tous les utilisateurs doivent appartenir à votre société.' });
-    }
-
     // Ajouter les participants
     await prisma.conversationParticipant.createMany({
       data: userIds.map(uid => ({
