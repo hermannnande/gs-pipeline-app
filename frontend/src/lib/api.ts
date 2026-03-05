@@ -4,12 +4,6 @@ import type { AuthResponse, LoginCredentials, User, Order } from '@/types';
 const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const API_URL = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
 
-export function getCompanySlug(): string {
-  const host = window.location.hostname;
-  if (host.startsWith('bf.')) return 'bf';
-  return 'ci';
-}
-
 export const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -22,7 +16,6 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  config.headers['X-Company-Slug'] = getCompanySlug();
   return config;
 });
 

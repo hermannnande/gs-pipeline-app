@@ -26,7 +26,6 @@ import {
   MapPin
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
-import { getCompanySlug } from '@/lib/api';
 import NotificationCenter from './NotificationCenter';
 
 interface LayoutProps {
@@ -37,8 +36,7 @@ export default function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuthStore();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const companySlug = getCompanySlug();
-  const companyLabel = companySlug === 'bf' ? 'GS Pipeline BF' : 'GS Pipeline';
+  const companyLabel = user?.companyId === 2 ? 'GS Pipeline BF' : 'GS Pipeline';
 
   // Chat et notifications désactivés pour le moment
   const totalUnread = 0;
