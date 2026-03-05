@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LogOut, 
@@ -26,7 +26,10 @@ import {
   MapPin
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import { api, getActiveCompanyId, setActiveCompanyId } from '@/lib/api';
 import NotificationCenter from './NotificationCenter';
+
+interface Company { id: number; nom: string; slug: string; }
 
 interface LayoutProps {
   children: ReactNode;
@@ -36,7 +39,24 @@ export default function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuthStore();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const companyLabel = user?.companyId === 2 ? 'GS Pipeline BF' : 'GS Pipeline';
+
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [activeCompany, setActiveCompany] = useState<number>(getActiveCompanyId() || user?.companyId || 1);
+
+  useEffect(() => {
+    if (user?.role === 'ADMIN') {
+      api.get('/auth/companies').then(res => setCompanies(res.data.companies || [])).catch(() => {});
+    }
+  }, [user?.role]);
+
+  const handleCompanySwitch = (companyId: number) => {
+    setActiveCompany(companyId);
+    setActiveCompanyId(companyId);
+    window.location.reload();
+  };
+
+  const currentCompany = companies.find(c => c.id === activeCompany);
+  const companyLabel = currentCompany ? currentCompany.nom : (activeCompany === 2 ? 'GS Pipeline BF' : 'GS Pipeline');
 
   // Chat et notifications désactivés pour le moment
   const totalUnread = 0;
@@ -173,13 +193,25 @@ export default function Layout({ children }: LayoutProps) {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold gradient-text font-display">{companyLabel}</h1>
-              <p className="text-xs font-semibold text-gray-500 mt-1.5 uppercase tracking-wide">
-                {user?.role === 'ADMIN' && '✨ Administration'}
-                {user?.role === 'GESTIONNAIRE' && '🎯 Gestion'}
-                {user?.role === 'GESTIONNAIRE_STOCK' && '📦 Gestion de Stock'}
-                {user?.role === 'APPELANT' && '📞 Appels'}
-                {user?.role === 'LIVREUR' && '🚚 Livraisons'}
-              </p>
+              {user?.role === 'ADMIN' && companies.length > 1 ? (
+                <select
+                  value={activeCompany}
+                  onChange={e => handleCompanySwitch(Number(e.target.value))}
+                  className="mt-1.5 w-full text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-200 rounded-lg px-2 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-300"
+                >
+                  {companies.map(c => (
+                    <option key={c.id} value={c.id}>{c.nom}</option>
+                  ))}
+                </select>
+              ) : (
+                <p className="text-xs font-semibold text-gray-500 mt-1.5 uppercase tracking-wide">
+                  {user?.role === 'ADMIN' && 'Administration'}
+                  {user?.role === 'GESTIONNAIRE' && 'Gestion'}
+                  {user?.role === 'GESTIONNAIRE_STOCK' && 'Gestion de Stock'}
+                  {user?.role === 'APPELANT' && 'Appels'}
+                  {user?.role === 'LIVREUR' && 'Livraisons'}
+                </p>
+              )}
             </div>
             {/* Close button for mobile */}
             <button

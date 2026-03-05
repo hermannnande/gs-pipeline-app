@@ -11,10 +11,27 @@ export const api = axios.create({
   },
 });
 
+export function getActiveCompanyId(): number | null {
+  const v = localStorage.getItem('activeCompanyId');
+  return v ? parseInt(v, 10) : null;
+}
+
+export function setActiveCompanyId(id: number | null) {
+  if (id) {
+    localStorage.setItem('activeCompanyId', String(id));
+  } else {
+    localStorage.removeItem('activeCompanyId');
+  }
+}
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  const activeCompany = getActiveCompanyId();
+  if (activeCompany) {
+    config.headers['X-Active-Company'] = String(activeCompany);
   }
   return config;
 });

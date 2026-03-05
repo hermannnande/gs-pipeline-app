@@ -66,7 +66,7 @@ app.use(cors({
     /https:\/\/gs-pipeline-app-.*\.vercel\.app$/
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-KEY', 'X-Company-Slug'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-KEY', 'X-Company-Slug', 'X-Active-Company'],
   credentials: true,
 }));
 

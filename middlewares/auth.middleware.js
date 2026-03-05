@@ -30,6 +30,15 @@ export const authenticate = async (req, res, next) => {
       return res.status(401).json({ error: 'Utilisateur non trouvé ou désactivé.' });
     }
 
+    // Permettre aux ADMIN de switcher d'entreprise via le header X-Active-Company
+    const activeCompany = req.headers['x-active-company'];
+    if (user.role === 'ADMIN' && activeCompany) {
+      const cid = parseInt(activeCompany, 10);
+      if (!isNaN(cid) && cid > 0) {
+        user.companyId = cid;
+      }
+    }
+
     req.user = user;
     next();
   } catch (error) {

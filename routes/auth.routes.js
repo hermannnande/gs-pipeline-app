@@ -135,6 +135,24 @@ router.get('/me', authenticate, async (req, res) => {
   }
 });
 
+// GET /api/auth/companies - Lister les entreprises (ADMIN uniquement)
+router.get('/companies', authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Accès réservé aux administrateurs.' });
+    }
+    const companies = await prisma.company.findMany({
+      where: { actif: true },
+      select: { id: true, nom: true, slug: true },
+      orderBy: { id: 'asc' },
+    });
+    res.json({ companies });
+  } catch (error) {
+    console.error('Erreur récupération companies:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération.' });
+  }
+});
+
 export default router;
 
 

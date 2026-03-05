@@ -59,7 +59,7 @@ export function createApp() {
         return cb(new Error('Origin non autorisée par CORS'));
       },
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-API-KEY', 'X-Company-Slug'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-API-KEY', 'X-Company-Slug', 'X-Active-Company'],
       credentials: true,
     })
   );
