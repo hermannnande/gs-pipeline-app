@@ -16,6 +16,7 @@ router.get('/local-reserve', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_ST
     // RETOURNE = En cours de retour, produit encore avec livreur
     const allOrders = await prisma.order.findMany({
       where: {
+        companyId: req.user.companyId,
         status: { in: ['ASSIGNEE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'] },
         deliveryType: 'LOCAL',
         productId: { not: null },
@@ -191,6 +192,7 @@ router.post('/recalculate-local-reserve', authorize('ADMIN'), async (req, res) =
     // Inclut: ASSIGNEE, REFUSEE, ANNULEE_LIVRAISON, RETOURNE
     const allOrders = await prisma.order.findMany({
       where: {
+        companyId: req.user.companyId,
         status: { in: ['ASSIGNEE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'] },
         deliveryType: 'LOCAL',
         productId: { not: null },
@@ -257,8 +259,8 @@ router.post('/recalculate-local-reserve', authorize('ADMIN'), async (req, res) =
     for (const [productIdStr, data] of Object.entries(stockByProduct)) {
       const productId = parseInt(productIdStr);
       
-      const product = await prisma.product.findUnique({
-        where: { id: productId }
+      const product = await prisma.product.findFirst({
+        where: { id: productId, companyId: req.user.companyId }
       });
 
       if (product) {
@@ -267,11 +269,11 @@ router.post('/recalculate-local-reserve', authorize('ADMIN'), async (req, res) =
         
         if (oldStockLocalReserve !== newStockLocalReserve) {
           await prisma.product.update({
-            where: { id: productId },
+            where: { id: productId, companyId: req.user.companyId },
             data: { stockLocalReserve: newStockLocalReserve }
           });
 
-          // Créer un mouvement de correction
+          // Créer un mouvement de correction (product a companyId, le produit est déjà filtré)
           await prisma.stockMovement.create({
             data: {
               productId,
@@ -302,6 +304,7 @@ router.post('/recalculate-local-reserve', authorize('ADMIN'), async (req, res) =
     // 4. Remettre à zéro les produits qui n'ont plus de commandes en livraison
     const allProducts = await prisma.product.findMany({
       where: {
+        companyId: req.user.companyId,
         stockLocalReserve: { gt: 0 }
       }
     });
@@ -309,7 +312,7 @@ router.post('/recalculate-local-reserve', authorize('ADMIN'), async (req, res) =
     for (const product of allProducts) {
       if (!stockByProduct[product.id]) {
         await prisma.product.update({
-          where: { id: product.id },
+          where: { id: product.id, companyId: req.user.companyId },
           data: { stockLocalReserve: 0 }
         });
 
@@ -367,6 +370,7 @@ router.get('/deliverer-details/:delivererId', authorize('ADMIN', 'LIVREUR'), asy
 
     const orders = await prisma.order.findMany({
       where: {
+        companyId: req.user.companyId,
         status: 'ASSIGNEE',
         deliveryType: 'LOCAL',
         delivererId: userId,

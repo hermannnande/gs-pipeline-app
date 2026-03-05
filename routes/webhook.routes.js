@@ -94,8 +94,23 @@ router.post('/make', verifyApiKey, [
       campaign_source,
       campaign_name,
       page_url,
-      raw_payload
+      raw_payload,
+      companySlug
     } = req.body;
+
+    // Déterminer companyId : companySlug/company dans body ou query, sinon default 1 (CI)
+    const slug = String(companySlug || req.body.company || req.query.company || '').trim().toLowerCase();
+    let companyId = 1;
+    if (slug) {
+      const company = await prisma.company.findUnique({
+        where: { slug }
+      });
+      if (company) {
+        companyId = company.id;
+      } else {
+        console.warn(`⚠️ Société non trouvée pour slug "${slug}", utilisation companyId=1`);
+      }
+    }
 
     console.log('📥 Commande reçue depuis Make:', {
       product_key,
@@ -106,9 +121,9 @@ router.post('/make', verifyApiKey, [
       source
     });
 
-    // 1. Chercher le produit via product_key (qui correspond au champ "code")
-    const product = await prisma.product.findUnique({
-      where: { code: product_key }
+    // 1. Chercher le produit via product_key (qui correspond au champ "code") pour la société
+    const product = await prisma.product.findFirst({
+      where: { code: product_key, companyId }
     });
 
     if (!product) {
@@ -129,6 +144,7 @@ router.post('/make', verifyApiKey, [
       // IMPORTANT: générer la référence côté serveur pour éviter toute dépendance
       // à un DEFAULT SQL (pgcrypto/gen_random_uuid) côté Supabase.
       orderReference: randomUUID(),
+      companyId,
       // Informations client
       clientNom: customer_name,
       clientTelephone: customer_phone,
@@ -243,7 +259,16 @@ router.get('/test', verifyApiKey, (req, res) => {
 // GET /api/webhook/products - Liste des produits disponibles (pour configuration Make)
 router.get('/products', verifyApiKey, async (req, res) => {
   try {
+    // Filtrer par société si company/companySlug fourni
+    const slug = String(req.query.company || req.query.companySlug || '').trim().toLowerCase();
+    let companyId = 1;
+    if (slug) {
+      const company = await prisma.company.findUnique({ where: { slug } });
+      if (company) companyId = company.id;
+    }
+
     const products = await prisma.product.findMany({
+      where: { companyId },
       select: {
         id: true,
         code: true,

@@ -27,6 +27,7 @@ export interface User {
   telephone?: string;
   role: UserRole;
   actif: boolean;
+  companyId?: number;
   createdAt: string;
 }
 

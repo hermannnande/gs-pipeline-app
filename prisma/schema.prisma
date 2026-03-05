@@ -10,6 +10,24 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// Entreprise (multi-tenant)
+model Company {
+  id        Int      @id @default(autoincrement())
+  nom       String
+  slug      String   @unique // "ci" ou "bf"
+  actif     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users        User[]
+  orders       Order[]
+  products     Product[]
+  deliveryLists DeliveryList[]
+  storeConfigs StoreConfig[]
+
+  @@map("companies")
+}
+
 // Énumération des rôles utilisateurs
 enum UserRole {
   ADMIN
@@ -55,6 +73,10 @@ model User {
   telephone String?
   role      UserRole
   actif     Boolean  @default(true)
+
+  companyId Int      @default(1)
+  company   Company  @relation(fields: [companyId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -83,6 +105,9 @@ model User {
 model Order {
   id             Int    @id @default(autoincrement())
   orderReference String @unique @default(uuid())
+
+  companyId      Int      @default(1)
+  company        Company  @relation(fields: [companyId], references: [id])
 
   // Informations client
   clientNom       String
@@ -214,8 +239,12 @@ model DeliveryList {
   delivererId  Int
   deliverer    User          @relation(fields: [delivererId], references: [id])
   zone         String? // Zone géographique
+
+  companyId    Int           @default(1)
+  company      Company       @relation(fields: [companyId], references: [id])
+
   orders       Order[]
-  tourneeStock TourneeStock? // Lien avec la gestion de stock
+  tourneeStock TourneeStock?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
@@ -417,6 +446,9 @@ model Product {
   nom               String
   description       String?
   prixUnitaire      Float // Prix pour 1 unité
+
+  companyId         Int      @default(1)
+  company           Company  @relation(fields: [companyId], references: [id])
   prix2Unites       Float? // Prix pour 2 unités (optionnel)
   prix3Unites       Float? // Prix pour 3 unités (optionnel)
   stockActuel       Int      @default(0) // Stock disponible normal
@@ -571,21 +603,15 @@ model StoreConfig {
   nom             String    @default("Magasin Principal")
   adresse         String?
 
-  // Coordonnées GPS
-  latitude        Float     // Ex: 5.353021
-  longitude       Float     // Ex: -3.870182
-  
-  // Rayon de tolérance (en mètres)
-  rayonTolerance  Int       @default(50)
+  companyId       Int       @default(1)
+  company         Company   @relation(fields: [companyId], references: [id])
 
-  // Horaires de travail
+  latitude        Float
+  longitude       Float
+  rayonTolerance  Int       @default(50)
   heureOuverture  String    @default("08:00")
   heureFermeture  String    @default("18:00")
-
-  // Tolérance de retard (en minutes)
   toleranceRetard Int       @default(15)
-
-  // Actif/Inactif (pour désactiver temporairement un bureau)
   actif           Boolean   @default(true)
 
   createdAt       DateTime  @default(now())

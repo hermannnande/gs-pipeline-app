@@ -39,7 +39,7 @@ router.get('/', async (req, res) => {
     const { status, ville, produit, startDate, endDate, callerId, delivererId, deliveryType, page = 1, limit = 1000 } = req.query;
     const user = req.user;
 
-    const where = {};
+    const where = { companyId: req.user.companyId };
 
     // Filtres selon le rôle
     if (user.role === 'APPELANT') {
@@ -131,8 +131,8 @@ router.get('/:id', async (req, res) => {
     const { id } = req.params;
     const user = req.user;
 
-    const order = await prisma.order.findUnique({
-      where: { id: parseInt(id) },
+    const order = await prisma.order.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId },
       include: {
         caller: {
           select: { id: true, nom: true, prenom: true, telephone: true }
@@ -181,6 +181,7 @@ router.post('/', authorize('ADMIN', 'GESTIONNAIRE'), [
     }
 
     const orderData = {
+      companyId: req.user.companyId,
       // IMPORTANT: générer la référence côté serveur pour éviter toute dépendance
       // à un DEFAULT SQL (pgcrypto/gen_random_uuid) côté Supabase.
       orderReference: randomUUID(),
@@ -230,8 +231,8 @@ router.post('/:id/marquer-appel', authorize('ADMIN', 'GESTIONNAIRE', 'APPELANT')
     const { id } = req.params;
     const user = req.user;
 
-    const order = await prisma.order.findUnique({
-      where: { id: parseInt(id) }
+    const order = await prisma.order.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId }
     });
 
     if (!order) {
@@ -240,7 +241,7 @@ router.post('/:id/marquer-appel', authorize('ADMIN', 'GESTIONNAIRE', 'APPELANT')
 
     // Incrémenter le compteur d'appels et assigner l'appelant
     const updatedOrder = await prisma.order.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id), companyId: req.user.companyId },
       data: {
         nombreAppels: { increment: 1 },
         callerId: order.callerId || user.id, // Assigner l'appelant si pas déjà assigné
@@ -269,8 +270,8 @@ router.post('/:id/toggle-priorite', authorize('ADMIN'), async (req, res) => {
     const { id } = req.params;
     const user = req.user;
 
-    const order = await prisma.order.findUnique({
-      where: { id: parseInt(id) }
+    const order = await prisma.order.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId }
     });
 
     if (!order) {
@@ -279,7 +280,7 @@ router.post('/:id/toggle-priorite', authorize('ADMIN'), async (req, res) => {
 
     // Basculer la priorité
     const updatedOrder = await prisma.order.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id), companyId: req.user.companyId },
       data: {
         priorite: !order.priorite,
         prioriteAt: !order.priorite ? new Date() : null,
@@ -304,8 +305,8 @@ router.put('/:id/status', async (req, res) => {
     const { status, note, raisonRetour } = req.body;
     const user = req.user;
 
-    const order = await prisma.order.findUnique({
-      where: { id: parseInt(id) }
+    const order = await prisma.order.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId }
     });
 
     if (!order) {
@@ -321,7 +322,7 @@ router.put('/:id/status', async (req, res) => {
       // Assigner l'appelant si ce n'est pas déjà fait
       if (!order.callerId) {
         await prisma.order.update({
-          where: { id: parseInt(id) },
+          where: { id: parseInt(id), companyId: req.user.companyId },
           data: { 
             callerId: user.id, 
             calledAt: new Date()
@@ -363,7 +364,7 @@ router.put('/:id/status', async (req, res) => {
     const updatedOrder = await prisma.$transaction(async (tx) => {
       // Mettre à jour le statut de la commande
       const updated = await tx.order.update({
-        where: { id: parseInt(id) },
+        where: { id: parseInt(id), companyId: req.user.companyId },
         data: {
           status,
           noteAppelant: user.role === 'APPELANT' && note ? note : order.noteAppelant,
@@ -748,8 +749,8 @@ router.post('/:id/renvoyer-appel', authorize('ADMIN', 'GESTIONNAIRE'), async (re
     const { id } = req.params;
     const { motif } = req.body;
 
-    const order = await prisma.order.findUnique({
-      where: { id: parseInt(id) }
+    const order = await prisma.order.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId }
     });
 
     if (!order) {
@@ -765,7 +766,7 @@ router.post('/:id/renvoyer-appel', authorize('ADMIN', 'GESTIONNAIRE'), async (re
 
     // Réinitialiser la commande au statut A_APPELER
     const updatedOrder = await prisma.order.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id), companyId: req.user.companyId },
       data: {
         status: 'A_APPELER',
         callerId: null, // Retirer l'appelant assigné
@@ -807,8 +808,8 @@ router.post('/:id/attente-paiement', authorize('APPELANT', 'ADMIN', 'GESTIONNAIR
     const { id } = req.params;
     const { note } = req.body;
 
-    const order = await prisma.order.findUnique({
-      where: { id: parseInt(id) }
+    const order = await prisma.order.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId }
     });
 
     if (!order) {
@@ -824,7 +825,7 @@ router.post('/:id/attente-paiement', authorize('APPELANT', 'ADMIN', 'GESTIONNAIR
 
     // Marquer en attente de paiement
     const updatedOrder = await prisma.order.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id), companyId: req.user.companyId },
       data: {
         enAttentePaiement: true,
         attentePaiementAt: new Date(),
@@ -872,8 +873,8 @@ router.put('/:id/quantite', authorize('ADMIN', 'GESTIONNAIRE'), [
     const { id } = req.params;
     const { quantite } = req.body;
 
-    const order = await prisma.order.findUnique({
-      where: { id: parseInt(id) },
+    const order = await prisma.order.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId },
       include: { product: true }
     });
 
@@ -975,7 +976,7 @@ router.put('/:id/quantite', authorize('ADMIN', 'GESTIONNAIRE'), [
 
       // Mettre à jour la commande
       const updatedOrder = await tx.order.update({
-        where: { id: parseInt(id) },
+        where: { id: parseInt(id), companyId: req.user.companyId },
         data: {
           quantite: quantite,
           montant: nouveauMontant,
@@ -1028,8 +1029,8 @@ router.put('/:id/adresse', authorize('ADMIN', 'GESTIONNAIRE'), [
     const { id } = req.params;
     const { clientVille, clientCommune, clientAdresse } = req.body;
 
-    const order = await prisma.order.findUnique({
-      where: { id: parseInt(id) }
+    const order = await prisma.order.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId }
     });
 
     if (!order) {
@@ -1046,7 +1047,7 @@ router.put('/:id/adresse', authorize('ADMIN', 'GESTIONNAIRE'), [
     // Mettre à jour l'adresse
     const updatedOrder = await prisma.$transaction(async (tx) => {
       const updated = await tx.order.update({
-        where: { id: parseInt(id) },
+        where: { id: parseInt(id), companyId: req.user.companyId },
         data: {
           clientVille,
           clientCommune: clientCommune || order.clientCommune,
@@ -1088,7 +1089,7 @@ router.put('/:id', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
     delete updateData.status;
 
     const order = await prisma.order.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id), companyId: req.user.companyId },
       data: updateData,
       include: {
         caller: {
@@ -1121,8 +1122,8 @@ router.post('/:id/expedition', authorize('APPELANT', 'ADMIN', 'GESTIONNAIRE'), [
     const { id } = req.params;
     const { montantPaye, modePaiement, referencePayment, note } = req.body;
 
-    const order = await prisma.order.findUnique({ 
-      where: { id: parseInt(id) },
+    const order = await prisma.order.findFirst({ 
+      where: { id: parseInt(id), companyId: req.user.companyId },
       include: { product: true }
     });
     
@@ -1184,7 +1185,7 @@ router.post('/:id/expedition', authorize('APPELANT', 'ADMIN', 'GESTIONNAIRE'), [
 
       // Mettre à jour la commande
       const updatedOrder = await tx.order.update({
-        where: { id: parseInt(id) },
+        where: { id: parseInt(id), companyId: req.user.companyId },
         data: {
           status: 'EXPEDITION',
           deliveryType: 'EXPEDITION',
@@ -1243,8 +1244,8 @@ router.post('/:id/express', authorize('APPELANT', 'ADMIN', 'GESTIONNAIRE'), [
     const { id } = req.params;
     const { montantPaye, modePaiement, referencePayment, agenceRetrait, note } = req.body;
 
-    const order = await prisma.order.findUnique({ 
-      where: { id: parseInt(id) },
+    const order = await prisma.order.findFirst({ 
+      where: { id: parseInt(id), companyId: req.user.companyId },
       include: { product: true }
     });
     
@@ -1264,7 +1265,7 @@ router.post('/:id/express', authorize('APPELANT', 'ADMIN', 'GESTIONNAIRE'), [
     // Transaction pour gérer le stock EXPRESS
     const updatedOrder = await prisma.$transaction(async (tx) => {
       const updated = await tx.order.update({
-        where: { id: parseInt(id) },
+        where: { id: parseInt(id), companyId: req.user.companyId },
         data: {
           status: 'EXPRESS',
           deliveryType: 'EXPRESS',
@@ -1340,7 +1341,7 @@ router.put('/:id/express/arrive', authorize('ADMIN', 'GESTIONNAIRE', 'APPELANT')
   try {
     const { id } = req.params;
 
-    const order = await prisma.order.findUnique({ where: { id: parseInt(id) } });
+    const order = await prisma.order.findFirst({ where: { id: parseInt(id), companyId: req.user.companyId } });
     
     if (!order) {
       return res.status(404).json({ error: 'Commande non trouvée.' });
@@ -1351,7 +1352,7 @@ router.put('/:id/express/arrive', authorize('ADMIN', 'GESTIONNAIRE', 'APPELANT')
     }
 
     const updatedOrder = await prisma.order.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id), companyId: req.user.companyId },
       data: {
         status: 'EXPRESS_ARRIVE',
         arriveAt: new Date(),
@@ -1392,20 +1393,20 @@ router.post('/:id/express/assign', authorize('ADMIN', 'GESTIONNAIRE'), [
     const { delivererId } = req.body;
     const orderId = parseInt(id);
 
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    const order = await prisma.order.findFirst({ where: { id: orderId, companyId: req.user.companyId } });
     if (!order) return res.status(404).json({ error: 'Commande non trouvée.' });
 
     if (order.deliveryType !== 'EXPRESS' || order.status !== 'EXPRESS') {
       return res.status(400).json({ error: 'Seules les commandes EXPRESS (statut EXPRESS) peuvent être assignées.' });
     }
 
-    const deliverer = await prisma.user.findUnique({ where: { id: parseInt(delivererId) } });
+    const deliverer = await prisma.user.findFirst({ where: { id: parseInt(delivererId), companyId: req.user.companyId } });
     if (!deliverer || deliverer.role !== 'LIVREUR') {
       return res.status(400).json({ error: 'Livreur invalide.' });
     }
 
     const updatedOrder = await prisma.order.update({
-      where: { id: orderId },
+      where: { id: orderId, companyId: req.user.companyId },
       data: {
         delivererId: parseInt(delivererId),
       },
@@ -1446,7 +1447,7 @@ router.post('/:id/express/expedier', authorize('LIVREUR', 'ADMIN'), [
     const { id } = req.params;
     const { codeExpress, note, photoRecuExpress } = req.body;
 
-    const order = await prisma.order.findUnique({ where: { id: parseInt(id) } });
+    const order = await prisma.order.findFirst({ where: { id: parseInt(id), companyId: req.user.companyId } });
     if (!order) return res.status(404).json({ error: 'Commande non trouvée.' });
 
     if (order.deliveryType !== 'EXPRESS' || order.status !== 'EXPRESS') {
@@ -1460,7 +1461,7 @@ router.post('/:id/express/expedier', authorize('LIVREUR', 'ADMIN'), [
     }
 
     const updatedOrder = await prisma.order.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id), companyId: req.user.companyId },
       data: {
         status: 'EXPRESS_ENVOYE',
         expressEnvoyeAt: new Date(),
@@ -1497,7 +1498,7 @@ router.post('/:id/express/notifier', authorize('ADMIN', 'GESTIONNAIRE', 'APPELAN
   try {
     const { id } = req.params;
 
-    const order = await prisma.order.findUnique({ where: { id: parseInt(id) } });
+    const order = await prisma.order.findFirst({ where: { id: parseInt(id), companyId: req.user.companyId } });
     
     if (!order) {
       return res.status(404).json({ error: 'Commande non trouvée.' });
@@ -1508,7 +1509,7 @@ router.post('/:id/express/notifier', authorize('ADMIN', 'GESTIONNAIRE', 'APPELAN
     }
 
     const updatedOrder = await prisma.order.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id), companyId: req.user.companyId },
       data: {
         clientNotifie: true,
         notifieAt: new Date(),
@@ -1547,8 +1548,8 @@ router.post('/:id/expedition/livrer', authorize('LIVREUR', 'ADMIN'), async (req,
       return res.status(400).json({ error: 'Le code d\'expédition est obligatoire.' });
     }
 
-    const order = await prisma.order.findUnique({ 
-      where: { id: parseInt(id) },
+    const order = await prisma.order.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId },
       include: { product: true }
     });
     
@@ -1567,7 +1568,7 @@ router.post('/:id/expedition/livrer', authorize('LIVREUR', 'ADMIN'), async (req,
 
     // Mettre à jour la commande (PAS de réduction de stock car déjà réduit lors de la création EXPÉDITION)
     const updatedOrder = await prisma.order.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id), companyId: req.user.companyId },
       data: {
         status: 'LIVREE',
         deliveredAt: new Date(),
@@ -1614,8 +1615,8 @@ router.post('/:id/express/finaliser', authorize('ADMIN', 'GESTIONNAIRE', 'APPELA
     const { id } = req.params;
     const { montantPaye, modePaiement, referencePayment } = req.body;
 
-    const order = await prisma.order.findUnique({ 
-      where: { id: parseInt(id) },
+    const order = await prisma.order.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId },
       include: { product: true }
     });
     
@@ -1638,7 +1639,7 @@ router.post('/:id/express/finaliser', authorize('ADMIN', 'GESTIONNAIRE', 'APPELA
     // Transaction pour gérer le stock
     const updatedOrder = await prisma.$transaction(async (tx) => {
       const updated = await tx.order.update({
-        where: { id: parseInt(id) },
+        where: { id: parseInt(id), companyId: req.user.companyId },
         data: {
           status: 'EXPRESS_LIVRE',
           montantPaye: montantTotal,
@@ -1708,8 +1709,8 @@ router.post('/:id/expedition/assign', authorize('ADMIN', 'GESTIONNAIRE'), [
     const { delivererId } = req.body;
     const orderId = parseInt(id);
 
-    const order = await prisma.order.findUnique({
-      where: { id: orderId }
+    const order = await prisma.order.findFirst({
+      where: { id: orderId, companyId: req.user.companyId }
     });
 
     if (!order) {
@@ -1720,8 +1721,8 @@ router.post('/:id/expedition/assign', authorize('ADMIN', 'GESTIONNAIRE'), [
     }
 
     // Vérifier que le livreur existe
-    const deliverer = await prisma.user.findUnique({
-      where: { id: parseInt(delivererId) }
+    const deliverer = await prisma.user.findFirst({
+      where: { id: parseInt(delivererId), companyId: req.user.companyId }
     });
 
     if (!deliverer || deliverer.role !== 'LIVREUR') {
@@ -1740,7 +1741,7 @@ router.post('/:id/expedition/assign', authorize('ADMIN', 'GESTIONNAIRE'), [
     });
 
     const updatedOrder = await prisma.order.update({
-      where: { id: orderId },
+      where: { id: orderId, companyId: req.user.companyId },
       data: {
         delivererId: parseInt(delivererId),
         deliveryListId: deliveryList.id,
@@ -1776,8 +1777,8 @@ router.delete('/:id', authorize('ADMIN'), async (req, res) => {
     const { id } = req.params;
 
     // Récupérer la commande avec ses informations de produit
-    const order = await prisma.order.findUnique({
-      where: { id: parseInt(id) },
+    const order = await prisma.order.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId },
       include: {
         product: true
       }
@@ -1847,10 +1848,13 @@ router.delete('/:id', authorize('ADMIN'), async (req, res) => {
         where: { orderId: parseInt(id) }
       });
 
-      // Supprimer la commande
-      await tx.order.delete({
-        where: { id: parseInt(id) }
+      // Supprimer la commande (deleteMany pour isoler par companyId)
+      const deleted = await tx.order.deleteMany({
+        where: { id: parseInt(id), companyId: req.user.companyId }
       });
+      if (deleted.count === 0) {
+        throw new Error('Commande non trouvée ou accès refusé.');
+      }
     });
 
     res.json({ message: 'Commande supprimée avec succès.' });
@@ -1876,7 +1880,7 @@ router.post('/bulk-delete', authorize('ADMIN'), [
 
     // Récupérer toutes les commandes à supprimer avec leurs informations de produit
     const orders = await prisma.order.findMany({
-      where: { id: { in: numericIds } },
+      where: { id: { in: numericIds }, companyId: req.user.companyId },
       include: { product: true }
     });
 
@@ -1962,7 +1966,7 @@ router.post('/bulk-delete', authorize('ADMIN'), [
 
       // Supprimer toutes les commandes en une seule requête
       await tx.order.deleteMany({
-        where: { id: { in: numericIds } }
+        where: { id: { in: numericIds }, companyId: req.user.companyId }
       });
 
       return { deletedCount, restoredStock };
@@ -1996,8 +2000,8 @@ router.put('/:id/note-appelant', authorize('ADMIN', 'GESTIONNAIRE'), [
     const { id } = req.params;
     const { noteAppelant } = req.body;
 
-    const order = await prisma.order.findUnique({
-      where: { id: parseInt(id) }
+    const order = await prisma.order.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId }
     });
 
     if (!order) {
@@ -2011,7 +2015,7 @@ router.put('/:id/note-appelant', authorize('ADMIN', 'GESTIONNAIRE'), [
 
     const updatedOrder = await prisma.$transaction(async (tx) => {
       const updated = await tx.order.update({
-        where: { id: parseInt(id) },
+        where: { id: parseInt(id), companyId: req.user.companyId },
         data: { noteAppelant: normalizedNote },
         include: {
           caller: { select: { id: true, nom: true, prenom: true } },

@@ -14,8 +14,8 @@ router.post('/:id/programmer', authenticate, authorize('ADMIN', 'GESTIONNAIRE', 
       return res.status(400).json({ error: 'Date du RDV requise.' });
     }
 
-    const order = await prisma.order.findUnique({
-      where: { id: parseInt(id) }
+    const order = await prisma.order.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId }
     });
 
     if (!order) {
@@ -29,7 +29,7 @@ router.post('/:id/programmer', authenticate, authorize('ADMIN', 'GESTIONNAIRE', 
 
     // Programmer le RDV
     const updatedOrder = await prisma.order.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id), companyId: req.user.companyId },
       data: {
         rdvProgramme: true,
         rdvDate: new Date(rdvDate),
@@ -66,6 +66,7 @@ router.get('/', authenticate, authorize('ADMIN', 'GESTIONNAIRE', 'APPELANT'), as
     const { rappele, dateDebut, dateFin, search } = req.query;
 
     const where = {
+      companyId: req.user.companyId,
       rdvProgramme: true
     };
 
@@ -135,8 +136,8 @@ router.post('/:id/rappeler', authenticate, authorize('ADMIN', 'GESTIONNAIRE', 'A
     const { id } = req.params;
     const { note } = req.body;
 
-    const order = await prisma.order.findUnique({
-      where: { id: parseInt(id) }
+    const order = await prisma.order.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId }
     });
 
     if (!order) {
@@ -149,7 +150,7 @@ router.post('/:id/rappeler', authenticate, authorize('ADMIN', 'GESTIONNAIRE', 'A
 
     // Marquer comme rappelé
     const updatedOrder = await prisma.order.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id), companyId: req.user.companyId },
       data: {
         rdvRappele: true,
         rdvProgramme: false, // Retirer le flag RDV pour que la commande retourne dans "À appeler"
@@ -184,8 +185,8 @@ router.put('/:id', authenticate, authorize('ADMIN', 'GESTIONNAIRE', 'APPELANT'),
     const { id } = req.params;
     const { rdvDate, rdvNote } = req.body;
 
-    const order = await prisma.order.findUnique({
-      where: { id: parseInt(id) }
+    const order = await prisma.order.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId }
     });
 
     if (!order) {
@@ -198,7 +199,7 @@ router.put('/:id', authenticate, authorize('ADMIN', 'GESTIONNAIRE', 'APPELANT'),
 
     // Modifier le RDV
     const updatedOrder = await prisma.order.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id), companyId: req.user.companyId },
       data: {
         rdvDate: rdvDate ? new Date(rdvDate) : order.rdvDate,
         rdvNote: rdvNote !== undefined ? rdvNote : order.rdvNote
@@ -231,8 +232,8 @@ router.delete('/:id', authenticate, authorize('ADMIN', 'GESTIONNAIRE', 'APPELANT
   try {
     const { id } = req.params;
 
-    const order = await prisma.order.findUnique({
-      where: { id: parseInt(id) }
+    const order = await prisma.order.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId }
     });
 
     if (!order) {
@@ -245,7 +246,7 @@ router.delete('/:id', authenticate, authorize('ADMIN', 'GESTIONNAIRE', 'APPELANT
 
     // Annuler le RDV
     const updatedOrder = await prisma.order.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id), companyId: req.user.companyId },
       data: {
         rdvProgramme: false,
         rdvDate: null,

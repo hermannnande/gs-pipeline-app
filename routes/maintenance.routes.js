@@ -18,6 +18,7 @@ router.post('/fix-order-amounts', authorize('ADMIN'), async (req, res) => {
     const statuses = Array.isArray(req.body?.statuses) ? req.body.statuses : null;
 
     const where = {
+      companyId: req.user.companyId,
       productId: { not: null },
     };
     if (statuses?.length) where.status = { in: statuses };
@@ -54,7 +55,7 @@ router.post('/fix-order-amounts', authorize('ADMIN'), async (req, res) => {
 
         if (!dryRun) {
           await prisma.order.update({
-            where: { id: order.id },
+            where: { id: order.id, companyId: req.user.companyId },
             data: {
               montant: expected,
               montantRestant: newMontantRestant,
@@ -101,9 +102,11 @@ router.post('/fix-stock-local-reserve', authorize('ADMIN'), async (req, res) => 
 
     // 1. Trouver TOUS les produits avec leurs commandes en livraison
     const allProducts = await prisma.product.findMany({
+      where: { companyId: req.user.companyId },
       include: {
         orders: {
           where: {
+            companyId: req.user.companyId,
             status: 'ASSIGNEE',
             deliveryType: 'LOCAL'
           },
@@ -169,7 +172,7 @@ router.post('/fix-stock-local-reserve', authorize('ADMIN'), async (req, res) => 
       console.log(`🔧 Correction de [${item.code}] ${item.nom}...`);
 
       await prisma.product.update({
-        where: { id: item.productId },
+        where: { id: item.productId, companyId: req.user.companyId },
         data: { stockLocalReserve: item.realStock }
       });
 
@@ -221,9 +224,11 @@ router.get('/check-stock-coherence', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), a
   try {
     // Analyser tous les produits
     const allProducts = await prisma.product.findMany({
+      where: { companyId: req.user.companyId },
       include: {
         orders: {
           where: {
+            companyId: req.user.companyId,
             status: 'ASSIGNEE',
             deliveryType: 'LOCAL'
           },

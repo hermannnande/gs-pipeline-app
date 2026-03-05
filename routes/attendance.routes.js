@@ -34,9 +34,9 @@ function haversineMeters(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-async function getClosestActiveStoreConfig(latitude, longitude) {
+async function getClosestActiveStoreConfig(latitude, longitude, companyId) {
   const stores = await prisma.storeConfig.findMany({
-    where: { actif: true },
+    where: { actif: true, companyId },
     orderBy: { id: 'asc' },
   });
 
@@ -81,7 +81,8 @@ router.post(
         return res.status(400).json({ error: 'Déjà pointé aujourd’hui.' });
       }
 
-      const closest = await getClosestActiveStoreConfig(latitude, longitude);
+      const companyId = req.user.companyId;
+      const closest = await getClosestActiveStoreConfig(latitude, longitude, companyId);
       if (!closest) {
         return res.status(404).json({ error: 'Configuration du magasin/bureau non trouvée.' });
       }
@@ -177,7 +178,8 @@ router.post(
       }
 
       // Distance départ (info)
-      const closest = await getClosestActiveStoreConfig(latitude, longitude);
+      const companyId = req.user.companyId;
+      const closest = await getClosestActiveStoreConfig(latitude, longitude, companyId);
       const distance = closest?.distance ?? null;
 
       const updated = await prisma.attendance.update({
@@ -224,7 +226,7 @@ router.get('/history', authenticate, authorize('ADMIN', 'GESTIONNAIRE'), async (
   try {
     const { userId, date, startDate, endDate, page = 1, limit = 30 } = req.query;
 
-    const where = {};
+    const where = { user: { companyId: req.user.companyId } };
     if (userId) where.userId = parseInt(String(userId), 10);
 
     if (date) {
@@ -251,7 +253,7 @@ router.get('/history', authenticate, authorize('ADMIN', 'GESTIONNAIRE'), async (
         take,
       }),
       prisma.attendance.count({ where }),
-      prisma.storeConfig.findMany({ select: { id: true, nom: true } }),
+      prisma.storeConfig.findMany({ where: { companyId: req.user.companyId }, select: { id: true, nom: true } }),
     ]);
 
     const storeMap = Object.fromEntries(storeConfigs.map((s) => [s.id, s.nom]));
@@ -273,7 +275,10 @@ router.get('/history', authenticate, authorize('ADMIN', 'GESTIONNAIRE'), async (
 // GET /api/attendance/store-config
 router.get('/store-config', authenticate, async (req, res) => {
   try {
-    const configs = await prisma.storeConfig.findMany({ orderBy: { id: 'asc' } });
+    const configs = await prisma.storeConfig.findMany({
+      where: { companyId: req.user.companyId },
+      orderBy: { id: 'asc' }
+    });
     if (!configs.length) return res.status(404).json({ error: 'Configuration non trouvée' });
     return res.json({ configs });
   } catch (e) {
@@ -317,12 +322,20 @@ router.put(
         actif: req.body.actif,
       };
 
+      const companyId = req.user.companyId;
       let config;
       if (id) {
+        const existing = await prisma.storeConfig.findFirst({
+          where: { id, companyId }
+        });
+        if (!existing) {
+          return res.status(404).json({ error: 'Configuration non trouvée pour cette société.' });
+        }
         config = await prisma.storeConfig.update({ where: { id }, data });
       } else {
         config = await prisma.storeConfig.create({
           data: {
+            companyId,
             nom: data.nom || 'Magasin Principal',
             adresse: data.adresse || null,
             latitude: data.latitude,

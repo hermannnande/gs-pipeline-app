@@ -13,7 +13,9 @@ router.get('/products', authorize('ADMIN'), async (req, res) => {
 
     // Construire les filtres
     // IMPORTANT: on inclut aussi les anciennes commandes (productId null) via produitNom
-    const whereClause = {};
+    const whereClause = {
+      companyId: req.user.companyId,
+    };
 
     // Helpers dates: les inputs <input type="date"> arrivent en YYYY-MM-DD.
     // On veut inclure TOUTE la journée sélectionnée:
@@ -344,6 +346,7 @@ router.get('/products/:id', authorize('ADMIN'), async (req, res) => {
 
     const whereClause = {
       productId,
+      companyId: req.user.companyId,
     };
 
     const parseUtcDayStart = (dateStr) => new Date(`${dateStr}T00:00:00.000Z`);
@@ -363,8 +366,8 @@ router.get('/products/:id', authorize('ADMIN'), async (req, res) => {
       };
     }
 
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
+    const product = await prisma.product.findFirst({
+      where: { id: productId, companyId: req.user.companyId },
     });
 
     if (!product) {

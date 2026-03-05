@@ -38,6 +38,7 @@ router.get('/tournees', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STOCK')
     }
     
     if (delivererId) where.delivererId = parseInt(delivererId);
+    where.companyId = req.user.companyId;
 
     const deliveryLists = await prisma.deliveryList.findMany({
       where,
@@ -46,6 +47,7 @@ router.get('/tournees', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STOCK')
           select: { id: true, nom: true, prenom: true, telephone: true }
         },
         orders: {
+          where: { companyId: req.user.companyId },
           include: {
             product: true
           }
@@ -116,13 +118,14 @@ router.get('/tournees/:id', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STO
   try {
     const { id } = req.params;
 
-    const deliveryList = await prisma.deliveryList.findUnique({
-      where: { id: parseInt(id) },
+    const deliveryList = await prisma.deliveryList.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId },
       include: {
         deliverer: {
           select: { id: true, nom: true, prenom: true, telephone: true }
         },
         orders: {
+          where: { companyId: req.user.companyId },
           include: {
             product: true
           }
@@ -216,10 +219,11 @@ router.post('/tournees/:id/confirm-remise', authorize('ADMIN', 'GESTIONNAIRE', '
     const { id } = req.params;
     const { colisRemis } = req.body;
 
-    const deliveryList = await prisma.deliveryList.findUnique({
-      where: { id: parseInt(id) },
+    const deliveryList = await prisma.deliveryList.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId },
       include: { 
         orders: {
+          where: { companyId: req.user.companyId },
           include: { product: true }
         },
         tourneeStock: true
@@ -273,7 +277,7 @@ router.post('/tournees/:id/confirm-remise', authorize('ADMIN', 'GESTIONNAIRE', '
 
             // Mettre à jour les deux stocks
             await tx.product.update({
-              where: { id: order.productId },
+              where: { id: order.productId, companyId: req.user.companyId },
               data: { 
                 stockActuel: stockActuelApres,
                 stockLocalReserve: stockLocalReserveApres
@@ -360,10 +364,11 @@ router.post('/tournees/:id/confirm-retour', authorize('ADMIN', 'GESTIONNAIRE', '
     const { id } = req.params;
     const { colisRetour, ecartMotif, raisonsRetour } = req.body;
 
-    const deliveryList = await prisma.deliveryList.findUnique({
-      where: { id: parseInt(id) },
+    const deliveryList = await prisma.deliveryList.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId },
       include: {
         orders: {
+          where: { companyId: req.user.companyId },
           include: { product: true }
         },
         tourneeStock: true
@@ -405,7 +410,7 @@ router.post('/tournees/:id/confirm-retour', authorize('ADMIN', 'GESTIONNAIRE', '
 
         for (const order of ordersToUpdate) {
           await tx.order.update({
-            where: { id: order.id },
+            where: { id: order.id, companyId: req.user.companyId },
             data: {
               status: 'RETOURNE',
               raisonRetour: raisonsRetour[order.id],
@@ -443,7 +448,7 @@ router.post('/tournees/:id/confirm-retour', authorize('ADMIN', 'GESTIONNAIRE', '
 
           // Mettre à jour les deux stocks
           await tx.product.update({
-            where: { id: order.productId },
+            where: { id: order.productId, companyId: req.user.companyId },
             data: { 
               stockActuel: stockActuelApres,
               stockLocalReserve: stockLocalReserveApres
@@ -473,8 +478,8 @@ router.post('/tournees/:id/confirm-retour', authorize('ADMIN', 'GESTIONNAIRE', '
 
     // 🔔 Envoyer la notification de retour confirmé
     try {
-      const deliveryListWithDeliverer = await prisma.deliveryList.findUnique({
-        where: { id: parseInt(id) },
+      const deliveryListWithDeliverer = await prisma.deliveryList.findFirst({
+        where: { id: parseInt(id), companyId: req.user.companyId },
         include: { deliverer: true }
       });
       if (deliveryListWithDeliverer?.deliverer) {
@@ -509,10 +514,10 @@ router.post('/tournees/:id/cloturer-expedition', authorize('ADMIN', 'GESTIONNAIR
     const { id } = req.params;
     const { ecartMotif } = req.body;
 
-    const deliveryList = await prisma.deliveryList.findUnique({
-      where: { id: parseInt(id) },
+    const deliveryList = await prisma.deliveryList.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId },
       include: {
-        orders: true,
+        orders: { where: { companyId: req.user.companyId } },
         tourneeStock: true,
         deliverer: { select: { id: true, nom: true, prenom: true } },
       },
@@ -606,6 +611,7 @@ router.get('/movements', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), async (req, r
       if (startDate) where.createdAt.gte = new Date(startDate);
       if (endDate) where.createdAt.lte = new Date(endDate);
     }
+    where.product = { companyId: req.user.companyId };
 
     const movements = await prisma.stockMovement.findMany({
       where,
@@ -646,6 +652,8 @@ router.get('/stats', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), async (req, res) 
       if (endDate) dateFilter.createdAt.lte = new Date(endDate);
     }
 
+    const companyFilter = { companyId: req.user.companyId };
+
     const [
       totalProduits,
       produitsActifs,
@@ -654,20 +662,20 @@ router.get('/stats', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), async (req, res) 
       totalRetours,
       stockTotal
     ] = await Promise.all([
-      prisma.product.count(),
-      prisma.product.count({ where: { actif: true } }),
+      prisma.product.count({ where: companyFilter }),
+      prisma.product.count({ where: { actif: true, ...companyFilter } }),
       prisma.product.findMany({
-        where: { actif: true },
+        where: { actif: true, ...companyFilter },
         select: { stockActuel: true, stockAlerte: true }
       }),
       prisma.stockMovement.count({
-        where: { ...dateFilter, type: 'LIVRAISON' }
+        where: { ...dateFilter, type: 'LIVRAISON', product: companyFilter }
       }),
       prisma.stockMovement.count({
-        where: { ...dateFilter, type: 'RETOUR' }
+        where: { ...dateFilter, type: 'RETOUR', product: companyFilter }
       }),
       prisma.product.aggregate({
-        where: { actif: true },
+        where: { actif: true, ...companyFilter },
         _sum: { stockActuel: true }
       })
     ]);

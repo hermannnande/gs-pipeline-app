@@ -11,6 +11,7 @@ router.get('/overview', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => 
   try {
     const { startDate, endDate } = req.query;
 
+    const companyFilter = { companyId: req.user.companyId };
     const dateFilter = {};
     if (startDate || endDate) {
       dateFilter.createdAt = {};
@@ -19,6 +20,8 @@ router.get('/overview', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => 
       if (startDate) dateFilter.createdAt.gte = new Date(`${startDate}T00:00:00.000Z`);
       if (endDate) dateFilter.createdAt.lte = new Date(`${endDate}T23:59:59.999Z`);
     }
+
+    const baseWhere = { ...companyFilter, ...dateFilter };
 
     // Statistiques globales
     const [
@@ -29,13 +32,13 @@ router.get('/overview', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => 
       cancelledOrders,
       totalRevenue
     ] = await Promise.all([
-      prisma.order.count({ where: dateFilter }),
-      prisma.order.count({ where: { ...dateFilter, status: { in: ['NOUVELLE', 'A_APPELER'] } } }),
-      prisma.order.count({ where: { ...dateFilter, status: 'VALIDEE' } }),
-      prisma.order.count({ where: { ...dateFilter, status: 'LIVREE' } }),
-      prisma.order.count({ where: { ...dateFilter, status: { in: ['ANNULEE', 'REFUSEE', 'ANNULEE_LIVRAISON'] } } }),
+      prisma.order.count({ where: baseWhere }),
+      prisma.order.count({ where: { ...baseWhere, status: { in: ['NOUVELLE', 'A_APPELER'] } } }),
+      prisma.order.count({ where: { ...baseWhere, status: 'VALIDEE' } }),
+      prisma.order.count({ where: { ...baseWhere, status: 'LIVREE' } }),
+      prisma.order.count({ where: { ...baseWhere, status: { in: ['ANNULEE', 'REFUSEE', 'ANNULEE_LIVRAISON'] } } }),
       prisma.order.aggregate({
-        where: { ...dateFilter, status: 'LIVREE' },
+        where: { ...baseWhere, status: 'LIVREE' },
         _sum: { montant: true }
       })
     ]);
@@ -43,14 +46,14 @@ router.get('/overview', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => 
     // Commandes par statut
     const ordersByStatus = await prisma.order.groupBy({
       by: ['status'],
-      where: dateFilter,
+      where: baseWhere,
       _count: true
     });
 
     // Top produits
     const topProducts = await prisma.order.groupBy({
       by: ['produitNom'],
-      where: { ...dateFilter, status: 'LIVREE' },
+      where: { ...baseWhere, status: 'LIVREE' },
       _count: true,
       _sum: { montant: true },
       orderBy: { _count: { produitNom: 'desc' } },
@@ -60,7 +63,7 @@ router.get('/overview', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => 
     // Top villes
     const topCities = await prisma.order.groupBy({
       by: ['clientVille'],
-      where: { ...dateFilter, status: 'LIVREE' },
+      where: { ...baseWhere, status: 'LIVREE' },
       _count: true,
       _sum: { montant: true },
       orderBy: { _count: { clientVille: 'desc' } },
@@ -92,7 +95,7 @@ router.get('/callers', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
   try {
     const { startDate, endDate, callerId } = req.query;
 
-    const where = {};
+    const where = { user: { companyId: req.user.companyId } };
     if (startDate || endDate) {
       where.date = {};
       if (startDate) where.date.gte = new Date(`${startDate}T00:00:00.000Z`);
@@ -132,6 +135,7 @@ router.get('/callers', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
     // Récupérer TOUS les appelants actifs pour s'assurer qu'on ne manque personne
     const allCallers = await prisma.user.findMany({
       where: {
+        companyId: req.user.companyId,
         role: 'APPELANT',
         actif: true
       },
@@ -163,6 +167,7 @@ router.get('/callers', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
 
     const orders = await prisma.order.findMany({
       where: {
+        companyId: req.user.companyId,
         callerId: callerId ? parseInt(callerId) : { not: null },
         deliveryType: { in: ['EXPEDITION', 'EXPRESS'] },
         expedieAt: expedieAtWhere // Date d'expédition (EXPEDITION/EXPRESS)
@@ -208,6 +213,7 @@ router.get('/prepaid-expeditions', authorize('ADMIN', 'GESTIONNAIRE'), async (re
     const { startDate, endDate, search, callerId, onlyExpedied } = req.query;
 
     const where = {
+      companyId: req.user.companyId,
       deliveryType: 'EXPEDITION',
       callerId: { not: null },
       validatedAt: { not: null },
@@ -271,7 +277,7 @@ router.get('/deliverers', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) =
   try {
     const { startDate, endDate, delivererId } = req.query;
 
-    const where = {};
+    const where = { user: { companyId: req.user.companyId } };
     if (startDate || endDate) {
       where.date = {};
       if (startDate) where.date.gte = new Date(`${startDate}T00:00:00.000Z`);
@@ -346,6 +352,7 @@ router.get('/my-stats', authorize('APPELANT', 'LIVREUR'), async (req, res) => {
       const stats = await prisma.callStatistic.findMany({
         where: {
           userId: user.id,
+          user: { companyId: req.user.companyId },
           date: { gte: startDate }
         },
         orderBy: { date: 'desc' }
@@ -361,6 +368,7 @@ router.get('/my-stats', authorize('APPELANT', 'LIVREUR'), async (req, res) => {
       // Récupérer les statistiques EXPRESS et EXPEDITION
       const orders = await prisma.order.findMany({
         where: {
+          companyId: req.user.companyId,
           callerId: user.id,
           expedieAt: { gte: startDate }, // Utiliser expedieAt pour la date de création EXPEDITION/EXPRESS
           deliveryType: { in: ['EXPEDITION', 'EXPRESS'] }
@@ -381,6 +389,7 @@ router.get('/my-stats', authorize('APPELANT', 'LIVREUR'), async (req, res) => {
       const stats = await prisma.deliveryStatistic.findMany({
         where: {
           userId: user.id,
+          user: { companyId: req.user.companyId },
           date: { gte: startDate }
         },
         orderBy: { date: 'desc' }
@@ -411,6 +420,7 @@ router.get('/export', authorize('ADMIN'), async (req, res) => {
   try {
     const { type = 'orders', startDate, endDate } = req.query;
 
+    const companyFilter = { companyId: req.user.companyId };
     const dateFilter = {};
     if (startDate || endDate) {
       dateFilter.createdAt = {};
@@ -421,7 +431,7 @@ router.get('/export', authorize('ADMIN'), async (req, res) => {
     let data;
     if (type === 'orders') {
       data = await prisma.order.findMany({
-        where: dateFilter,
+        where: { ...companyFilter, ...dateFilter },
         include: {
           caller: { select: { nom: true, prenom: true } },
           deliverer: { select: { nom: true, prenom: true } }
@@ -429,14 +439,20 @@ router.get('/export', authorize('ADMIN'), async (req, res) => {
       });
     } else if (type === 'callers') {
       data = await prisma.callStatistic.findMany({
-        where: dateFilter.createdAt ? { date: dateFilter.createdAt } : {},
+        where: {
+          user: { companyId: req.user.companyId },
+          ...(dateFilter.createdAt ? { date: dateFilter.createdAt } : {})
+        },
         include: {
           user: { select: { nom: true, prenom: true, email: true } }
         }
       });
     } else if (type === 'deliverers') {
       data = await prisma.deliveryStatistic.findMany({
-        where: dateFilter.createdAt ? { date: dateFilter.createdAt } : {},
+        where: {
+          user: { companyId: req.user.companyId },
+          ...(dateFilter.createdAt ? { date: dateFilter.createdAt } : {})
+        },
         include: {
           user: { select: { nom: true, prenom: true, email: true } }
         }

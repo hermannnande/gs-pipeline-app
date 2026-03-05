@@ -78,7 +78,7 @@ router.post('/login', [
 
     // Générer le token JWT
     const token = jwt.sign(
-      { userId: user.id, role: user.role },
+      { userId: user.id, role: user.role, companyId: user.companyId },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -90,7 +90,8 @@ router.post('/login', [
         email: user.email,
         nom: user.nom,
         prenom: user.prenom,
-        role: user.role
+        role: user.role,
+        companyId: user.companyId
       }
     });
   } catch (error) {
@@ -122,6 +123,7 @@ router.get('/me', authenticate, async (req, res) => {
         telephone: true,
         role: true,
         actif: true,
+        companyId: true,
         createdAt: true
       }
     });

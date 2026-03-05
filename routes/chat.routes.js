@@ -80,7 +80,10 @@ router.get('/users', async (req, res) => {
   try {
     const { q } = req.query;
 
-    const where = { actif: true };
+    const where = {
+      actif: true,
+      companyId: req.user.companyId,
+    };
 
     if (q && String(q).trim().length > 0) {
       const query = String(q).trim();
@@ -120,11 +123,20 @@ router.get('/conversations', async (req, res) => {
 
     const conversations = await prisma.conversation.findMany({
       where: {
-        participants: {
-          some: {
-            userId
-          }
-        }
+        AND: [
+          {
+            participants: {
+              some: { userId },
+            },
+          },
+          {
+            participants: {
+              every: {
+                user: { companyId: req.user.companyId },
+              },
+            },
+          },
+        ],
       },
       include: {
         participants: {
@@ -216,14 +228,23 @@ router.post('/conversations', async (req, res) => {
         return res.status(400).json({ error: 'Une conversation privée nécessite exactement 1 destinataire.' });
       }
 
-      // Vérifier si une conversation privée existe déjà entre ces 2 utilisateurs
+      // Vérifier que le destinataire appartient à la même société
+      const targetUser = await prisma.user.findFirst({
+        where: { id: parseInt(participantIds[0]), companyId: req.user.companyId },
+      });
+      if (!targetUser) {
+        return res.status(400).json({ error: 'Destinataire non trouvé ou n\'appartient pas à votre société.' });
+      }
+
+      // Vérifier si une conversation privée existe déjà entre ces 2 utilisateurs (même société)
       const existingConv = await prisma.conversation.findFirst({
         where: {
           type: 'PRIVATE',
           AND: [
             { participants: { some: { userId } } },
-            { participants: { some: { userId: participantIds[0] } } }
-          ]
+            { participants: { some: { userId: parseInt(participantIds[0]) } } },
+            { participants: { every: { user: { companyId: req.user.companyId } } } },
+          ],
         },
         include: {
           participants: {
@@ -248,6 +269,19 @@ router.post('/conversations', async (req, res) => {
 
     if (type === 'GROUP' && !name) {
       return res.status(400).json({ error: 'Un nom est requis pour les groupes.' });
+    }
+
+    // Vérifier que tous les participants appartiennent à la même société
+    if (participantIds && participantIds.length > 0) {
+      const participantsInCompany = await prisma.user.count({
+        where: {
+          id: { in: participantIds.map((id) => parseInt(id)) },
+          companyId: req.user.companyId,
+        },
+      });
+      if (participantsInCompany !== participantIds.length) {
+        return res.status(400).json({ error: 'Tous les participants doivent appartenir à votre société.' });
+      }
     }
 
     // Créer la conversation
@@ -311,11 +345,10 @@ router.get('/conversations/:id', async (req, res) => {
     const conversation = await prisma.conversation.findFirst({
       where: {
         id: parseInt(id),
-        participants: {
-          some: {
-            userId
-          }
-        }
+        AND: [
+          { participants: { some: { userId } } },
+          { participants: { every: { user: { companyId: req.user.companyId } } } },
+        ],
       },
       include: {
         participants: {
@@ -372,6 +405,17 @@ router.put('/conversations/:id', async (req, res) => {
       return res.status(403).json({ error: 'Vous devez être admin de cette conversation.' });
     }
 
+    // Vérifier que la conversation appartient à la société (tous participants)
+    const convCheck = await prisma.conversation.findFirst({
+      where: {
+        id: parseInt(id),
+        participants: { every: { user: { companyId: req.user.companyId } } },
+      },
+    });
+    if (!convCheck) {
+      return res.status(404).json({ error: 'Conversation non trouvée.' });
+    }
+
     const conversation = await prisma.conversation.update({
       where: { id: parseInt(id) },
       data: {
@@ -412,6 +456,17 @@ router.post('/conversations/:id/participants', async (req, res) => {
       return res.status(400).json({ error: 'Liste d\'utilisateurs requise.' });
     }
 
+    // Vérifier que tous les utilisateurs à ajouter appartiennent à la société
+    const usersInCompany = await prisma.user.count({
+      where: {
+        id: { in: userIds.map(uid => parseInt(uid)) },
+        companyId: req.user.companyId
+      }
+    });
+    if (usersInCompany !== userIds.length) {
+      return res.status(400).json({ error: 'Tous les participants doivent appartenir à votre société.' });
+    }
+
     // Vérifier que l'utilisateur est admin de la conversation
     const participant = await prisma.conversationParticipant.findFirst({
       where: {
@@ -423,6 +478,27 @@ router.post('/conversations/:id/participants', async (req, res) => {
 
     if (!participant) {
       return res.status(403).json({ error: 'Vous devez être admin de cette conversation.' });
+    }
+
+    // Vérifier que la conversation et les utilisateurs appartiennent à la société
+    const convCompanyCheck = await prisma.conversation.findFirst({
+      where: {
+        id: parseInt(id),
+        participants: { every: { user: { companyId: req.user.companyId } } },
+      },
+    });
+    if (!convCompanyCheck) {
+      return res.status(404).json({ error: 'Conversation non trouvée.' });
+    }
+
+    const usersInCompany = await prisma.user.count({
+      where: {
+        id: { in: userIds.map((uid) => parseInt(uid)) },
+        companyId: req.user.companyId,
+      },
+    });
+    if (usersInCompany !== userIds.length) {
+      return res.status(400).json({ error: 'Tous les utilisateurs doivent appartenir à votre société.' });
     }
 
     // Ajouter les participants
@@ -445,8 +521,11 @@ router.post('/conversations/:id/participants', async (req, res) => {
       }
     });
 
-    const conversation = await prisma.conversation.findUnique({
-      where: { id: parseInt(id) },
+    const conversation = await prisma.conversation.findFirst({
+      where: {
+        id: parseInt(id),
+        participants: { every: { user: { companyId: req.user.companyId } } },
+      },
       include: {
         participants: {
           include: {
@@ -462,6 +541,10 @@ router.post('/conversations/:id/participants', async (req, res) => {
         }
       }
     });
+
+    if (!conversation) {
+      return res.status(404).json({ error: 'Conversation non trouvée.' });
+    }
 
     res.json({ conversation });
   } catch (error) {
@@ -499,13 +582,15 @@ router.delete('/conversations/:id/participants/:participantId', async (req, res)
     });
 
     // Message système
-    const user = await prisma.user.findUnique({ where: { id: parseInt(participantId) } });
+    const user = await prisma.user.findFirst({
+      where: { id: parseInt(participantId), companyId: req.user.companyId },
+    });
     await prisma.message.create({
       data: {
         conversationId: parseInt(id),
         senderId: userId,
         type: 'SYSTEM',
-        content: `${user.prenom} ${user.nom} a quitté la conversation`
+        content: user ? `${user.prenom} ${user.nom} a quitté la conversation` : 'Un participant a quitté la conversation'
       }
     });
 
@@ -794,8 +879,13 @@ router.put('/messages/:id', async (req, res) => {
     const { content } = req.body;
     const userId = req.user.id;
 
-    const message = await prisma.message.findUnique({
-      where: { id: parseInt(id) }
+    const message = await prisma.message.findFirst({
+      where: {
+        id: parseInt(id),
+        conversation: {
+          participants: { every: { user: { companyId: req.user.companyId } } },
+        },
+      },
     });
 
     if (!message) {
@@ -841,8 +931,13 @@ router.delete('/messages/:id', async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
 
-    const message = await prisma.message.findUnique({
-      where: { id: parseInt(id) }
+    const message = await prisma.message.findFirst({
+      where: {
+        id: parseInt(id),
+        conversation: {
+          participants: { every: { user: { companyId: req.user.companyId } } },
+        },
+      },
     });
 
     if (!message) {
@@ -943,9 +1038,14 @@ router.put('/messages/:id/pin', async (req, res) => {
     const { isPinned } = req.body;
     const userId = req.user.id;
 
-    const message = await prisma.message.findUnique({
-      where: { id: parseInt(id) },
-      include: { conversation: true }
+    const message = await prisma.message.findFirst({
+      where: {
+        id: parseInt(id),
+        conversation: {
+          participants: { every: { user: { companyId: req.user.companyId } } },
+        },
+      },
+      include: { conversation: true },
     });
 
     if (!message) {
@@ -998,12 +1098,11 @@ router.get('/search', async (req, res) => {
       },
       deletedAt: null,
       conversation: {
-        participants: {
-          some: {
-            userId
-          }
-        }
-      }
+        AND: [
+          { participants: { some: { userId } } },
+          { participants: { every: { user: { companyId: req.user.companyId } } } },
+        ],
+      },
     };
 
     if (conversationId) {
@@ -1061,6 +1160,7 @@ router.get('/admin/stats', async (req, res) => {
       if (endDate) dateFilter.createdAt.lte = new Date(endDate + 'T23:59:59.999Z');
     }
 
+    const companyId = req.user.companyId;
     const [
       totalConversations,
       totalMessages,
@@ -1068,16 +1168,29 @@ router.get('/admin/stats', async (req, res) => {
       activeUsers,
       messagesByType
     ] = await Promise.all([
-      prisma.conversation.count(),
-      prisma.message.count({ where: { ...dateFilter, deletedAt: null } }),
-      prisma.user.count({ where: { actif: true } }),
+      prisma.conversation.count({
+        where: { creator: { companyId } },
+      }),
+      prisma.message.count({
+        where: {
+          ...dateFilter,
+          deletedAt: null,
+          conversation: { creator: { companyId } },
+        },
+      }),
+      prisma.user.count({ where: { actif: true, companyId } }),
       prisma.conversationParticipant.groupBy({
         by: ['userId'],
+        where: { user: { companyId } },
         _count: true
       }),
       prisma.message.groupBy({
         by: ['type'],
-        where: { ...dateFilter, deletedAt: null },
+        where: {
+          ...dateFilter,
+          deletedAt: null,
+          conversation: { creator: { companyId } },
+        },
         _count: true
       })
     ]);
@@ -1085,7 +1198,11 @@ router.get('/admin/stats', async (req, res) => {
     // Top utilisateurs actifs
     const topUsers = await prisma.message.groupBy({
       by: ['senderId'],
-      where: { ...dateFilter, deletedAt: null },
+      where: {
+        ...dateFilter,
+        deletedAt: null,
+        conversation: { creator: { companyId } },
+      },
       _count: true,
       orderBy: {
         _count: {
@@ -1097,8 +1214,8 @@ router.get('/admin/stats', async (req, res) => {
 
     const topUsersWithDetails = await Promise.all(
       topUsers.map(async (u) => {
-        const user = await prisma.user.findUnique({
-          where: { id: u.senderId },
+        const user = await prisma.user.findFirst({
+          where: { id: u.senderId, companyId },
           select: { id: true, nom: true, prenom: true, role: true }
         });
         return {
@@ -1132,6 +1249,7 @@ router.get('/admin/conversations', async (req, res) => {
     }
 
     const conversations = await prisma.conversation.findMany({
+      where: { creator: { companyId: req.user.companyId } },
       include: {
         creator: {
           select: {
@@ -1179,7 +1297,9 @@ router.get('/admin/messages', async (req, res) => {
 
     const { conversationId, limit = 100 } = req.query;
 
-    const where = {};
+    const where = {
+      conversation: { creator: { companyId: req.user.companyId } },
+    };
     if (conversationId) {
       where.conversationId = parseInt(conversationId);
     }

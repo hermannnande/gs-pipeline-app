@@ -4,7 +4,12 @@ import type { AuthResponse, LoginCredentials, User, Order } from '@/types';
 const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const API_URL = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
 
-// Configuration axios
+export function getCompanySlug(): string {
+  const host = window.location.hostname;
+  if (host.startsWith('bf.')) return 'bf';
+  return 'ci';
+}
+
 export const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -12,12 +17,12 @@ export const api = axios.create({
   },
 });
 
-// Intercepteur pour ajouter le token à chaque requête
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  config.headers['X-Company-Slug'] = getCompanySlug();
   return config;
 });
 

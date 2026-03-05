@@ -26,6 +26,7 @@ import {
   MapPin
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import { getCompanySlug } from '@/lib/api';
 import NotificationCenter from './NotificationCenter';
 
 interface LayoutProps {
@@ -36,6 +37,8 @@ export default function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuthStore();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const companySlug = getCompanySlug();
+  const companyLabel = companySlug === 'bf' ? 'GS Pipeline BF' : 'GS Pipeline';
 
   // Chat et notifications désactivés pour le moment
   const totalUnread = 0;
@@ -126,7 +129,7 @@ export default function Layout({ children }: LayoutProps) {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
       {/* Mobile Header with Burger Menu */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 glass-effect border-b border-white/20 backdrop-blur-xl flex items-center justify-between px-4 z-30 shadow-soft">
-        <h1 className="text-xl font-bold gradient-text font-display">GS Pipeline</h1>
+        <h1 className="text-xl font-bold gradient-text font-display">{companyLabel}</h1>
         <div className="flex items-center gap-2">
           <NotificationCenter />
           <button
@@ -171,7 +174,7 @@ export default function Layout({ children }: LayoutProps) {
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold gradient-text font-display">GS Pipeline</h1>
+              <h1 className="text-2xl font-bold gradient-text font-display">{companyLabel}</h1>
               <p className="text-xs font-semibold text-gray-500 mt-1.5 uppercase tracking-wide">
                 {user?.role === 'ADMIN' && '✨ Administration'}
                 {user?.role === 'GESTIONNAIRE' && '🎯 Gestion'}

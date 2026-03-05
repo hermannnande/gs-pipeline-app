@@ -13,7 +13,7 @@ router.get('/', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), async (req, res) => {
   try {
     const { actif, search } = req.query;
 
-    const where = {};
+    const where = { companyId: req.user.companyId };
     if (actif !== undefined) where.actif = actif === 'true';
     if (search) {
       where.OR = [
@@ -94,6 +94,7 @@ router.get('/stock-local-reserve/overview', authorize('ADMIN', 'GESTIONNAIRE_STO
     // Récupérer tous les produits avec leur stock local réservé
     const products = await prisma.product.findMany({
       where: {
+        companyId: req.user.companyId,
         actif: true,
         stockLocalReserve: { gt: 0 }
       },
@@ -160,8 +161,8 @@ router.get('/:id', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), async (req, res) =>
   try {
     const { id } = req.params;
 
-    const product = await prisma.product.findUnique({
-      where: { id: parseInt(id) },
+    const product = await prisma.product.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId },
       include: {
         stockMovements: {
           orderBy: { createdAt: 'desc' },
@@ -197,8 +198,8 @@ router.post('/', authorize('ADMIN'), [
     const { code, nom, description, prixUnitaire, prix2Unites, prix3Unites, stockActuel, stockAlerte } = req.body;
 
     // Vérifier si le code existe déjà
-    const existing = await prisma.product.findUnique({
-      where: { code }
+    const existing = await prisma.product.findFirst({
+      where: { code, companyId: req.user.companyId }
     });
 
     if (existing) {
@@ -207,6 +208,7 @@ router.post('/', authorize('ADMIN'), [
 
     const product = await prisma.product.create({
       data: {
+        companyId: req.user.companyId,
         code,
         nom,
         description,
@@ -257,6 +259,13 @@ router.put('/:id', authorize('ADMIN'), async (req, res) => {
     if (actif !== undefined) updateData.actif = actif;
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl || null;
 
+    const existing = await prisma.product.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId }
+    });
+    if (!existing) {
+      return res.status(404).json({ error: 'Produit non trouvé.' });
+    }
+
     const product = await prisma.product.update({
       where: { id: parseInt(id) },
       data: updateData
@@ -275,8 +284,8 @@ router.delete('/:id', authorize('ADMIN'), async (req, res) => {
     const { id } = req.params;
 
     // Vérifier si le produit existe
-    const product = await prisma.product.findUnique({
-      where: { id: parseInt(id) },
+    const product = await prisma.product.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId },
       include: {
         _count: {
           select: {
@@ -304,8 +313,8 @@ router.delete('/:id', authorize('ADMIN'), async (req, res) => {
     });
 
     // Supprimer le produit
-    await prisma.product.delete({
-      where: { id: parseInt(id) }
+    await prisma.product.deleteMany({
+      where: { id: parseInt(id), companyId: req.user.companyId }
     });
 
     res.json({ message: 'Produit supprimé avec succès.' });
@@ -330,8 +339,8 @@ router.post('/:id/stock/adjust', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), [
     const { id } = req.params;
     const { quantite, type, motif } = req.body;
 
-    const product = await prisma.product.findUnique({
-      where: { id: parseInt(id) }
+    const product = await prisma.product.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId }
     });
 
     if (!product) {
@@ -347,7 +356,7 @@ router.post('/:id/stock/adjust', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), [
 
     // Transaction pour assurer la cohérence
     const result = await prisma.$transaction(async (tx) => {
-      // Mettre à jour le stock
+      // Mettre à jour le stock (findFirst au début a déjà vérifié companyId)
       const updatedProduct = await tx.product.update({
         where: { id: parseInt(id) },
         data: { stockActuel: stockApres }
@@ -393,7 +402,7 @@ router.get('/alerts/low-stock', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), async 
   try {
     // Récupérer tous les produits actifs et filtrer en JavaScript
     const allProducts = await prisma.product.findMany({
-      where: { actif: true },
+      where: { companyId: req.user.companyId, actif: true },
       orderBy: { stockActuel: 'asc' }
     });
 

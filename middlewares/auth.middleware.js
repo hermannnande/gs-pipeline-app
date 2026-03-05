@@ -21,7 +21,8 @@ export const authenticate = async (req, res, next) => {
         nom: true,
         prenom: true,
         role: true,
-        actif: true
+        actif: true,
+        companyId: true
       }
     });
 

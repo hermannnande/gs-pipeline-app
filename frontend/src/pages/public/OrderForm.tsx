@@ -3,6 +3,12 @@ import axios from 'axios';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '/api');
 
+function getCompanySlug(): string {
+  const host = window.location.hostname;
+  if (host.startsWith('bf.')) return 'bf';
+  return 'ci';
+}
+
 interface Product {
   id: number;
   code: string;
@@ -24,6 +30,18 @@ const VILLES_CI = [
   'Bondoukou','Bouna','Tanda','Agnibilékrou','Bettié','Danané','Guiglo',
   'Bangolo','Zuénoula','Vavoua','Tiassalé','Jacqueville','Taabo',
 ];
+
+const VILLES_BF = [
+  'Ouagadougou','Bobo-Dioulasso','Koudougou','Ouahigouya','Banfora',
+  'Dédougou','Kaya','Tenkodogo','Fada N\'Gourma','Ziniaré',
+  'Manga','Gaoua','Dori','Djibo','Réo','Léo','Pô','Yako',
+  'Kongoussi','Boulsa','Nouna','Tougan','Solenzo','Boromo',
+  'Houndé','Orodara','Diébougou','Kombissiri','Koupéla',
+];
+
+function getVilles(): string[] {
+  return getCompanySlug() === 'bf' ? VILLES_BF : VILLES_CI;
+}
 
 function formatPrice(price: number): string {
   return Math.round(price).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
@@ -61,15 +79,16 @@ export default function OrderForm() {
 
   const modalRef = useRef<HTMLDivElement>(null);
 
+  const villes = useMemo(() => getVilles(), []);
   const filteredCities = useMemo(
     () => citySearch
-      ? VILLES_CI.filter(v => v.toLowerCase().includes(citySearch.toLowerCase()))
-      : VILLES_CI,
-    [citySearch]
+      ? villes.filter(v => v.toLowerCase().includes(citySearch.toLowerCase()))
+      : villes,
+    [citySearch, villes]
   );
 
   useEffect(() => {
-    axios.get(`${API_URL}/public/products`)
+    axios.get(`${API_URL}/public/products`, { params: { company: getCompanySlug() } })
       .then(res => setProducts(res.data.products || []))
       .catch(() => setError('Impossible de charger les produits.'))
       .finally(() => setLoading(false));
@@ -116,6 +135,7 @@ export default function OrderForm() {
     setSubmitting(true);
     try {
       const res = await axios.post(`${API_URL}/public/order`, {
+        company: getCompanySlug(),
         productId: selectedProduct.id,
         customerName: customerName.trim(),
         customerPhone: customerPhone.trim(),
@@ -225,7 +245,9 @@ export default function OrderForm() {
       {/* Footer */}
       <footer className="bg-white border-t border-gray-100 py-6 mt-8">
         <div className="max-w-6xl mx-auto px-4 text-center">
-          <p className="text-gray-400 text-sm">Paiement à la livraison &middot; Livraison partout en Côte d'Ivoire</p>
+          <p className="text-gray-400 text-sm">
+            Paiement à la livraison &middot; Livraison partout {getCompanySlug() === 'bf' ? 'au Burkina Faso' : 'en Côte d\'Ivoire'}
+          </p>
         </div>
       </footer>
 

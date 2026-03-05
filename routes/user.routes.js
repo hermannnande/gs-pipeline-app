@@ -14,7 +14,7 @@ router.get('/', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STOCK'), async 
   try {
     const { role, actif } = req.query;
     
-    const where = {};
+    const where = { companyId: req.user.companyId };
     if (role) where.role = role;
     if (actif !== undefined) where.actif = actif === 'true';
 
@@ -65,9 +65,9 @@ router.post('/', authorize('ADMIN', 'GESTIONNAIRE'), [
       });
     }
 
-    // Vérifier si l'email existe déjà
-    const existingUser = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() }
+    // Vérifier si l'email existe déjà (dans la même société)
+    const existingUser = await prisma.user.findFirst({
+      where: { email: email.toLowerCase(), companyId: req.user.companyId }
     });
 
     if (existingUser) {
@@ -85,7 +85,8 @@ router.post('/', authorize('ADMIN', 'GESTIONNAIRE'), [
         nom,
         prenom,
         telephone,
-        role
+        role,
+        companyId: req.user.companyId
       },
       select: {
         id: true,
@@ -122,7 +123,7 @@ router.put('/:id', authorize('ADMIN'), async (req, res) => {
     if (password) updateData.password = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id), companyId: req.user.companyId },
       data: updateData,
       select: {
         id: true,
@@ -154,7 +155,7 @@ router.delete('/:id', authorize('ADMIN'), async (req, res) => {
     }
 
     const user = await prisma.user.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id), companyId: req.user.companyId },
       data: { actif: false }
     });
 

@@ -11,6 +11,7 @@ router.get('/en-agence', authenticate, authorize('ADMIN', 'GESTIONNAIRE', 'APPEL
 
     // Construire le filtre
     const where = {
+      companyId: req.user.companyId,
       deliveryType: 'EXPRESS',
       status: {
         in: ['EXPRESS_ARRIVE', 'EXPRESS_LIVRE']
@@ -146,8 +147,8 @@ router.post('/:id/notifier', authenticate, authorize('ADMIN', 'GESTIONNAIRE', 'A
     const { id } = req.params;
     const { note } = req.body;
 
-    const order = await prisma.order.findUnique({
-      where: { id: parseInt(id) }
+    const order = await prisma.order.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId }
     });
 
     if (!order) {
@@ -175,7 +176,7 @@ router.post('/:id/notifier', authenticate, authorize('ADMIN', 'GESTIONNAIRE', 'A
     const nouvelleNote = `${noteExistante}\n[${new Date().toLocaleString('fr-FR')}] Notifié par ${req.user.prenom} ${req.user.nom}${note ? ': ' + note : ''}`.trim();
     
     await prisma.order.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id), companyId: req.user.companyId },
       data: {
         noteAppelant: nouvelleNote
       }
@@ -196,8 +197,8 @@ router.post('/:id/confirmer-retrait', authenticate, authorize('ADMIN', 'GESTIONN
   try {
     const { id } = req.params;
 
-    const order = await prisma.order.findUnique({
-      where: { id: parseInt(id) },
+    const order = await prisma.order.findFirst({
+      where: { id: parseInt(id), companyId: req.user.companyId },
       include: {
         product: true
       }
@@ -215,7 +216,7 @@ router.post('/:id/confirmer-retrait', authenticate, authorize('ADMIN', 'GESTIONN
     const result = await prisma.$transaction(async (tx) => {
       // 1. Mettre à jour le statut à EXPRESS_LIVRE
       const updatedOrder = await tx.order.update({
-        where: { id: parseInt(id) },
+        where: { id: parseInt(id), companyId: req.user.companyId },
         data: {
           status: 'EXPRESS_LIVRE',
           deliveredAt: new Date(), // Date de retrait

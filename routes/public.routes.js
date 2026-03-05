@@ -6,6 +6,16 @@ import { randomUUID } from 'crypto';
 
 const router = express.Router();
 
+/** Résout companyId à partir de req.query.company ou req.headers['x-company-slug'] */
+async function resolveCompanyId(req) {
+  const slug = String(
+    req.query.company || req.headers['x-company-slug'] || ''
+  ).trim().toLowerCase();
+  if (!slug) return 1;
+  const company = await prisma.company.findUnique({ where: { slug } });
+  return company ? company.id : 1;
+}
+
 async function repairOrdersIdSequenceIfNeeded(error) {
   if (error?.code !== 'P2002') return false;
   const target = error?.meta?.target;
@@ -28,8 +38,9 @@ async function repairOrdersIdSequenceIfNeeded(error) {
 // GET /api/public/products - Liste des produits actifs (public, sans auth)
 router.get('/products', async (req, res) => {
   try {
+    const companyId = await resolveCompanyId(req);
     const products = await prisma.product.findMany({
-      where: { actif: true },
+      where: { actif: true, companyId },
       select: {
         id: true,
         code: true,
@@ -52,6 +63,7 @@ router.get('/products', async (req, res) => {
 // POST /api/public/order - Passer une commande (public, sans auth)
 router.post('/order', async (req, res) => {
   try {
+    const companyId = await resolveCompanyId(req);
     const { productId, customerName, customerPhone, customerCity, customerCommune, customerAddress, quantity } = req.body;
 
     if (!productId || !customerName || !customerPhone || !customerCity) {
@@ -61,8 +73,8 @@ router.post('/order', async (req, res) => {
       });
     }
 
-    const product = await prisma.product.findUnique({
-      where: { id: parseInt(productId) },
+    const product = await prisma.product.findFirst({
+      where: { id: parseInt(productId), companyId },
     });
 
     if (!product || !product.actif) {
@@ -74,6 +86,7 @@ router.post('/order', async (req, res) => {
 
     const createData = {
       orderReference: randomUUID(),
+      companyId,
       clientNom: customerName.trim(),
       clientTelephone: customerPhone.trim(),
       clientVille: customerCity.trim(),

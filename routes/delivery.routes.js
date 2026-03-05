@@ -16,6 +16,7 @@ router.get('/lists', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STOCK', 'A
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       await prisma.order.updateMany({
         where: {
+          companyId: req.user.companyId,
           photoRecuExpedition: { not: null },
           photoRecuExpeditionUploadedAt: { lt: sevenDaysAgo }
         },
@@ -31,7 +32,7 @@ router.get('/lists', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STOCK', 'A
 
     const { delivererId, startDate, endDate } = req.query;
 
-    const where = {};
+    const where = { companyId: req.user.companyId };
     if (delivererId) where.delivererId = parseInt(delivererId);
     if (startDate || endDate) {
       where.date = {};
@@ -99,6 +100,7 @@ router.post('/assign', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
     // Vérifier qu'aucune des commandes n'est une EXPEDITION ou EXPRESS
     const ordersToAssign = await prisma.order.findMany({
       where: {
+        companyId: req.user.companyId,
         id: { in: orderIds.map(id => parseInt(id)) }
       }
     });
@@ -113,6 +115,7 @@ router.post('/assign', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
     // Créer la liste de livraison
     const deliveryList = await prisma.deliveryList.create({
       data: {
+        companyId: req.user.companyId,
         nom: listName || `Livraison ${new Date(deliveryDate).toLocaleDateString('fr-FR')}`,
         date: new Date(deliveryDate),
         delivererId: parseInt(delivererId),
@@ -123,7 +126,7 @@ router.post('/assign', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
     // Assigner les commandes
     const updatePromises = orderIds.map(orderId =>
       prisma.order.update({
-        where: { id: parseInt(orderId) },
+        where: { id: parseInt(orderId), companyId: req.user.companyId },
         data: {
           delivererId: parseInt(delivererId),
           deliveryListId: deliveryList.id,
@@ -157,7 +160,7 @@ router.post('/assign', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
       
       // Notifier pour chaque commande assignée
       const assignedOrders = await prisma.order.findMany({
-        where: { id: { in: orderIds.map(id => parseInt(id)) } }
+        where: { companyId: req.user.companyId, id: { in: orderIds.map(id => parseInt(id)) } }
       });
       
       assignedOrders.forEach(order => {
@@ -183,6 +186,7 @@ router.get('/my-orders', authorize('LIVREUR'), async (req, res) => {
   try {
     const { date, status } = req.query;
     const where = {
+      companyId: req.user.companyId,
       delivererId: req.user.id,
       deliveryType: 'LOCAL' // ✅ Exclure EXPEDITION (gérées séparément dans le frontend)
     };
@@ -246,6 +250,7 @@ router.get('/validated-orders', authorize('ADMIN', 'GESTIONNAIRE'), async (req, 
     const { ville, startDate, endDate } = req.query;
 
     const where = {
+      companyId: req.user.companyId,
       status: 'VALIDEE',
       delivererId: null
     };

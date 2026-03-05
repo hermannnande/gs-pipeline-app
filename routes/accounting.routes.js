@@ -34,6 +34,7 @@ router.get('/stats', authenticate, authorize('ADMIN'), async (req, res) => {
     // Récupérer toutes les commandes dans la période (tous types)
     const commandes = await prisma.order.findMany({
       where: {
+        companyId: req.user.companyId,
         OR: [
           // Livraisons locales
           {
