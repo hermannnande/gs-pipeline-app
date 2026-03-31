@@ -121,49 +121,132 @@ router.post('/make', verifyApiKey, [
       source
     });
 
-    // 1. Chercher le produit via product_key (qui correspond au champ "code") pour la société
-    const product = await prisma.product.findFirst({
-      where: { code: product_key, companyId }
-    });
+    // Mapping de secours : noms courants des formulaires → codes produit
+    const FALLBACK_MAPPING = {
+      'chaussette de compression': 'CHAUSSETTE_CHAUFFANTE',
+      'chaussettes chauffantes tourmaline': 'CHAUSSETTE_CHAUFFANTE',
+      'patch minceur glp': 'PATCH_MINCEUR',
+      'patch minceur': 'PATCH_MINCEUR',
+      'creme minceur': 'SPRAY_MINCEUR',
+      'patch anti douleur': 'SPRAY_DOULEUR',
+      'gaine tourmaline': 'GAINE_MINCEUR_TOURMALINE',
+      'gaine tourmaline chauffante': 'GAINE_MINCEUR_TOURMALINE_CHAUFFANTE',
+      'patch anti cicatrice': 'PATCH_ANTI_CICATRICE',
+      'creme anti cerne': 'CREME_ANTI_CERNE',
+      'creme anti lipome': 'CREME_ANTI_LIPOME',
+      'crème anti-verrues': 'CREME_ANTI_VERRUES',
+      'creme verrue tk': 'VERRUE_TK',
+      'creme probleme de peau': 'CREME_PROBLEME_DE_PEAU',
+      'pack détox minceur': 'PATCH_DETOX_MINCEUR',
+      'logo educatif': 'LOGO_EDUCATIF',
+      'pourdre pousse cheveux': 'POUDRE_CHEVEUX',
+      'creme anti tache': 'CREME_TACHE',
+      'crème vitiligo': 'CREME_VITILIGO',
+      'spray anti douleur': 'SPRAY_DOULEUR',
+      'crème jjl': 'CREME_JLL',
+      'semelle massante': 'SEMELLE_MASSANTE',
+      'ultra blanchiment dentaire v34': 'ULTRA_BLANCHIMENT_DENTAIRE_V34',
+      'crème lèvre rose': 'LEVRE_ROSE',
+      'crème anti-hémorroïdes': 'CREME_ANTI_HEMORROIDE',
+      'spray minceur': 'SPRAY_MINCEUR',
+      'crème anti-cernes2': 'CREME_ANTI_CERNES2',
+      'serum ongle': 'SERUM_ONGLE',
+      'creme cerne tk': 'CREME_CERNE_TK',
+      'creme anti tache2': 'CREME_TACHE2',
+      'creme tache tk': 'CREME_TACHE_TK',
+      'patch minceur tk': 'PATCH_MINCEUR_TK',
+      'lunette de vision noctune': 'LUNETTE_VISION_NOCTUNE',
+      'pads rehausseurs poitrine': 'PADS_REHAUSSEURS_POITRINE',
+    };
 
-    if (!product) {
-      console.error(`❌ Produit introuvable pour product_key: ${product_key}`);
-      return res.status(400).json({ 
-        success: false,
-        error: `Produit inconnu avec product_key: ${product_key}`,
-        hint: 'Vérifiez que le produit existe dans l\'app avec ce code.'
+    // Résoudre le product_key : si c'est un nom de formulaire, le convertir en code
+    const resolvedKey = FALLBACK_MAPPING[product_key.toLowerCase()] || product_key;
+
+    // 1. Chercher le produit — stratégie multi-fallback
+    let product = null;
+    let matchMethod = '';
+
+    // 1a. Chercher par le code résolu (après FALLBACK_MAPPING)
+    product = await prisma.product.findFirst({
+      where: { code: resolvedKey, companyId }
+    });
+    if (product) matchMethod = resolvedKey !== product_key ? 'fallback_mapping' : 'code_exact';
+
+    // 1b. Chercher par code original (si différent du résolu)
+    if (!product && resolvedKey !== product_key) {
+      product = await prisma.product.findFirst({
+        where: { code: product_key, companyId }
       });
+      if (product) matchMethod = 'code_exact';
     }
 
-    // 2. Calculer les montants (avec prix par paliers si définis)
+    // 1c. Chercher par code insensible à la casse
+    if (!product) {
+      product = await prisma.product.findFirst({
+        where: { code: { equals: resolvedKey, mode: 'insensitive' }, companyId }
+      });
+      if (product) matchMethod = 'code_insensitive';
+    }
+
+    // 1d. Chercher par nom exact (le formulaire envoie parfois le nom du produit)
+    if (!product) {
+      product = await prisma.product.findFirst({
+        where: { nom: { equals: product_key, mode: 'insensitive' }, companyId, actif: true }
+      });
+      if (product) matchMethod = 'nom_exact';
+    }
+
+    // 1e. Chercher par nom contenant le product_key (recherche partielle)
+    if (!product) {
+      product = await prisma.product.findFirst({
+        where: { nom: { contains: product_key, mode: 'insensitive' }, companyId, actif: true }
+      });
+      if (product) matchMethod = 'nom_contains';
+    }
+
+    // 1f. Recherche floue : normaliser et comparer
+    if (!product) {
+      const allProducts = await prisma.product.findMany({
+        where: { companyId, actif: true }
+      });
+      const keyLower = product_key.toLowerCase().replace(/[^a-zàâäéèêëïîôùûüç0-9]/g, '');
+      product = allProducts.find(p => {
+        const nomLower = p.nom.toLowerCase().replace(/[^a-zàâäéèêëïîôùûüç0-9]/g, '');
+        return nomLower.includes(keyLower) || keyLower.includes(nomLower);
+      }) || null;
+      if (product) matchMethod = 'fuzzy';
+    }
+
+    if (product) {
+      if (matchMethod !== 'code_exact') {
+        console.log(`🔍 Produit trouvé par ${matchMethod}: "${product_key}" → ${product.nom} (${product.code})`);
+      }
+    } else {
+      console.warn(`⚠️ Produit non trouvé pour "${product_key}", commande créée sans productId`);
+    }
+
+    // 2. Calculer les montants
     const orderQuantity = parseInt(quantity) || 1;
-    const totalAmount = computeTotalAmount(product, orderQuantity);
+    const totalAmount = product
+      ? computeTotalAmount(product, orderQuantity)
+      : (parseFloat(String(raw_payload?.total || '').replace(/[^0-9.]/g, '')) || 9900) * orderQuantity;
 
     // 3. Créer la commande dans la base de données
     const createData = {
-      // IMPORTANT: générer la référence côté serveur pour éviter toute dépendance
-      // à un DEFAULT SQL (pgcrypto/gen_random_uuid) côté Supabase.
       orderReference: randomUUID(),
       companyId,
-      // Informations client
       clientNom: customer_name,
       clientTelephone: customer_phone,
       clientVille: customer_city,
       clientCommune: customer_commune || null,
       clientAdresse: customer_address || null,
-
-      // Informations produit
-      produitNom: product.nom,
+      produitNom: product ? product.nom : product_key,
       produitPage: page_url || source || null,
-      productId: product.id,
+      productId: product ? product.id : null,
       quantite: orderQuantity,
       montant: totalAmount,
-
-      // Informations marketing
       sourceCampagne: campaign_source || campaign_name || make_scenario_name || 'Make',
       sourcePage: source || page_url || make_scenario_name || null,
-
-      // Statut initial
       status: 'NOUVELLE',
     };
 
@@ -187,9 +270,10 @@ router.post('/make', verifyApiKey, [
     console.log('✅ Commande créée depuis Make:', {
       orderId: order.id,
       orderReference: order.orderReference,
-      product: product.nom,
+      product: product ? product.nom : product_key,
       customer: customer_name,
-      amount: totalAmount
+      amount: totalAmount,
+      matchMethod: matchMethod || 'none'
     });
 
     // 4.5 Envoyer une notification aux appelants
@@ -211,13 +295,14 @@ router.post('/make', verifyApiKey, [
       success: true,
       order_id: order.id,
       order_reference: order.orderReference,
-      product: {
+      product: product ? {
         id: product.id,
         name: product.nom,
         code: product.code
-      },
+      } : { name: product_key, matched: false },
       amount: totalAmount,
-      message: 'Commande créée avec succès'
+      match_method: matchMethod || 'none',
+      message: product ? 'Commande créée avec succès' : 'Commande créée (produit non résolu, à vérifier)'
     });
 
   } catch (error) {
