@@ -121,8 +121,9 @@ router.post('/make', verifyApiKey, [
       source
     });
 
-    // Mapping de secours : noms courants des formulaires → codes produit
+    // Mapping de secours : noms de formulaires ET codes Apps Script → codes produit en BDD
     const FALLBACK_MAPPING = {
+      // Noms de formulaires → codes BDD
       'chaussette de compression': 'CHAUSSETTE_CHAUFFANTE',
       'chaussettes chauffantes tourmaline': 'CHAUSSETTE_CHAUFFANTE',
       'patch minceur glp': 'PATCH_MINCEUR',
@@ -157,6 +158,15 @@ router.post('/make', verifyApiKey, [
       'patch minceur tk': 'PATCH_MINCEUR_TK',
       'lunette de vision noctune': 'LUNETTE_VISION_NOCTUNE',
       'pads rehausseurs poitrine': 'PADS_REHAUSSEURS_POITRINE',
+      'bande sport minceur': 'SPRAY_MINCEUR',
+      'lunette anti uv': 'LUNETTE_VISION_NOCTUNE',
+      // Codes Apps Script qui diffèrent des codes en BDD
+      'chaussette_de_compression': 'CHAUSSETTE_CHAUFFANTE',
+      'patch_minceur_glp': 'PATCH_MINCEUR',
+      'creme_minceur': 'SPRAY_MINCEUR',
+      'patch_anti_douleur': 'SPRAY_DOULEUR',
+      'bande_sport_minceur': 'SPRAY_MINCEUR',
+      'lunette_anti_uv': 'LUNETTE_VISION_NOCTUNE',
     };
 
     // Résoudre le product_key : si c'est un nom de formulaire, le convertir en code
