@@ -121,15 +121,15 @@ router.post('/make', verifyApiKey, [
       source
     });
 
-    // Mapping de secours : noms de formulaires ET codes Apps Script → codes produit en BDD
-    const FALLBACK_MAPPING = {
-      // Noms de formulaires → codes BDD
-      'chaussette de compression': 'CHAUSSETTE_CHAUFFANTE',
+    // Mapping de secours : noms de formulaires (pas les codes) → codes produit en BDD
+    // Utilisé UNIQUEMENT si le code brut n'est pas trouvé dans la base
+    const FALLBACK_NAME_MAPPING = {
+      'chaussette de compression': 'CHAUSSETTE_DE_COMPRESSION',
       'chaussettes chauffantes tourmaline': 'CHAUSSETTE_CHAUFFANTE',
-      'patch minceur glp': 'PATCH_MINCEUR',
+      'patch minceur glp': 'PATCH_MINCEUR_GLP',
       'patch minceur': 'PATCH_MINCEUR',
-      'creme minceur': 'SPRAY_MINCEUR',
-      'patch anti douleur': 'SPRAY_DOULEUR',
+      'creme minceur': 'CREME_MINCEUR',
+      'patch anti douleur': 'PATCH_ANTI_DOULEUR',
       'gaine tourmaline': 'GAINE_MINCEUR_TOURMALINE',
       'gaine tourmaline chauffante': 'GAINE_MINCEUR_TOURMALINE_CHAUFFANTE',
       'patch anti cicatrice': 'PATCH_ANTI_CICATRICE',
@@ -158,47 +158,40 @@ router.post('/make', verifyApiKey, [
       'patch minceur tk': 'PATCH_MINCEUR_TK',
       'lunette de vision noctune': 'LUNETTE_VISION_NOCTUNE',
       'pads rehausseurs poitrine': 'PADS_REHAUSSEURS_POITRINE',
-      'bande sport minceur': 'SPRAY_MINCEUR',
-      'lunette anti uv': 'LUNETTE_VISION_NOCTUNE',
-      // Codes Apps Script qui diffèrent des codes en BDD
-      'chaussette_de_compression': 'CHAUSSETTE_CHAUFFANTE',
-      'patch_minceur_glp': 'PATCH_MINCEUR',
-      'creme_minceur': 'SPRAY_MINCEUR',
-      'patch_anti_douleur': 'SPRAY_DOULEUR',
-      'bande_sport_minceur': 'SPRAY_MINCEUR',
-      'lunette_anti_uv': 'LUNETTE_VISION_NOCTUNE',
+      'bande sport minceur': 'BANDE_SPORT_MINCEUR',
+      'lunette anti uv': 'LUNETTE_ANTI_UV',
     };
 
-    // Résoudre le product_key : si c'est un nom de formulaire, le convertir en code
-    const resolvedKey = FALLBACK_MAPPING[product_key.toLowerCase()] || product_key;
-
-    // 1. Chercher le produit — stratégie multi-fallback
+    // 1. Chercher le produit — code brut d'abord, fallback ensuite
     let product = null;
     let matchMethod = '';
 
-    // 1a. Chercher par le code résolu (après FALLBACK_MAPPING)
+    // 1a. Chercher par code exact tel que reçu (priorité absolue)
     product = await prisma.product.findFirst({
-      where: { code: resolvedKey, companyId }
+      where: { code: product_key, companyId }
     });
-    if (product) matchMethod = resolvedKey !== product_key ? 'fallback_mapping' : 'code_exact';
+    if (product) matchMethod = 'code_exact';
 
-    // 1b. Chercher par code original (si différent du résolu)
-    if (!product && resolvedKey !== product_key) {
-      product = await prisma.product.findFirst({
-        where: { code: product_key, companyId }
-      });
-      if (product) matchMethod = 'code_exact';
-    }
-
-    // 1c. Chercher par code insensible à la casse
+    // 1b. Chercher par code insensible à la casse
     if (!product) {
       product = await prisma.product.findFirst({
-        where: { code: { equals: resolvedKey, mode: 'insensitive' }, companyId }
+        where: { code: { equals: product_key, mode: 'insensitive' }, companyId }
       });
       if (product) matchMethod = 'code_insensitive';
     }
 
-    // 1d. Chercher par nom exact (le formulaire envoie parfois le nom du produit)
+    // 1c. Utiliser le mapping de secours (nom formulaire → code BDD)
+    if (!product) {
+      const fallbackCode = FALLBACK_NAME_MAPPING[product_key.toLowerCase()];
+      if (fallbackCode) {
+        product = await prisma.product.findFirst({
+          where: { code: fallbackCode, companyId }
+        });
+        if (product) matchMethod = 'fallback_mapping';
+      }
+    }
+
+    // 1d. Chercher par nom exact
     if (!product) {
       product = await prisma.product.findFirst({
         where: { nom: { equals: product_key, mode: 'insensitive' }, companyId, actif: true }
@@ -206,7 +199,7 @@ router.post('/make', verifyApiKey, [
       if (product) matchMethod = 'nom_exact';
     }
 
-    // 1e. Chercher par nom contenant le product_key (recherche partielle)
+    // 1e. Chercher par nom contenant le product_key
     if (!product) {
       product = await prisma.product.findFirst({
         where: { nom: { contains: product_key, mode: 'insensitive' }, companyId, actif: true }
@@ -214,7 +207,7 @@ router.post('/make', verifyApiKey, [
       if (product) matchMethod = 'nom_contains';
     }
 
-    // 1f. Recherche floue : normaliser et comparer
+    // 1f. Recherche floue
     if (!product) {
       const allProducts = await prisma.product.findMany({
         where: { companyId, actif: true }
@@ -222,7 +215,8 @@ router.post('/make', verifyApiKey, [
       const keyLower = product_key.toLowerCase().replace(/[^a-zàâäéèêëïîôùûüç0-9]/g, '');
       product = allProducts.find(p => {
         const nomLower = p.nom.toLowerCase().replace(/[^a-zàâäéèêëïîôùûüç0-9]/g, '');
-        return nomLower.includes(keyLower) || keyLower.includes(nomLower);
+        const codeLower = p.code.toLowerCase().replace(/[^a-zàâäéèêëïîôùûüç0-9]/g, '');
+        return nomLower.includes(keyLower) || keyLower.includes(nomLower) || codeLower.includes(keyLower) || keyLower.includes(codeLower);
       }) || null;
       if (product) matchMethod = 'fuzzy';
     }
