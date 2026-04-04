@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import { authenticate, authorize } from '../middlewares/auth.middleware.js';
 import { prisma } from '../utils/prisma.js';
 
@@ -211,7 +211,6 @@ router.post('/backfill', async (req, res) => {
       prisma.statusHistory.findMany({
         where: {
           order: { companyId },
-          changedBy: { not: null },
         },
         include: {
           order: {
@@ -326,7 +325,7 @@ router.post('/backfill', async (req, res) => {
     });
   } catch (error) {
     console.error('Erreur backfill audit:', error);
-    return res.status(500).json({ error: 'Erreur lors de l’import historique audit.' });
+    return res.status(500).json({ error: 'Erreur import historique audit.' });
   }
 });
 

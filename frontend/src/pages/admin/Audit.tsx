@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, Eye, Filter, Inbox, Monitor, RefreshCw, Shield, Smartphone, Users, Wifi } from 'lucide-react';
 import { api, usersApi } from '@/lib/api';
@@ -208,7 +208,7 @@ export default function Audit() {
           disabled={isBackfilling}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 disabled:opacity-60"
         >
-          {isBackfilling ? 'Import en cours...' : 'Importer l’historique'}
+          {isBackfilling ? 'Import en cours...' : 'Importer historique'}
         </button>
       </div>
       {backfillMessage && (
