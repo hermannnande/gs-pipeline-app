@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, Eye, Filter, Monitor, RefreshCw, Shield, Smartphone, Users, Wifi } from 'lucide-react';
+import { AlertTriangle, Eye, Filter, Inbox, Monitor, RefreshCw, Shield, Smartphone, Users, Wifi } from 'lucide-react';
 import { api, usersApi } from '@/lib/api';
 import { PageHeader, LoadingState, EmptyState } from '@/components/UIComponents';
 
@@ -192,7 +192,7 @@ export default function Audit() {
       {/* TAB: Appareils & IP */}
       {tab === 'devices' && (
         <div className="space-y-6">
-          {devicesLoading ? <LoadingState message="Analyse en cours..." /> : !devicesData ? <EmptyState message="Aucune donnée" /> : (
+          {devicesLoading ? <LoadingState text="Analyse en cours..." /> : !devicesData ? <EmptyState icon={Inbox} title="Aucune donnée" description="Aucune donnée d'audit disponible pour cette période." /> : (
             <>
               {/* Appareils partagés */}
               {devicesData.sharedFingerprints.length > 0 && (
@@ -322,7 +322,7 @@ export default function Audit() {
               className="border rounded-lg px-3 py-1.5 text-sm w-40" />
           </div>
 
-          {logsLoading ? <LoadingState message="Chargement..." /> : !logsData?.logs?.length ? <EmptyState message="Aucune action enregistrée" /> : (
+          {logsLoading ? <LoadingState text="Chargement..." /> : !logsData?.logs?.length ? <EmptyState icon={Inbox} title="Aucune action enregistrée" description="Les actions seront enregistrées automatiquement." /> : (
             <>
               <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
                 <div className="overflow-x-auto">
