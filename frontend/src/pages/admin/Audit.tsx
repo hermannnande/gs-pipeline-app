@@ -134,7 +134,7 @@ export default function Audit() {
       <PageHeader
         title="Audit & Sécurité"
         subtitle="Traçabilité des actions, IP et détection de partage d'appareils"
-        icon={<Shield className="h-6 w-6" />}
+        icon={Shield}
       />
 
       {/* Alertes */}
