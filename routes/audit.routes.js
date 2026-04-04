@@ -1,4 +1,4 @@
-﻿import express from 'express';
+import express from 'express';
 import { authenticate, authorize } from '../middlewares/auth.middleware.js';
 import { prisma } from '../utils/prisma.js';
 
@@ -199,6 +199,133 @@ router.get('/user/:userId', async (req, res) => {
   } catch (error) {
     console.error('Erreur audit user:', error);
     res.status(500).json({ error: 'Erreur récupération audit utilisateur.' });
+  }
+});
+
+// GET /api/audit/cross-role - Analyse croisement gestionnaire/livreur
+router.get('/cross-role', async (req, res) => {
+  try {
+    const companyId = req.user.companyId;
+
+    const attendances = await prisma.attendance.findMany({
+      where: {
+        user: { companyId },
+        ipAddress: { not: null },
+      },
+      select: {
+        id: true,
+        userId: true,
+        ipAddress: true,
+        deviceInfo: true,
+        date: true,
+        heureArrivee: true,
+        user: { select: { id: true, nom: true, prenom: true, role: true, email: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const ipToUsers = {};
+    const deviceToUsers = {};
+
+    for (const a of attendances) {
+      const ip = (a.ipAddress || '').trim();
+      const device = (a.deviceInfo || '').trim();
+      if (!ip || ip === 'unknown') continue;
+
+      if (!ipToUsers[ip]) ipToUsers[ip] = {};
+      if (!ipToUsers[ip][a.userId]) {
+        ipToUsers[ip][a.userId] = { user: a.user, dates: [], count: 0 };
+      }
+      ipToUsers[ip][a.userId].dates.push(a.heureArrivee || a.date);
+      ipToUsers[ip][a.userId].count++;
+
+      if (device && device !== 'unknown') {
+        if (!deviceToUsers[device]) deviceToUsers[device] = {};
+        if (!deviceToUsers[device][a.userId]) {
+          deviceToUsers[device][a.userId] = { user: a.user, dates: [], count: 0 };
+        }
+        deviceToUsers[device][a.userId].dates.push(a.heureArrivee || a.date);
+        deviceToUsers[device][a.userId].count++;
+      }
+    }
+
+    function findCrossRole(map) {
+      const results = [];
+      for (const [key, users] of Object.entries(map)) {
+        const userList = Object.values(users);
+        const roles = new Set(userList.map((u) => u.user.role));
+        const hasGestionnaire = roles.has('GESTIONNAIRE') || roles.has('GESTIONNAIRE_STOCK') || roles.has('ADMIN');
+        const hasLivreur = roles.has('LIVREUR');
+        if (hasGestionnaire && hasLivreur) {
+          results.push({
+            key,
+            users: userList.map((u) => ({
+              ...u.user,
+              count: u.count,
+              lastDate: u.dates[0],
+            })),
+            gestionnaires: userList.filter((u) => ['GESTIONNAIRE', 'GESTIONNAIRE_STOCK', 'ADMIN'].includes(u.user.role)).map((u) => u.user),
+            livreurs: userList.filter((u) => u.user.role === 'LIVREUR').map((u) => u.user),
+          });
+        }
+      }
+      return results;
+    }
+
+    const crossIP = findCrossRole(ipToUsers);
+    const crossDevice = findCrossRole(deviceToUsers);
+
+    const auditLogs = await prisma.auditLog.findMany({
+      where: {
+        companyId,
+        action: 'ORDER_STATUS_CHANGE',
+        ipAddress: { not: null },
+      },
+      select: {
+        userId: true,
+        ipAddress: true,
+        deviceFingerprint: true,
+        createdAt: true,
+        details: true,
+        user: { select: { id: true, nom: true, prenom: true, role: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 5000,
+    });
+
+    const auditIpToUsers = {};
+    for (const log of auditLogs) {
+      const ip = (log.ipAddress || '').trim();
+      if (!ip || ip === 'unknown') continue;
+      if (!auditIpToUsers[ip]) auditIpToUsers[ip] = {};
+      if (!auditIpToUsers[ip][log.userId]) {
+        auditIpToUsers[ip][log.userId] = { user: log.user, count: 0 };
+      }
+      auditIpToUsers[ip][log.userId].count++;
+    }
+    const crossAuditIP = findCrossRole(auditIpToUsers);
+
+    res.json({
+      fromAttendance: {
+        sharedIPs: crossIP,
+        sharedDevices: crossDevice,
+        totalAttendances: attendances.length,
+      },
+      fromAuditLogs: {
+        sharedIPs: crossAuditIP,
+      },
+      summary: {
+        crossIPCount: crossIP.length,
+        crossDeviceCount: crossDevice.length,
+        crossAuditIPCount: crossAuditIP.length,
+        verdict: crossIP.length > 0 || crossDevice.length > 0
+          ? 'SUSPECT - Des gestionnaires et livreurs partagent des appareils/IP'
+          : 'RAS - Aucun croisement gestionnaire/livreur detecte',
+      },
+    });
+  } catch (error) {
+    console.error('Erreur cross-role:', error);
+    res.status(500).json({ error: 'Erreur analyse croisement.' });
   }
 });
 
