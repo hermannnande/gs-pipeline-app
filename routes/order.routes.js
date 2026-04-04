@@ -1,6 +1,7 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { authenticate, authorize } from '../middlewares/auth.middleware.js';
+import { logAudit } from '../middlewares/audit.middleware.js';
 import { notifyOrderValidated, notifyOrderDelivered, notifyOrderRefused } from '../utils/notifications.js';
 import { computeTotalAmount } from '../utils/pricing.js';
 import { prisma } from '../utils/prisma.js';
@@ -616,6 +617,21 @@ router.put('/:id/status', async (req, res) => {
       console.error('⚠️ Erreur envoi notification:', notifError);
       // Ne pas bloquer la mise à jour si la notification échoue
     }
+
+    logAudit(req, {
+      action: 'ORDER_STATUS_CHANGE',
+      entityType: 'Order',
+      entityId: updatedOrder.id,
+      details: {
+        oldStatus: order.status,
+        newStatus: status,
+        note: note || null,
+        raisonRetour: raisonRetour || null,
+        orderId: updatedOrder.id,
+        orderRef: updatedOrder.orderReference,
+        clientNom: updatedOrder.clientNom,
+      },
+    });
 
     res.json({ order: updatedOrder, message: 'Statut mis à jour avec succès.' });
   } catch (error) {
@@ -1483,6 +1499,13 @@ router.post('/:id/express/expedier', authorize('LIVREUR', 'ADMIN'), [
       },
     });
 
+    logAudit(req, {
+      action: 'EXPRESS_EXPEDIER',
+      entityType: 'Order',
+      entityId: updatedOrder.id,
+      details: { codeExpress, orderId: updatedOrder.id, orderRef: updatedOrder.orderReference },
+    });
+
     res.json({
       order: updatedOrder,
       message: 'EXPRESS marqué comme envoyé vers l’agence.',
@@ -1589,6 +1612,13 @@ router.post('/:id/expedition/livrer', authorize('LIVREUR', 'ADMIN'), async (req,
         changedBy: req.user.id,
         comment: `EXPÉDITION confirmée comme livrée/expédiée par ${req.user.prenom} ${req.user.nom}${note ? ' - ' + note : ''}`,
       },
+    });
+
+    logAudit(req, {
+      action: 'EXPEDITION_LIVRER',
+      entityType: 'Order',
+      entityId: updatedOrder.id,
+      details: { codeExpedition, orderId: updatedOrder.id, orderRef: updatedOrder.orderReference },
     });
 
     res.json({ 

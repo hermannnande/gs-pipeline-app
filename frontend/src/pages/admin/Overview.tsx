@@ -260,6 +260,13 @@ export default function Overview() {
               <FileText size={20} />
               <span>Voir les rapports détaillés</span>
             </button>
+            <button 
+              onClick={() => navigate('/admin/audit')}
+              className="w-full btn btn-secondary"
+            >
+              <FileText size={20} />
+              <span>Audit & Sécurité</span>
+            </button>
           </div>
         </div>
       </div>

@@ -20,6 +20,7 @@ import Chat from '../common/Chat';
 import ChatSupervision from './ChatSupervision';
 import ProductAnalytics from './ProductAnalytics';
 import Attendances from './Attendances';
+import Audit from './Audit';
 
 export default function AdminDashboard() {
   return (
@@ -45,6 +46,7 @@ export default function AdminDashboard() {
       <Route path="chat" element={<Chat />} />
       <Route path="chat-supervision" element={<ChatSupervision />} />
       <Route path="product-analytics" element={<ProductAnalytics />} />
+      <Route path="audit" element={<Audit />} />
     </Routes>
   );
 }

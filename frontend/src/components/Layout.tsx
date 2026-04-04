@@ -86,6 +86,7 @@ export default function Layout({ children }: LayoutProps) {
           { icon: DollarSign, label: 'Comptabilité', path: '/admin/accounting' },
           { icon: MessageSquare, label: 'Chat', path: '/admin/chat' },
           { icon: MessageSquare, label: 'Supervision Chat', path: '/admin/chat-supervision' },
+          { icon: Eye, label: 'Audit & Sécurité', path: '/admin/audit' },
         ];
       case 'GESTIONNAIRE':
         return [

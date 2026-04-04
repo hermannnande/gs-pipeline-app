@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { body, validationResult } from 'express-validator';
 import { authenticate } from '../middlewares/auth.middleware.js';
+import { logAudit } from '../middlewares/audit.middleware.js';
 import { prisma } from '../utils/prisma.js';
 
 const router = express.Router();
@@ -73,6 +74,10 @@ router.post('/login', [
     }
 
     if (!isValidPassword) {
+      logAudit(
+        { ...req, user: { id: user.id, companyId: user.companyId } },
+        { action: 'LOGIN_FAILED', details: { email: user.email, role: user.role } }
+      );
       return res.status(401).json({ error: 'Email ou mot de passe incorrect.' });
     }
 
@@ -83,7 +88,7 @@ router.post('/login', [
       { expiresIn: '24h' }
     );
 
-    res.json({
+    const response = {
       token,
       user: {
         id: user.id,
@@ -93,7 +98,12 @@ router.post('/login', [
         role: user.role,
         companyId: user.companyId
       }
-    });
+    };
+
+    req.user = { id: user.id, companyId: user.companyId };
+    logAudit(req, { action: 'LOGIN', details: { role: user.role, email: user.email } });
+
+    res.json(response);
   } catch (error) {
     console.error('Erreur login:', error);
     const err = error instanceof Error ? error : new Error(String(error));

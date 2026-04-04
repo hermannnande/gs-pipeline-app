@@ -2,6 +2,7 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { prisma } from '../utils/prisma.js';
 import { authenticate, authorize } from '../middlewares/auth.middleware.js';
+import { logAudit } from '../middlewares/audit.middleware.js';
 
 const router = express.Router();
 
@@ -127,6 +128,13 @@ router.post(
           ipAddress: String(req.headers['x-forwarded-for'] || req.ip || 'unknown').slice(0, 200),
           deviceInfo: String(req.headers['user-agent'] || 'unknown').slice(0, 250),
         },
+      });
+
+      logAudit(req, {
+        action: 'ATTENDANCE_MARK',
+        entityType: 'Attendance',
+        entityId: attendance.id,
+        details: { validation, distance: Math.round(distance), storeName: store.nom },
       });
 
       return res.json({
