@@ -96,6 +96,8 @@ export default function Audit() {
   const [filterAction, setFilterAction] = useState('');
   const [filterIp, setFilterIp] = useState('');
   const [logsPage, setLogsPage] = useState(1);
+  const [isBackfilling, setIsBackfilling] = useState(false);
+  const [backfillMessage, setBackfillMessage] = useState<string | null>(null);
 
   const { data: usersData } = useQuery({
     queryKey: ['audit-users'],
@@ -128,6 +130,20 @@ export default function Audit() {
   const hasAlerts = alerts && (alerts.sharedDeviceCount > 0 || alerts.sharedIPCount > 0);
 
   const allUsers: DeviceUser[] = usersData?.users || usersData || [];
+
+  async function handleBackfill() {
+    try {
+      setIsBackfilling(true);
+      setBackfillMessage(null);
+      const { data } = await api.post('/audit/backfill');
+      setBackfillMessage(data?.message || 'Import historique terminé.');
+      await Promise.all([refetchDevices(), refetchLogs()]);
+    } catch (error: any) {
+      setBackfillMessage(error?.response?.data?.error || "Erreur lors de l'import historique.");
+    } finally {
+      setIsBackfilling(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -187,7 +203,19 @@ export default function Audit() {
           className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">
           <RefreshCw className="h-3.5 w-3.5" />Actualiser
         </button>
+        <button
+          onClick={handleBackfill}
+          disabled={isBackfilling}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 disabled:opacity-60"
+        >
+          {isBackfilling ? 'Import en cours...' : 'Importer l’historique'}
+        </button>
       </div>
+      {backfillMessage && (
+        <div className="text-sm text-gray-700 bg-gray-50 border rounded-lg px-3 py-2">
+          {backfillMessage}
+        </div>
+      )}
 
       {/* TAB: Appareils & IP */}
       {tab === 'devices' && (

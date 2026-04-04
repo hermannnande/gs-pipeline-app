@@ -7,6 +7,16 @@ const router = express.Router();
 router.use(authenticate);
 router.use(authorize('ADMIN'));
 
+function toLogKey(row) {
+  return [
+    row.userId,
+    row.action,
+    row.entityType || '',
+    row.entityId || '',
+    new Date(row.createdAt).toISOString(),
+  ].join('|');
+}
+
 // GET /api/audit/logs - Journal d'audit complet
 router.get('/logs', async (req, res) => {
   try {
@@ -189,6 +199,134 @@ router.get('/user/:userId', async (req, res) => {
   } catch (error) {
     console.error('Erreur audit user:', error);
     res.status(500).json({ error: 'Erreur récupération audit utilisateur.' });
+  }
+});
+
+// POST /api/audit/backfill - Importer les anciennes actions dans audit_logs
+router.post('/backfill', async (req, res) => {
+  try {
+    const companyId = req.user.companyId;
+
+    const [statusHistoryRows, attendanceRows] = await Promise.all([
+      prisma.statusHistory.findMany({
+        where: {
+          order: { companyId },
+          changedBy: { not: null },
+        },
+        include: {
+          order: {
+            select: {
+              id: true,
+              orderReference: true,
+              clientNom: true,
+              companyId: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
+      prisma.attendance.findMany({
+        where: {
+          user: { companyId },
+        },
+        select: {
+          id: true,
+          userId: true,
+          validation: true,
+          ipAddress: true,
+          deviceInfo: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
+    ]);
+
+    const wantedLogs = [];
+
+    for (const h of statusHistoryRows) {
+      wantedLogs.push({
+        userId: h.changedBy,
+        action: 'ORDER_STATUS_CHANGE',
+        entityType: 'Order',
+        entityId: h.orderId,
+        details: JSON.stringify({
+          oldStatus: h.oldStatus,
+          newStatus: h.newStatus,
+          orderId: h.orderId,
+          orderRef: h.order?.orderReference || null,
+          clientNom: h.order?.clientNom || null,
+          source: 'status_history',
+          statusHistoryId: h.id,
+        }),
+        ipAddress: null,
+        userAgent: null,
+        deviceFingerprint: null,
+        companyId,
+        createdAt: h.createdAt,
+      });
+    }
+
+    for (const a of attendanceRows) {
+      wantedLogs.push({
+        userId: a.userId,
+        action: 'ATTENDANCE_MARK',
+        entityType: 'Attendance',
+        entityId: a.id,
+        details: JSON.stringify({
+          validation: a.validation,
+          source: 'attendances',
+          attendanceId: a.id,
+        }),
+        ipAddress: a.ipAddress || null,
+        userAgent: a.deviceInfo || null,
+        deviceFingerprint: null,
+        companyId,
+        createdAt: a.createdAt,
+      });
+    }
+
+    if (!wantedLogs.length) {
+      return res.json({
+        success: true,
+        inserted: 0,
+        message: 'Aucune donnée historique à importer.',
+      });
+    }
+
+    const minDate = wantedLogs[0].createdAt;
+    const maxDate = wantedLogs[wantedLogs.length - 1].createdAt;
+
+    const existing = await prisma.auditLog.findMany({
+      where: {
+        companyId,
+        action: { in: ['ORDER_STATUS_CHANGE', 'ATTENDANCE_MARK'] },
+        createdAt: { gte: minDate, lte: maxDate },
+      },
+      select: {
+        userId: true,
+        action: true,
+        entityType: true,
+        entityId: true,
+        createdAt: true,
+      },
+    });
+
+    const existingSet = new Set(existing.map(toLogKey));
+    const toInsert = wantedLogs.filter((row) => !existingSet.has(toLogKey(row)));
+
+    if (toInsert.length > 0) {
+      await prisma.auditLog.createMany({ data: toInsert });
+    }
+
+    return res.json({
+      success: true,
+      inserted: toInsert.length,
+      scanned: wantedLogs.length,
+      message: `${toInsert.length} action(s) historique(s) importée(s).`,
+    });
+  } catch (error) {
+    console.error('Erreur backfill audit:', error);
+    return res.status(500).json({ error: 'Erreur lors de l’import historique audit.' });
   }
 });
 
