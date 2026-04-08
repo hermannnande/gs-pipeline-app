@@ -23,6 +23,9 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   X,
+  Activity,
+  Crosshair,
+  CalendarClock,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -261,6 +264,159 @@ function DashboardTab({ stats }: { stats: any }) {
           color="amber"
         />
       </div>
+
+      {/* PREVISIONS MENSUELLES */}
+      {stats.previsions && (
+        <div className="card bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 border-indigo-200">
+          <div className="flex items-center gap-2 mb-4">
+            <CalendarClock className="text-indigo-600" size={20} />
+            <h2 className="text-lg font-semibold text-indigo-900">Previsions - {stats.previsions.mois}</h2>
+            <span className="ml-auto text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full font-medium">
+              Jour {stats.previsions.joursEcoules}/{stats.previsions.joursTotalMois} ({stats.previsions.joursRestants}j restants)
+            </span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <p className="text-xs text-gray-500">CA actuel</p>
+              <p className="text-lg font-bold text-emerald-700">{formatCurrency(stats.previsions.revenuActuel)}</p>
+              <p className="text-xs text-gray-400">{stats.previsions.commandesActuelles} cmd</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Projection fin de mois</p>
+              <p className="text-xl font-bold text-indigo-700">{formatCurrency(stats.previsions.projectionCA)}</p>
+              <p className="text-xs text-gray-400">~{stats.previsions.projectionCommandes} cmd</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Projection depenses pub</p>
+              <p className="text-lg font-bold text-red-600">{formatCurrency(stats.previsions.projectionDepensesPub)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Marge projetee</p>
+              <p className={`text-xl font-bold ${stats.previsions.projectionMarge >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                {formatCurrency(stats.previsions.projectionMarge)}
+              </p>
+              <p className="text-xs text-gray-400">{stats.previsions.projectionMargePourcent}% du CA</p>
+            </div>
+          </div>
+          <div className="mt-3 w-full bg-gray-200 rounded-full h-3">
+            <div
+              className="bg-gradient-to-r from-indigo-500 to-purple-500 h-3 rounded-full transition-all"
+              style={{ width: `${Math.min(100, (stats.previsions.joursEcoules / stats.previsions.joursTotalMois) * 100)}%` }}
+            />
+          </div>
+          <p className="text-xs text-gray-500 mt-1 text-center">
+            Moyenne journaliere: {formatCurrency(stats.previsions.moyenneJournaliereCA)}/jour
+          </p>
+        </div>
+      )}
+
+      {/* TAUX DE LIVRAISON + CAC */}
+      {stats.tauxLivraison && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Taux de livraison */}
+          <div className="card">
+            <div className="flex items-center gap-2 mb-4">
+              <Activity className="text-emerald-600" size={20} />
+              <h2 className="text-lg font-semibold">Taux de livraison reussie</h2>
+            </div>
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="text-center p-3 rounded-lg bg-emerald-50 border border-emerald-200">
+                <p className="text-2xl font-bold text-emerald-700">{stats.tauxLivraison.tauxReussite}%</p>
+                <p className="text-xs text-emerald-600">Reussies ({stats.tauxLivraison.nbReussies})</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-red-50 border border-red-200">
+                <p className="text-2xl font-bold text-red-700">{stats.tauxLivraison.tauxEchec}%</p>
+                <p className="text-xs text-red-600">Echecs ({stats.tauxLivraison.nbEchecs})</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-amber-50 border border-amber-200">
+                <p className="text-2xl font-bold text-amber-700">{stats.tauxLivraison.nbEnCours}</p>
+                <p className="text-xs text-amber-600">En cours</p>
+              </div>
+            </div>
+            {/* Barre visuelle */}
+            <div className="w-full flex rounded-full overflow-hidden h-4 mb-3">
+              {stats.tauxLivraison.totalRecues > 0 && (
+                <>
+                  <div className="bg-emerald-500" style={{ width: `${stats.tauxLivraison.tauxReussite}%` }} title={`Reussies: ${stats.tauxLivraison.tauxReussite}%`} />
+                  <div className="bg-amber-400" style={{ width: `${((stats.tauxLivraison.nbEnCours / stats.tauxLivraison.totalRecues) * 100)}%` }} title="En cours" />
+                  <div className="bg-red-500" style={{ width: `${stats.tauxLivraison.tauxEchec}%` }} title={`Echecs: ${stats.tauxLivraison.tauxEchec}%`} />
+                </>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 text-center">{stats.tauxLivraison.totalRecues} commandes recues sur la periode</p>
+
+            {/* Par produit */}
+            {stats.tauxLivraison.parProduit?.length > 0 && (
+              <div className="mt-4 max-h-48 overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-2 py-1 text-left text-xs">Produit</th>
+                      <th className="px-2 py-1 text-center text-xs">Total</th>
+                      <th className="px-2 py-1 text-center text-xs">Taux</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {stats.tauxLivraison.parProduit.slice(0, 10).map((p: any) => (
+                      <tr key={p.id}>
+                        <td className="px-2 py-1 text-xs">{p.nom}</td>
+                        <td className="px-2 py-1 text-center text-xs">{p.total}</td>
+                        <td className="px-2 py-1 text-center">
+                          <span className={`text-xs font-bold ${parseFloat(p.taux) >= 70 ? 'text-emerald-600' : parseFloat(p.taux) >= 50 ? 'text-amber-600' : 'text-red-600'}`}>
+                            {p.taux}%
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* CAC */}
+          <div className="card">
+            <div className="flex items-center gap-2 mb-4">
+              <Crosshair className="text-blue-600" size={20} />
+              <h2 className="text-lg font-semibold">Cout d'Acquisition Client (CAC)</h2>
+            </div>
+            <div className="text-center p-4 mb-4 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200">
+              <p className="text-xs text-blue-600 font-medium">CAC Global</p>
+              <p className="text-3xl font-bold text-blue-700">{formatCurrency(stats.cac.global)}</p>
+              <p className="text-xs text-gray-500 mt-1">par commande livree avec succes</p>
+            </div>
+
+            {stats.cac.parProduit?.length > 0 && (
+              <div className="max-h-56 overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-2 py-1 text-left text-xs">Produit</th>
+                      <th className="px-2 py-1 text-right text-xs">Pub depensee</th>
+                      <th className="px-2 py-1 text-center text-xs">Livrees</th>
+                      <th className="px-2 py-1 text-right text-xs">CAC</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {stats.cac.parProduit.map((p: any) => (
+                      <tr key={p.id} className={p.cac > 5000 ? 'bg-red-50' : ''}>
+                        <td className="px-2 py-1 text-xs font-medium">{p.nom}</td>
+                        <td className="px-2 py-1 text-xs text-right text-blue-600">{formatCurrency(p.pub)}</td>
+                        <td className="px-2 py-1 text-xs text-center">{p.livrees}</td>
+                        <td className="px-2 py-1 text-right">
+                          <span className={`text-xs font-bold ${p.cac <= 3000 ? 'text-emerald-600' : p.cac <= 5000 ? 'text-amber-600' : 'text-red-600'}`}>
+                            {formatCurrency(Math.round(p.cac))}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Bande depenses detaillees */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -105,7 +105,7 @@ router.get('/stats', async (req, res) => {
 
     // Charger TOUS les budgets pub (pas uniquement la periode)
     // car un budget defini avant la periode reste actif pendant
-    const [commandes, allAdBudgets, purchases] = await Promise.all([
+    const [commandes, allAdBudgets, purchases, toutesCommandes] = await Promise.all([
       prisma.order.findMany({
         where: {
           companyId,
@@ -131,6 +131,18 @@ router.get('/stats', async (req, res) => {
         where: { companyId, date: { gte: startDate, lte: endDate } },
         include: { product: { select: { id: true, nom: true, code: true } } },
         orderBy: { date: 'desc' },
+      }),
+      // TOUTES les commandes de la periode pour taux de livraison
+      prisma.order.findMany({
+        where: {
+          companyId,
+          createdAt: { gte: startDate, lte: endDate },
+        },
+        select: {
+          id: true, status: true, deliveryType: true, montant: true,
+          productId: true, createdAt: true,
+          product: { select: { id: true, nom: true } },
+        },
       }),
     ]);
 
@@ -242,6 +254,104 @@ router.get('/stats', async (req, res) => {
     const nbJours = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
     const budgetJournalierTotal = budgetsActifs.reduce((s, b) => s + b.montantJournalier, 0);
 
+    // ========================================
+    // TAUX DE LIVRAISON REUSSIE
+    // ========================================
+    const STATUS_REUSSIE = ['LIVREE', 'EXPEDITION', 'EXPRESS', 'EXPRESS_ARRIVE', 'EXPRESS_LIVRE', 'EXPRESS_ENVOYE'];
+    const STATUS_ECHEC = ['ANNULEE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'];
+
+    const totalRecues = toutesCommandes.length;
+    const nbReussies = toutesCommandes.filter(c => STATUS_REUSSIE.includes(c.status)).length;
+    const nbEchecs = toutesCommandes.filter(c => STATUS_ECHEC.includes(c.status)).length;
+    const nbEnCours = totalRecues - nbReussies - nbEchecs;
+    const tauxReussite = totalRecues > 0 ? ((nbReussies / totalRecues) * 100).toFixed(1) : 0;
+    const tauxEchec = totalRecues > 0 ? ((nbEchecs / totalRecues) * 100).toFixed(1) : 0;
+
+    // Par produit
+    const tauxParProduit = {};
+    for (const c of toutesCommandes) {
+      const pid = c.product?.id || 0;
+      const pnom = c.product?.nom || 'Inconnu';
+      if (!tauxParProduit[pid]) tauxParProduit[pid] = { id: pid, nom: pnom, total: 0, reussies: 0, echecs: 0 };
+      tauxParProduit[pid].total++;
+      if (STATUS_REUSSIE.includes(c.status)) tauxParProduit[pid].reussies++;
+      if (STATUS_ECHEC.includes(c.status)) tauxParProduit[pid].echecs++;
+    }
+    const tauxProduits = Object.values(tauxParProduit)
+      .map(p => ({ ...p, taux: p.total > 0 ? ((p.reussies / p.total) * 100).toFixed(1) : 0 }))
+      .sort((a, b) => b.total - a.total);
+
+    // ========================================
+    // CAC (Cout d'Acquisition Client)
+    // ========================================
+    const cacGlobal = nbReussies > 0 ? totalPub / nbReussies : 0;
+    const cacParProduit = tauxProduits.map(p => {
+      const pubProduit = pubParProduit[p.id] || 0;
+      return {
+        id: p.id, nom: p.nom,
+        pub: pubProduit,
+        livrees: p.reussies,
+        cac: p.reussies > 0 ? pubProduit / p.reussies : 0,
+      };
+    }).filter(p => p.pub > 0 || p.livrees > 0);
+
+    // ========================================
+    // PREVISIONS MENSUELLES
+    // ========================================
+    const now = new Date();
+    const debutMois = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const finMois = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 59, 999));
+    const joursEcoules = now.getUTCDate();
+    const joursTotalMois = finMois.getUTCDate();
+    const joursRestants = joursTotalMois - joursEcoules;
+
+    // Commandes du mois en cours pour projection
+    const commandesMoisActuel = await prisma.order.findMany({
+      where: {
+        companyId,
+        OR: [
+          { deliveryType: 'LOCAL', status: 'LIVREE', deliveredAt: { gte: debutMois, lte: now } },
+          { deliveryType: 'EXPEDITION', status: 'EXPEDITION', expedieAt: { gte: debutMois, lte: now } },
+          { deliveryType: 'EXPRESS', status: 'EXPRESS', expedieAt: { gte: debutMois, lte: now } },
+          { deliveryType: 'EXPRESS', status: { in: ['EXPRESS_ARRIVE', 'EXPRESS_LIVRE'] }, arriveAt: { gte: debutMois, lte: now } },
+        ],
+      },
+      select: { montant: true, deliveryType: true, status: true },
+    });
+    const revenuMoisEnCours = commandesMoisActuel.reduce((s, c) => {
+      if (c.deliveryType === 'LOCAL') return s + c.montant;
+      if (c.deliveryType === 'EXPEDITION') return s + c.montant;
+      if (c.deliveryType === 'EXPRESS' && c.status === 'EXPRESS') return s + c.montant * 0.1;
+      return s + c.montant * 0.9;
+    }, 0);
+
+    const moyenneJournaliereCA = joursEcoules > 0 ? revenuMoisEnCours / joursEcoules : 0;
+    const projectionCA = revenuMoisEnCours + (moyenneJournaliereCA * joursRestants);
+    const nbCommandesMois = commandesMoisActuel.length;
+    const moyenneCommandesJour = joursEcoules > 0 ? nbCommandesMois / joursEcoules : 0;
+    const projectionCommandes = Math.round(nbCommandesMois + (moyenneCommandesJour * joursRestants));
+
+    const pubMoisProjection = computeDailyAdSpend(allAdBudgets, debutMois, finMois);
+    const projectionDepensesPub = pubMoisProjection.totalPub;
+    const projectionCommissions = projectionCommandes * commissionParLivraison * (parseFloat(tauxReussite) / 100);
+    const projectionMarge = projectionCA - projectionDepensesPub - projectionCommissions;
+
+    const previsions = {
+      mois: now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }),
+      joursEcoules,
+      joursTotalMois,
+      joursRestants,
+      revenuActuel: revenuMoisEnCours,
+      moyenneJournaliereCA,
+      projectionCA,
+      commandesActuelles: nbCommandesMois,
+      projectionCommandes,
+      projectionDepensesPub,
+      projectionCommissions: Math.round(projectionCommissions),
+      projectionMarge: Math.round(projectionMarge),
+      projectionMargePourcent: projectionCA > 0 ? ((projectionMarge / projectionCA) * 100).toFixed(1) : 0,
+    };
+
     // Conseils business
     const conseils = [];
     if (margePourcent < 20 && revenuTotal > 0) conseils.push({ type: 'warning', text: 'Marge nette faible (<20%). Revoyez vos prix de vente ou reduisez les depenses pub.' });
@@ -258,6 +368,17 @@ router.get('/stats', async (req, res) => {
     if (revenuTotal > 0 && totalPub > 0) {
       const roas = revenuTotal / totalPub;
       conseils.push({ type: roas >= 3 ? 'success' : roas >= 2 ? 'info' : 'warning', text: `ROAS (Return On Ad Spend): ${roas.toFixed(1)}x. ${roas >= 3 ? 'Excellent!' : roas >= 2 ? 'Correct, peut etre ameliore.' : 'Faible, optimisez vos campagnes.'}` });
+    }
+    if (parseFloat(tauxReussite) < 50 && totalRecues > 10) {
+      conseils.push({ type: 'danger', text: `Taux de livraison reussie: ${tauxReussite}% seulement. Plus de la moitie des commandes echouent. Verifiez la qualite de confirmation des appelants.` });
+    } else if (parseFloat(tauxReussite) < 70 && totalRecues > 10) {
+      conseils.push({ type: 'warning', text: `Taux de livraison: ${tauxReussite}%. Objectif: 70%+. Chaque retour coute en pub + commission livreur.` });
+    }
+    if (cacGlobal > 0) {
+      const panierMoyen = nbReussies > 0 ? revenuTotal / nbReussies : 0;
+      if (cacGlobal > panierMoyen * 0.5) {
+        conseils.push({ type: 'danger', text: `CAC (${Math.round(cacGlobal)} Fr) > 50% du panier moyen (${Math.round(panierMoyen)} Fr). La pub coute trop cher par rapport au prix de vente.` });
+      }
     }
 
     res.json({
@@ -286,6 +407,17 @@ router.get('/stats', async (req, res) => {
       parProduit: produits,
       evolutionJournaliere,
       topLivreurs,
+      tauxLivraison: {
+        totalRecues, nbReussies, nbEchecs, nbEnCours,
+        tauxReussite: parseFloat(tauxReussite),
+        tauxEchec: parseFloat(tauxEchec),
+        parProduit: tauxProduits,
+      },
+      cac: {
+        global: Math.round(cacGlobal),
+        parProduit: cacParProduit,
+      },
+      previsions,
       conseils,
       config: { commissionLivreurLocal: commissionParLivraison },
     });
