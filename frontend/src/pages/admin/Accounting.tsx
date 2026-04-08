@@ -234,32 +234,39 @@ function DashboardTab({ stats }: { stats: any }) {
   return (
     <div className="space-y-6">
       {/* KPI principaux */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <KpiCard
           title="Chiffre d'Affaires"
-          value={stats.revenus.total}
-          subtitle={`${stats.revenus.totalCommandes} commande(s)`}
+          value={stats.revenus.chiffreAffaires}
+          subtitle={`${stats.revenus.nbLivreesLocal} colis livres (livreur)`}
           icon={TrendingUp}
           color="emerald"
         />
         <KpiCard
+          title="Expeditions & Express"
+          value={(stats.revenus.expedition?.montant || 0) + (stats.revenus.expressAvance?.montant || 0) + (stats.revenus.expressRetrait?.montant || 0)}
+          subtitle={`${(stats.revenus.expedition?.nombre || 0) + (stats.revenus.expressAvance?.nombre || 0) + (stats.revenus.expressRetrait?.nombre || 0)} envoi(s)`}
+          icon={Truck}
+          color="blue"
+        />
+        <KpiCard
           title="Total Depenses"
           value={stats.depenses.total}
-          subtitle={`Pub + Achats + Commissions`}
+          subtitle="Pub + Achats + Commissions"
           icon={TrendingDown}
           color="red"
         />
         <KpiCard
           title="Marge Nette"
           value={stats.marge.nette}
-          subtitle={`${stats.marge.pourcentage}% du CA`}
+          subtitle={`${stats.marge.pourcentage}% du total encaisse`}
           icon={stats.marge.nette >= 0 ? ArrowUpRight : ArrowDownRight}
           color={stats.marge.nette >= 0 ? 'blue' : 'red'}
         />
         <KpiCard
           title="Commission Livreurs"
           value={stats.depenses.commissions.total}
-          subtitle={`${stats.depenses.commissions.nbLivraisons} livraisons x ${formatCurrency(stats.config.commissionLivreurLocal)}`}
+          subtitle={`${stats.depenses.commissions.nbLivraisons} x ${formatCurrency(stats.config.commissionLivreurLocal)}`}
           icon={Truck}
           color="amber"
         />

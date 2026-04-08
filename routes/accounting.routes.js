@@ -157,6 +157,7 @@ router.get('/stats', async (req, res) => {
     ]);
 
     // REVENUS
+    // CA = uniquement les livraisons confirmees par le livreur (clic "livré")
     const livraisonsLocales = commandes.filter((c) => c.deliveryType === 'LOCAL' && c.status === 'LIVREE');
     const expeditions = commandes.filter((c) => c.deliveryType === 'EXPEDITION' && c.status === 'EXPEDITION');
     const expressAvance = commandes.filter((c) => c.deliveryType === 'EXPRESS' && c.status === 'EXPRESS');
@@ -166,6 +167,10 @@ router.get('/stats', async (req, res) => {
     const revenuExpedition = expeditions.reduce((s, c) => s + c.montant, 0);
     const revenuExpressAv = expressAvance.reduce((s, c) => s + c.montant * 0.1, 0);
     const revenuExpressRet = expressRetrait.reduce((s, c) => s + c.montant * 0.9, 0);
+
+    // CA = seulement livraisons LOCAL confirmees (livreur a clique "livré")
+    const chiffreAffaires = revenuLocal;
+    // Encaissements = CA + expeditions + express (argent deja recu mais pas forcement livre)
     const revenuTotal = revenuLocal + revenuExpedition + revenuExpressAv + revenuExpressRet;
 
     // DEPENSES PUB (recurrentes journalieres)
@@ -176,9 +181,11 @@ router.get('/stats', async (req, res) => {
     const totalCommissionsLivreur = livraisonsLocales.length * commissionParLivraison;
     const totalDepenses = totalPub + totalAchats + totalCommissionsLivreur;
 
-    // MARGE
+    // MARGE (basee sur le total encaisse, pas seulement LOCAL)
     const margeNette = revenuTotal - totalDepenses;
     const margePourcent = revenuTotal > 0 ? ((margeNette / revenuTotal) * 100).toFixed(1) : 0;
+    // Marge sur CA local uniquement (livraisons confirmees)
+    const margeLocale = chiffreAffaires - totalDepenses;
 
     // Par produit
     const parProduit = {};
@@ -394,6 +401,8 @@ router.get('/stats', async (req, res) => {
     res.json({
       periode: { debut: startDate.toISOString(), fin: endDate.toISOString() },
       revenus: {
+        chiffreAffaires,
+        nbLivreesLocal: livraisonsLocales.length,
         local: { montant: revenuLocal, nombre: livraisonsLocales.length },
         expedition: { montant: revenuExpedition, nombre: expeditions.length },
         expressAvance: { montant: revenuExpressAv, nombre: expressAvance.length },
