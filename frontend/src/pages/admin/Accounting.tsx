@@ -317,6 +317,68 @@ function DashboardTab({ stats }: { stats: any }) {
         </div>
       )}
 
+      {/* EPARGNE & INVESTISSEMENT */}
+      {stats.epargne?.details?.length > 0 && (
+        <div className="card border-2 border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-teal-50/50">
+          <div className="flex items-center gap-2 mb-4">
+            <DollarSign className="text-emerald-600" size={22} />
+            <h2 className="text-lg font-bold text-emerald-900">Repartition recommandee de votre marge</h2>
+          </div>
+
+          {stats.epargne.personnel > 0 ? (
+            <>
+              {/* Barre visuelle 50/30/20 */}
+              <div className="flex rounded-full overflow-hidden h-6 mb-4 shadow-inner">
+                <div className="bg-emerald-500 flex items-center justify-center text-white text-xs font-bold" style={{ width: '50%' }}>50% Reinvestir</div>
+                <div className="bg-blue-500 flex items-center justify-center text-white text-xs font-bold" style={{ width: '30%' }}>30% Tresorerie</div>
+                <div className="bg-purple-500 flex items-center justify-center text-white text-xs font-bold" style={{ width: '20%' }}>20% Perso</div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                {stats.epargne.details.filter((d: any) => d.type !== 'tip' && d.type !== 'warning').map((d: any, i: number) => (
+                  <div key={i} className={`p-4 rounded-xl border-2 ${
+                    d.type === 'invest' ? 'border-emerald-300 bg-white' :
+                    d.type === 'entreprise' ? 'border-blue-300 bg-white' :
+                    'border-purple-300 bg-white'
+                  }`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`w-3 h-3 rounded-full ${
+                        d.type === 'invest' ? 'bg-emerald-500' :
+                        d.type === 'entreprise' ? 'bg-blue-500' :
+                        'bg-purple-500'
+                      }`} />
+                      <span className="text-sm font-semibold text-gray-700">{d.titre}</span>
+                    </div>
+                    <p className={`text-2xl font-bold ${
+                      d.type === 'invest' ? 'text-emerald-700' :
+                      d.type === 'entreprise' ? 'text-blue-700' :
+                      'text-purple-700'
+                    }`}>{formatCurrency(d.montant)}</p>
+                    {d.parJour > 0 && (
+                      <p className="text-xs text-gray-500 mt-1">{formatCurrency(d.parJour)}/jour</p>
+                    )}
+                    <p className="text-xs text-gray-600 mt-2 leading-relaxed">{d.conseil}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : null}
+
+          {/* Tips supplementaires */}
+          {stats.epargne.details.filter((d: any) => d.type === 'tip' || d.type === 'warning').map((d: any, i: number) => (
+            <div key={i} className={`flex items-start gap-3 p-3 rounded-lg mt-2 ${
+              d.type === 'warning' ? 'bg-red-50 text-red-800' : 'bg-amber-50 text-amber-800'
+            }`}>
+              {d.type === 'warning' ? <AlertTriangle size={18} className="mt-0.5 flex-shrink-0" /> : <Lightbulb size={18} className="mt-0.5 flex-shrink-0" />}
+              <div>
+                <p className="text-sm font-semibold">{d.titre}</p>
+                <p className="text-xs mt-1">{d.conseil}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* TAUX DE LIVRAISON + CAC */}
       {stats.tauxLivraison && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

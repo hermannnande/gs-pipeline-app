@@ -398,6 +398,74 @@ router.get('/stats', async (req, res) => {
       }
     }
 
+    // ========================================
+    // CONSEILS EPARGNE & INVESTISSEMENT
+    // ========================================
+    const epargne = { personnel: 0, entreprise: 0, investissement: 0, details: [] };
+    if (margeNette > 0) {
+      // Regle 50/30/20 adaptee e-commerce Afrique
+      // 50% reinvestir dans le business (pub, stock)
+      // 30% epargne entreprise (tresorerie, imprevus, croissance)
+      // 20% epargne personnelle (salaire patron)
+      const reinvestissement = Math.round(margeNette * 0.50);
+      const epargneEntreprise = Math.round(margeNette * 0.30);
+      const epargnePerso = Math.round(margeNette * 0.20);
+
+      epargne.personnel = epargnePerso;
+      epargne.entreprise = epargneEntreprise;
+      epargne.investissement = reinvestissement;
+
+      epargne.details.push({
+        type: 'perso',
+        titre: 'Epargne personnelle (20%)',
+        montant: epargnePerso,
+        parJour: nbJours > 0 ? Math.round(epargnePerso / nbJours) : 0,
+        conseil: 'Votre salaire de dirigeant. Mettez-le de cote chaque semaine sur un compte separe. Ne touchez pas a la tresorerie de l\'entreprise pour vos depenses personnelles.',
+      });
+      epargne.details.push({
+        type: 'entreprise',
+        titre: 'Tresorerie entreprise (30%)',
+        montant: epargneEntreprise,
+        parJour: nbJours > 0 ? Math.round(epargneEntreprise / nbJours) : 0,
+        conseil: 'Reserve de securite pour : payer les livreurs en cas de retard, couvrir les retours, anticiper les periodes creuses, faire face aux imprevus (panne, dedouanement bloque).',
+      });
+      epargne.details.push({
+        type: 'invest',
+        titre: 'Reinvestissement business (50%)',
+        montant: reinvestissement,
+        parJour: nbJours > 0 ? Math.round(reinvestissement / nbJours) : 0,
+        conseil: 'A reinjecter dans : augmenter le budget pub sur les produits les plus rentables, acheter plus de stock pour les best-sellers, tester de nouveaux produits, ameliorer la logistique.',
+      });
+
+      // Conseils specifiques selon la situation
+      if (totalPub < margeNette * 0.3) {
+        epargne.details.push({
+          type: 'tip',
+          titre: 'Marge de manoeuvre pub',
+          montant: 0,
+          parJour: 0,
+          conseil: 'Votre budget pub est faible par rapport a votre marge. Vous pouvez augmenter la pub de 20-30% sur vos 3 meilleurs produits pour accelerer la croissance.',
+        });
+      }
+      if (totalAchats === 0 && chiffreAffaires > 0) {
+        epargne.details.push({
+          type: 'tip',
+          titre: 'Anticipez le restock',
+          montant: 0,
+          parJour: 0,
+          conseil: 'Aucun achat fournisseur enregistre sur la periode. Pensez a commander vos produits best-sellers AVANT la rupture de stock. Un jour sans stock = argent perdu en pub.',
+        });
+      }
+    } else if (margeNette < 0) {
+      epargne.details.push({
+        type: 'warning',
+        titre: 'Pas d\'epargne possible',
+        montant: 0,
+        parJour: 0,
+        conseil: `Votre marge est negative (${Math.round(margeNette)} Fr). Priorite : reduire les depenses pub sur les produits non rentables, negocier les prix fournisseur, ou augmenter vos prix de vente.`,
+      });
+    }
+
     res.json({
       periode: { debut: startDate.toISOString(), fin: endDate.toISOString() },
       revenus: {
@@ -437,6 +505,7 @@ router.get('/stats', async (req, res) => {
         parProduit: cacParProduit,
       },
       previsions,
+      epargne,
       conseils,
       config: { commissionLivreurLocal: commissionParLivraison },
     });
