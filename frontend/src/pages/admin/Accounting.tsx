@@ -515,7 +515,7 @@ function DashboardTab({ stats }: { stats: any }) {
 }
 
 // ========================================
-// PUB TAB
+// PUB TAB - Budgets journaliers recurrents
 // ========================================
 
 function PubTab({ stats, products, showForm, setShowForm, queryClient }: any) {
@@ -546,19 +546,37 @@ function PubTab({ stats, products, showForm, setShowForm, queryClient }: any) {
     });
   };
 
+  const budgetsActifs = stats.depenses.pub.budgetsActifs || [];
+  const budgetJournalierTotal = stats.depenses.pub.budgetJournalierTotal || 0;
+  const nbJours = stats.depenses.pub.nbJours || 0;
   const pubParPlateforme = Object.entries(stats.depenses.pub.parPlateforme as Record<string, number>);
 
   return (
     <div className="space-y-6">
-      {/* Resume */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Explication */}
+      <div className="card bg-blue-50 border-blue-200">
+        <div className="flex items-start gap-3">
+          <Info size={20} className="text-blue-600 mt-0.5 flex-shrink-0" />
+          <div className="text-sm text-blue-800">
+            <p className="font-semibold mb-1">Comment ca fonctionne</p>
+            <p>Definissez un <strong>budget journalier</strong> par plateforme et par produit. Ce budget s'applique <strong>automatiquement chaque jour</strong> jusqu'a ce que vous le modifiiez. Pour changer un budget, ajoutez simplement une nouvelle entree avec le nouveau montant — l'ancien s'arrete automatiquement. Pour stopper la pub, mettez le montant a 0.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* KPI */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="card bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-          <p className="text-sm text-blue-600 font-medium">Total Depenses Pub</p>
-          <p className="text-2xl font-bold text-blue-700">{formatCurrency(stats.depenses.pub.total)}</p>
+          <p className="text-sm text-blue-600 font-medium">Budget journalier actuel</p>
+          <p className="text-2xl font-bold text-blue-700">{formatCurrency(budgetJournalierTotal)}<span className="text-sm font-normal text-blue-500">/jour</span></p>
+        </div>
+        <div className="card bg-gradient-to-br from-indigo-50 to-violet-50 border-indigo-200">
+          <p className="text-sm text-indigo-600 font-medium">Total sur la periode ({nbJours}j)</p>
+          <p className="text-2xl font-bold text-indigo-700">{formatCurrency(stats.depenses.pub.total)}</p>
         </div>
         {stats.revenus.total > 0 && stats.depenses.pub.total > 0 && (
           <div className="card bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200">
-            <p className="text-sm text-emerald-600 font-medium">ROAS (retour sur investissement pub)</p>
+            <p className="text-sm text-emerald-600 font-medium">ROAS</p>
             <p className="text-2xl font-bold text-emerald-700">{(stats.revenus.total / stats.depenses.pub.total).toFixed(1)}x</p>
           </div>
         )}
@@ -570,10 +588,35 @@ function PubTab({ stats, products, showForm, setShowForm, queryClient }: any) {
         </div>
       </div>
 
-      {/* Par plateforme */}
+      {/* Budgets actifs */}
+      {budgetsActifs.length > 0 && (
+        <div className="card">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Megaphone size={18} className="text-blue-600" />
+            Budgets journaliers actifs
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {budgetsActifs.map((b: any) => (
+              <div key={b.id} className="p-4 rounded-xl border-2 border-blue-200 bg-white shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="px-2 py-0.5 rounded text-xs font-bold text-white" style={{ backgroundColor: PLATFORM_COLORS[b.platform] || '#6B7280' }}>
+                    {b.platform}
+                  </span>
+                  <span className="text-xs text-gray-500">depuis le {new Date(b.depuis).toLocaleDateString('fr-FR')}</span>
+                </div>
+                <p className="text-sm text-gray-600 mb-1">{b.productNom}</p>
+                <p className="text-xl font-bold text-blue-700">{formatCurrency(b.montantJournalier)}<span className="text-sm font-normal text-blue-500">/jour</span></p>
+                {b.note && <p className="text-xs text-gray-400 mt-1">{b.note}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Par plateforme (cumul periode) */}
       {pubParPlateforme.length > 0 && (
         <div className="card">
-          <h3 className="text-lg font-semibold mb-4">Depenses par plateforme</h3>
+          <h3 className="text-lg font-semibold mb-4">Total par plateforme (sur la periode)</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {pubParPlateforme.map(([p, v]) => (
               <div key={p} className="p-3 rounded-lg bg-gray-50 border">
@@ -585,11 +628,11 @@ function PubTab({ stats, products, showForm, setShowForm, queryClient }: any) {
         </div>
       )}
 
-      {/* Bouton ajout */}
+      {/* Bouton ajout / modifier */}
       <div className="flex justify-end">
         <button onClick={() => setShowForm(!showForm)} className="btn btn-primary flex items-center gap-2">
           <PlusCircle size={18} />
-          Ajouter une depense pub
+          {budgetsActifs.length > 0 ? 'Modifier / Ajouter un budget' : 'Definir un budget journalier'}
         </button>
       </div>
 
@@ -597,12 +640,15 @@ function PubTab({ stats, products, showForm, setShowForm, queryClient }: any) {
       {showForm && (
         <div className="card border-blue-200 bg-blue-50/30">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="font-semibold">Nouvelle depense publicitaire</h3>
+            <div>
+              <h3 className="font-semibold">Definir un budget journalier</h3>
+              <p className="text-xs text-gray-500 mt-1">Ce montant sera applique chaque jour a partir de la date choisie, jusqu'a ce que vous le changiez.</p>
+            </div>
             <button onClick={() => setShowForm(false)}><X size={20} /></button>
           </div>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Date *</label>
+              <label className="block text-sm font-medium mb-1">A partir de *</label>
               <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="input" required />
             </div>
             <div>
@@ -612,8 +658,9 @@ function PubTab({ stats, products, showForm, setShowForm, queryClient }: any) {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Montant (FCFA) *</label>
+              <label className="block text-sm font-medium mb-1">Budget par jour (FCFA) *</label>
               <input type="number" value={form.montant} onChange={(e) => setForm({ ...form, montant: e.target.value })} className="input" required min="0" step="100" placeholder="Ex: 5000" />
+              <p className="text-xs text-gray-400 mt-1">Mettre 0 pour arreter la pub</p>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Produit (optionnel)</label>
@@ -624,58 +671,14 @@ function PubTab({ stats, products, showForm, setShowForm, queryClient }: any) {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Note</label>
-              <input type="text" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} className="input" placeholder="Campagne Black Friday..." />
+              <input type="text" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} className="input" placeholder="Campagne specifique..." />
             </div>
             <div className="flex items-end">
               <button type="submit" disabled={createMutation.isPending} className="btn btn-primary w-full">
-                {createMutation.isPending ? 'Enregistrement...' : 'Enregistrer'}
+                {createMutation.isPending ? 'Enregistrement...' : 'Appliquer ce budget'}
               </button>
             </div>
           </form>
-        </div>
-      )}
-
-      {/* Liste des depenses */}
-      {stats.depenses.pub.details?.length > 0 && (
-        <div className="card">
-          <h3 className="text-lg font-semibold mb-4">Historique des depenses pub</h3>
-          <div className="overflow-x-auto max-h-96 overflow-y-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 sticky top-0">
-                <tr className="border-b">
-                  <th className="px-3 py-2 text-left text-xs font-semibold">Date</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold">Plateforme</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold">Produit</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold">Montant</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold">Note</th>
-                  <th className="px-3 py-2 text-center text-xs font-semibold">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {stats.depenses.pub.details.map((e: any) => (
-                  <tr key={e.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 text-sm">{new Date(e.date).toLocaleDateString('fr-FR')}</td>
-                    <td className="px-3 py-2">
-                      <span className="px-2 py-0.5 rounded text-xs font-medium text-white" style={{ backgroundColor: PLATFORM_COLORS[e.platform] || '#6B7280' }}>
-                        {e.platform}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-sm">{e.product?.nom || 'Global'}</td>
-                    <td className="px-3 py-2 text-sm text-right font-medium">{formatCurrency(e.montant)}</td>
-                    <td className="px-3 py-2 text-xs text-gray-500">{e.note || '—'}</td>
-                    <td className="px-3 py-2 text-center">
-                      <button
-                        onClick={() => { if (confirm('Supprimer cette depense?')) deleteMutation.mutate(e.id); }}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </div>
       )}
     </div>

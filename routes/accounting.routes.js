@@ -8,7 +8,77 @@ router.use(authenticate);
 router.use(authorize('ADMIN'));
 
 // ========================================
-// STATS COMPTABLES (existant, enrichi)
+// HELPER: Calculer les depenses pub journalieres recurrentes
+// Chaque entree = "a partir de cette date, le budget journalier est X"
+// Le budget reste actif jusqu'a ce qu'une nouvelle entree le remplace
+// ========================================
+
+function computeDailyAdSpend(allBudgets, startDate, endDate) {
+  // Grouper par (productId, platform)
+  const groups = {};
+  for (const b of allBudgets) {
+    const key = `${b.productId ?? 'null'}_${b.platform}`;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(b);
+  }
+  // Trier chaque groupe par date ASC
+  for (const key of Object.keys(groups)) {
+    groups[key].sort((a, b) => new Date(a.date) - new Date(b.date));
+  }
+
+  let totalPub = 0;
+  const pubParProduit = {};
+  const pubParPlateforme = {};
+  const pubParJour = {};
+
+  const tempDate = new Date(startDate);
+  while (tempDate <= endDate) {
+    const dateStr = tempDate.toISOString().split('T')[0];
+    let dayTotal = 0;
+
+    for (const [, budgets] of Object.entries(groups)) {
+      let active = null;
+      for (let i = budgets.length - 1; i >= 0; i--) {
+        if (new Date(budgets[i].date) <= tempDate) {
+          active = budgets[i];
+          break;
+        }
+      }
+      if (active && active.montant > 0) {
+        dayTotal += active.montant;
+        const pid = active.productId ?? 0;
+        pubParProduit[pid] = (pubParProduit[pid] || 0) + active.montant;
+        pubParPlateforme[active.platform] = (pubParPlateforme[active.platform] || 0) + active.montant;
+      }
+    }
+
+    pubParJour[dateStr] = dayTotal;
+    totalPub += dayTotal;
+    tempDate.setUTCDate(tempDate.getUTCDate() + 1);
+  }
+
+  // Budgets actifs actuellement (dernier par groupe avec montant > 0)
+  const budgetsActifs = [];
+  for (const [, budgets] of Object.entries(groups)) {
+    const latest = budgets[budgets.length - 1];
+    if (latest && latest.montant > 0) {
+      budgetsActifs.push({
+        id: latest.id,
+        productId: latest.productId,
+        productNom: latest.product?.nom || 'Tous produits',
+        platform: latest.platform,
+        montantJournalier: latest.montant,
+        depuis: latest.date,
+        note: latest.note,
+      });
+    }
+  }
+
+  return { totalPub, pubParProduit, pubParPlateforme, pubParJour, budgetsActifs };
+}
+
+// ========================================
+// STATS COMPTABLES
 // ========================================
 
 router.get('/stats', async (req, res) => {
@@ -33,7 +103,9 @@ router.get('/stats', async (req, res) => {
     const config = await prisma.accountingConfig.findUnique({ where: { companyId } });
     const commissionParLivraison = config?.commissionLivreurLocal || 1500;
 
-    const [commandes, adExpenses, purchases] = await Promise.all([
+    // Charger TOUS les budgets pub (pas uniquement la periode)
+    // car un budget defini avant la periode reste actif pendant
+    const [commandes, allAdBudgets, purchases] = await Promise.all([
       prisma.order.findMany({
         where: {
           companyId,
@@ -51,9 +123,9 @@ router.get('/stats', async (req, res) => {
         orderBy: { createdAt: 'desc' },
       }),
       prisma.adExpense.findMany({
-        where: { companyId, date: { gte: startDate, lte: endDate } },
+        where: { companyId },
         include: { product: { select: { id: true, nom: true, code: true } } },
-        orderBy: { date: 'desc' },
+        orderBy: { date: 'asc' },
       }),
       prisma.supplierPurchase.findMany({
         where: { companyId, date: { gte: startDate, lte: endDate } },
@@ -74,8 +146,10 @@ router.get('/stats', async (req, res) => {
     const revenuExpressRet = expressRetrait.reduce((s, c) => s + c.montant * 0.9, 0);
     const revenuTotal = revenuLocal + revenuExpedition + revenuExpressAv + revenuExpressRet;
 
-    // DEPENSES
-    const totalPub = adExpenses.reduce((s, e) => s + e.montant, 0);
+    // DEPENSES PUB (recurrentes journalieres)
+    const { totalPub, pubParProduit, pubParPlateforme, pubParJour, budgetsActifs } =
+      computeDailyAdSpend(allAdBudgets, startDate, endDate);
+
     const totalAchats = purchases.reduce((s, p) => s + p.coutTotalRevient, 0);
     const totalCommissionsLivreur = livraisonsLocales.length * commissionParLivraison;
     const totalDepenses = totalPub + totalAchats + totalCommissionsLivreur;
@@ -104,9 +178,10 @@ router.get('/stats', async (req, res) => {
       }
       parProduit[pid].nbVentes++;
     }
-    for (const e of adExpenses) {
-      const pid = e.productId || 0;
-      if (parProduit[pid]) parProduit[pid].pub += e.montant;
+    // Attribution pub par produit (calculee par le helper)
+    for (const [pidStr, montant] of Object.entries(pubParProduit)) {
+      const pid = parseInt(pidStr);
+      if (parProduit[pid]) parProduit[pid].pub += montant;
     }
     for (const p of purchases) {
       const pid = p.productId || 0;
@@ -136,15 +211,15 @@ router.get('/stats', async (req, res) => {
         + cJour.filter((c) => c.deliveryType === 'EXPRESS' && c.status === 'EXPRESS').reduce((s, c) => s + c.montant * 0.1, 0)
         + cJour.filter((c) => ['EXPRESS_ARRIVE', 'EXPRESS_LIVRE'].includes(c.status)).reduce((s, c) => s + c.montant * 0.9, 0);
 
-      const pubJour = adExpenses.filter((e) => e.date.toISOString().split('T')[0] === dateStr).reduce((s, e) => s + e.montant, 0);
+      const pubJourMontant = pubParJour[dateStr] || 0;
       const commJour = localJour.length * commissionParLivraison;
 
       evolutionJournaliere.push({
         date: dateStr,
         revenu: revJour,
-        pub: pubJour,
+        pub: pubJourMontant,
         commissions: commJour,
-        marge: revJour - pubJour - commJour,
+        marge: revJour - pubJourMontant - commJour,
       });
 
       currentDate.setUTCDate(currentDate.getUTCDate() + 1);
@@ -163,18 +238,15 @@ router.get('/stats', async (req, res) => {
     });
     const topLivreurs = Object.values(livreurStats).sort((a, b) => b.montant - a.montant);
 
-    // Pub par plateforme
-    const pubParPlateforme = {};
-    for (const e of adExpenses) {
-      const p = e.platform || 'AUTRE';
-      pubParPlateforme[p] = (pubParPlateforme[p] || 0) + e.montant;
-    }
+    // Nombre de jours dans la periode
+    const nbJours = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+    const budgetJournalierTotal = budgetsActifs.reduce((s, b) => s + b.montantJournalier, 0);
 
     // Conseils business
     const conseils = [];
-    if (margePourcent < 20) conseils.push({ type: 'warning', text: 'Marge nette faible (<20%). Revoyez vos prix de vente ou reduisez les depenses pub.' });
-    if (totalPub > revenuTotal * 0.4) conseils.push({ type: 'danger', text: 'Depenses pub > 40% du CA. Le cout d\'acquisition client est trop eleve.' });
-    if (totalCommissionsLivreur > revenuTotal * 0.15) conseils.push({ type: 'info', text: 'Les commissions livreurs representent plus de 15% du CA. Envisagez un systeme de tournees optimisees.' });
+    if (margePourcent < 20 && revenuTotal > 0) conseils.push({ type: 'warning', text: 'Marge nette faible (<20%). Revoyez vos prix de vente ou reduisez les depenses pub.' });
+    if (totalPub > revenuTotal * 0.4 && revenuTotal > 0) conseils.push({ type: 'danger', text: 'Depenses pub > 40% du CA. Le cout d\'acquisition client est trop eleve.' });
+    if (totalCommissionsLivreur > revenuTotal * 0.15 && revenuTotal > 0) conseils.push({ type: 'info', text: 'Les commissions livreurs representent plus de 15% du CA. Envisagez un systeme de tournees optimisees.' });
     const produitsDeficitaires = produits.filter((p) => p.marge < 0);
     if (produitsDeficitaires.length > 0) {
       conseils.push({ type: 'danger', text: `${produitsDeficitaires.length} produit(s) deficitaire(s): ${produitsDeficitaires.map((p) => p.nom).join(', ')}. Arretez la pub ou augmentez le prix.` });
@@ -199,7 +271,13 @@ router.get('/stats', async (req, res) => {
         totalCommandes: commandes.length,
       },
       depenses: {
-        pub: { total: totalPub, parPlateforme: pubParPlateforme, details: adExpenses },
+        pub: {
+          total: totalPub,
+          parPlateforme: pubParPlateforme,
+          budgetsActifs,
+          budgetJournalierTotal,
+          nbJours,
+        },
         achats: { total: totalAchats, details: purchases },
         commissions: { total: totalCommissionsLivreur, parLivraison: commissionParLivraison, nbLivraisons: livraisonsLocales.length },
         total: totalDepenses,
@@ -218,30 +296,20 @@ router.get('/stats', async (req, res) => {
 });
 
 // ========================================
-// DEPENSES PUBLICITAIRES
+// BUDGETS PUBLICITAIRES (recurrents journaliers)
 // ========================================
 
 router.get('/ad-expenses', async (req, res) => {
   try {
-    const { startDate, endDate, productId, platform } = req.query;
-    const where = { companyId: req.user.companyId };
-    if (startDate || endDate) {
-      where.date = {};
-      if (startDate) where.date.gte = new Date(startDate);
-      if (endDate) where.date.lte = new Date(endDate);
-    }
-    if (productId) where.productId = parseInt(productId);
-    if (platform) where.platform = platform;
-
     const expenses = await prisma.adExpense.findMany({
-      where,
+      where: { companyId: req.user.companyId },
       include: { product: { select: { id: true, nom: true, code: true } } },
       orderBy: { date: 'desc' },
     });
     res.json({ expenses });
   } catch (error) {
     console.error('Erreur ad-expenses:', error);
-    res.status(500).json({ error: 'Erreur recuperation depenses pub.' });
+    res.status(500).json({ error: 'Erreur recuperation budgets pub.' });
   }
 });
 
@@ -265,8 +333,8 @@ router.post('/ad-expenses', async (req, res) => {
     });
     res.status(201).json({ expense });
   } catch (error) {
-    console.error('Erreur creation ad-expense:', error);
-    res.status(500).json({ error: 'Erreur creation depense pub.' });
+    console.error('Erreur creation budget pub:', error);
+    res.status(500).json({ error: 'Erreur creation budget pub.' });
   }
 });
 
@@ -286,8 +354,8 @@ router.put('/ad-expenses/:id', async (req, res) => {
     });
     res.json({ expense });
   } catch (error) {
-    console.error('Erreur update ad-expense:', error);
-    res.status(500).json({ error: 'Erreur mise a jour depense pub.' });
+    console.error('Erreur update budget pub:', error);
+    res.status(500).json({ error: 'Erreur mise a jour budget pub.' });
   }
 });
 
@@ -296,8 +364,8 @@ router.delete('/ad-expenses/:id', async (req, res) => {
     await prisma.adExpense.delete({ where: { id: parseInt(req.params.id) } });
     res.json({ success: true });
   } catch (error) {
-    console.error('Erreur delete ad-expense:', error);
-    res.status(500).json({ error: 'Erreur suppression depense pub.' });
+    console.error('Erreur delete budget pub:', error);
+    res.status(500).json({ error: 'Erreur suppression budget pub.' });
   }
 });
 
