@@ -341,6 +341,42 @@ export const accountingApi = {
     const { data } = await api.get('/accounting/stats', { params });
     return data;
   },
+  getAdExpenses: async (params?: { startDate?: string; endDate?: string; productId?: number; platform?: string }) => {
+    const { data } = await api.get('/accounting/ad-expenses', { params });
+    return data;
+  },
+  createAdExpense: async (payload: { productId?: number; date: string; platform: string; montant: number; note?: string }) => {
+    const { data } = await api.post('/accounting/ad-expenses', payload);
+    return data;
+  },
+  updateAdExpense: async (id: number, payload: { productId?: number; date?: string; platform?: string; montant?: number; note?: string }) => {
+    const { data } = await api.put(`/accounting/ad-expenses/${id}`, payload);
+    return data;
+  },
+  deleteAdExpense: async (id: number) => {
+    const { data } = await api.delete(`/accounting/ad-expenses/${id}`);
+    return data;
+  },
+  getPurchases: async (params?: { startDate?: string; endDate?: string; productId?: number }) => {
+    const { data } = await api.get('/accounting/purchases', { params });
+    return data;
+  },
+  createPurchase: async (payload: { productId?: number; date: string; fournisseur: string; quantite: number; prixUnitaire: number; fraisDedouanement?: number; fraisTransport?: number; autreFrais?: number; note?: string }) => {
+    const { data } = await api.post('/accounting/purchases', payload);
+    return data;
+  },
+  deletePurchase: async (id: number) => {
+    const { data } = await api.delete(`/accounting/purchases/${id}`);
+    return data;
+  },
+  getConfig: async () => {
+    const { data } = await api.get('/accounting/config');
+    return data;
+  },
+  updateConfig: async (payload: { commissionLivreurLocal: number }) => {
+    const { data } = await api.put('/accounting/config', payload);
+    return data;
+  },
 };
 
 export const expressApi = {

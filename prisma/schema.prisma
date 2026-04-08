@@ -466,6 +466,8 @@ model Product {
   // Relations
   stockMovements StockMovement[]
   orders         Order[]         @relation("ProductOrders")
+  adExpenses     AdExpense[]     @relation("ProductAdExpenses")
+  purchases      SupplierPurchase[] @relation("ProductPurchases")
 
   @@unique([code, companyId])
   @@index([code])
@@ -630,6 +632,74 @@ model AuditLog {
   @@index([createdAt])
   @@index([companyId])
   @@map("audit_logs")
+}
+
+// ========================================
+// COMPTABILITÉ AVANCÉE
+// ========================================
+
+// Dépenses publicitaires par produit et par jour
+model AdExpense {
+  id          Int      @id @default(autoincrement())
+  productId   Int?
+  product     Product? @relation("ProductAdExpenses", fields: [productId], references: [id])
+
+  date        DateTime @db.Date
+  platform    String   // FACEBOOK, TIKTOK, GOOGLE, AUTRE
+  montant     Float
+  note        String?
+
+  companyId   Int      @default(1)
+  createdBy   Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([productId])
+  @@index([date])
+  @@index([platform])
+  @@index([companyId])
+  @@map("ad_expenses")
+}
+
+// Achats fournisseur (approvisionnement produits)
+model SupplierPurchase {
+  id              Int      @id @default(autoincrement())
+  productId       Int?
+  product         Product? @relation("ProductPurchases", fields: [productId], references: [id])
+
+  date            DateTime @db.Date
+  fournisseur     String
+  quantite        Int
+  prixUnitaire    Float
+  prixTotal       Float
+  fraisDedouanement Float  @default(0)
+  fraisTransport  Float    @default(0)
+  autreFrais      Float    @default(0)
+  coutTotalRevient Float   // prixTotal + dedouanement + transport + autres
+  note            String?
+
+  companyId       Int      @default(1)
+  createdBy       Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([productId])
+  @@index([date])
+  @@index([companyId])
+  @@map("supplier_purchases")
+}
+
+// Configuration comptabilité (commission livreur, etc.)
+model AccountingConfig {
+  id                    Int    @id @default(autoincrement())
+  commissionLivreurLocal Float @default(1500) // 1500 Fr par livraison locale
+  companyId             Int   @default(1)
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([companyId])
+  @@map("accounting_config")
 }
 
 // Configuration du magasin/bureau (support multi-sites)
