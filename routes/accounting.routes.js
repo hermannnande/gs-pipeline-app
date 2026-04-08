@@ -132,11 +132,21 @@ router.get('/stats', async (req, res) => {
         include: { product: { select: { id: true, nom: true, code: true } } },
         orderBy: { date: 'desc' },
       }),
-      // TOUTES les commandes de la periode pour taux de livraison
+      // Commandes ayant eu une resolution (livree, echouee, ou en cours) durant la periode
       prisma.order.findMany({
         where: {
           companyId,
-          createdAt: { gte: startDate, lte: endDate },
+          OR: [
+            // Livrees durant la periode
+            { deliveredAt: { gte: startDate, lte: endDate } },
+            // Expediees/Express durant la periode
+            { expedieAt: { gte: startDate, lte: endDate } },
+            { arriveAt: { gte: startDate, lte: endDate } },
+            // Echouees durant la periode (annulees, refusees, retournees)
+            { status: { in: ['ANNULEE', 'REFUSEE', 'RETOURNE', 'ANNULEE_LIVRAISON'] }, updatedAt: { gte: startDate, lte: endDate } },
+            // En cours (creees durant la periode, pas encore resolues)
+            { status: { in: ['NOUVELLE', 'A_APPELER', 'VALIDEE', 'INJOIGNABLE', 'ASSIGNEE'] }, createdAt: { gte: startDate, lte: endDate } },
+          ],
         },
         select: {
           id: true, status: true, deliveryType: true, montant: true,
