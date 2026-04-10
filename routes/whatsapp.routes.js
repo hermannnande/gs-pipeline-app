@@ -85,26 +85,45 @@ router.get('/diag', async (req, res) => {
 
   let rawApiTest = null;
   if (req.query.rawTest && recentConv?.waId) {
-    try {
-      const resp = await fetch(`${WA_CONFIG.dialog360.apiUrl}/messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'D360-API-KEY': WA_CONFIG.dialog360.apiKey,
-        },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          recipient_type: 'individual',
-          to: recentConv.waId,
-          type: 'text',
-          text: { body: 'Test direct API.' },
-        }),
-      });
-      const txt = await resp.text();
-      rawApiTest = { status: resp.status, body: txt };
-    } catch (e) {
-      rawApiTest = { error: e.message };
-    }
+    const baseUrl = WA_CONFIG.dialog360.apiUrl;
+    const key = WA_CONFIG.dialog360.apiKey;
+    const to = recentConv.waId;
+    const tests = {};
+
+    const tryCall = async (label, url, body) => {
+      try {
+        const r = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'D360-API-KEY': key },
+          body: JSON.stringify(body),
+        });
+        const t = await r.text();
+        return { status: r.status, body: t.slice(0, 300) };
+      } catch (e) { return { error: e.message }; }
+    };
+
+    tests.cloudApi = await tryCall('cloudApi', `${baseUrl}/messages`, {
+      messaging_product: 'whatsapp', recipient_type: 'individual',
+      to, type: 'text', text: { body: 'Test 1' },
+    });
+
+    tests.noMsgProduct = await tryCall('noMsgProduct', `${baseUrl}/messages`, {
+      to, type: 'text', text: { body: 'Test 2' },
+    });
+
+    tests.onPremFormat = await tryCall('onPremFormat', `${baseUrl}/messages`, {
+      to, type: 'text', text: { body: 'Test 3' },
+      recipient_type: 'individual',
+    });
+
+    tests.wabaV1 = await tryCall('wabaV1', 'https://waba.360dialog.io/v1/messages', {
+      to, type: 'text', text: { body: 'Test 4' },
+      recipient_type: 'individual',
+    });
+
+    tests.phoneCheck = { to, length: to.length };
+
+    rawApiTest = tests;
   }
 
   res.json({
