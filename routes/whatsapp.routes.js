@@ -45,6 +45,7 @@ router.post('/webhook', async (req, res) => {
 // Diagnostic endpoint
 router.get('/diag', async (req, res) => {
   const { WA_CONFIG } = await import('../services/whatsapp/config.js');
+  const { sendTextMessage } = await import('../services/whatsapp/dialog360.js');
   
   let dbOk = false;
   let dbError = null;
@@ -59,11 +60,27 @@ router.get('/diag', async (req, res) => {
 
   let convCount = null;
   let msgCount = null;
+  let recentConv = null;
+  let recentMessages = [];
   try {
     convCount = await prisma.waConversation.count();
     msgCount = await prisma.waMessage.count();
+    recentConv = await prisma.waConversation.findFirst({ orderBy: { lastMessageAt: 'desc' } });
+    if (recentConv) {
+      recentMessages = await prisma.waMessage.findMany({
+        where: { conversationId: recentConv.id },
+        orderBy: { timestamp: 'desc' },
+        take: 10,
+        select: { id: true, direction: true, actor: true, contentType: true, body: true, externalId: true, timestamp: true, transcription: true },
+      });
+    }
   } catch (e) {
     dbError = (dbError || '') + ' | ' + e.message;
+  }
+
+  let sendTest = null;
+  if (req.query.testSend && recentConv?.waId) {
+    sendTest = await sendTextMessage(recentConv.waId, 'Test de connexion OB Gestion - ignorez ce message.');
   }
 
   res.json({
@@ -83,6 +100,24 @@ router.get('/diag', async (req, res) => {
       messages: msgCount,
       error: dbError,
     },
+    recentConversation: recentConv ? {
+      id: recentConv.id,
+      waId: recentConv.waId,
+      status: recentConv.status,
+      convState: recentConv.convState,
+      lastIntent: recentConv.lastIntent,
+      lastBotMessage: recentConv.lastBotMessage?.slice(0, 200),
+      confidenceScore: recentConv.confidenceScore,
+      extractedProduct: recentConv.extractedProduct,
+    } : null,
+    recentMessages: recentMessages.map(m => ({
+      id: m.id,
+      dir: m.direction,
+      actor: m.actor,
+      body: m.body?.slice(0, 150),
+      time: m.timestamp,
+    })),
+    sendTest,
   });
 });
 
