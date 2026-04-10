@@ -54,12 +54,15 @@ function inferFromState(text, convState) {
         return { intent: INTENTS.ORDER_CONTINUE, confidence: 75 };
       break;
     case 'ASKING_LOCATION':
+      if (text.length >= 3)
+        return { intent: INTENTS.ORDER_CONTINUE, confidence: 55 };
+      break;
     case 'ASKING_ADDRESS':
       if (text.length >= 3)
         return { intent: INTENTS.ORDER_CONTINUE, confidence: 55 };
       break;
     case 'CONFIRMING_ORDER':
-      if (/^(oui|ok|yes|parfait|d'accord|c'est bon)/.test(text))
+      if (/^(oui|ok|yes|parfait|d'accord|c'est bon|valide|confirme)/.test(text))
         return { intent: INTENTS.ORDER_CONFIRM, confidence: 85 };
       if (/^(non|nan|pas|annul)/.test(text))
         return { intent: INTENTS.ORDER_CANCEL, confidence: 80 };
@@ -70,13 +73,15 @@ function inferFromState(text, convState) {
 
 function applyContextBoost(scores, convState) {
   const boosts = {
-    ASKING_PRODUCT: { ORDER_CONTINUE: 15, PRODUCT_QUESTION: 10 },
+    ASKING_PRODUCT: { ORDER_CONTINUE: 15, PRODUCT_QUESTION: 10, PRICE_REQUEST: 10, PRODUCT_EFFECT: 10, PRODUCT_HOWTO: 10, PRODUCT_WORKS: 10, HESITATION: 10 },
     ASKING_QUANTITY: { ORDER_CONTINUE: 15 },
     ASKING_NAME: { ORDER_CONTINUE: 15 },
     ASKING_PHONE: { ORDER_CONTINUE: 15 },
     ASKING_LOCATION: { ORDER_CONTINUE: 15 },
     ASKING_ADDRESS: { ORDER_CONTINUE: 15 },
     CONFIRMING_ORDER: { ORDER_CONFIRM: 20, ORDER_CANCEL: 10, YES: 20, NO: 15 },
+    GREETING: { ORDER_START: 10, PRODUCT_EFFECT: 5, PRODUCT_WORKS: 5, HESITATION: 5 },
+    FAQ: { ORDER_START: 10, YES: 10 },
   };
 
   const stateBoosts = boosts[convState];

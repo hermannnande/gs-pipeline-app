@@ -1,9 +1,8 @@
-import { INTENTS, CONV_STATES } from './config.js';
+import { INTENTS, CONV_STATES, PRODUCT_KNOWLEDGE, PRODUCT_SYNONYMS } from './config.js';
 import { TEMPLATES } from './response-templates.js';
 import { matchProduct, getProductCatalog } from './product-matcher.js';
 import { extractQuantity, extractName, extractPhoneNumber, extractCity, normalize } from './normalizer.js';
 import { CITY_PATTERNS } from './config.js';
-import { computeTotalAmount } from '../../utils/pricing.js';
 
 export async function processConversation(conv, intent, confidence, rawText, companyId) {
   const state = conv.convState || CONV_STATES.NEW;
@@ -38,14 +37,14 @@ export async function processConversation(conv, intent, confidence, rawText, com
     case CONV_STATES.ASKING_QUANTITY:
       result = handleAskingQuantity(intent, rawText, extraction);
       break;
-    case CONV_STATES.ASKING_NAME:
-      result = handleAskingName(intent, rawText, extraction);
+    case CONV_STATES.ASKING_LOCATION:
+      result = handleAskingLocation(intent, rawText, extraction);
       break;
     case CONV_STATES.ASKING_PHONE:
       result = handleAskingPhone(intent, rawText, extraction);
       break;
-    case CONV_STATES.ASKING_LOCATION:
-      result = handleAskingLocation(intent, rawText, extraction);
+    case CONV_STATES.ASKING_NAME:
+      result = handleAskingName(intent, rawText, extraction);
       break;
     case CONV_STATES.ASKING_ADDRESS:
       result = handleAskingAddress(intent, rawText, extraction);
@@ -66,31 +65,118 @@ export async function processConversation(conv, intent, confidence, rawText, com
   return result;
 }
 
+function findProductKey(productName) {
+  if (!productName) return null;
+  const norm = normalize(productName);
+  for (const [key, synonyms] of Object.entries(PRODUCT_SYNONYMS)) {
+    for (const syn of synonyms) {
+      if (norm.includes(normalize(syn))) return key;
+    }
+  }
+  return null;
+}
+
+function getProductKnowledge(extraction) {
+  if (!extraction.product) return null;
+  const key = findProductKey(extraction.product);
+  return key ? PRODUCT_KNOWLEDGE[key] : null;
+}
+
+function getProductKeyFromExtraction(extraction) {
+  if (!extraction.product) return null;
+  return findProductKey(extraction.product) || null;
+}
+
+function advanceToNextMissing(extraction) {
+  if (!extraction.qty) return { state: CONV_STATES.ASKING_QUANTITY, response: TEMPLATES.askQuantity(extraction.product) };
+  if (!extraction.city) return { state: CONV_STATES.ASKING_LOCATION, response: TEMPLATES.askCity() };
+  if (!extraction.phone) return { state: CONV_STATES.ASKING_PHONE, response: TEMPLATES.askPhone() };
+  if (!extraction.name) return { state: CONV_STATES.ASKING_NAME, response: TEMPLATES.askName() };
+  return { state: CONV_STATES.CONFIRMING_ORDER, response: null, action: 'CONFIRM_PROMPT' };
+}
+
 async function handleNewOrGreeting(intent, rawText, extraction, companyId) {
-  const r = { response: null, newState: CONV_STATES.GREETING, extraction, action: null, shouldCreateOrder: false };
+  const r = { response: null, newState: CONV_STATES.GREETING, extraction: { ...extraction }, action: null, shouldCreateOrder: false };
 
   switch (intent) {
     case INTENTS.GREETING:
       r.response = TEMPLATES.welcome();
       r.newState = CONV_STATES.GREETING;
       break;
-    case INTENTS.ORDER_START:
-      r.response = TEMPLATES.askProduct();
-      r.newState = CONV_STATES.ASKING_PRODUCT;
+    case INTENTS.ORDER_START: {
+      const tryProduct = await matchProduct(rawText, companyId);
+      if (tryProduct.product && tryProduct.confidence >= 40) {
+        r.extraction.product = tryProduct.product.nom;
+        r.extraction.productId = tryProduct.product.id;
+        const qty = extractQuantity(rawText);
+        if (qty) r.extraction.qty = qty;
+        const next = advanceToNextMissing(r.extraction);
+        r.newState = next.state;
+        r.response = next.response;
+        r.action = next.action || null;
+      } else {
+        r.response = TEMPLATES.askProduct();
+        r.newState = CONV_STATES.ASKING_PRODUCT;
+      }
       break;
-    case INTENTS.PRICE_REQUEST:
+    }
+    case INTENTS.PRICE_REQUEST: {
+      const match = await matchProduct(rawText, companyId);
+      if (match.product) {
+        r.extraction.product = match.product.nom;
+        r.extraction.productId = match.product.id;
+        const pk = getProductKeyFromExtraction(r.extraction);
+        r.response = pk ? TEMPLATES.pricingForProduct(pk) : TEMPLATES.productInfo(match.product);
+        r.newState = CONV_STATES.ASKING_PRODUCT;
+      } else {
+        const defaultPk = PRODUCT_KNOWLEDGE.creme_minceur;
+        if (defaultPk) {
+          r.response = TEMPLATES.pricingForProduct('creme_minceur');
+          r.newState = CONV_STATES.ASKING_PRODUCT;
+        } else {
+          const catalog = await getProductCatalog(companyId);
+          r.response = TEMPLATES.catalogList(catalog);
+          r.newState = CONV_STATES.ASKING_PRODUCT;
+        }
+      }
+      break;
+    }
     case INTENTS.PRODUCT_QUESTION: {
       const match = await matchProduct(rawText, companyId);
       if (match.product) {
-        r.response = TEMPLATES.productInfo(match.product);
         r.extraction.product = match.product.nom;
         r.extraction.productId = match.product.id;
+        r.response = TEMPLATES.productInfo(match.product);
         r.newState = CONV_STATES.ASKING_PRODUCT;
       } else {
         const catalog = await getProductCatalog(companyId);
         r.response = TEMPLATES.catalogList(catalog);
         r.newState = CONV_STATES.ASKING_PRODUCT;
       }
+      break;
+    }
+    case INTENTS.PRODUCT_EFFECT: {
+      const resp = TEMPLATES.productFaqEffect('creme_minceur');
+      r.response = resp ? resp + `\n\nSouhaitez-vous commander ?` : TEMPLATES.welcome();
+      r.newState = CONV_STATES.ASKING_PRODUCT;
+      break;
+    }
+    case INTENTS.PRODUCT_HOWTO: {
+      const resp = TEMPLATES.productFaqHowto('creme_minceur');
+      r.response = resp ? resp + `\n\nVous souhaitez en commander ?` : TEMPLATES.welcome();
+      r.newState = CONV_STATES.ASKING_PRODUCT;
+      break;
+    }
+    case INTENTS.PRODUCT_WORKS: {
+      const resp = TEMPLATES.productFaqWorks('creme_minceur');
+      r.response = resp ? resp + `\n\nVous souhaitez essayer ?` : TEMPLATES.welcome();
+      r.newState = CONV_STATES.ASKING_PRODUCT;
+      break;
+    }
+    case INTENTS.HESITATION: {
+      const resp = TEMPLATES.productHesitation('creme_minceur');
+      r.response = resp || TEMPLATES.welcome();
+      r.newState = CONV_STATES.ASKING_PRODUCT;
       break;
     }
     case INTENTS.DELIVERY_QUESTION:
@@ -112,9 +198,9 @@ async function handleNewOrGreeting(intent, rawText, extraction, companyId) {
     default: {
       const tryProduct = await matchProduct(rawText, companyId);
       if (tryProduct.product && tryProduct.confidence >= 50) {
-        r.response = TEMPLATES.productInfo(tryProduct.product);
         r.extraction.product = tryProduct.product.nom;
         r.extraction.productId = tryProduct.product.id;
+        r.response = TEMPLATES.productInfo(tryProduct.product);
         r.newState = CONV_STATES.ASKING_PRODUCT;
       } else {
         r.response = TEMPLATES.welcome();
@@ -127,7 +213,36 @@ async function handleNewOrGreeting(intent, rawText, extraction, companyId) {
 
 async function handleAskingProduct(intent, rawText, extraction, companyId) {
   const r = { response: null, newState: CONV_STATES.ASKING_PRODUCT, extraction: { ...extraction }, action: null, shouldCreateOrder: false };
+  const pk = getProductKeyFromExtraction(r.extraction);
 
+  if (intent === INTENTS.PRODUCT_EFFECT) {
+    const key = pk || 'creme_minceur';
+    const resp = TEMPLATES.productFaqEffect(key);
+    r.response = resp ? resp + `\n\nSouhaitez-vous commander ?` : TEMPLATES.clarify();
+    return r;
+  }
+  if (intent === INTENTS.PRODUCT_HOWTO) {
+    const key = pk || 'creme_minceur';
+    const resp = TEMPLATES.productFaqHowto(key);
+    r.response = resp ? resp + `\n\nVous souhaitez en commander ?` : TEMPLATES.clarify();
+    return r;
+  }
+  if (intent === INTENTS.PRODUCT_WORKS) {
+    const key = pk || 'creme_minceur';
+    const resp = TEMPLATES.productFaqWorks(key);
+    r.response = resp ? resp + `\n\nVous souhaitez essayer ?` : TEMPLATES.clarify();
+    return r;
+  }
+  if (intent === INTENTS.HESITATION) {
+    const key = pk || 'creme_minceur';
+    r.response = TEMPLATES.productHesitation(key) || TEMPLATES.clarify();
+    return r;
+  }
+  if (intent === INTENTS.PRICE_REQUEST) {
+    const key = pk || 'creme_minceur';
+    r.response = TEMPLATES.pricingForProduct(key) || TEMPLATES.clarify();
+    return r;
+  }
   if (intent === INTENTS.DELIVERY_QUESTION) {
     r.response = TEMPLATES.deliveryInfo();
     return r;
@@ -137,6 +252,16 @@ async function handleAskingProduct(intent, rawText, extraction, companyId) {
     return r;
   }
 
+  if (intent === INTENTS.YES || intent === INTENTS.ORDER_START || intent === INTENTS.ORDER_CONFIRM) {
+    if (r.extraction.product) {
+      const next = advanceToNextMissing(r.extraction);
+      r.newState = next.state;
+      r.response = next.response;
+      r.action = next.action || null;
+      return r;
+    }
+  }
+
   const norm = normalize(rawText);
   if (/^[1-9]$/.test(norm.trim())) {
     const catalog = await getProductCatalog(companyId);
@@ -144,8 +269,10 @@ async function handleAskingProduct(intent, rawText, extraction, companyId) {
     if (idx >= 0 && idx < catalog.length) {
       r.extraction.product = catalog[idx].nom;
       r.extraction.productId = catalog[idx].id;
-      r.response = TEMPLATES.askQuantity(catalog[idx].nom);
-      r.newState = CONV_STATES.ASKING_QUANTITY;
+      const next = advanceToNextMissing(r.extraction);
+      r.newState = next.state;
+      r.response = next.response;
+      r.action = next.action || null;
       return r;
     }
   }
@@ -156,14 +283,12 @@ async function handleAskingProduct(intent, rawText, extraction, companyId) {
     r.extraction.productId = match.product.id;
 
     const qty = extractQuantity(rawText);
-    if (qty) {
-      r.extraction.qty = qty;
-      r.response = TEMPLATES.askName();
-      r.newState = CONV_STATES.ASKING_NAME;
-    } else {
-      r.response = TEMPLATES.askQuantity(match.product.nom);
-      r.newState = CONV_STATES.ASKING_QUANTITY;
-    }
+    if (qty) r.extraction.qty = qty;
+
+    const next = advanceToNextMissing(r.extraction);
+    r.newState = next.state;
+    r.response = next.response;
+    r.action = next.action || null;
   } else {
     r.response = TEMPLATES.productNotFound();
   }
@@ -176,51 +301,12 @@ function handleAskingQuantity(intent, rawText, extraction) {
   const qty = extractQuantity(rawText);
   if (qty && qty >= 1 && qty <= 20) {
     r.extraction.qty = qty;
-    if (r.extraction.name) {
-      if (r.extraction.phone) {
-        if (r.extraction.city) {
-          r.newState = CONV_STATES.ASKING_ADDRESS;
-          r.response = TEMPLATES.askAddress(r.extraction.city);
-        } else {
-          r.newState = CONV_STATES.ASKING_LOCATION;
-          r.response = TEMPLATES.askCity();
-        }
-      } else {
-        r.newState = CONV_STATES.ASKING_PHONE;
-        r.response = TEMPLATES.askPhone();
-      }
-    } else {
-      r.newState = CONV_STATES.ASKING_NAME;
-      r.response = TEMPLATES.askName();
-    }
+    const next = advanceToNextMissing(r.extraction);
+    r.newState = next.state;
+    r.response = next.response;
+    r.action = next.action || null;
   } else {
     r.response = `Veuillez indiquer une quantité valide (ex: 1, 2 ou 3).`;
-  }
-  return r;
-}
-
-function handleAskingName(intent, rawText, extraction) {
-  const r = { response: null, newState: CONV_STATES.ASKING_NAME, extraction: { ...extraction }, action: null, shouldCreateOrder: false };
-  const name = extractName(rawText);
-  if (name) {
-    r.extraction.name = name;
-    r.newState = CONV_STATES.ASKING_PHONE;
-    r.response = TEMPLATES.askPhone();
-  } else {
-    r.response = `Veuillez me donner votre nom complet (prénom et nom).`;
-  }
-  return r;
-}
-
-function handleAskingPhone(intent, rawText, extraction) {
-  const r = { response: null, newState: CONV_STATES.ASKING_PHONE, extraction: { ...extraction }, action: null, shouldCreateOrder: false };
-  const phone = extractPhoneNumber(rawText);
-  if (phone) {
-    r.extraction.phone = phone;
-    r.newState = CONV_STATES.ASKING_LOCATION;
-    r.response = TEMPLATES.askCity();
-  } else {
-    r.response = `Veuillez me donner un numéro de téléphone valide (ex: 07 00 00 00 00).`;
   }
   return r;
 }
@@ -230,10 +316,42 @@ function handleAskingLocation(intent, rawText, extraction) {
   const city = extractCity(rawText, CITY_PATTERNS);
   if (city) {
     r.extraction.city = city;
-    r.newState = CONV_STATES.ASKING_ADDRESS;
-    r.response = TEMPLATES.askAddress(city);
+    const next = advanceToNextMissing(r.extraction);
+    r.newState = next.state;
+    r.response = next.response;
+    r.action = next.action || null;
   } else {
     r.response = `Veuillez indiquer votre ville de livraison.`;
+  }
+  return r;
+}
+
+function handleAskingPhone(intent, rawText, extraction) {
+  const r = { response: null, newState: CONV_STATES.ASKING_PHONE, extraction: { ...extraction }, action: null, shouldCreateOrder: false };
+  const phone = extractPhoneNumber(rawText);
+  if (phone) {
+    r.extraction.phone = phone;
+    const next = advanceToNextMissing(r.extraction);
+    r.newState = next.state;
+    r.response = next.response;
+    r.action = next.action || null;
+  } else {
+    r.response = `Veuillez me donner un numéro de téléphone valide (ex: 07 00 00 00 00).`;
+  }
+  return r;
+}
+
+function handleAskingName(intent, rawText, extraction) {
+  const r = { response: null, newState: CONV_STATES.ASKING_NAME, extraction: { ...extraction }, action: null, shouldCreateOrder: false };
+  const name = extractName(rawText);
+  if (name) {
+    r.extraction.name = name;
+    const next = advanceToNextMissing(r.extraction);
+    r.newState = next.state;
+    r.response = next.response;
+    r.action = next.action || null;
+  } else {
+    r.response = `Veuillez me donner votre nom complet (prénom et nom).`;
   }
   return r;
 }
@@ -274,6 +392,18 @@ function handleConfirming(intent, rawText, extraction, companyId) {
 }
 
 async function handleFaq(intent, rawText, extraction, companyId) {
+  if (intent === INTENTS.ORDER_START || intent === INTENTS.YES) {
+    const r = { response: null, newState: CONV_STATES.ASKING_PRODUCT, extraction: { ...extraction }, action: null, shouldCreateOrder: false };
+    if (extraction.product) {
+      const next = advanceToNextMissing(extraction);
+      r.newState = next.state;
+      r.response = next.response;
+      r.action = next.action || null;
+    } else {
+      r.response = TEMPLATES.askProduct();
+    }
+    return r;
+  }
   return handleNewOrGreeting(intent, rawText, extraction, companyId);
 }
 
