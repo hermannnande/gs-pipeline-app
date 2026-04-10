@@ -52,16 +52,40 @@ export async function downloadMedia(mediaId) {
   if (!apiKey) return null;
 
   try {
-    const resp = await fetch(`${apiUrl}/media/${mediaId}`, {
+    const urlResp = await fetch(`${apiUrl}/media/${mediaId}`, {
       headers: { 'D360-API-KEY': apiKey },
     });
 
-    if (!resp.ok) {
-      console.error('[360dialog] Erreur download media:', resp.status);
+    if (!urlResp.ok) {
+      console.error('[360dialog] Erreur get media URL:', urlResp.status);
       return null;
     }
 
-    const buffer = await resp.arrayBuffer();
+    const contentType = urlResp.headers.get('content-type') || '';
+
+    if (contentType.includes('application/json')) {
+      const data = await urlResp.json();
+      const downloadUrl = data.url;
+      console.log('[360dialog] Media URL obtenue:', downloadUrl ? downloadUrl.slice(0, 80) + '...' : 'null');
+
+      if (!downloadUrl) return null;
+
+      const mediaResp = await fetch(downloadUrl, {
+        headers: { 'D360-API-KEY': apiKey },
+      });
+
+      if (!mediaResp.ok) {
+        console.error('[360dialog] Erreur download media binary:', mediaResp.status);
+        return null;
+      }
+
+      const buffer = await mediaResp.arrayBuffer();
+      console.log('[360dialog] Media telecharge:', buffer.byteLength, 'octets');
+      return Buffer.from(buffer);
+    }
+
+    const buffer = await urlResp.arrayBuffer();
+    console.log('[360dialog] Media telecharge directement:', buffer.byteLength, 'octets');
     return Buffer.from(buffer);
   } catch (err) {
     console.error('[360dialog] Exception download media:', err.message);

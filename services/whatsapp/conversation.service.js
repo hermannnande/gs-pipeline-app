@@ -42,10 +42,13 @@ export async function handleIncomingMessage({ from, messageId, contactName, mess
   if (audio) {
     mediaUrl = audio.id;
     mediaMimeType = audio.mime_type;
+    console.log('[WA] Audio recu — mediaId:', audio.id, '| mime:', audio.mime_type);
     try {
       const audioBuffer = await downloadMedia(audio.id);
+      console.log('[WA] Audio download:', audioBuffer ? `${audioBuffer.length} octets` : 'ECHEC');
       if (audioBuffer) {
         const result = await transcribeAudio(audioBuffer, audio.mime_type);
+        console.log('[WA] Transcription:', result.ok ? `"${result.text}"` : `ECHEC: ${result.error}`);
         transcription = result.text;
         transcriptionOk = result.ok;
         if (result.ok && result.text) {
