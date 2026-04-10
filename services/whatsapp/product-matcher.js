@@ -2,6 +2,9 @@ import { prisma } from '../../utils/prisma.js';
 import { normalize } from './normalizer.js';
 import { PRODUCT_SYNONYMS } from './config.js';
 
+const CATALOG_CACHE_TTL_MS = 60 * 1000;
+const catalogCache = new Map();
+
 const FALLBACK_NAME_MAPPING = {
   'chaussette de compression': 'CHAUSSETTE_DE_COMPRESSION',
   'chaussettes chauffantes tourmaline': 'CHAUSSETTE_CHAUFFANTE',
@@ -60,7 +63,7 @@ export async function matchProduct(rawQuery, companyId = 1) {
   p = await prisma.product.findFirst({ where: { nom: { contains: rawQuery, mode: 'insensitive' }, companyId, actif: true } });
   if (p) return { product: p, confidence: 75, method: 'nom_contains' };
 
-  const allProducts = await prisma.product.findMany({ where: { companyId, actif: true } });
+  const allProducts = await getCachedProducts(companyId);
 
   for (const [, synonyms] of Object.entries(PRODUCT_SYNONYMS)) {
     const matchesSynonym = synonyms.some(s => query.includes(s));
@@ -92,4 +95,17 @@ export async function getProductCatalog(companyId = 1) {
     select: { id: true, code: true, nom: true, prixUnitaire: true, prix2Unites: true, prix3Unites: true, stockActuel: true },
     orderBy: { nom: 'asc' },
   });
+}
+
+async function getCachedProducts(companyId) {
+  const key = String(companyId);
+  const now = Date.now();
+  const cached = catalogCache.get(key);
+  if (cached && now - cached.ts < CATALOG_CACHE_TTL_MS) {
+    return cached.items;
+  }
+
+  const items = await prisma.product.findMany({ where: { companyId, actif: true } });
+  catalogCache.set(key, { ts: now, items });
+  return items;
 }

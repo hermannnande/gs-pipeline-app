@@ -176,25 +176,34 @@ export async function handleIncomingMessage({ from, messageId, contactName, mess
     updateData.status = 'BOT_ACTIVE';
   }
 
-  await prisma.waConversation.update({ where: { id: conv.id }, data: updateData });
+  // Performance: envoyer le message en parallèle des écritures DB non critiques.
+  const sendPromise = responseText ? sendTextMessage(from, responseText) : Promise.resolve(null);
+  const persistencePromise = Promise.allSettled([
+    prisma.waConversation.update({ where: { id: conv.id }, data: updateData }),
+    prisma.waRulesLog.create({
+      data: {
+        conversationId: conv.id,
+        inputText: body,
+        detectedIntent: intent,
+        confidence,
+        extractedData: JSON.stringify(stateResult.extraction),
+        actionTaken: stateResult.action,
+        responseChosen: responseText?.slice(0, 500),
+        convStateBefore: conv.convState,
+        convStateAfter: stateResult.newState,
+      },
+    }),
+  ]);
 
-  await prisma.waRulesLog.create({
-    data: {
-      conversationId: conv.id,
-      inputText: body,
-      detectedIntent: intent,
-      confidence,
-      extractedData: JSON.stringify(stateResult.extraction),
-      actionTaken: stateResult.action,
-      responseChosen: responseText?.slice(0, 500),
-      convStateBefore: conv.convState,
-      convStateAfter: stateResult.newState,
-    },
-  });
+  const [sendResult, persistenceResults] = await Promise.all([sendPromise, persistencePromise]);
+
+  for (const r of persistenceResults) {
+    if (r.status === 'rejected') {
+      console.error('[WA] Erreur persistence:', r.reason?.message || r.reason);
+    }
+  }
 
   if (responseText) {
-    const sendResult = await sendTextMessage(from, responseText);
-
     await prisma.waMessage.create({
       data: {
         conversationId: conv.id,
@@ -202,7 +211,7 @@ export async function handleIncomingMessage({ from, messageId, contactName, mess
         actor: stateResult.action === 'HANDOFF' ? 'SYSTEM' : 'BOT',
         contentType: 'TEXT',
         body: responseText,
-        externalId: sendResult.messageId || `bot_${Date.now()}`,
+        externalId: sendResult?.messageId || `bot_${Date.now()}`,
         timestamp: new Date(),
       },
     });

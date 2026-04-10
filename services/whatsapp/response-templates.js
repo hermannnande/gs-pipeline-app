@@ -26,10 +26,10 @@ export const TEMPLATES = {
   ]),
 
   askProduct: () => pick([
-    `Quel produit vous intéresse ? Dites-moi et je vous donne toutes les informations.`,
-    `Parfait, je vous accompagne pour la commande. Quel produit souhaitez-vous ?`,
+    `Quel produit vous intéresse ? Je vous accompagne avec plaisir pour trouver l'offre qui vous convient.`,
+    `Parfait, je vous accompagne pour la commande. Quel produit souhaitez-vous pour votre bien-être ?`,
     `Très bien. Dites-moi le produit qui vous intéresse s'il vous plaît.`,
-    `D'accord. Quel produit souhaitez-vous commander ?`,
+    `D'accord. Quel produit souhaitez-vous commander aujourd'hui ?`,
   ]),
 
   productInfo: (product) => {
@@ -37,9 +37,9 @@ export const TEMPLATES = {
     if (pk) {
       const p = pk.pricing;
       return pick([
-        `La *${pk.displayName}* est disponible :\n\n📦 1 paquet : ${formatPrice(p[1])}\n📦 2 paquets : ${formatPrice(p[2])}\n📦 3 paquets : ${formatPrice(p[3])}\n\nCombien de paquets souhaitez-vous prendre ?`,
-        `Nous avons la *${pk.displayName}* avec 3 offres :\n\n• 1 paquet à ${formatPrice(p[1])}\n• 2 paquets à ${formatPrice(p[2])}\n• 3 paquets à ${formatPrice(p[3])}\n\nQuelle offre vous convient ?`,
-        `Pour la *${pk.displayName}* :\n• ${formatPrice(p[1])} le paquet\n• ${formatPrice(p[2])} les 2 paquets\n• ${formatPrice(p[3])} les 3 paquets\n\nVous souhaitez 1, 2 ou 3 paquets ?`,
+        `La *${pk.displayName}* est disponible :\n\n📦 1 paquet : ${formatPrice(p[1])}\n📦 2 paquets : ${formatPrice(p[2])}\n📦 3 paquets : ${formatPrice(p[3])}\n\nC'est un produit très apprécié pour accompagner visuellement la silhouette. Combien de paquets souhaitez-vous prendre ?`,
+        `Nous avons la *${pk.displayName}* avec 3 offres :\n\n• 1 paquet à ${formatPrice(p[1])}\n• 2 paquets à ${formatPrice(p[2])}\n• 3 paquets à ${formatPrice(p[3])}\n\nBeaucoup de clientes apprécient son application simple et son effet chauffant. Quelle offre vous convient ?`,
+        `Pour la *${pk.displayName}* :\n• ${formatPrice(p[1])} le paquet\n• ${formatPrice(p[2])} les 2 paquets\n• ${formatPrice(p[3])} les 3 paquets\n\nVous souhaitez 1, 2 ou 3 paquets ? Je peux vous aider à choisir selon votre objectif.`,
       ]);
     }
     return `*${product.nom}*\n💰 Prix : ${formatPrice(product.prixUnitaire)}${product.prix2Unites ? '\n📦 2 unités : ' + formatPrice(product.prix2Unites) : ''}${product.prix3Unites ? '\n📦 3 unités : ' + formatPrice(product.prix3Unites) : ''}\n\nSouhaitez-vous commander ce produit ?`;
@@ -97,8 +97,8 @@ export const TEMPLATES = {
   ]),
 
   deliveryInfo: () => pick([
-    `📦 Pour la livraison :\n\n🏙 Abidjan : livraison rapide sous 24h\n💰 Paiement à la livraison\n\nVous payez quand vous recevez le produit.`,
-    `Nous livrons rapidement à Abidjan, avec paiement à la livraison. Vous ne payez qu'à la réception du produit.`,
+    `📦 Pour la livraison :\n\n🏙 Abidjan : livraison rapide sous 24h\n💰 Paiement à la livraison\n\nVous payez quand vous recevez le produit, en toute tranquillité.`,
+    `Nous livrons rapidement à Abidjan, avec paiement à la livraison. Vous ne payez qu'à la réception du produit, c'est plus rassurant.`,
     `La livraison se fait sous 24h à Abidjan. Vous payez à la réception, aucun paiement à l'avance.`,
   ]),
 
