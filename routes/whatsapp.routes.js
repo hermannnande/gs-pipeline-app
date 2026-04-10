@@ -42,6 +42,24 @@ router.post('/webhook', async (req, res) => {
   }
 });
 
+router.get('/reset-conv', async (req, res) => {
+  try {
+    const conv = await prisma.waConversation.findFirst({ orderBy: { lastMessageAt: 'desc' } });
+    if (!conv) return res.json({ error: 'No conversation' });
+    await prisma.waConversation.update({
+      where: { id: conv.id },
+      data: {
+        convState: 'NEW', status: 'BOT_ACTIVE',
+        extractedProduct: null, extractedProductId: null, extractedQty: null,
+        extractedName: null, extractedPhone: null, extractedCity: null,
+        extractedCommune: null, extractedAddress: null,
+        lastIntent: null, lastBotMessage: null, confidenceScore: 0,
+      },
+    });
+    res.json({ success: true, conversationId: conv.id, message: 'Conversation reset' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // Diagnostic endpoint
 router.get('/diag', async (req, res) => {
   const { WA_CONFIG } = await import('../services/whatsapp/config.js');

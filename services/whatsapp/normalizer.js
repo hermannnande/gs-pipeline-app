@@ -46,10 +46,29 @@ export function extractPhoneNumber(text) {
 export function extractQuantity(text) {
   if (!text) return null;
   const norm = normalize(text);
-  const wordNums = { un: 1, une: 1, deux: 2, trois: 3, quatre: 4, cinq: 5 };
+
+  const directNum = norm.match(/^([1-9])$/);
+  if (directNum) return parseInt(directNum[1]);
+
+  const paquet = norm.match(/([1-9])\s*(?:paquet|pot|boite|tube|unite)/);
+  if (paquet) return parseInt(paquet[1]);
+
+  const jeVeuxNum = norm.match(/(?:je (?:veux|prends?|souhaite|voudrais)\s+)([1-9])/);
+  if (jeVeuxNum) return parseInt(jeVeuxNum[1]);
+
+  const wordNums = {
+    un: 1, une: 1, '1': 1,
+    deux: 2, '2': 2,
+    trois: 3, '3': 3,
+    quatre: 4, '4': 4,
+    cinq: 5, '5': 5,
+  };
+
   for (const [w, n] of Object.entries(wordNums)) {
-    if (norm.includes(w)) return n;
+    const pattern = new RegExp(`\\b${w}\\b`);
+    if (pattern.test(norm)) return n;
   }
+
   const numMatch = norm.match(/\b([1-9])\b/);
   if (numMatch) return parseInt(numMatch[1]);
   return null;

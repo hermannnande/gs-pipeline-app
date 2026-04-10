@@ -26,6 +26,26 @@ export async function processConversation(conv, intent, confidence, rawText, com
     return result;
   }
 
+  // A tout moment (sauf CONFIRMING), si le client mentionne un produit,
+  // on le detecte et on reoriente la conversation.
+  const COLLECTION_STATES = [CONV_STATES.ASKING_QUANTITY, CONV_STATES.ASKING_LOCATION, CONV_STATES.ASKING_PHONE, CONV_STATES.ASKING_NAME, CONV_STATES.ASKING_ADDRESS];
+  if (COLLECTION_STATES.includes(state)) {
+    const productSwitch = await tryDetectProductSwitch(rawText, companyId);
+    if (productSwitch) {
+      const r = { response: null, newState: state, extraction: { ...extraction }, action: null, shouldCreateOrder: false };
+      r.extraction.product = productSwitch.nom;
+      r.extraction.productId = productSwitch.id;
+      r.extraction.qty = null;
+      const qty = extractQuantity(rawText);
+      if (qty) r.extraction.qty = qty;
+      const next = advanceToNextMissing(r.extraction);
+      r.newState = next.state;
+      r.response = next.response;
+      r.action = next.action || null;
+      return r;
+    }
+  }
+
   switch (state) {
     case CONV_STATES.NEW:
     case CONV_STATES.GREETING:
@@ -65,6 +85,23 @@ export async function processConversation(conv, intent, confidence, rawText, com
   return result;
 }
 
+async function tryDetectProductSwitch(rawText, companyId) {
+  const norm = normalize(rawText);
+  const productKeywords = [
+    /(?:je (?:veux|voudrais|souhaite|cherche)|(?:la|le|du|des|une?)\s)/,
+    /(?:creme|crème|patch|gaine|spray|poudre|serum|sérum)/,
+    /(?:minceur|mincir|maigrir|amincissant|ventre|graisse)/,
+  ];
+  const looksLikeProductRequest = productKeywords.some(p => p.test(norm));
+  if (!looksLikeProductRequest && norm.length < 6) return null;
+
+  const match = await matchProduct(rawText, companyId);
+  if (match.product && match.confidence >= 60) {
+    return match.product;
+  }
+  return null;
+}
+
 function findProductKey(productName) {
   if (!productName) return null;
   const norm = normalize(productName);
@@ -74,12 +111,6 @@ function findProductKey(productName) {
     }
   }
   return null;
-}
-
-function getProductKnowledge(extraction) {
-  if (!extraction.product) return null;
-  const key = findProductKey(extraction.product);
-  return key ? PRODUCT_KNOWLEDGE[key] : null;
 }
 
 function getProductKeyFromExtraction(extraction) {
@@ -99,10 +130,19 @@ async function handleNewOrGreeting(intent, rawText, extraction, companyId) {
   const r = { response: null, newState: CONV_STATES.GREETING, extraction: { ...extraction }, action: null, shouldCreateOrder: false };
 
   switch (intent) {
-    case INTENTS.GREETING:
-      r.response = TEMPLATES.welcome();
-      r.newState = CONV_STATES.GREETING;
+    case INTENTS.GREETING: {
+      const tryProduct = await matchProduct(rawText, companyId);
+      if (tryProduct.product && tryProduct.confidence >= 60) {
+        r.extraction.product = tryProduct.product.nom;
+        r.extraction.productId = tryProduct.product.id;
+        r.response = TEMPLATES.productInfo(tryProduct.product);
+        r.newState = CONV_STATES.ASKING_PRODUCT;
+      } else {
+        r.response = TEMPLATES.welcome();
+        r.newState = CONV_STATES.GREETING;
+      }
       break;
+    }
     case INTENTS.ORDER_START: {
       const tryProduct = await matchProduct(rawText, companyId);
       if (tryProduct.product && tryProduct.confidence >= 40) {
@@ -127,18 +167,10 @@ async function handleNewOrGreeting(intent, rawText, extraction, companyId) {
         r.extraction.productId = match.product.id;
         const pk = getProductKeyFromExtraction(r.extraction);
         r.response = pk ? TEMPLATES.pricingForProduct(pk) : TEMPLATES.productInfo(match.product);
-        r.newState = CONV_STATES.ASKING_PRODUCT;
       } else {
-        const defaultPk = PRODUCT_KNOWLEDGE.creme_minceur;
-        if (defaultPk) {
-          r.response = TEMPLATES.pricingForProduct('creme_minceur');
-          r.newState = CONV_STATES.ASKING_PRODUCT;
-        } else {
-          const catalog = await getProductCatalog(companyId);
-          r.response = TEMPLATES.catalogList(catalog);
-          r.newState = CONV_STATES.ASKING_PRODUCT;
-        }
+        r.response = TEMPLATES.pricingForProduct('creme_minceur') || TEMPLATES.askProduct();
       }
+      r.newState = CONV_STATES.ASKING_PRODUCT;
       break;
     }
     case INTENTS.PRODUCT_QUESTION: {
@@ -147,12 +179,11 @@ async function handleNewOrGreeting(intent, rawText, extraction, companyId) {
         r.extraction.product = match.product.nom;
         r.extraction.productId = match.product.id;
         r.response = TEMPLATES.productInfo(match.product);
-        r.newState = CONV_STATES.ASKING_PRODUCT;
       } else {
         const catalog = await getProductCatalog(companyId);
         r.response = TEMPLATES.catalogList(catalog);
-        r.newState = CONV_STATES.ASKING_PRODUCT;
       }
+      r.newState = CONV_STATES.ASKING_PRODUCT;
       break;
     }
     case INTENTS.PRODUCT_EFFECT: {
@@ -174,8 +205,7 @@ async function handleNewOrGreeting(intent, rawText, extraction, companyId) {
       break;
     }
     case INTENTS.HESITATION: {
-      const resp = TEMPLATES.productHesitation('creme_minceur');
-      r.response = resp || TEMPLATES.welcome();
+      r.response = TEMPLATES.productHesitation('creme_minceur') || TEMPLATES.welcome();
       r.newState = CONV_STATES.ASKING_PRODUCT;
       break;
     }
@@ -197,7 +227,7 @@ async function handleNewOrGreeting(intent, rawText, extraction, companyId) {
       break;
     default: {
       const tryProduct = await matchProduct(rawText, companyId);
-      if (tryProduct.product && tryProduct.confidence >= 50) {
+      if (tryProduct.product && tryProduct.confidence >= 40) {
         r.extraction.product = tryProduct.product.nom;
         r.extraction.productId = tryProduct.product.id;
         r.response = TEMPLATES.productInfo(tryProduct.product);
@@ -214,55 +244,32 @@ async function handleNewOrGreeting(intent, rawText, extraction, companyId) {
 async function handleAskingProduct(intent, rawText, extraction, companyId) {
   const r = { response: null, newState: CONV_STATES.ASKING_PRODUCT, extraction: { ...extraction }, action: null, shouldCreateOrder: false };
   const pk = getProductKeyFromExtraction(r.extraction);
-  const qtyFromText = extractQuantity(rawText);
-
-  // Si le produit est déjà identifié, interpréter directement "1/2/3" comme quantité
-  // au lieu d'un index de catalogue.
-  if (r.extraction.product && qtyFromText && qtyFromText >= 1) {
-    r.extraction.qty = qtyFromText;
-    const next = advanceToNextMissing(r.extraction);
-    r.newState = next.state;
-    r.response = next.response;
-    r.action = next.action || null;
-    return r;
-  }
 
   if (intent === INTENTS.PRODUCT_EFFECT) {
     const key = pk || 'creme_minceur';
-    const resp = TEMPLATES.productFaqEffect(key);
-    r.response = resp ? resp + `\n\nSouhaitez-vous commander ?` : TEMPLATES.clarify();
+    r.response = (TEMPLATES.productFaqEffect(key) || '') + `\n\nSouhaitez-vous commander ?`;
     return r;
   }
   if (intent === INTENTS.PRODUCT_HOWTO) {
     const key = pk || 'creme_minceur';
-    const resp = TEMPLATES.productFaqHowto(key);
-    r.response = resp ? resp + `\n\nVous souhaitez en commander ?` : TEMPLATES.clarify();
+    r.response = (TEMPLATES.productFaqHowto(key) || '') + `\n\nVous souhaitez en commander ?`;
     return r;
   }
   if (intent === INTENTS.PRODUCT_WORKS) {
     const key = pk || 'creme_minceur';
-    const resp = TEMPLATES.productFaqWorks(key);
-    r.response = resp ? resp + `\n\nVous souhaitez essayer ?` : TEMPLATES.clarify();
+    r.response = (TEMPLATES.productFaqWorks(key) || '') + `\n\nVous souhaitez essayer ?`;
     return r;
   }
   if (intent === INTENTS.HESITATION) {
-    const key = pk || 'creme_minceur';
-    r.response = TEMPLATES.productHesitation(key) || TEMPLATES.clarify();
+    r.response = TEMPLATES.productHesitation(pk || 'creme_minceur') || TEMPLATES.clarify();
     return r;
   }
   if (intent === INTENTS.PRICE_REQUEST) {
-    const key = pk || 'creme_minceur';
-    r.response = TEMPLATES.pricingForProduct(key) || TEMPLATES.clarify();
+    r.response = TEMPLATES.pricingForProduct(pk || 'creme_minceur') || TEMPLATES.clarify();
     return r;
   }
-  if (intent === INTENTS.DELIVERY_QUESTION) {
-    r.response = TEMPLATES.deliveryInfo();
-    return r;
-  }
-  if (intent === INTENTS.PAYMENT_QUESTION) {
-    r.response = TEMPLATES.paymentInfo();
-    return r;
-  }
+  if (intent === INTENTS.DELIVERY_QUESTION) { r.response = TEMPLATES.deliveryInfo(); return r; }
+  if (intent === INTENTS.PAYMENT_QUESTION) { r.response = TEMPLATES.paymentInfo(); return r; }
 
   if (intent === INTENTS.YES || intent === INTENTS.ORDER_START || intent === INTENTS.ORDER_CONFIRM) {
     if (r.extraction.product) {
@@ -274,19 +281,15 @@ async function handleAskingProduct(intent, rawText, extraction, companyId) {
     }
   }
 
-  const norm = normalize(rawText);
-  if (/^[1-9]$/.test(norm.trim())) {
-    const catalog = await getProductCatalog(companyId);
-    const idx = parseInt(norm.trim()) - 1;
-    if (idx >= 0 && idx < catalog.length) {
-      r.extraction.product = catalog[idx].nom;
-      r.extraction.productId = catalog[idx].id;
-      const next = advanceToNextMissing(r.extraction);
-      r.newState = next.state;
-      r.response = next.response;
-      r.action = next.action || null;
-      return r;
-    }
+  // Si le produit est deja choisi et que le client envoie un chiffre, c'est une quantite
+  const qtyFromText = extractQuantity(rawText);
+  if (r.extraction.product && qtyFromText && qtyFromText >= 1) {
+    r.extraction.qty = qtyFromText;
+    const next = advanceToNextMissing(r.extraction);
+    r.newState = next.state;
+    r.response = next.response;
+    r.action = next.action || null;
+    return r;
   }
 
   const match = await matchProduct(rawText, companyId);
