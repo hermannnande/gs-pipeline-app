@@ -214,6 +214,18 @@ async function handleNewOrGreeting(intent, rawText, extraction, companyId) {
 async function handleAskingProduct(intent, rawText, extraction, companyId) {
   const r = { response: null, newState: CONV_STATES.ASKING_PRODUCT, extraction: { ...extraction }, action: null, shouldCreateOrder: false };
   const pk = getProductKeyFromExtraction(r.extraction);
+  const qtyFromText = extractQuantity(rawText);
+
+  // Si le produit est déjà identifié, interpréter directement "1/2/3" comme quantité
+  // au lieu d'un index de catalogue.
+  if (r.extraction.product && qtyFromText && qtyFromText >= 1) {
+    r.extraction.qty = qtyFromText;
+    const next = advanceToNextMissing(r.extraction);
+    r.newState = next.state;
+    r.response = next.response;
+    r.action = next.action || null;
+    return r;
+  }
 
   if (intent === INTENTS.PRODUCT_EFFECT) {
     const key = pk || 'creme_minceur';
