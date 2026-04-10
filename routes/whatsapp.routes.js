@@ -12,25 +12,78 @@ const router = express.Router();
 // =============================================
 
 router.get('/webhook', (req, res) => {
+  console.log('[WA Webhook GET] Query params:', JSON.stringify(req.query));
   const { valid, challenge } = verifyWebhook(req.query);
   if (valid) return res.status(200).send(challenge);
   return res.status(403).json({ error: 'Verification failed' });
 });
 
 router.post('/webhook', async (req, res) => {
+  console.log('[WA Webhook POST] Body recu:', JSON.stringify(req.body).slice(0, 1000));
+
   res.status(200).json({ status: 'ok' });
 
   try {
     const events = parseWebhookPayload(req.body);
+    console.log('[WA Webhook POST] Events parses:', events.length, events.map(e => ({ type: e.type, from: e.from, msgType: e.messageType })));
 
     for (const evt of events) {
       if (evt.type === 'message') {
-        await handleIncomingMessage(evt);
+        try {
+          const result = await handleIncomingMessage(evt);
+          console.log('[WA Webhook POST] Message traite:', JSON.stringify(result));
+        } catch (msgErr) {
+          console.error('[WA Webhook POST] Erreur traitement message:', msgErr.message, msgErr.stack);
+        }
       }
     }
   } catch (err) {
-    console.error('[WA Webhook] Erreur:', err);
+    console.error('[WA Webhook] Erreur parse:', err.message, err.stack);
   }
+});
+
+// Diagnostic endpoint
+router.get('/diag', async (req, res) => {
+  const { WA_CONFIG } = await import('../services/whatsapp/config.js');
+  
+  let dbOk = false;
+  let dbError = null;
+  let tableExists = false;
+  try {
+    const r = await prisma.$queryRaw`SELECT COUNT(*) as c FROM information_schema.tables WHERE table_name = 'wa_conversations'`;
+    tableExists = r[0]?.c > 0 || parseInt(r[0]?.c) > 0;
+    dbOk = true;
+  } catch (e) {
+    dbError = e.message;
+  }
+
+  let convCount = null;
+  let msgCount = null;
+  try {
+    convCount = await prisma.waConversation.count();
+    msgCount = await prisma.waMessage.count();
+  } catch (e) {
+    dbError = (dbError || '') + ' | ' + e.message;
+  }
+
+  res.json({
+    config: {
+      apiKeySet: !!WA_CONFIG.dialog360.apiKey,
+      apiKeyPrefix: WA_CONFIG.dialog360.apiKey ? WA_CONFIG.dialog360.apiKey.slice(0, 6) + '...' : 'MISSING',
+      apiUrl: WA_CONFIG.dialog360.apiUrl,
+      webhookSecretSet: !!WA_CONFIG.dialog360.webhookSecret,
+      botEnabled: WA_CONFIG.bot.enabled,
+      defaultCompanyId: WA_CONFIG.bot.defaultCompanyId,
+      deepgramKeySet: !!WA_CONFIG.transcription.deepgramApiKey,
+    },
+    database: {
+      ok: dbOk,
+      tableExists,
+      conversations: convCount,
+      messages: msgCount,
+      error: dbError,
+    },
+  });
 });
 
 // =============================================
