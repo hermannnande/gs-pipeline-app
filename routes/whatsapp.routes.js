@@ -123,6 +123,20 @@ router.get('/diag', async (req, res) => {
 
     tests.phoneCheck = { to, length: to.length };
 
+    const checkEndpoint = async (label, url) => {
+      try {
+        const r = await fetch(url, {
+          headers: { 'D360-API-KEY': key },
+        });
+        const t = await r.text();
+        return { status: r.status, body: t.slice(0, 500) };
+      } catch (e) { return { error: e.message }; }
+    };
+
+    tests.webhookConfig = await checkEndpoint('webhookConfig', `${baseUrl}/configs/webhook`);
+    tests.templates = await checkEndpoint('templates', `${baseUrl}/configs/templates`);
+    tests.phoneNumbers = await checkEndpoint('phoneNumbers', `${baseUrl}/phone_numbers`);
+
     rawApiTest = tests;
   }
 
