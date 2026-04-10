@@ -8,6 +8,16 @@ export async function sendTextMessage(to, text) {
     return { success: false, error: 'API_KEY_MISSING' };
   }
 
+  const payload = {
+    messaging_product: 'whatsapp',
+    recipient_type: 'individual',
+    to,
+    type: 'text',
+    text: { body: text },
+  };
+
+  console.log('[360dialog] Envoi vers:', to, '| URL:', `${apiUrl}/messages`, '| Payload:', JSON.stringify(payload).slice(0, 300));
+
   try {
     const resp = await fetch(`${apiUrl}/messages`, {
       method: 'POST',
@@ -15,18 +25,17 @@ export async function sendTextMessage(to, text) {
         'Content-Type': 'application/json',
         'D360-API-KEY': apiKey,
       },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        to,
-        type: 'text',
-        text: { body: text },
-      }),
+      body: JSON.stringify(payload),
     });
 
-    const data = await resp.json();
+    const rawText = await resp.text();
+    console.log('[360dialog] Reponse status:', resp.status, '| Body:', rawText.slice(0, 500));
+
+    let data;
+    try { data = JSON.parse(rawText); } catch { data = { raw: rawText }; }
+
     if (!resp.ok) {
-      console.error('[360dialog] Erreur envoi:', data);
-      return { success: false, error: data };
+      return { success: false, error: data, status: resp.status };
     }
 
     return {

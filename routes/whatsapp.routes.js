@@ -80,7 +80,31 @@ router.get('/diag', async (req, res) => {
 
   let sendTest = null;
   if (req.query.testSend && recentConv?.waId) {
-    sendTest = await sendTextMessage(recentConv.waId, 'Test de connexion OB Gestion - ignorez ce message.');
+    sendTest = await sendTextMessage(recentConv.waId, 'Test de connexion OB Gestion.');
+  }
+
+  let rawApiTest = null;
+  if (req.query.rawTest && recentConv?.waId) {
+    try {
+      const resp = await fetch(`${WA_CONFIG.dialog360.apiUrl}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'D360-API-KEY': WA_CONFIG.dialog360.apiKey,
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: recentConv.waId,
+          type: 'text',
+          text: { body: 'Test direct API.' },
+        }),
+      });
+      const txt = await resp.text();
+      rawApiTest = { status: resp.status, body: txt };
+    } catch (e) {
+      rawApiTest = { error: e.message };
+    }
   }
 
   res.json({
@@ -118,6 +142,7 @@ router.get('/diag', async (req, res) => {
       time: m.timestamp,
     })),
     sendTest,
+    rawApiTest,
   });
 });
 
