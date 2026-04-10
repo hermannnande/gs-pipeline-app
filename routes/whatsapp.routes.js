@@ -133,8 +133,9 @@ router.get('/diag', async (req, res) => {
       } catch (e) { return { error: e.message }; }
     };
 
-    tests.webhookConfig = await checkEndpoint('webhookConfig', `${baseUrl}/configs/webhook`);
-    tests.templates = await checkEndpoint('templates', `${baseUrl}/configs/templates`);
+    const configBase = baseUrl.replace(/\/v1\/?$/, '') + '/v1';
+    tests.webhookConfig = await checkEndpoint('webhookConfig', `${configBase}/configs/webhook`);
+    tests.templates = await checkEndpoint('templates', `${configBase}/configs/templates`);
     tests.phoneNumbers = await checkEndpoint('phoneNumbers', `${baseUrl}/phone_numbers`);
 
     rawApiTest = tests;

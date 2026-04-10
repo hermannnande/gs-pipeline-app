@@ -2,7 +2,7 @@ export const WA_CONFIG = {
   provider: process.env.WHATSAPP_PROVIDER || '360DIALOG',
   dialog360: {
     apiKey: process.env.DIALOG360_API_KEY || '',
-    apiUrl: process.env.DIALOG360_API_URL || 'https://waba-v2.360dialog.io/v1',
+    apiUrl: process.env.DIALOG360_API_URL || 'https://waba-v2.360dialog.io',
     webhookSecret: process.env.DIALOG360_WEBHOOK_SECRET || '',
   },
   transcription: {
