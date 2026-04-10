@@ -1,0 +1,563 @@
+================================================================================
+                    GS PIPELINE - DOCUMENTATION COMPLETE DU PROJET
+================================================================================
+                         Derniere mise a jour : 08/04/2026
+================================================================================
+
+
+================================================================================
+1. PRESENTATION GENERALE
+================================================================================
+
+GS Pipeline est un systeme complet de gestion de commandes e-commerce pour
+la Cote d'Ivoire et le Burkina Faso. Il couvre l'ensemble du cycle de vie
+d'une commande : reception, confirmation telephonique, preparation, livraison,
+suivi financier et audit de securite.
+
+URL de production : https://www.obgestion.com
+API Backend : https://gs-pipeline-app-2.vercel.app/api
+Hebergement : Vercel (frontend + backend)
+Base de donnees : Supabase (PostgreSQL)
+Depot Git : https://github.com/hermannnande/gs-pipeline-app
+
+
+================================================================================
+2. ARCHITECTURE TECHNIQUE
+================================================================================
+
+2.1 BACKEND (Node.js / Express)
+--------------------------------
+- Langage : JavaScript (ES Modules)
+- Framework : Express.js
+- ORM : Prisma (v5.22)
+- Base de donnees : PostgreSQL (Supabase)
+- Authentification : JWT (JSON Web Token)
+- Temps reel : Socket.IO
+- Upload fichiers : Multer
+- Taches planifiees : node-cron
+- Deploiement : Vercel (serverless via app.js)
+
+Point d'entree local : server.js
+Point d'entree production (Vercel) : app.js
+
+2.2 FRONTEND (React / TypeScript)
+----------------------------------
+- Framework : React 18 + TypeScript
+- Build : Vite
+- Routage : React Router DOM
+- State management : Zustand
+- Data fetching : TanStack React Query
+- UI : Tailwind CSS + Lucide Icons
+- Graphiques : Recharts
+- PDF : jsPDF + jspdf-autotable
+- Notifications : React Hot Toast
+- Temps reel : Socket.IO Client
+
+2.3 APPLICATION MOBILE (React Native / Expo)
+----------------------------------------------
+- Framework : React Native + Expo
+- Navigation : @react-navigation
+- State : Zustand
+- Stockage local : AsyncStorage
+- Build : EAS CLI / Gradle local
+- Dossier : mobile/
+
+
+================================================================================
+3. STRUCTURE DES FICHIERS
+================================================================================
+
+GS cursor/
+|
+|-- app.js                    # Point d'entree Vercel (production)
+|-- server.js                 # Point d'entree local (developpement)
+|-- package.json              # Dependances backend
+|
+|-- prisma/
+|   |-- schema.prisma         # Schema de la base de donnees
+|   |-- migrations/           # Historique des migrations SQL
+|
+|-- routes/                   # 18 fichiers de routes API
+|   |-- auth.routes.js        # Authentification (login, me, companies)
+|   |-- order.routes.js       # Gestion des commandes (CRUD, statuts)
+|   |-- product.routes.js     # Gestion des produits
+|   |-- stock.routes.js       # Gestion du stock
+|   |-- delivery.routes.js    # Gestion des livraisons et listes
+|   |-- express.routes.js     # Gestion express (agence, envoi)
+|   |-- user.routes.js        # Gestion des utilisateurs
+|   |-- accounting.routes.js  # Comptabilite (CA, depenses, marges)
+|   |-- attendance.routes.js  # Pointage des employes (GPS)
+|   |-- audit.routes.js       # Audit et securite (IP, devices)
+|   |-- analytics.routes.js   # Analyse produits
+|   |-- stats.routes.js       # Statistiques generales
+|   |-- chat.routes.js        # Systeme de messagerie interne
+|   |-- webhook.routes.js     # Reception commandes (Google Apps Script)
+|   |-- rdv.routes.js         # Gestion des rendez-vous
+|   |-- public.routes.js      # Endpoints publics
+|   |-- stock.analysis.routes.js # Analyse stock detaillee
+|   |-- maintenance.routes.js # Maintenance systeme
+|
+|-- middlewares/
+|   |-- auth.middleware.js    # Verification JWT + roles
+|   |-- audit.middleware.js   # Tracking IP, User-Agent, empreinte
+|
+|-- utils/
+|   |-- prisma.js             # Instance Prisma partagee
+|
+|-- frontend/                 # Application React
+|   |-- src/
+|       |-- pages/            # 38 pages organisees par role
+|       |   |-- Login.tsx
+|       |   |-- admin/        # 11 pages admin
+|       |   |-- appelant/     # 6 pages appelant
+|       |   |-- gestionnaire/ # 6 pages gestionnaire
+|       |   |-- livreur/      # 4 pages livreur
+|       |   |-- stock/        # 6 pages stock
+|       |   |-- common/       # 3 pages partagees
+|       |   |-- public/       # 1 page publique
+|       |-- components/       # Composants reutilisables
+|       |-- lib/api.ts        # Client API (axios)
+|       |-- utils/            # Helpers (formatage, statuts)
+|
+|-- mobile/                   # Application Android (React Native)
+|
+|-- scripts/                  # 12 scripts de maintenance
+|
+|-- backups/                  # Scripts SQL de sauvegarde/migration
+|
+|-- copie-railway-supabase.sql
+|-- import-railway-vers-supabase-COMPLET.sql
+|-- supabase-cleanup.sql
+|-- supabase-reset-sequences.sql
+|-- supabase-schema-utf8.sql
+|-- verifier-schema-railway.sql
+
+
+================================================================================
+4. BASE DE DONNEES - SCHEMA
+================================================================================
+
+4.1 ENUMS (Types enumeres)
+---------------------------
+- UserRole : ADMIN, GESTIONNAIRE, GESTIONNAIRE_STOCK, APPELANT, LIVREUR
+- OrderStatus : NOUVELLE, A_APPELER, VALIDEE, ANNULEE, INJOIGNABLE,
+                ASSIGNEE, LIVREE, REFUSEE, ANNULEE_LIVRAISON, RETOURNE,
+                EXPEDITION, EXPRESS, EXPRESS_ENVOYE, EXPRESS_ARRIVE,
+                EXPRESS_LIVRE
+- DeliveryType : LOCAL, EXPEDITION, EXPRESS
+- ConversationType : PRIVATE, GROUP, BROADCAST
+- MessageType : TEXT, IMAGE, FILE, SYSTEM
+- StockMovementType : APPROVISIONNEMENT, LIVRAISON, RETOUR, CORRECTION,
+                      PERTE, RESERVATION, RESERVATION_EXPRESS, etc.
+
+4.2 TABLES PRINCIPALES (22 modeles)
+-------------------------------------
+- Company          : Multi-entreprise (CI, BF)
+- User             : Utilisateurs avec roles
+- Order            : Commandes (coeur du systeme)
+- StatusHistory    : Historique des changements de statut
+- Product          : Catalogue produits avec stock
+- StockMovement    : Mouvements de stock traces
+- DeliveryList     : Listes de livraison par livreur
+- TourneeStock     : Suivi stock par tournee
+- Attendance       : Pointage employes (GPS)
+- StoreConfig      : Configuration magasins (multi-sites)
+- Conversation     : Conversations chat interne
+- Message          : Messages chat
+- AuditLog         : Journal d'audit (IP, device, actions)
+- AdExpense        : Budgets publicitaires journaliers
+- SupplierPurchase : Achats fournisseur
+- AccountingConfig : Configuration comptabilite
+- CallStatistic    : Stats appels par jour
+- DeliveryStatistic: Stats livraisons par jour
+- ExpressNotification : Notifications express
+- ConversationParticipant, MessageRead, MessageReaction
+
+
+================================================================================
+5. ROLES UTILISATEURS ET PERMISSIONS
+================================================================================
+
+5.1 ADMIN
+----------
+Acces complet a toutes les fonctionnalites :
+- Dashboard global avec KPI
+- Gestion de TOUS les utilisateurs (creation, activation, roles)
+- Supervision de toutes les commandes
+- Comptabilite et finances (CA, depenses, marges, previsions)
+- Audit et securite (IP, devices, actions)
+- Statistiques avancees et analyse produits
+- Supervision chat
+- Supervision appelants
+- Configuration multi-entreprise (CI, BF)
+- Pointage des employes
+
+5.2 GESTIONNAIRE
+-----------------
+- Voir les commandes validees par les appelants
+- Assigner les commandes aux livreurs
+- Creer des listes de livraison
+- Gerer les expeditions et express
+- Changer le statut des commandes
+- Voir les statistiques de son activite
+
+5.3 GESTIONNAIRE DE STOCK
+---------------------------
+- Gestion complete du stock (approvisionnement, corrections)
+- Suivi des produits et alertes stock
+- Gestion des tournees (remise/retour colis)
+- Livraisons en cours (colis chez les livreurs)
+- Historique des mouvements de stock
+
+5.4 APPELANT
+-------------
+- Voir les commandes a appeler (NOUVELLE, A_APPELER)
+- Appeler les clients et confirmer/annuler
+- Programmer des RDV de rappel
+- Voir ses statistiques personnelles
+- Acceder au chat interne
+
+5.5 LIVREUR
+------------
+- Voir ses livraisons assignees du jour
+- Marquer les colis comme livres, refuses, ou retournes
+- Ajouter des notes de livraison
+- Voir ses statistiques personnelles
+- Pointer sa presence (GPS)
+
+
+================================================================================
+6. CYCLE DE VIE D'UNE COMMANDE
+================================================================================
+
+1. RECEPTION
+   - Source : Google Apps Script (formulaires web) → POST /api/webhook/make
+   - La commande arrive avec statut NOUVELLE
+   - Le product mapping convertit le nom produit en code systeme
+
+2. CONFIRMATION TELEPHONIQUE
+   - L'appelant voit la commande en statut A_APPELER
+   - Il appelle le client et met a jour :
+     * VALIDEE : client confirme
+     * ANNULEE : client annule
+     * INJOIGNABLE : pas de reponse
+   - Possibilite de programmer un RDV de rappel
+
+3. PREPARATION
+   - Le gestionnaire voit les commandes VALIDEES
+   - Il choisit le type de livraison :
+     * LOCAL : livraison par livreur dans la ville
+     * EXPEDITION : envoi vers autre ville (100% paye avant)
+     * EXPRESS : envoi en agence (10% avance + 90% au retrait)
+   - Il assigne un livreur et cree une liste de livraison
+
+4. LIVRAISON (LOCAL)
+   - Le livreur recoit sa liste du jour
+   - Pour chaque colis :
+     * LIVREE : client a paye et recu le colis → CA comptabilise
+     * REFUSEE : client refuse a la porte
+     * RETOURNE : client absent, adresse incorrecte
+   - Le livreur preleve 1 500 Fr de commission par livraison reussie
+
+5. EXPEDITION
+   - Le gestionnaire marque EXPEDITION quand le client a paye 100%
+   - Le colis est envoie vers la ville du client
+   - Code expedition renseigne pour le suivi
+
+6. EXPRESS
+   - 10% paye → statut EXPRESS
+   - Envoye vers l'agence → EXPRESS_ENVOYE
+   - Arrive en agence → EXPRESS_ARRIVE (client notifie)
+   - Client recupere et paye 90% → EXPRESS_LIVRE
+
+7. RETOURS
+   - Les colis retournes reviennent au stock
+   - Le gestionnaire de stock confirme le retour
+   - Le stock est re-incremente automatiquement
+
+
+================================================================================
+7. SYSTEME DE COMPTABILITE
+================================================================================
+
+7.1 CHIFFRE D'AFFAIRES (CA)
+-----------------------------
+- Compte UNIQUEMENT quand le livreur clique "livre" (LOCAL + LIVREE)
+- Les expeditions et express sont affiches separement
+
+7.2 DEPENSES
+--------------
+a) Budget publicitaire (recurrent journalier)
+   - On definit un montant par jour, par plateforme, par produit
+   - Le budget s'applique automatiquement chaque jour
+   - Pour changer : ajouter une nouvelle entree (l'ancien s'arrete)
+   - Pour arreter : mettre le montant a 0
+   - Plateformes : FACEBOOK, TIKTOK, GOOGLE, SNAPCHAT, INSTAGRAM, AUTRE
+
+b) Achats fournisseur
+   - Prix unitaire x quantite = prix total
+   - + frais de dedouanement
+   - + frais de transport
+   - + autres frais
+   - = Cout total de revient
+
+c) Commission livreur
+   - 1 500 Fr par livraison locale reussie (configurable)
+   - Automatiquement deduit dans le calcul de marge
+
+7.3 MARGE NETTE
+-----------------
+Marge = CA - (Pub + Achats + Commissions)
+
+7.4 KPI AVANCES
+-----------------
+- Taux de livraison reussie (livrees vs retours vs en cours)
+- CAC (Cout d'Acquisition Client) = total pub / commandes livrees
+- Previsions mensuelles (projection fin de mois au rythme actuel)
+- ROAS (Return On Ad Spend) = CA / depenses pub
+- Cout par vente = pub / nombre de commandes
+
+7.5 CONSEILS AUTOMATIQUES
+---------------------------
+- Alerte si marge < 20%
+- Alerte si pub > 40% du CA
+- Alerte si taux de livraison < 50%
+- Alerte si CAC > 50% du panier moyen
+- Detection produits deficitaires
+- Detection produits rentables sans pub
+
+7.6 EPARGNE RECOMMANDEE (regle 50/30/20)
+-------------------------------------------
+- 50% reinvestissement business (pub, stock)
+- 30% tresorerie entreprise (imprevus, periodes creuses)
+- 20% epargne personnelle (salaire dirigeant)
+
+
+================================================================================
+8. SYSTEME D'AUDIT ET SECURITE
+================================================================================
+
+Visible uniquement par l'admin :
+
+- Tracking de chaque action utilisateur (login, changement de statut, etc.)
+- Enregistrement de l'IP, User-Agent, empreinte device (SHA-256)
+- Detection de partage de compte (meme device pour plusieurs users)
+- Detection d'IP partagees entre roles (gestionnaire utilisant un compte livreur)
+- Historique complet des actions avec filtres
+- Import historique depuis status_history et attendances
+
+
+================================================================================
+9. SYSTEME DE STOCK
+================================================================================
+
+- Stock actuel : stock principal en magasin
+- Stock express : reserve pour les envois express
+- Stock local reserve : colis chez les livreurs (en tournee)
+- Stock alerte : seuil minimum declenchant une alerte
+
+Types de mouvements :
+- APPROVISIONNEMENT : entree de stock (achat fournisseur)
+- RESERVATION_LOCAL : sortie vers le livreur (debut tournee)
+- LIVRAISON_LOCAL : sortie definitive (livraison reussie)
+- RETOUR_LOCAL : retour du livreur vers le stock
+- RESERVATION_EXPRESS : sortie vers stock express
+- Et bien d'autres...
+
+Chaque mouvement est trace avec : qui, quand, combien, stock avant/apres.
+
+
+================================================================================
+10. POINTAGE DES EMPLOYES (GPS)
+================================================================================
+
+- Configuration de magasins avec coordonnees GPS
+- Rayon de tolerance configurable (ex: 50 metres)
+- Pointage d'arrivee et de depart
+- Calcul de distance entre l'employe et le magasin
+- Validation automatique si dans le rayon
+- Historique complet des pointages
+
+
+================================================================================
+11. RECEPTION DES COMMANDES (WEBHOOK)
+================================================================================
+
+Source : Google Apps Script → POST /api/webhook/make
+
+Le webhook recoit :
+- product_key : code du produit
+- customer_name, customer_phone, customer_city
+- quantity, source, make_scenario_name
+- raw_payload (donnees brutes du formulaire)
+
+Strategie de mapping produit (multi-fallback) :
+1. Recherche exacte par code
+2. Recherche case-insensitive par code
+3. Mapping de noms alternatifs (FALLBACK_NAME_MAPPING)
+4. Recherche exacte par nom
+5. Recherche partielle par nom
+6. Recherche fuzzy (contient)
+
+Si le produit n'est pas trouve, la commande est quand meme creee avec
+productId = null pour eviter la perte de donnees.
+
+Cle API : header X-API-KEY pour securiser l'acces
+
+
+================================================================================
+12. CHAT INTERNE
+================================================================================
+
+- Conversations privees (1 a 1) et groupes
+- Types de messages : texte, image, fichier, systeme
+- Reactions emoji sur les messages
+- Indicateurs de lecture
+- Messages epingles
+- Reponses a des messages
+- Supervision admin des conversations
+
+
+================================================================================
+13. MULTI-ENTREPRISE
+================================================================================
+
+Le systeme supporte plusieurs entreprises (companyId) :
+- Chaque commande, produit, utilisateur est lie a une entreprise
+- L'admin peut switcher entre entreprises (CI, BF)
+- Header X-Active-Company pour changer de contexte
+- Les donnees sont isolees par entreprise
+
+
+================================================================================
+14. DEPLOIEMENT
+================================================================================
+
+14.1 PRODUCTION
+-----------------
+- Frontend + Backend : Vercel (auto-deploy sur push main)
+- Base de donnees : Supabase (PostgreSQL)
+- Domaine : obgestion.com
+
+14.2 PROCESSUS DE DEPLOIEMENT
+-------------------------------
+1. Modifier le code localement
+2. git add + git commit + git push origin main
+3. Vercel detecte le push et deploie automatiquement
+4. Si migration SQL necessaire : executer dans Supabase SQL Editor
+
+14.3 VARIABLES D'ENVIRONNEMENT
+--------------------------------
+- DATABASE_URL : URL de connexion PostgreSQL (Supabase)
+- DIRECT_URL : URL directe PostgreSQL (sans pooler)
+- JWT_SECRET : Cle secrete pour les tokens JWT
+- API_KEY : Cle pour securiser les webhooks
+- FRONTEND_URL : URL du frontend (CORS)
+
+
+================================================================================
+15. SCRIPTS DE MAINTENANCE
+================================================================================
+
+Dossier scripts/ contient 12 scripts :
+
+- check-and-inject-missing.js : Verifier et injecter des commandes manquantes
+- inject-missing-orders.js : Injection initiale de commandes perdues
+- inject-lost-only.js : Injection des commandes uniquement perdues
+- fix-injected-products.js : Corriger les produits des commandes injectees
+- delete-duplicates.js : Generer SQL pour supprimer les doublons
+- correction-directe-stock.js : Correction directe du stock
+- fix-stock-en-livraison-negatif.js : Corriger le stock negatif
+- fix-stock-negatif-manuel.js : Correction manuelle du stock negatif
+- recalculer-stock-livraison.js : Recalculer le stock en livraison
+- verifier-livraisons-en-cours.js : Verifier les livraisons actives
+- setup-store-location.js : Configurer un magasin (GPS)
+- setup-two-locations.js : Configurer deux magasins
+
+
+================================================================================
+16. SAUVEGARDES SQL
+================================================================================
+
+7 fichiers SQL pour la migration Railway → Supabase :
+
+1. supabase-cleanup.sql : Nettoyer la base (supprimer tables + enums)
+2. supabase-schema-utf8.sql : Recreer le schema complet
+3. backups/prepare-import-supabase.sql : Preparer avant import
+4. import-railway-vers-supabase-COMPLET.sql : Import complet des donnees
+5. supabase-reset-sequences.sql : Recaler les auto-increments
+6. copie-railway-supabase.sql : Esquisse de connexion FDW
+7. verifier-schema-railway.sql : Diagnostic avant import
+
+Ordre d'execution pour migration complete :
+cleanup → schema → prepare → import-COMPLET → reset-sequences
+
+
+================================================================================
+17. API ENDPOINTS PRINCIPAUX
+================================================================================
+
+Auth :
+  POST   /api/auth/login          # Connexion
+  GET    /api/auth/me              # Utilisateur courant
+  GET    /api/auth/companies       # Liste entreprises
+
+Orders :
+  GET    /api/orders               # Lister les commandes
+  POST   /api/orders               # Creer une commande
+  PUT    /api/orders/:id/status    # Changer le statut
+  GET    /api/orders/:id           # Detail commande
+
+Products :
+  GET    /api/products             # Lister les produits
+  POST   /api/products             # Creer un produit
+  PUT    /api/products/:id         # Modifier un produit
+
+Stock :
+  POST   /api/stock/movement       # Creer un mouvement
+  GET    /api/stock/movements       # Historique mouvements
+
+Deliveries :
+  GET    /api/delivery/lists        # Listes de livraison
+  POST   /api/delivery/lists        # Creer une liste
+
+Users :
+  GET    /api/users                # Lister les utilisateurs
+  POST   /api/users                # Creer un utilisateur
+
+Accounting :
+  GET    /api/accounting/stats      # Stats comptables completes
+  POST   /api/accounting/ad-expenses # Definir budget pub
+  POST   /api/accounting/purchases   # Ajouter achat fournisseur
+  PUT    /api/accounting/config      # Modifier config (commission)
+
+Audit :
+  GET    /api/audit/logs           # Journal d'audit
+  GET    /api/audit/devices        # Analyse devices/IP
+  GET    /api/audit/cross-role     # Analyse cross-role
+
+Webhook :
+  POST   /api/webhook/make         # Reception commandes externes
+
+Attendance :
+  POST   /api/attendance/mark      # Pointer (arrivee/depart)
+  GET    /api/attendance            # Historique pointages
+
+
+================================================================================
+18. SECURITE
+================================================================================
+
+- Authentification JWT avec expiration
+- Middleware de verification de role (authorize)
+- API Key pour les webhooks externes
+- Audit trail complet (IP, device, action)
+- Detection de partage de compte
+- CORS configure pour le domaine de production
+- Mots de passe hashes avec bcryptjs
+- Empreinte device via SHA-256 (User-Agent + Accept headers)
+
+
+================================================================================
+FIN DE LA DOCUMENTATION
+================================================================================

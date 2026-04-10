@@ -101,6 +101,9 @@ model User {
   // Audit
   auditLogs                AuditLog[]
 
+  // WhatsApp
+  waConversations          WaConversation[] @relation("WaConvAssigned")
+
   @@map("users")
 }
 
@@ -700,6 +703,173 @@ model AccountingConfig {
 
   @@unique([companyId])
   @@map("accounting_config")
+}
+
+// ========================================
+// WHATSAPP AGENT AUTOMATISE
+// ========================================
+
+enum WaConversationStatus {
+  OPEN
+  BOT_ACTIVE
+  HUMAN_HANDOFF
+  WAITING_CUSTOMER
+  RESOLVED
+  ARCHIVED
+}
+
+enum WaMessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum WaMessageActor {
+  CUSTOMER
+  BOT
+  HUMAN
+  SYSTEM
+}
+
+enum WaMessageContentType {
+  TEXT
+  AUDIO
+  IMAGE
+  VIDEO
+  DOCUMENT
+  LOCATION
+  STICKER
+  REACTION
+  SYSTEM
+}
+
+enum WaConvState {
+  NEW
+  GREETING
+  ASKING_PRODUCT
+  ASKING_QUANTITY
+  ASKING_NAME
+  ASKING_PHONE
+  ASKING_LOCATION
+  ASKING_ADDRESS
+  CONFIRMING_ORDER
+  HUMAN_HANDOFF
+  COMPLETED
+  FAQ
+}
+
+enum WaHandoffReason {
+  CUSTOMER_REQUEST
+  LOW_CONFIDENCE
+  COMPLAINT
+  UNKNOWN_INTENT
+  PRODUCT_NOT_FOUND
+  COMPLEX_QUESTION
+  MULTIPLE_FAILURES
+  MANUAL
+}
+
+model WaConversation {
+  id              Int                  @id @default(autoincrement())
+  waId            String               // Numero WhatsApp client (ex: 2250707000000)
+  customerName    String?
+  customerPhone   String?
+
+  status          WaConversationStatus @default(OPEN)
+  convState       WaConvState          @default(NEW)
+  unreadCount     Int                  @default(0)
+
+  companyId       Int                  @default(1)
+  assignedUserId  Int?
+  assignedUser    User?                @relation("WaConvAssigned", fields: [assignedUserId], references: [id])
+
+  // Extraction commande en cours
+  extractedProduct   String?
+  extractedProductId Int?
+  extractedQty       Int?
+  extractedName      String?
+  extractedPhone     String?
+  extractedCity      String?
+  extractedCommune   String?
+  extractedAddress   String?
+  confidenceScore    Int              @default(0) // 0-100
+
+  // Lien vers commande creee
+  orderId         Int?
+  lastIntent      String?
+  lastBotMessage  String?             @db.Text
+
+  // Handoff
+  handoffReason   WaHandoffReason?
+  handoffAt       DateTime?
+  handoffBy       Int?
+
+  lastMessageAt   DateTime?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  messages        WaMessage[]
+  logs            WaRulesLog[]
+
+  @@unique([waId, companyId])
+  @@index([status])
+  @@index([companyId])
+  @@index([assignedUserId])
+  @@index([lastMessageAt])
+  @@map("wa_conversations")
+}
+
+model WaMessage {
+  id              Int                  @id @default(autoincrement())
+  conversationId  Int
+  conversation    WaConversation       @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  direction       WaMessageDirection
+  actor           WaMessageActor       @default(CUSTOMER)
+  contentType     WaMessageContentType @default(TEXT)
+
+  body            String?              @db.Text
+  externalId      String?              // ID message 360dialog (anti-doublon)
+
+  // Media
+  mediaUrl        String?
+  mediaMimeType   String?
+  mediaFilename   String?
+
+  // Transcription audio
+  transcription   String?              @db.Text
+  transcriptionOk Boolean?
+
+  // Metadata
+  senderUserId    Int?                 // Si humain interne
+  timestamp       DateTime             @default(now())
+
+  createdAt       DateTime             @default(now())
+
+  @@unique([externalId])
+  @@index([conversationId])
+  @@index([timestamp])
+  @@map("wa_messages")
+}
+
+model WaRulesLog {
+  id              Int                @id @default(autoincrement())
+  conversationId  Int
+  conversation    WaConversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  inputText       String?            @db.Text
+  detectedIntent  String?
+  confidence      Int                @default(0)
+  extractedData   String?            @db.Text // JSON
+  actionTaken     String?
+  responseChosen  String?            @db.Text
+  convStateBefore String?
+  convStateAfter  String?
+
+  createdAt       DateTime           @default(now())
+
+  @@index([conversationId])
+  @@index([createdAt])
+  @@map("wa_rules_logs")
 }
 
 // Configuration du magasin/bureau (support multi-sites)

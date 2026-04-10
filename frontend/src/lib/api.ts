@@ -379,6 +379,42 @@ export const accountingApi = {
   },
 };
 
+// WhatsApp API
+export const whatsappApi = {
+  getConversations: async (params?: { status?: string; search?: string; page?: number; limit?: number }) => {
+    const { data } = await api.get('/whatsapp/conversations', { params });
+    return data;
+  },
+  getConversation: async (id: number) => {
+    const { data } = await api.get(`/whatsapp/conversations/${id}`);
+    return data;
+  },
+  getStats: async () => {
+    const { data } = await api.get('/whatsapp/conversations/stats');
+    return data;
+  },
+  sendMessage: async (id: number, text: string) => {
+    const { data } = await api.post(`/whatsapp/conversations/${id}/send`, { text });
+    return data;
+  },
+  handoff: async (id: number) => {
+    const { data } = await api.post(`/whatsapp/conversations/${id}/handoff`);
+    return data;
+  },
+  returnToBot: async (id: number) => {
+    const { data } = await api.post(`/whatsapp/conversations/${id}/return-to-bot`);
+    return data;
+  },
+  resolve: async (id: number) => {
+    const { data } = await api.post(`/whatsapp/conversations/${id}/resolve`);
+    return data;
+  },
+  archive: async (id: number) => {
+    const { data } = await api.post(`/whatsapp/conversations/${id}/archive`);
+    return data;
+  },
+};
+
 export const expressApi = {
   getEnAgence: async (params?: { search?: string; agence?: string; statut?: string; nonRetires?: string; startDate?: string; endDate?: string }) => {
     const { data } = await api.get('/express/en-agence', { params });

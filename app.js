@@ -20,6 +20,7 @@ import analyticsRoutes from './routes/analytics.routes.js';
 import attendanceRoutes from './routes/attendance.routes.js';
 import publicRoutes from './routes/public.routes.js';
 import auditRoutes from './routes/audit.routes.js';
+import whatsappRoutes from './routes/whatsapp.routes.js';
 import { prisma, prismaInitError } from './utils/prisma.js';
 
 if (process.env.NODE_ENV !== 'production') {
@@ -88,6 +89,7 @@ export function createApp() {
   app.use('/api/attendance', attendanceRoutes);
   app.use('/api/public', publicRoutes);
   app.use('/api/audit', auditRoutes);
+  app.use('/api/whatsapp', whatsappRoutes);
 
   // Routes de test
   app.get('/', (req, res) => {
