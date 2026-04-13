@@ -7,6 +7,33 @@ const fmt = (v: number) => v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + 
 const pad = (n: number) => String(n).padStart(2, '0');
 const co = () => new URLSearchParams(window.location.search).get('company') || 'ci';
 
+const THEMES: Record<string, { topBar: string; marquee: string; marqueeTxt: string; dotBg: string; badgeBg: string; badgeTxt: string; subtitleTxt: string; starColor: string; discountBg: string; discountTxt: string; stockBorder: string; stockBg: string; stockTxt: string; btnGrad: string; btnShadow: string; btnHoverShadow: string; ringColor: string; tagBg: string; offerBorder: string; offerActiveBg: string; sectionAccent: string; stepBadgeBg: string; stepBadgeTxt: string; radioActive: string; formFocus: string; formRing: string; badgePill1: string; badgePill2: string; progressBar: string; stockBar: string; topBarAccent: string; countdownBg: string }> = {
+  amber: {
+    topBar: 'bg-neutral-900', marquee: 'bg-neutral-800', marqueeTxt: 'text-amber-300/80', dotBg: 'bg-amber-400/40',
+    badgeBg: 'bg-red-500', badgeTxt: 'text-white', subtitleTxt: 'text-amber-600', starColor: 'text-amber-400',
+    discountBg: 'bg-red-50', discountTxt: 'text-red-600', stockBorder: 'border-amber-100', stockBg: 'bg-amber-50', stockTxt: 'text-amber-700',
+    btnGrad: 'bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400', btnShadow: 'shadow-[0_8px_32px_rgba(251,191,36,.45)]', btnHoverShadow: 'hover:shadow-[0_12px_40px_rgba(251,191,36,.6)]',
+    ringColor: 'ring-amber-200', tagBg: 'bg-amber-500', offerBorder: 'border-amber-400', offerActiveBg: 'bg-amber-50/50',
+    sectionAccent: 'text-amber-600', stepBadgeBg: 'bg-amber-50', stepBadgeTxt: 'text-amber-600',
+    radioActive: 'border-amber-500 bg-amber-500', formFocus: 'focus-within:border-amber-400', formRing: 'focus-within:shadow-[0_0_0_3px_rgba(251,191,36,.12)]',
+    badgePill1: 'border-amber-400/30 bg-amber-400/10 text-amber-300', badgePill2: 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300',
+    progressBar: 'bg-gradient-to-r from-amber-400 to-amber-500', stockBar: 'bg-gradient-to-r from-red-400 to-amber-400',
+    topBarAccent: 'text-amber-300', countdownBg: 'bg-white/10',
+  },
+  blue: {
+    topBar: 'bg-gradient-to-r from-sky-900 to-indigo-900', marquee: 'bg-sky-800', marqueeTxt: 'text-cyan-200/80', dotBg: 'bg-cyan-300/40',
+    badgeBg: 'bg-cyan-500', badgeTxt: 'text-white', subtitleTxt: 'text-sky-600', starColor: 'text-cyan-400',
+    discountBg: 'bg-sky-50', discountTxt: 'text-sky-700', stockBorder: 'border-sky-100', stockBg: 'bg-sky-50', stockTxt: 'text-sky-700',
+    btnGrad: 'bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500', btnShadow: 'shadow-[0_8px_32px_rgba(6,182,212,.4)]', btnHoverShadow: 'hover:shadow-[0_12px_40px_rgba(6,182,212,.55)]',
+    ringColor: 'ring-sky-200', tagBg: 'bg-cyan-500', offerBorder: 'border-sky-400', offerActiveBg: 'bg-sky-50/50',
+    sectionAccent: 'text-sky-600', stepBadgeBg: 'bg-sky-50', stepBadgeTxt: 'text-sky-700',
+    radioActive: 'border-sky-500 bg-sky-500', formFocus: 'focus-within:border-sky-400', formRing: 'focus-within:shadow-[0_0_0_3px_rgba(14,165,233,.12)]',
+    badgePill1: 'border-cyan-400/30 bg-cyan-400/10 text-cyan-300', badgePill2: 'border-teal-400/30 bg-teal-400/10 text-teal-300',
+    progressBar: 'bg-gradient-to-r from-cyan-400 to-sky-500', stockBar: 'bg-gradient-to-r from-sky-400 to-cyan-400',
+    topBarAccent: 'text-cyan-300', countdownBg: 'bg-white/10',
+  },
+};
+
 interface TemplateConfig {
   productCode: string;
   title: string;
@@ -24,12 +51,14 @@ interface TemplateConfig {
   sections: {
     problem?: string;
     solution?: string;
+    marqueeTexts?: string[];
+    catchphrase?: { text: string; sub: string };
     howToUse?: { n: string; t: string; d: string; ico: string }[];
     faq?: { q: string; a: string }[];
     trustBadges?: { ico: string; t: string; d: string }[];
     stats?: { n: string; l: string }[];
   };
-  colors?: { primary?: string; accent?: string };
+  colors?: { theme?: string; primary?: string; accent?: string };
   thankYouUrl?: string;
 }
 
@@ -48,7 +77,7 @@ function useOnScreen(rootMargin = '200px') {
   return { ref, visible };
 }
 
-function LazyVideo({ src }: { src: string }) {
+function LazyVideo({ src, spinClass }: { src: string; spinClass?: string }) {
   const { ref, visible } = useOnScreen('300px');
   return (
     <div ref={ref} className="aspect-[9/16] w-full rounded-2xl border border-neutral-100 bg-neutral-100 overflow-hidden shadow-md">
@@ -56,7 +85,7 @@ function LazyVideo({ src }: { src: string }) {
         <video src={src} autoPlay loop muted playsInline preload="none" className="h-full w-full object-cover"/>
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-neutral-100">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-neutral-200 border-t-amber-400"/>
+          <div className={`h-6 w-6 animate-spin rounded-full border-2 border-neutral-200 ${spinClass || 'border-t-amber-400'}`}/>
         </div>
       )}
     </div>
@@ -83,9 +112,10 @@ function LazySection({ children, className }: { children: React.ReactNode; class
   );
 }
 
-function GlowBtn({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+function GlowBtn({ onClick, children, theme }: { onClick: () => void; children: React.ReactNode; theme?: string }) {
+  const t = THEMES[theme || 'amber'] || THEMES.amber;
   return (
-    <button onClick={onClick} className="glow-btn group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 px-6 py-4 text-[15px] font-extrabold text-neutral-900 shadow-[0_8px_32px_rgba(251,191,36,.45)] transition-all hover:shadow-[0_12px_40px_rgba(251,191,36,.6)] active:scale-[.97] sm:text-base">
+    <button onClick={onClick} className={`glow-btn group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl ${t.btnGrad} px-6 py-4 text-[15px] font-extrabold text-white ${t.btnShadow} transition-all ${t.btnHoverShadow} active:scale-[.97] sm:text-base`}>
       <span className="glow-sheen absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent"/>
       {children}
     </button>
@@ -93,7 +123,7 @@ function GlowBtn({ onClick, children }: { onClick: () => void; children: React.R
 }
 
 const Star = () => (
-  <svg className="h-3.5 w-3.5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+  <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
   </svg>
 );
@@ -233,6 +263,9 @@ export default function DynamicLanding() {
   const gallery = [cfg.images.hero, ...cfg.images.gallery].filter(Boolean);
   const qtyOpts = cfg.qtyOptions || [{ v: 1, label: '1 boite', sub: fmt(prices[1] || 0) }];
   const stockPct = Math.round((stock / 30) * 100);
+  const themeKey = cfg.colors?.theme || 'amber';
+  const T = THEMES[themeKey] || THEMES.amber;
+  const marqueeTexts = cfg.sections?.marqueeTexts || ['Livraison 24h Abidjan', 'Paiement a la livraison', 'Resultat visible', 'Support 7j/7'];
 
   return (
     <div className="min-h-screen bg-white text-neutral-900" style={{ fontFamily: "'Inter',system-ui,-apple-system,sans-serif" }}>
@@ -256,26 +289,23 @@ export default function DynamicLanding() {
       `}</style>
 
       {/* STICKY TOP BAR */}
-      <div className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-neutral-900 px-3 py-2 sm:gap-3">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 sm:text-[11px]">Offre du jour</span>
+      <div className={`sticky top-0 z-50 flex items-center justify-center gap-2 ${T.topBar} px-3 py-2 sm:gap-3`}>
+        <span className={`text-[10px] font-bold uppercase tracking-wider ${T.topBarAccent} sm:text-[11px]`}>Offre du jour</span>
         <div className="flex items-center gap-1">
           {[pad(countdown.h), pad(countdown.m), pad(countdown.s)].map((v, i) => (
             <div key={i} className="flex items-center gap-1">
-              {i > 0 && <span className="text-[10px] font-bold text-amber-400/60">:</span>}
-              <span className="inline-flex h-6 min-w-[26px] items-center justify-center rounded bg-white/10 px-1 font-mono text-[12px] font-black tabular-nums text-white sm:h-7 sm:min-w-[30px] sm:text-[13px]">{v}</span>
+              {i > 0 && <span className={`text-[10px] font-bold ${T.topBarAccent} opacity-60`}>:</span>}
+              <span className={`inline-flex h-6 min-w-[26px] items-center justify-center rounded ${T.countdownBg} px-1 font-mono text-[12px] font-black tabular-nums text-white sm:h-7 sm:min-w-[30px] sm:text-[13px]`}>{v}</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* MARQUEE */}
-      <div className="overflow-hidden bg-neutral-800 py-1.5">
-        <div className="marquee-track flex w-[200%] items-center gap-8 text-[9px] font-bold uppercase tracking-[.18em] text-amber-300/80 sm:text-[10px]">
+      <div className={`overflow-hidden ${T.marquee} py-1.5`}>
+        <div className={`marquee-track flex w-[200%] items-center gap-8 text-[9px] font-bold uppercase tracking-[.18em] ${T.marqueeTxt} sm:text-[10px]`}>
           {[0,1].map(k=><div key={k} className="flex shrink-0 items-center gap-8">
-            <span>Livraison 24h Abidjan</span><span className="h-1 w-1 rounded-full bg-amber-400/40"/>
-            <span>Paiement a la livraison</span><span className="h-1 w-1 rounded-full bg-amber-400/40"/>
-            <span>Resultat visible</span><span className="h-1 w-1 rounded-full bg-amber-400/40"/>
-            <span>Support 7j/7</span><span className="h-1 w-1 rounded-full bg-amber-400/40"/>
+            {marqueeTexts.map((txt, mi) => <span key={mi}>{txt}<span className={`ml-8 inline-block h-1 w-1 rounded-full ${T.dotBg}`}/></span>)}
           </div>)}
         </div>
       </div>
@@ -286,12 +316,12 @@ export default function DynamicLanding() {
           <div className="fade-up">
             <div className="relative aspect-square overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 sm:rounded-3xl">
               <img src={gallery[gi] || cfg.images.hero} alt={cfg.title} className="h-full w-full object-cover transition-opacity duration-300" fetchPriority="high" width={800} height={800} decoding="async"/>
-              <span className="absolute left-3 top-3 rounded-full bg-red-500 px-2.5 py-1 text-[10px] font-bold text-white shadow-lg sm:left-4 sm:top-4 sm:text-xs">{cfg.badge || 'BEST-SELLER'}</span>
+              <span className={`absolute left-3 top-3 rounded-full ${T.badgeBg} px-2.5 py-1 text-[10px] font-bold ${T.badgeTxt} shadow-lg sm:left-4 sm:top-4 sm:text-xs`}>{cfg.badge || 'BEST-SELLER'}</span>
             </div>
             {gallery.length > 1 && (
               <div className="mt-2.5 flex gap-2 sm:mt-3">
                 {gallery.map((src, i) => (
-                  <button key={i} onClick={() => setGi(i)} className={`h-14 w-14 overflow-hidden rounded-lg border-2 transition-all sm:h-[72px] sm:w-[72px] sm:rounded-xl ${i === gi ? 'border-amber-500 ring-2 ring-amber-200' : 'border-transparent opacity-60 hover:opacity-100'}`}>
+                  <button key={i} onClick={() => setGi(i)} className={`h-14 w-14 overflow-hidden rounded-lg border-2 transition-all sm:h-[72px] sm:w-[72px] sm:rounded-xl ${i === gi ? `border-current ring-2 ${T.ringColor}` : 'border-transparent opacity-60 hover:opacity-100'}`}>
                     <img src={src} alt="" className="h-full w-full object-cover"/>
                   </button>
                 ))}
@@ -300,22 +330,22 @@ export default function DynamicLanding() {
           </div>
           <div className="fade-up space-y-4 sm:space-y-5" style={{ animationDelay: '.1s' }}>
             <div>
-              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-amber-600 sm:text-xs">{cfg.subtitle}</p>
+              <p className={`mb-1.5 text-[11px] font-semibold uppercase tracking-widest ${T.subtitleTxt} sm:text-xs`}>{cfg.subtitle}</p>
               <h1 className="text-[22px] font-extrabold leading-[1.2] sm:text-3xl md:text-[2.2rem]">{cfg.title}</h1>
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex gap-0.5">{[...Array(5)].map((_,i)=><Star key={i}/>)}</div>
+              <div className={`flex gap-0.5 ${T.starColor}`}>{[...Array(5)].map((_,i)=><Star key={i}/>)}</div>
               <span className="text-xs font-semibold text-neutral-600">4.8</span>
               <span className="text-xs text-neutral-400">(1 247 avis)</span>
             </div>
             <div className="flex items-baseline gap-2.5">
               <span className="text-2xl font-black sm:text-3xl">{fmt(prices[1] || 0)}</span>
               {cfg.oldPrice && <span className="text-sm text-neutral-400 line-through">{fmt(cfg.oldPrice)}</span>}
-              {cfg.discount && <span className="rounded-md bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-600">{cfg.discount}</span>}
+              {cfg.discount && <span className={`rounded-md ${T.discountBg} px-2 py-0.5 text-[11px] font-bold ${T.discountTxt}`}>{cfg.discount}</span>}
             </div>
-            <div className="flex items-center gap-1.5 self-start rounded-lg border border-amber-100 bg-amber-50 px-2.5 py-1.5">
+            <div className={`flex items-center gap-1.5 self-start rounded-lg border ${T.stockBorder} ${T.stockBg} px-2.5 py-1.5`}>
               <span className="text-xs">📦</span>
-              <span className="text-[12px] font-bold text-amber-700">Plus que {stock} en stock</span>
+              <span className={`text-[12px] font-bold ${T.stockTxt}`}>Plus que {stock} en stock</span>
             </div>
             <p className="text-[13px] leading-relaxed text-neutral-500 sm:text-sm">{cfg.description}</p>
             <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[12px] text-neutral-600 sm:text-[13px]">
@@ -324,9 +354,9 @@ export default function DynamicLanding() {
               <span className="flex items-center gap-1.5"><Check/> Support 7j/7</span>
             </div>
             <div className="hidden sm:block">
-              <GlowBtn onClick={open}>
+              <GlowBtn onClick={open} theme={themeKey}>
                 <span className="relative z-10 flex items-center gap-2">
-                  <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-900 opacity-40"/><span className="relative inline-flex h-2 w-2 rounded-full bg-neutral-900"/></span>
+                  <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-40"/><span className="relative inline-flex h-2 w-2 rounded-full bg-white"/></span>
                   Commander maintenant — {fmt(prices[1] || 0)}
                 </span>
               </GlowBtn>
@@ -352,7 +382,13 @@ export default function DynamicLanding() {
           <div className="relative mx-auto max-w-3xl px-4">
             <img src={cfg.images.banner} alt="" className="w-full rounded-t-2xl border border-b-0 border-neutral-100 object-cover shadow-xl" loading="lazy"/>
             <div className="rounded-b-2xl border border-t-0 border-neutral-100 bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 px-5 py-6 text-center shadow-xl sm:px-8 sm:py-8">
-              <GlowBtn onClick={open}>
+              {cfg.sections?.catchphrase && (
+                <div className="mb-5">
+                  <p className="text-base font-extrabold text-white sm:text-lg">{cfg.sections.catchphrase.text}</p>
+                  <p className="mt-1.5 text-[13px] leading-relaxed text-neutral-400">{cfg.sections.catchphrase.sub}</p>
+                </div>
+              )}
+              <GlowBtn onClick={open} theme={themeKey}>
                 <span className="relative z-10 flex items-center gap-2">Commander maintenant — {fmt(prices[1] || 0)}</span>
               </GlowBtn>
             </div>
@@ -365,13 +401,13 @@ export default function DynamicLanding() {
         <LazySection className="relative overflow-hidden py-10 sm:py-14">
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-50/80 via-white to-amber-50/60"/>
           <div className="relative mx-auto max-w-3xl px-4">
-            <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-widest text-amber-600">Offres speciales</p>
+            <p className={`mb-1 text-center text-[11px] font-semibold uppercase tracking-widest ${T.sectionAccent}`}>Offres speciales</p>
             <h2 className="mb-6 text-center text-xl font-extrabold sm:text-2xl">Choisissez votre offre</h2>
             <div className="grid gap-3 sm:grid-cols-3">
               {qtyOpts.map(o => (
                 <button key={o.v} onClick={() => { setQty(o.v); open(); }}
-                  className={`relative rounded-2xl border-2 px-4 py-4 text-center transition-all hover:shadow-lg sm:p-5 ${o.v === 2 ? 'border-amber-400 bg-amber-50/50 shadow-md ring-2 ring-amber-200' : 'border-neutral-200 bg-white hover:border-amber-300'}`}>
-                  {o.tag && <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-amber-500 px-3 py-0.5 text-[10px] font-bold text-white shadow">{o.tag}</span>}
+                  className={`relative rounded-2xl border-2 px-4 py-4 text-center transition-all hover:shadow-lg sm:p-5 ${o.v === 2 ? `${T.offerBorder} ${T.offerActiveBg} shadow-md ring-2 ${T.ringColor}` : 'border-neutral-200 bg-white hover:border-neutral-300'}`}>
+                  {o.tag && <span className={`absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full ${T.tagBg} px-3 py-0.5 text-[10px] font-bold text-white shadow`}>{o.tag}</span>}
                   <p className="text-[15px] font-black sm:text-lg">{o.label}</p>
                   <p className="text-[17px] font-black text-neutral-900 sm:text-xl">{o.sub}</p>
                   {o.save && <p className="text-[10px] font-bold text-emerald-600">{o.save}</p>}
@@ -387,7 +423,7 @@ export default function DynamicLanding() {
         <LazySection className="relative overflow-hidden border-y border-neutral-100 py-10 sm:py-14">
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-neutral-900 via-neutral-800 to-neutral-900"/>
           <div className="relative mx-auto max-w-6xl px-4">
-            <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-widest text-amber-400">Preuves en video</p>
+            <p className={`mb-1 text-center text-[11px] font-semibold uppercase tracking-widest ${T.topBarAccent}`}>Preuves en video</p>
             <h2 className="mb-5 text-center text-xl font-extrabold text-white sm:text-2xl">Voyez les resultats</h2>
           </div>
           <div className="relative mx-auto grid max-w-4xl grid-cols-3 gap-2 px-4 sm:gap-4">
@@ -428,7 +464,7 @@ export default function DynamicLanding() {
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {cfg.sections.howToUse.map(s => (
                 <div key={s.n} className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
-                  <div className="mb-2.5 flex items-center gap-2"><span className="text-lg">{s.ico}</span><span className="rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-black text-amber-600">ETAPE {s.n}</span></div>
+                  <div className="mb-2.5 flex items-center gap-2"><span className="text-lg">{s.ico}</span><span className={`rounded-md ${T.stepBadgeBg} px-2 py-0.5 text-[10px] font-black ${T.stepBadgeTxt}`}>ETAPE {s.n}</span></div>
                   <h3 className="mb-1 text-sm font-bold">{s.t}</h3>
                   <p className="text-xs leading-relaxed text-neutral-400">{s.d}</p>
                 </div>
@@ -442,10 +478,10 @@ export default function DynamicLanding() {
       <LazySection className="relative overflow-hidden py-8 sm:py-10">
         <div className="relative mx-auto max-w-lg px-4 text-center">
           <div className="mb-4 flex items-center justify-center gap-2">
-            <div className="h-2.5 flex-1 rounded-full bg-neutral-100"><div className="h-full rounded-full bg-gradient-to-r from-red-400 to-amber-400 transition-all" style={{ width: `${stockPct}%` }}/></div>
+            <div className="h-2.5 flex-1 rounded-full bg-neutral-100"><div className={`h-full rounded-full ${T.stockBar} transition-all`} style={{ width: `${stockPct}%` }}/></div>
             <span className="shrink-0 text-[11px] font-bold text-red-500">Plus que {stock} unites</span>
           </div>
-          <GlowBtn onClick={open}>
+          <GlowBtn onClick={open} theme={themeKey}>
             <span className="relative z-10">Je commande maintenant</span>
           </GlowBtn>
         </div>
@@ -464,7 +500,7 @@ export default function DynamicLanding() {
                   <div className={`flex h-9 w-9 items-center justify-center rounded-full ${t.bg} text-[11px] font-bold text-white shadow-md`}>{t.init}</div>
                   <div><p className="text-[13px] font-bold">{t.n}</p><p className="text-[10px] text-neutral-400">{t.v}</p></div>
                 </div>
-                <div className="mb-2 flex gap-0.5">{[...Array(t.s)].map((_,j)=><Star key={j}/>)}</div>
+                <div className={`mb-2 flex gap-0.5 ${T.starColor}`}>{[...Array(t.s)].map((_,j)=><Star key={j}/>)}</div>
                 <p className="text-[12px] leading-relaxed text-neutral-600">"{t.q}"</p>
               </div>
             ))}
@@ -496,7 +532,7 @@ export default function DynamicLanding() {
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900"/>
         <div className="relative mx-auto max-w-lg px-4 text-center">
           <h2 className="mb-6 text-xl font-extrabold text-white sm:text-2xl">Commandez maintenant</h2>
-          <GlowBtn onClick={open}>
+          <GlowBtn onClick={open} theme={themeKey}>
             <span className="relative z-10">Commander ici — {fmt(prices[1] || 0)}</span>
           </GlowBtn>
           <p className="mt-3 text-[11px] text-neutral-500">Aucun compte requis · Paiement a la livraison</p>
@@ -527,7 +563,7 @@ export default function DynamicLanding() {
             <p className="truncate text-[13px] font-bold sm:text-sm">{cfg.title}</p>
             <p className="text-[11px] text-neutral-400">{fmt(prices[1] || 0)} · Paiement a la livraison</p>
           </div>
-          <button onClick={open} className="shrink-0 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-300 px-4 py-2.5 text-[13px] font-extrabold text-neutral-900 shadow-[0_4px_16px_rgba(251,191,36,.35)] transition hover:shadow-[0_6px_24px_rgba(251,191,36,.5)] active:scale-[.97] sm:px-6 sm:text-sm">Commander</button>
+          <button onClick={open} className={`shrink-0 rounded-xl ${T.btnGrad} px-4 py-2.5 text-[13px] font-extrabold text-white ${T.btnShadow} transition ${T.btnHoverShadow} active:scale-[.97] sm:px-6 sm:text-sm`}>Commander</button>
         </div>
       </div>
 
@@ -568,12 +604,12 @@ export default function DynamicLanding() {
             </button>
             <div className="bg-neutral-900 px-4 pb-3 pt-4 text-white sm:px-5 sm:pb-4 sm:pt-5">
               <div className="mb-2 flex flex-wrap items-center gap-1.5">
-                <span className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[9px] font-bold text-amber-300">Livraison 24h</span>
-                <span className="inline-flex rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[9px] font-bold text-emerald-300">Paiement a la livraison</span>
+                <span className={`inline-flex rounded-full border ${T.badgePill1} px-2 py-0.5 text-[9px] font-bold`}>Livraison 24h</span>
+                <span className={`inline-flex rounded-full border ${T.badgePill2} px-2 py-0.5 text-[9px] font-bold`}>Paiement a la livraison</span>
               </div>
               <h3 className="text-base font-extrabold sm:text-lg">Finaliser votre commande</h3>
             </div>
-            <div className="h-1 bg-neutral-100"><div className="h-full w-4/5 bg-gradient-to-r from-amber-400 to-amber-500"/></div>
+            <div className="h-1 bg-neutral-100"><div className={`h-full w-4/5 ${T.progressBar}`}/></div>
             <form onSubmit={submit} className="space-y-2.5 p-3 pb-4 sm:space-y-3 sm:p-4 sm:pb-5">
               {[
                 { icon: '👤', label: 'Nom complet', val: name, set: setName, ph: 'Ex. Kouadio Fernand', type: 'text' as const },
@@ -582,7 +618,7 @@ export default function DynamicLanding() {
               ].map(f => (
                 <label key={f.label} className="block">
                   <span className="mb-0.5 block text-[11px] font-bold text-neutral-700">{f.label} <span className="text-red-500">*</span></span>
-                  <div className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-3 transition-colors focus-within:border-amber-400 focus-within:bg-white focus-within:shadow-[0_0_0_3px_rgba(251,191,36,.12)]">
+                  <div className={`flex items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-3 transition-colors ${T.formFocus} focus-within:bg-white ${T.formRing}`}>
                     <span className="text-sm">{f.icon}</span>
                     <input type={f.type} inputMode={f.type === 'tel' ? 'tel' : undefined} value={f.val} onChange={e => f.set(e.target.value)} placeholder={f.ph} className="h-10 w-full border-none bg-transparent text-[13px] font-medium outline-none placeholder:text-neutral-300 sm:h-11"/>
                   </div>
@@ -592,9 +628,9 @@ export default function DynamicLanding() {
                 <span className="mb-1 block text-[11px] font-bold text-neutral-700">Quantite</span>
                 <div className="grid gap-1.5">
                   {qtyOpts.map(o => (
-                    <button key={o.v} type="button" onClick={() => setQty(o.v)} className={`relative flex items-center justify-between rounded-xl border-2 px-3 py-2 text-left transition-all ${qty === o.v ? 'border-amber-400 bg-amber-50/60 shadow-sm' : 'border-neutral-200 bg-white hover:border-neutral-300'}`}>
+                    <button key={o.v} type="button" onClick={() => setQty(o.v)} className={`relative flex items-center justify-between rounded-xl border-2 px-3 py-2 text-left transition-all ${qty === o.v ? `${T.offerBorder} ${T.offerActiveBg} shadow-sm` : 'border-neutral-200 bg-white hover:border-neutral-300'}`}>
                       <div className="flex items-center gap-2">
-                        <div className={`flex h-4 w-4 items-center justify-center rounded-full border-2 ${qty === o.v ? 'border-amber-500 bg-amber-500' : 'border-neutral-300'}`}>{qty === o.v && <div className="h-1.5 w-1.5 rounded-full bg-white"/>}</div>
+                        <div className={`flex h-4 w-4 items-center justify-center rounded-full border-2 ${qty === o.v ? T.radioActive : 'border-neutral-300'}`}>{qty === o.v && <div className="h-1.5 w-1.5 rounded-full bg-white"/>}</div>
                         <span className="text-[12px] font-bold">{o.label}</span>
                       </div>
                       <span className="text-[12px] font-extrabold">{o.sub}</span>
