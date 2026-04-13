@@ -87,7 +87,7 @@ const PATCH_CONFIG = {
       { ico: '📞', t: 'Support client', d: '7j/7' },
     ],
   },
-  thankYouUrl: '/patch-douleur/merci',
+  thankYouUrl: '/landing/patchdouleurtk/merci',
 };
 
 async function login() {

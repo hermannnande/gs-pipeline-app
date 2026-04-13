@@ -13,6 +13,7 @@ import OrderForm from './pages/public/OrderForm';
 import VerrueTkLanding from './pages/public/VerrueTkLanding';
 import VerrueTkThankYou from './pages/public/VerrueTkThankYou';
 import DynamicLanding from './pages/public/DynamicLanding';
+import DynamicThankYou from './pages/public/DynamicThankYou';
 
 function AuthenticatedApp() {
   const { isAuthenticated, isLoading, loadUser, user } = useAuthStore();
@@ -78,6 +79,7 @@ function App() {
         <Route path="/anti-verrue" element={<VerrueTkLanding />} />
         <Route path="/anti-verrue/merci" element={<VerrueTkThankYou />} />
         <Route path="/landing/:slug" element={<DynamicLanding />} />
+        <Route path="/landing/:slug/merci" element={<DynamicThankYou />} />
         <Route path="/login" element={<Login />} />
 
         {/* Pages protégées — nécessitent une authentification */}
