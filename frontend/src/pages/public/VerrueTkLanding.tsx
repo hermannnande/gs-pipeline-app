@@ -19,16 +19,16 @@ const fmt = (v: number) => v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + 
 const pad = (n: number) => String(n).padStart(2, '0');
 
 const I = {
-  hero: '/verrue-tk/hero.png', g1: '/verrue-tk/gallery-1.png',
-  g2: '/verrue-tk/gallery-2.png', g3: '/verrue-tk/gallery-3.png',
-  r1: '/verrue-tk/result-1.png', r2: '/verrue-tk/result-2.png',
-  usage: '/verrue-tk/usage.png',
+  hero: '/verrue-tk/hero.webp', g1: '/verrue-tk/gallery-1.webp',
+  g2: '/verrue-tk/gallery-2.webp', g3: '/verrue-tk/gallery-3.webp',
+  r1: '/verrue-tk/result-1.webp', r2: '/verrue-tk/result-2.webp',
+  usage: '/verrue-tk/usage.webp',
 };
 const VID = ['/verrue-tk/video-1.mp4', '/verrue-tk/video-2.mp4', '/verrue-tk/video-3.mp4'];
 
 const EXTRA_IMGS = [
-  '/verrue-tk/extra-1.png', '/verrue-tk/extra-2.png', '/verrue-tk/extra-3.png',
-  '/verrue-tk/extra-4.png', '/verrue-tk/extra-5.png', '/verrue-tk/extra-6.png',
+  '/verrue-tk/extra-1.webp', '/verrue-tk/extra-2.webp', '/verrue-tk/extra-3.webp',
+  '/verrue-tk/extra-4.webp', '/verrue-tk/extra-5.webp', '/verrue-tk/extra-6.webp',
 ];
 
 const TOASTS = [
@@ -79,7 +79,7 @@ function LazyVideo({ src }: { src: string }) {
   return (
     <div ref={ref} className="aspect-[9/16] w-full rounded-2xl border border-neutral-100 bg-neutral-100 object-cover shadow-md overflow-hidden">
       {visible ? (
-        <video src={src} autoPlay loop muted playsInline preload="metadata" className="h-full w-full object-cover"/>
+        <video src={src} autoPlay loop muted playsInline preload="none" className="h-full w-full object-cover"/>
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-neutral-100">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-neutral-200 border-t-amber-400"></div>
@@ -94,7 +94,7 @@ function LazyImg({ src, alt, className }: { src: string; alt: string; className?
   return (
     <div ref={ref}>
       {visible ? (
-        <img src={src} alt={alt} className={className} loading="lazy"/>
+        <img src={src} alt={alt} className={className} loading="lazy" decoding="async"/>
       ) : (
         <div className={`bg-neutral-100 animate-pulse ${className}`} style={{ aspectRatio: 'auto' }}/>
       )}
@@ -164,8 +164,6 @@ export default function VerrueTkLanding() {
   const navigate = useNavigate();
   const company = useMemo(co, []);
   const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [modal, setModal] = useState(false);
   const [qty, setQty] = useState(1);
   const [name, setName] = useState('');
@@ -224,8 +222,7 @@ export default function VerrueTkLanding() {
   useEffect(() => {
     axios.get(`${API_URL}/public/products`, { params: { company } })
       .then(r => setProduct((r.data?.products || []).find((p: Product) => p.code?.toUpperCase() === TARGET_CODE) || null))
-      .catch(() => setError('Impossible de charger le produit.'))
-      .finally(() => setLoading(false));
+      .catch(() => { /* loaded lazily at submit time if needed */ });
   }, [company]);
 
   useEffect(() => { document.body.style.overflow = (modal || exitPopup) ? 'hidden' : ''; return () => { document.body.style.overflow = ''; }; }, [modal, exitPopup]);
@@ -234,13 +231,19 @@ export default function VerrueTkLanding() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setFormErr('');
-    if (!product) return;
     if (!name.trim()) return setFormErr('Entrez votre nom complet.');
     if (!city.trim()) return setFormErr('Entrez votre ville / commune.');
     if (!phone.trim()) return setFormErr('Entrez votre numero de telephone.');
     setSending(true);
     try {
-      const res = await axios.post(`${API_URL}/public/order`, { company, productId: product.id, customerName: name.trim(), customerPhone: phone.trim(), customerCity: city.trim(), quantity: qty });
+      let prod = product;
+      if (!prod) {
+        const r = await axios.get(`${API_URL}/public/products`, { params: { company } });
+        prod = (r.data?.products || []).find((p: Product) => p.code?.toUpperCase() === TARGET_CODE) || null;
+        if (prod) setProduct(prod);
+      }
+      if (!prod) { setFormErr('Produit introuvable. Reessayez.'); setSending(false); return; }
+      const res = await axios.post(`${API_URL}/public/order`, { company, productId: prod.id, customerName: name.trim(), customerPhone: phone.trim(), customerCity: city.trim(), quantity: qty });
       const ref = res.data?.orderReference || '';
       const p = new URLSearchParams(); p.set('company', company); if (ref) p.set('ref', ref);
       navigate(`/anti-verrue/merci?${p.toString()}`);
@@ -248,21 +251,6 @@ export default function VerrueTkLanding() {
     finally { setSending(false); }
   };
 
-  if (loading) return (
-    <div className="flex min-h-screen items-center justify-center bg-white">
-      <div className="text-center">
-        <div className="mx-auto h-10 w-10 animate-spin rounded-full border-[3px] border-neutral-200 border-t-amber-500"></div>
-        <p className="mt-3 text-xs text-neutral-400">Chargement...</p>
-      </div>
-    </div>
-  );
-  if (error || !product) return (
-    <div className="flex min-h-screen items-center justify-center bg-white px-4">
-      <div className="rounded-2xl border border-red-100 bg-red-50 p-6 text-center text-sm text-red-600">
-        {error || 'Produit non disponible.'}
-      </div>
-    </div>
-  );
 
   const stockPct = Math.round((stock / 30) * 100);
 
@@ -318,7 +306,7 @@ export default function VerrueTkLanding() {
         <div className="grid items-start gap-6 md:grid-cols-2 md:gap-10">
           <div className="fade-up">
             <div className="relative aspect-square overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 sm:rounded-3xl">
-              <img src={gallery[gi]} alt="Creme anti verrue TK" className="h-full w-full object-cover transition-opacity duration-300" fetchPriority="high"/>
+              <img src={gallery[gi]} alt="Creme anti verrue TK" className="h-full w-full object-cover transition-opacity duration-300" fetchPriority="high" width={800} height={800} decoding="async"/>
               <span className="absolute left-3 top-3 rounded-full bg-red-500 px-2.5 py-1 text-[10px] font-bold text-white shadow-lg sm:left-4 sm:top-4 sm:text-xs">BEST-SELLER</span>
             </div>
             <div className="mt-2.5 flex gap-2 sm:mt-3">
@@ -405,7 +393,7 @@ export default function VerrueTkLanding() {
       <div className="relative overflow-hidden py-6 sm:py-8">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-amber-50/40 via-white to-white"/>
         <div className="relative mx-auto max-w-3xl px-4">
-          <img src="/verrue-tk/banner-clients.jpg" alt="Clients satisfaits" className="w-full rounded-t-2xl border border-b-0 border-neutral-100 object-cover shadow-xl" loading="lazy"/>
+          <img src="/verrue-tk/banner-clients.webp" alt="Clients satisfaits" className="w-full rounded-t-2xl border border-b-0 border-neutral-100 object-cover shadow-xl" loading="lazy"/>
           <div className="rounded-b-2xl border border-t-0 border-neutral-100 bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 px-5 py-6 text-center shadow-xl sm:px-8 sm:py-8">
             <h3 className="mb-2 text-lg font-extrabold leading-tight text-white sm:text-xl">
               <span className="text-amber-400">✨</span> Dites STOP aux verrues rapidement !
@@ -487,14 +475,14 @@ export default function VerrueTkLanding() {
           <div className="mx-auto grid max-w-2xl grid-cols-2 gap-3 sm:gap-5">
             <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-md">
               <div className="relative">
-                <LazyImg src="/verrue-tk/avant.jpg" alt="Avant utilisation" className="aspect-[3/4] w-full object-cover"/>
+                <LazyImg src="/verrue-tk/avant.webp" alt="Avant utilisation" className="aspect-[3/4] w-full object-cover"/>
                 <span className="absolute bottom-3 left-3 rounded-full bg-red-500 px-3.5 py-1 text-[11px] font-bold text-white shadow-lg sm:text-xs">AVANT</span>
               </div>
               <div className="p-3 sm:p-4"><p className="text-[11px] text-neutral-500 sm:text-[12px]">Verrues visibles genantes au quotidien.</p></div>
             </div>
             <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-md">
               <div className="relative">
-                <LazyImg src="/verrue-tk/apres.jpg" alt="Apres utilisation" className="aspect-[3/4] w-full object-cover"/>
+                <LazyImg src="/verrue-tk/apres.webp" alt="Apres utilisation" className="aspect-[3/4] w-full object-cover"/>
                 <span className="absolute bottom-3 left-3 rounded-full bg-emerald-500 px-3.5 py-1 text-[11px] font-bold text-white shadow-lg sm:text-xs">APRES</span>
               </div>
               <div className="p-3 sm:p-4"><p className="text-[11px] text-neutral-500 sm:text-[12px]">Peau nette apres utilisation de VERRUE TK.</p></div>
