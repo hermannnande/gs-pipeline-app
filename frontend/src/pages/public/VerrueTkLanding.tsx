@@ -401,6 +401,14 @@ export default function VerrueTkLanding() {
         </div>
       </div>
 
+      {/* ══ BANNER IMAGE ══ */}
+      <div className="relative overflow-hidden py-6 sm:py-8">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-amber-50/40 via-white to-white"/>
+        <div className="relative mx-auto max-w-3xl px-4">
+          <img src="/verrue-tk/banner-clients.jpg" alt="Clients satisfaits" className="w-full rounded-2xl border border-neutral-100 object-cover shadow-xl" loading="lazy"/>
+        </div>
+      </div>
+
       {/* ══ EXTRA IMAGES STRIP 1 ══ */}
       <ExtraImageStrip indices={[0, 1]}/>
 
