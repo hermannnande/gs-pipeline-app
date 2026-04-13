@@ -484,20 +484,20 @@ export default function VerrueTkLanding() {
           <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-widest text-amber-600">Resultats constates</p>
           <h2 className="mb-2 text-center text-xl font-extrabold sm:text-2xl">Avant et apres utilisation</h2>
           <p className="mx-auto mb-7 max-w-lg text-center text-[13px] text-neutral-400">Evolution constatee par nos clients en quelques jours.</p>
-          <div className="mx-auto grid max-w-3xl gap-4 sm:grid-cols-2">
-            <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+          <div className="mx-auto grid max-w-2xl grid-cols-2 gap-3 sm:gap-5">
+            <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-md">
               <div className="relative">
-                <LazyImg src={I.r1} alt="Avant" className="aspect-[4/3] w-full object-cover"/>
-                <span className="absolute bottom-3 left-3 rounded-full bg-red-500 px-3 py-1 text-[11px] font-bold text-white shadow-lg">AVANT</span>
+                <LazyImg src="/verrue-tk/avant.jpg" alt="Avant utilisation" className="aspect-[3/4] w-full object-cover"/>
+                <span className="absolute bottom-3 left-3 rounded-full bg-red-500 px-3.5 py-1 text-[11px] font-bold text-white shadow-lg sm:text-xs">AVANT</span>
               </div>
-              <div className="p-4"><p className="text-[12px] text-neutral-500">Verrues visibles genantes au quotidien.</p></div>
+              <div className="p-3 sm:p-4"><p className="text-[11px] text-neutral-500 sm:text-[12px]">Verrues visibles genantes au quotidien.</p></div>
             </div>
-            <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-md">
               <div className="relative">
-                <LazyImg src={I.r2} alt="Apres" className="aspect-[4/3] w-full object-cover"/>
-                <span className="absolute bottom-3 left-3 rounded-full bg-emerald-500 px-3 py-1 text-[11px] font-bold text-white shadow-lg">APRES</span>
+                <LazyImg src="/verrue-tk/apres.jpg" alt="Apres utilisation" className="aspect-[3/4] w-full object-cover"/>
+                <span className="absolute bottom-3 left-3 rounded-full bg-emerald-500 px-3.5 py-1 text-[11px] font-bold text-white shadow-lg sm:text-xs">APRES</span>
               </div>
-              <div className="p-4"><p className="text-[12px] text-neutral-500">Peau nette apres utilisation de VERRUE TK.</p></div>
+              <div className="p-3 sm:p-4"><p className="text-[11px] text-neutral-500 sm:text-[12px]">Peau nette apres utilisation de VERRUE TK.</p></div>
             </div>
           </div>
         </div>
