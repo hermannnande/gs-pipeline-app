@@ -26,6 +26,11 @@ const I = {
 };
 const VID = ['/verrue-tk/video-1.mp4', '/verrue-tk/video-2.mp4', '/verrue-tk/video-3.mp4'];
 
+const EXTRA_IMGS = [
+  '/verrue-tk/extra-1.png', '/verrue-tk/extra-2.png', '/verrue-tk/extra-3.png',
+  '/verrue-tk/extra-4.png', '/verrue-tk/extra-5.png', '/verrue-tk/extra-6.png',
+];
+
 const TOASTS = [
   { n: 'Awa K.', v: 'Abidjan', t: '2 min' },
   { n: 'Jean M.', v: 'Bouake', t: '5 min' },
@@ -108,6 +113,49 @@ function LazySection({ children, className }: { children: React.ReactNode; class
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-neutral-200 border-t-amber-400"></div>
         </div>
       )}
+    </div>
+  );
+}
+
+function GlowBtn({ onClick, children, variant = 'gold' }: { onClick: () => void; children: React.ReactNode; variant?: 'gold' | 'green' | 'dark' }) {
+  const base = 'glow-btn group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl px-6 py-4 text-[15px] font-extrabold shadow-xl transition-all active:scale-[.97] sm:text-base';
+  const styles = {
+    gold: `${base} bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 text-neutral-900 shadow-[0_8px_32px_rgba(251,191,36,.45)] hover:shadow-[0_12px_40px_rgba(251,191,36,.6)]`,
+    green: `${base} bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-500 text-white shadow-[0_8px_32px_rgba(16,185,129,.4)] hover:shadow-[0_12px_40px_rgba(16,185,129,.55)]`,
+    dark: `${base} bg-gradient-to-r from-neutral-800 via-neutral-900 to-neutral-800 text-white shadow-[0_8px_32px_rgba(0,0,0,.3)] hover:shadow-[0_12px_40px_rgba(0,0,0,.45)]`,
+  };
+  return (
+    <button onClick={onClick} className={styles[variant]}>
+      <span className="glow-sheen absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent"/>
+      {children}
+    </button>
+  );
+}
+
+function ExtraImageStrip({ indices }: { indices: number[] }) {
+  const [loaded, setLoaded] = useState<Record<number, boolean>>({});
+  const srcs = indices.map(i => EXTRA_IMGS[i]).filter(Boolean);
+  if (srcs.length === 0) return null;
+  const anyLoaded = Object.values(loaded).some(Boolean);
+  if (srcs.length > 0 && !anyLoaded) {
+    srcs.forEach((src, idx) => {
+      const img = new Image();
+      img.onload = () => setLoaded(prev => ({ ...prev, [idx]: true }));
+      img.onerror = () => setLoaded(prev => ({ ...prev, [idx]: false }));
+      img.src = src;
+    });
+  }
+  const visibleSrcs = srcs.filter((_, idx) => loaded[idx]);
+  if (visibleSrcs.length === 0) return null;
+  return (
+    <div className="overflow-hidden py-4 sm:py-6">
+      <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 scrollbar-hide sm:justify-center sm:gap-4 sm:overflow-visible sm:px-0">
+        {visibleSrcs.map((src, i) => (
+          <div key={i} className="w-[70vw] max-w-[320px] shrink-0 snap-center sm:w-[300px] sm:max-w-none">
+            <img src={src} alt="" className="w-full rounded-2xl border border-neutral-100 object-cover shadow-lg" loading="lazy"/>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -232,6 +280,11 @@ export default function VerrueTkLanding() {
         details[open] summary .chevron{transform:rotate(180deg)}
         .scrollbar-hide::-webkit-scrollbar{display:none}
         .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
+        @keyframes bounce-soft{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+        @keyframes sheen{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+        .glow-btn{animation:bounce-soft 2.5s ease-in-out infinite}
+        .glow-btn:hover{animation:none}
+        .glow-sheen{animation:sheen 3s ease-in-out infinite}
       `}</style>
 
       {/* ══ STICKY COUNTDOWN TOP BAR — always visible ══ */}
@@ -306,10 +359,12 @@ export default function VerrueTkLanding() {
               <span className="flex items-center gap-1.5"><Check/> Support 7j/7</span>
             </div>
             <div className="hidden sm:block">
-              <button onClick={open} className="group mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-6 py-3.5 text-[15px] font-bold text-white shadow-xl transition hover:bg-neutral-800 active:scale-[.98]">
-                <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60"/><span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400"/></span>
-                Commander maintenant — {fmt(PRICES[1])}
-              </button>
+              <GlowBtn onClick={open} variant="gold">
+                <span className="relative z-10 flex items-center gap-2">
+                  <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-900 opacity-40"/><span className="relative inline-flex h-2 w-2 rounded-full bg-neutral-900"/></span>
+                  Commander maintenant — {fmt(PRICES[1])}
+                </span>
+              </GlowBtn>
               <p className="mt-2 text-center text-[11px] text-neutral-400">Aucun compte requis. Formulaire rapide en 30 secondes.</p>
             </div>
             <div className="flex items-center gap-3 rounded-xl border border-neutral-100 bg-neutral-50 px-4 py-3">
@@ -346,9 +401,15 @@ export default function VerrueTkLanding() {
         </div>
       </div>
 
+      {/* ══ EXTRA IMAGES STRIP 1 ══ */}
+      <ExtraImageStrip indices={[0, 1]}/>
+
       {/* ══ PACK OFFERS — lazy ══ */}
-      <LazySection className="py-10 sm:py-14">
-        <div className="mx-auto max-w-3xl px-4">
+      <LazySection className="relative overflow-hidden py-10 sm:py-14">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-50/80 via-white to-amber-50/60"/>
+        <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-amber-200/20 blur-3xl"/>
+        <div className="pointer-events-none absolute -bottom-10 -left-20 h-48 w-48 rounded-full bg-amber-300/15 blur-3xl"/>
+        <div className="relative mx-auto max-w-3xl px-4">
           <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-widest text-amber-600">Offres speciales</p>
           <h2 className="mb-2 text-center text-xl font-extrabold sm:text-2xl">Choisissez votre offre</h2>
           <p className="mx-auto mb-6 max-w-lg text-center text-[13px] text-neutral-400">Plus vous commandez, plus vous economisez.</p>
@@ -363,8 +424,8 @@ export default function VerrueTkLanding() {
                     <p className="text-[17px] font-black text-neutral-900 sm:text-xl">{o.sub}</p>
                     {o.v > 1 && <p className="text-[10px] font-bold text-emerald-600">{o.save}</p>}
                   </div>
-                  <div className="flex shrink-0 items-center gap-1.5 rounded-lg bg-neutral-900 px-3 py-2 text-[11px] font-bold text-white sm:mt-2 sm:w-full sm:justify-center sm:px-4 sm:text-[12px]">
-                    <span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60"/><span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-400"/></span>
+                  <div className="flex shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-300 px-3 py-2 text-[11px] font-extrabold text-neutral-900 shadow-md sm:mt-2 sm:w-full sm:justify-center sm:px-4 sm:text-[12px]">
+                    <span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-900 opacity-40"/><span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-neutral-900"/></span>
                     Commander
                   </div>
                 </div>
@@ -374,11 +435,16 @@ export default function VerrueTkLanding() {
         </div>
       </LazySection>
 
+      {/* ══ EXTRA IMAGES STRIP 2 ══ */}
+      <ExtraImageStrip indices={[2, 3]}/>
+
       {/* ══ VIDEOS — lazy loaded individually ══ */}
-      <LazySection className="border-y border-neutral-100 bg-neutral-50 py-10 sm:py-14">
-        <div className="mx-auto max-w-6xl px-4">
-          <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-widest text-amber-600">Preuves en video</p>
-          <h2 className="mb-2 text-center text-xl font-extrabold sm:text-2xl">Voyez les resultats vous-meme</h2>
+      <LazySection className="relative overflow-hidden border-y border-neutral-100 py-10 sm:py-14">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-neutral-900 via-neutral-800 to-neutral-900"/>
+        <div className="pointer-events-none absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-amber-500/10 blur-[80px]"/>
+        <div className="relative mx-auto max-w-6xl px-4">
+          <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-widest text-amber-400">Preuves en video</p>
+          <h2 className="mb-2 text-center text-xl font-extrabold text-white sm:text-2xl">Voyez les resultats vous-meme</h2>
           <p className="mx-auto mb-5 max-w-lg text-center text-[13px] text-neutral-400">Des utilisateurs partagent leur experience.</p>
         </div>
         <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 scrollbar-hide sm:justify-center sm:gap-5 sm:overflow-visible sm:px-0">
@@ -439,18 +505,26 @@ export default function VerrueTkLanding() {
         </div>
       </LazySection>
 
+      {/* ══ EXTRA IMAGES STRIP 3 ══ */}
+      <ExtraImageStrip indices={[4, 5]}/>
+
       {/* ══ MID CTA — lazy ══ */}
-      <LazySection className="py-6 sm:py-8">
-        <div className="mx-auto max-w-lg px-4 text-center">
-          <div className="mb-3 flex items-center justify-center gap-2">
-            <div className="h-2 flex-1 rounded-full bg-neutral-100"><div className="h-full rounded-full bg-gradient-to-r from-red-400 to-amber-400 transition-all" style={{ width: `${stockPct}%` }}/></div>
+      <LazySection className="relative overflow-hidden py-8 sm:py-10">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-50/60 via-white to-amber-50/50"/>
+        <div className="pointer-events-none absolute -left-16 top-1/2 h-40 w-40 -translate-y-1/2 rounded-full bg-emerald-200/20 blur-3xl"/>
+        <div className="pointer-events-none absolute -right-16 top-1/2 h-40 w-40 -translate-y-1/2 rounded-full bg-amber-200/20 blur-3xl"/>
+        <div className="relative mx-auto max-w-lg px-4 text-center">
+          <div className="mb-4 flex items-center justify-center gap-2">
+            <div className="h-2.5 flex-1 rounded-full bg-neutral-100"><div className="h-full rounded-full bg-gradient-to-r from-red-400 to-amber-400 transition-all" style={{ width: `${stockPct}%` }}/></div>
             <span className="shrink-0 text-[11px] font-bold text-red-500">Plus que {stock} unites</span>
           </div>
-          <button onClick={open} className="group flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-6 py-4 text-[15px] font-bold text-white shadow-xl transition hover:bg-neutral-800 active:scale-[.98]">
-            <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60"/><span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400"/></span>
-            Je commande maintenant
-          </button>
-          <p className="mt-2 text-[11px] text-neutral-400">Paiement a la livraison — Formulaire en 30 secondes</p>
+          <GlowBtn onClick={open} variant="gold">
+            <span className="relative z-10 flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-900 opacity-40"/><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-neutral-900"/></span>
+              Je commande maintenant
+            </span>
+          </GlowBtn>
+          <p className="mt-3 text-[11px] text-neutral-400">Paiement a la livraison — Formulaire en 30 secondes</p>
         </div>
       </LazySection>
 
@@ -479,9 +553,11 @@ export default function VerrueTkLanding() {
       </LazySection>
 
       {/* ══ GUARANTEE — lazy ══ */}
-      <LazySection className="py-10 sm:py-14">
-        <div className="mx-auto max-w-3xl px-4">
-          <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-6 sm:p-8">
+      <LazySection className="relative overflow-hidden py-10 sm:py-14">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-50/50 via-white to-emerald-50/30"/>
+        <div className="pointer-events-none absolute -right-16 top-1/2 h-52 w-52 -translate-y-1/2 rounded-full bg-emerald-200/15 blur-3xl"/>
+        <div className="relative mx-auto max-w-3xl px-4">
+          <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-6 shadow-lg sm:p-8">
             <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
               <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-3xl shadow-sm">🛡️</div>
               <div>
@@ -523,18 +599,25 @@ export default function VerrueTkLanding() {
       </LazySection>
 
       {/* ══ FINAL CTA — lazy ══ */}
-      <LazySection className="bg-neutral-900 py-12 sm:py-16">
-        <div className="mx-auto max-w-lg px-4 text-center">
+      <LazySection className="relative overflow-hidden py-14 sm:py-20">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900"/>
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-500/10 blur-[100px]"/>
+        <div className="pointer-events-none absolute -left-10 bottom-0 h-48 w-48 rounded-full bg-amber-400/5 blur-[60px]"/>
+        <div className="pointer-events-none absolute -right-10 top-0 h-48 w-48 rounded-full bg-emerald-400/5 blur-[60px]"/>
+        <div className="relative mx-auto max-w-lg px-4 text-center">
           <div className="mx-auto mb-4 flex justify-center -space-x-2">
             {REVIEWS.slice(0,5).map((s,i)=><div key={i} className={`flex h-9 w-9 items-center justify-center rounded-full border-[3px] border-neutral-900 ${s.bg} text-[10px] font-bold text-white`}>{s.init}</div>)}
           </div>
           <div className="mb-3 flex items-center justify-center gap-1"><div className="flex gap-0.5">{[...Array(5)].map((_,i)=><Star key={i}/>)}</div><span className="text-xs font-bold text-white">4.8/5</span></div>
           <h2 className="mb-2 text-xl font-extrabold text-white sm:text-2xl">Rejoignez +1 200 clients satisfaits</h2>
           <p className="mb-6 text-[13px] text-neutral-400">Commandez maintenant. Paiement a la livraison.</p>
-          <button onClick={open} className="group mx-auto flex items-center justify-center gap-2 rounded-xl bg-amber-400 px-8 py-3.5 text-[15px] font-extrabold text-neutral-900 shadow-[0_12px_35px_rgba(251,191,36,.4)] transition hover:bg-amber-300 active:scale-[.98]">
-            <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-900 opacity-40"/><span className="relative inline-flex h-2 w-2 rounded-full bg-neutral-900"/></span>
-            Commander ici — {fmt(PRICES[1])}
-          </button>
+          <GlowBtn onClick={open} variant="gold">
+            <span className="relative z-10 flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-900 opacity-40"/><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-neutral-900"/></span>
+              Commander ici — {fmt(PRICES[1])}
+            </span>
+          </GlowBtn>
+          <p className="mt-3 text-[11px] text-neutral-500">Aucun compte requis · Formulaire en 30 secondes</p>
         </div>
       </LazySection>
 
@@ -558,7 +641,7 @@ export default function VerrueTkLanding() {
             <p className="truncate text-[13px] font-bold sm:text-sm">Creme Anti-Verrue TK</p>
             <p className="text-[11px] text-neutral-400">{fmt(PRICES[1])} · Paiement a la livraison</p>
           </div>
-          <button onClick={open} className="shrink-0 rounded-xl bg-neutral-900 px-4 py-2.5 text-[13px] font-bold text-white shadow-lg transition hover:bg-neutral-800 active:scale-[.97] sm:px-6 sm:text-sm">Commander</button>
+          <button onClick={open} className="shrink-0 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-300 px-4 py-2.5 text-[13px] font-extrabold text-neutral-900 shadow-[0_4px_16px_rgba(251,191,36,.35)] transition hover:shadow-[0_6px_24px_rgba(251,191,36,.5)] active:scale-[.97] sm:px-6 sm:text-sm">Commander</button>
         </div>
       </div>
 
