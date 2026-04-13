@@ -45,8 +45,72 @@ const REVIEWS = [
   { init: 'IT', bg: 'bg-teal-500', n: 'Ibrahim T.', v: 'Korhogo', q: 'J\'hesitais. Maintenant je regrette de ne pas avoir commande plus tot.', s: 5 },
 ];
 
-const Check = () => <svg className="h-4 w-4 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>;
-const Star = () => <svg className="h-3.5 w-3.5 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>;
+const Check = () => (
+  <svg className="h-4 w-4 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+  </svg>
+);
+const Star = () => (
+  <svg className="h-3.5 w-3.5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+  </svg>
+);
+
+function useOnScreen(rootMargin = '200px') {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } }, { rootMargin });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [rootMargin]);
+  return { ref, visible };
+}
+
+function LazyVideo({ src }: { src: string }) {
+  const { ref, visible } = useOnScreen('300px');
+  return (
+    <div ref={ref} className="aspect-[9/16] w-full rounded-2xl border border-neutral-100 bg-neutral-100 object-cover shadow-md overflow-hidden">
+      {visible ? (
+        <video src={src} autoPlay loop muted playsInline preload="metadata" className="h-full w-full object-cover"/>
+      ) : (
+        <div className="flex h-full w-full items-center justify-center bg-neutral-100">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-neutral-200 border-t-amber-400"></div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LazyImg({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  const { ref, visible } = useOnScreen('300px');
+  return (
+    <div ref={ref}>
+      {visible ? (
+        <img src={src} alt={alt} className={className} loading="lazy"/>
+      ) : (
+        <div className={`bg-neutral-100 animate-pulse ${className}`} style={{ aspectRatio: 'auto' }}/>
+      )}
+    </div>
+  );
+}
+
+function LazySection({ children, className }: { children: React.ReactNode; className?: string }) {
+  const { ref, visible } = useOnScreen('100px');
+  return (
+    <div ref={ref} className={className}>
+      {visible ? (
+        <div className="animate-[fadeUp_.4s_ease_both]">{children}</div>
+      ) : (
+        <div className="flex min-h-[120px] items-center justify-center">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-neutral-200 border-t-amber-400"></div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function VerrueTkLanding() {
   const navigate = useNavigate();
@@ -80,14 +144,12 @@ export default function VerrueTkLanding() {
     return () => { clearInterval(id); clearTimeout(first); };
   }, []);
 
-  // 3. Stock counter
   const [stock, setStock] = useState(23);
   useEffect(() => {
     const id = setInterval(() => setStock(s => s > 7 ? s - 1 : s), 50000);
     return () => clearInterval(id);
   }, []);
 
-  // 5. Countdown timer
   const [countdown, setCountdown] = useState({ h: 0, m: 0, s: 0 });
   useEffect(() => {
     const tick = () => {
@@ -101,15 +163,11 @@ export default function VerrueTkLanding() {
     return () => clearInterval(id);
   }, []);
 
-  // 8. Exit intent popup
   const [exitPopup, setExitPopup] = useState(false);
   const exitShown = useRef(false);
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (e.clientY < 10 && !exitShown.current && !modal) {
-        exitShown.current = true;
-        setExitPopup(true);
-      }
+      if (e.clientY < 10 && !exitShown.current && !modal) { exitShown.current = true; setExitPopup(true); }
     };
     document.addEventListener('mousemove', handler);
     return () => document.removeEventListener('mousemove', handler);
@@ -176,15 +234,11 @@ export default function VerrueTkLanding() {
         .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
       `}</style>
 
-      {/* ══ STICKY COUNTDOWN TOP BAR ══ */}
+      {/* ══ STICKY COUNTDOWN TOP BAR — always visible ══ */}
       <div className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-neutral-900 px-3 py-2 sm:gap-3">
         <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 sm:text-[11px]">Offre du jour</span>
         <div className="flex items-center gap-1">
-          {[
-            { v: pad(countdown.h), l: 'h' },
-            { v: pad(countdown.m), l: 'm' },
-            { v: pad(countdown.s), l: 's' },
-          ].map((u, i) => (
+          {[{ v: pad(countdown.h) },{ v: pad(countdown.m) },{ v: pad(countdown.s) }].map((u, i) => (
             <div key={i} className="flex items-center gap-1">
               {i > 0 && <span className="text-[10px] font-bold text-amber-400/60">:</span>}
               <span className="inline-flex h-6 min-w-[26px] items-center justify-center rounded bg-white/10 px-1 font-mono text-[12px] font-black tabular-nums text-white sm:h-7 sm:min-w-[30px] sm:text-[13px]">{u.v}</span>
@@ -194,7 +248,7 @@ export default function VerrueTkLanding() {
         <span className="hidden text-[10px] text-amber-300/70 sm:inline">· Livraison 24h · Paiement a la livraison</span>
       </div>
 
-      {/* ══ ANNOUNCEMENT BAR ══ */}
+      {/* ══ MARQUEE — immediate ══ */}
       <div className="overflow-hidden bg-neutral-800 py-1.5">
         <div className="marquee-track flex w-[200%] items-center gap-8 text-[9px] font-bold uppercase tracking-[.18em] text-amber-300/80 sm:text-[10px]">
           {[0,1].map(k=><div key={k} className="flex shrink-0 items-center gap-8">
@@ -206,12 +260,12 @@ export default function VerrueTkLanding() {
         </div>
       </div>
 
-      {/* ══ HERO ══ */}
+      {/* ══ HERO — loads immediately (priority) ══ */}
       <section className="mx-auto max-w-6xl px-4 pb-6 pt-5 sm:pb-10 sm:pt-8 md:pt-12">
         <div className="grid items-start gap-6 md:grid-cols-2 md:gap-10">
           <div className="fade-up">
             <div className="relative aspect-square overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 sm:rounded-3xl">
-              <img src={gallery[gi]} alt="Creme anti verrue TK" className="h-full w-full object-cover transition-opacity duration-300"/>
+              <img src={gallery[gi]} alt="Creme anti verrue TK" className="h-full w-full object-cover transition-opacity duration-300" fetchPriority="high"/>
               <span className="absolute left-3 top-3 rounded-full bg-red-500 px-2.5 py-1 text-[10px] font-bold text-white shadow-lg sm:left-4 sm:top-4 sm:text-xs">BEST-SELLER</span>
             </div>
             <div className="mt-2.5 flex gap-2 sm:mt-3">
@@ -239,23 +293,18 @@ export default function VerrueTkLanding() {
               <span className="text-sm text-neutral-400 line-through">15 000 FCFA</span>
               <span className="rounded-md bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-600">-34%</span>
             </div>
-
-            {/* Stock indicator */}
             <div className="flex items-center gap-1.5 self-start rounded-lg border border-amber-100 bg-amber-50 px-2.5 py-1.5">
               <span className="text-xs">📦</span>
               <span className="text-[12px] font-bold text-amber-700">Plus que {stock} en stock</span>
             </div>
-
             <p className="text-[13px] leading-relaxed text-neutral-500 sm:text-sm">
               Formule ciblee pour les verrues visibles. Application simple et sans douleur. Resultats constates en quelques jours.
             </p>
-
             <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[12px] text-neutral-600 sm:text-[13px]">
               <span className="flex items-center gap-1.5"><Check/> Paiement a la livraison</span>
               <span className="flex items-center gap-1.5"><Check/> Livraison rapide</span>
               <span className="flex items-center gap-1.5"><Check/> Support 7j/7</span>
             </div>
-
             <div className="hidden sm:block">
               <button onClick={open} className="group mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-6 py-3.5 text-[15px] font-bold text-white shadow-xl transition hover:bg-neutral-800 active:scale-[.98]">
                 <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60"/><span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400"/></span>
@@ -263,7 +312,6 @@ export default function VerrueTkLanding() {
               </button>
               <p className="mt-2 text-center text-[11px] text-neutral-400">Aucun compte requis. Formulaire rapide en 30 secondes.</p>
             </div>
-
             <div className="flex items-center gap-3 rounded-xl border border-neutral-100 bg-neutral-50 px-4 py-3">
               <div className="flex -space-x-1.5">
                 {['bg-amber-400','bg-emerald-400','bg-sky-400'].map((c,i)=>(
@@ -279,15 +327,10 @@ export default function VerrueTkLanding() {
         </div>
       </section>
 
-      {/* ══ 7. VU SUR / TRUST STRIP ══ */}
+      {/* ══ TRUST STRIPS — lightweight, immediate ══ */}
       <div className="border-y border-neutral-100 bg-neutral-50 py-4">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-5 px-4 text-center sm:gap-8">
-          {[
-            { ico: '📱', l: 'Vu sur TikTok' },
-            { ico: '⭐', l: '4.8/5 — 1247 avis' },
-            { ico: '🏆', l: '+1 200 commandes' },
-            { ico: '👨‍⚕️', l: 'Recommande par des specialistes' },
-          ].map((s,i) => (
+          {[{ ico: '📱', l: 'Vu sur TikTok' },{ ico: '⭐', l: '4.8/5 — 1247 avis' },{ ico: '🏆', l: '+1 200 commandes' },{ ico: '👨‍⚕️', l: 'Recommande' }].map((s,i) => (
             <div key={i} className="flex items-center gap-1.5">
               <span className="text-sm">{s.ico}</span>
               <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 sm:text-[11px]">{s.l}</span>
@@ -295,8 +338,6 @@ export default function VerrueTkLanding() {
           ))}
         </div>
       </div>
-
-      {/* ══ SOCIAL PROOF STRIP ══ */}
       <div className="border-b border-neutral-100 bg-white py-5">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-6 px-4 text-center sm:gap-10">
           {[{ n: '1 200+', l: 'Clients satisfaits' },{ n: '24h', l: 'Livraison Abidjan' },{ n: '4.8/5', l: 'Note moyenne' },{ n: '98%', l: 'Recommandent' }].map((s,i)=>(
@@ -305,8 +346,8 @@ export default function VerrueTkLanding() {
         </div>
       </div>
 
-      {/* ══ 4. PACK OFFERS VISIBLE ON PAGE ══ */}
-      <section className="py-10 sm:py-14">
+      {/* ══ PACK OFFERS — lazy ══ */}
+      <LazySection className="py-10 sm:py-14">
         <div className="mx-auto max-w-3xl px-4">
           <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-widest text-amber-600">Offres speciales</p>
           <h2 className="mb-2 text-center text-xl font-extrabold sm:text-2xl">Choisissez votre offre</h2>
@@ -331,10 +372,10 @@ export default function VerrueTkLanding() {
             ))}
           </div>
         </div>
-      </section>
+      </LazySection>
 
-      {/* ══ VIDEOS ══ */}
-      <section className="border-y border-neutral-100 bg-neutral-50 py-10 sm:py-14">
+      {/* ══ VIDEOS — lazy loaded individually ══ */}
+      <LazySection className="border-y border-neutral-100 bg-neutral-50 py-10 sm:py-14">
         <div className="mx-auto max-w-6xl px-4">
           <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-widest text-amber-600">Preuves en video</p>
           <h2 className="mb-2 text-center text-xl font-extrabold sm:text-2xl">Voyez les resultats vous-meme</h2>
@@ -343,14 +384,14 @@ export default function VerrueTkLanding() {
         <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 scrollbar-hide sm:justify-center sm:gap-5 sm:overflow-visible sm:px-0">
           {VID.map((v,i) => (
             <div key={i} className="w-[44vw] max-w-[200px] shrink-0 snap-center sm:w-[220px] sm:max-w-none md:w-[260px]">
-              <video src={v} autoPlay loop muted playsInline preload="metadata" className="aspect-[9/16] w-full rounded-2xl border border-neutral-100 bg-neutral-100 object-cover shadow-md"/>
+              <LazyVideo src={v}/>
             </div>
           ))}
         </div>
-      </section>
+      </LazySection>
 
-      {/* ══ 2. AVANT / APRES ══ */}
-      <section className="py-10 sm:py-14">
+      {/* ══ AVANT / APRES — lazy ══ */}
+      <LazySection className="py-10 sm:py-14">
         <div className="mx-auto max-w-5xl px-4">
           <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-widest text-amber-600">Resultats constates</p>
           <h2 className="mb-2 text-center text-xl font-extrabold sm:text-2xl">Avant et apres utilisation</h2>
@@ -358,29 +399,29 @@ export default function VerrueTkLanding() {
           <div className="mx-auto grid max-w-3xl gap-4 sm:grid-cols-2">
             <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
               <div className="relative">
-                <img src={I.r1} alt="Avant" className="aspect-[4/3] w-full object-cover"/>
+                <LazyImg src={I.r1} alt="Avant" className="aspect-[4/3] w-full object-cover"/>
                 <span className="absolute bottom-3 left-3 rounded-full bg-red-500 px-3 py-1 text-[11px] font-bold text-white shadow-lg">AVANT</span>
               </div>
               <div className="p-4"><p className="text-[12px] text-neutral-500">Verrues visibles genantes au quotidien.</p></div>
             </div>
             <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
               <div className="relative">
-                <img src={I.r2} alt="Apres" className="aspect-[4/3] w-full object-cover"/>
+                <LazyImg src={I.r2} alt="Apres" className="aspect-[4/3] w-full object-cover"/>
                 <span className="absolute bottom-3 left-3 rounded-full bg-emerald-500 px-3 py-1 text-[11px] font-bold text-white shadow-lg">APRES</span>
               </div>
               <div className="p-4"><p className="text-[12px] text-neutral-500">Peau nette apres utilisation de VERRUE TK.</p></div>
             </div>
           </div>
         </div>
-      </section>
+      </LazySection>
 
-      {/* ══ HOW TO USE ══ */}
-      <section className="border-y border-neutral-100 bg-neutral-50 py-10 sm:py-14">
+      {/* ══ HOW TO USE — lazy ══ */}
+      <LazySection className="border-y border-neutral-100 bg-neutral-50 py-10 sm:py-14">
         <div className="mx-auto max-w-5xl px-4">
           <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-widest text-amber-600">Mode d'emploi</p>
           <h2 className="mb-2 text-center text-xl font-extrabold sm:text-2xl">Simple a utiliser</h2>
           <p className="mx-auto mb-7 max-w-lg text-center text-[13px] text-neutral-400">4 etapes faciles.</p>
-          <img src={I.usage} alt="Utilisation" className="mx-auto mb-8 w-full max-w-xl rounded-2xl border border-neutral-200 object-cover shadow-lg sm:rounded-3xl" loading="lazy"/>
+          <LazyImg src={I.usage} alt="Utilisation" className="mx-auto mb-8 w-full max-w-xl rounded-2xl border border-neutral-200 object-cover shadow-lg sm:rounded-3xl"/>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { n: '01', t: 'Nettoyez', d: 'Lavez la zone concernee a l\'eau propre.', ico: '💧' },
@@ -396,10 +437,10 @@ export default function VerrueTkLanding() {
             ))}
           </div>
         </div>
-      </section>
+      </LazySection>
 
-      {/* ══ MID CTA with stock ══ */}
-      <section className="py-6 sm:py-8">
+      {/* ══ MID CTA — lazy ══ */}
+      <LazySection className="py-6 sm:py-8">
         <div className="mx-auto max-w-lg px-4 text-center">
           <div className="mb-3 flex items-center justify-center gap-2">
             <div className="h-2 flex-1 rounded-full bg-neutral-100"><div className="h-full rounded-full bg-gradient-to-r from-red-400 to-amber-400 transition-all" style={{ width: `${stockPct}%` }}/></div>
@@ -411,10 +452,10 @@ export default function VerrueTkLanding() {
           </button>
           <p className="mt-2 text-[11px] text-neutral-400">Paiement a la livraison — Formulaire en 30 secondes</p>
         </div>
-      </section>
+      </LazySection>
 
-      {/* ══ TESTIMONIALS ══ */}
-      <section className="border-y border-neutral-100 bg-neutral-50 py-10 sm:py-14">
+      {/* ══ TESTIMONIALS — lazy ══ */}
+      <LazySection className="border-y border-neutral-100 bg-neutral-50 py-10 sm:py-14">
         <div className="mx-auto max-w-6xl px-4">
           <div className="mb-6 flex flex-col items-center gap-1 sm:mb-8">
             <p className="text-[11px] font-semibold uppercase tracking-widest text-amber-600">Avis clients verifies</p>
@@ -427,10 +468,7 @@ export default function VerrueTkLanding() {
             <div key={i} className="w-[75vw] max-w-[300px] shrink-0 snap-center rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm sm:w-[300px] sm:max-w-none sm:p-5">
               <div className="mb-3 flex items-center gap-3">
                 <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${t.bg} text-[11px] font-bold text-white shadow-md sm:h-10 sm:w-10 sm:text-xs`}>{t.init}</div>
-                <div className="min-w-0">
-                  <p className="truncate text-[13px] font-bold">{t.n}</p>
-                  <p className="text-[10px] text-neutral-400">{t.v}</p>
-                </div>
+                <div className="min-w-0"><p className="truncate text-[13px] font-bold">{t.n}</p><p className="text-[10px] text-neutral-400">{t.v}</p></div>
               </div>
               <div className="mb-2 flex items-center gap-2"><div className="flex gap-0.5">{[...Array(t.s)].map((_,j)=><Star key={j}/>)}</div></div>
               <p className="mb-3 text-[12px] leading-relaxed text-neutral-600 sm:text-[13px]">"{t.q}"</p>
@@ -438,10 +476,10 @@ export default function VerrueTkLanding() {
             </div>
           ))}
         </div>
-      </section>
+      </LazySection>
 
-      {/* ══ GUARANTEE ══ */}
-      <section className="py-10 sm:py-14">
+      {/* ══ GUARANTEE — lazy ══ */}
+      <LazySection className="py-10 sm:py-14">
         <div className="mx-auto max-w-3xl px-4">
           <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-6 sm:p-8">
             <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
@@ -458,10 +496,10 @@ export default function VerrueTkLanding() {
             </div>
           </div>
         </div>
-      </section>
+      </LazySection>
 
-      {/* ══ FAQ ══ */}
-      <section className="border-y border-neutral-100 bg-neutral-50 py-10 sm:py-14">
+      {/* ══ FAQ — lazy ══ */}
+      <LazySection className="border-y border-neutral-100 bg-neutral-50 py-10 sm:py-14">
         <div className="mx-auto max-w-2xl px-4">
           <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-widest text-amber-600">FAQ</p>
           <h2 className="mb-2 text-center text-xl font-extrabold sm:text-2xl">Questions frequentes</h2>
@@ -482,10 +520,10 @@ export default function VerrueTkLanding() {
             ))}
           </div>
         </div>
-      </section>
+      </LazySection>
 
-      {/* ══ FINAL CTA ══ */}
-      <section className="bg-neutral-900 py-12 sm:py-16">
+      {/* ══ FINAL CTA — lazy ══ */}
+      <LazySection className="bg-neutral-900 py-12 sm:py-16">
         <div className="mx-auto max-w-lg px-4 text-center">
           <div className="mx-auto mb-4 flex justify-center -space-x-2">
             {REVIEWS.slice(0,5).map((s,i)=><div key={i} className={`flex h-9 w-9 items-center justify-center rounded-full border-[3px] border-neutral-900 ${s.bg} text-[10px] font-bold text-white`}>{s.init}</div>)}
@@ -498,7 +536,7 @@ export default function VerrueTkLanding() {
             Commander ici — {fmt(PRICES[1])}
           </button>
         </div>
-      </section>
+      </LazySection>
 
       {/* ══ FOOTER ══ */}
       <footer className="border-t border-neutral-100 bg-white pb-24 pt-6 sm:pb-8">
@@ -535,7 +573,7 @@ export default function VerrueTkLanding() {
         </div>
       )}
 
-      {/* ══ 8. EXIT INTENT POPUP ══ */}
+      {/* ══ EXIT INTENT ══ */}
       {exitPopup && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) setExitPopup(false); }}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"/>
