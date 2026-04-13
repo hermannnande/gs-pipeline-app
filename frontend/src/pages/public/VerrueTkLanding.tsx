@@ -36,7 +36,7 @@ const TOASTS = [
   { n: 'Aminata C.', v: 'Man', t: '22 min' },
 ];
 
-const STORIES = [
+const REVIEWS = [
   { init: 'AK', bg: 'bg-amber-500', n: 'Awa K.', v: 'Abidjan', q: 'En 5 jours la verrue a seche completement. Ma peau est redevenue lisse. Incroyable.', s: 5 },
   { init: 'JM', bg: 'bg-sky-500', n: 'Jean-Marc B.', v: 'Bouake', q: 'Livraison le lendemain. Resultat visible des la premiere semaine. Je recommande.', s: 5 },
   { init: 'MD', bg: 'bg-emerald-500', n: 'Mariam D.', v: 'Yopougon', q: 'Commande pour ma mere. Verrues depuis 2 ans. Apres 10 jours, presque fini.', s: 5 },
@@ -65,18 +65,18 @@ export default function VerrueTkLanding() {
   const formRef = useRef<HTMLDivElement>(null);
   const gallery = [I.hero, I.g1, I.g2, I.g3];
 
-  // 1. Live toast notifications
-  const [toast, setToast] = useState<{ n: string; v: string; t: string } | null>(null);
+  const [toast, setToast] = useState<{ n: string; v: string; t: string; visible: boolean } | null>(null);
   const toastIdx = useRef(0);
   useEffect(() => {
     const show = () => {
       const t = TOASTS[toastIdx.current % TOASTS.length];
       toastIdx.current++;
-      setToast(t);
-      setTimeout(() => setToast(null), 4000);
+      setToast({ ...t, visible: true });
+      setTimeout(() => setToast(prev => prev ? { ...prev, visible: false } : null), 3000);
+      setTimeout(() => setToast(null), 3400);
     };
-    const id = setInterval(show, 25000);
-    const first = setTimeout(show, 6000);
+    const first = setTimeout(show, 5000);
+    const id = setInterval(show, 18000);
     return () => { clearInterval(id); clearTimeout(first); };
   }, []);
 
@@ -115,9 +115,6 @@ export default function VerrueTkLanding() {
     return () => document.removeEventListener('mousemove', handler);
   }, [modal]);
 
-  // 9. Story modal
-  const [storyIdx, setStoryIdx] = useState<number | null>(null);
-
   useEffect(() => {
     axios.get(`${API_URL}/public/products`, { params: { company } })
       .then(r => setProduct((r.data?.products || []).find((p: Product) => p.code?.toUpperCase() === TARGET_CODE) || null))
@@ -125,7 +122,7 @@ export default function VerrueTkLanding() {
       .finally(() => setLoading(false));
   }, [company]);
 
-  useEffect(() => { document.body.style.overflow = (modal || storyIdx !== null || exitPopup) ? 'hidden' : ''; return () => { document.body.style.overflow = ''; }; }, [modal, storyIdx, exitPopup]);
+  useEffect(() => { document.body.style.overflow = (modal || exitPopup) ? 'hidden' : ''; return () => { document.body.style.overflow = ''; }; }, [modal, exitPopup]);
 
   const open = useCallback(() => { setFormErr(''); setName(''); setCity(''); setPhone(''); setQty(1); setModal(true); setExitPopup(false); }, []);
 
@@ -170,15 +167,13 @@ export default function VerrueTkLanding() {
         @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
         @keyframes slideInLeft{from{opacity:0;transform:translateX(-100%)}to{opacity:1;transform:translateX(0)}}
         @keyframes slideOutLeft{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(-100%)}}
-        @keyframes pulseRing{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.5)}50%{box-shadow:0 0 0 6px rgba(251,191,36,0)}}
         .fade-up{animation:fadeUp .5s ease both}
         .marquee-track{animation:marquee 22s linear infinite}
-        .toast-in{animation:slideInLeft .4s ease both}
-        .toast-out{animation:slideOutLeft .3s ease both}
+        .toast-in{animation:slideInLeft .4s cubic-bezier(.22,1,.36,1) both}
+        .toast-out{animation:slideOutLeft .35s cubic-bezier(.55,.08,.68,.53) both}
         details[open] summary .chevron{transform:rotate(180deg)}
         .scrollbar-hide::-webkit-scrollbar{display:none}
         .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
-        .story-ring{animation:pulseRing 2s ease-in-out infinite}
       `}</style>
 
       {/* ══ ANNOUNCEMENT BAR ══ */}
@@ -190,20 +185,6 @@ export default function VerrueTkLanding() {
             <span>Resultat visible en quelques jours</span><span className="h-1 w-1 rounded-full bg-amber-400/60"/>
             <span>Support client 7j/7</span><span className="h-1 w-1 rounded-full bg-amber-400/60"/>
           </div>)}
-        </div>
-      </div>
-
-      {/* ══ 9. STORIES BAR ══ */}
-      <div className="border-b border-neutral-100 bg-white px-4 py-3">
-        <div className="mx-auto flex max-w-6xl gap-3 overflow-x-auto scrollbar-hide">
-          {STORIES.map((s, i) => (
-            <button key={i} onClick={() => setStoryIdx(i)} className="flex shrink-0 flex-col items-center gap-1">
-              <div className={`story-ring flex h-14 w-14 items-center justify-center rounded-full border-[3px] border-amber-400 ${s.bg} text-xs font-bold text-white sm:h-16 sm:w-16`}>
-                {s.init}
-              </div>
-              <span className="max-w-[56px] truncate text-[9px] font-medium text-neutral-500">{s.n.split(' ')[0]}</span>
-            </button>
-          ))}
         </div>
       </div>
 
@@ -427,7 +408,7 @@ export default function VerrueTkLanding() {
           </div>
         </div>
         <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 scrollbar-hide sm:justify-center sm:gap-4 sm:overflow-visible sm:px-0">
-          {STORIES.map((t, i) => (
+          {REVIEWS.map((t, i) => (
             <div key={i} className="w-[280px] shrink-0 snap-center rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm sm:w-[300px] sm:p-5">
               <div className="mb-3 flex items-center gap-3">
                 <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${t.bg} text-xs font-bold text-white shadow-md`}>{t.init}</div>
@@ -489,7 +470,7 @@ export default function VerrueTkLanding() {
       <section className="bg-neutral-900 py-12 sm:py-16">
         <div className="mx-auto max-w-lg px-4 text-center">
           <div className="mx-auto mb-4 flex justify-center -space-x-2">
-            {STORIES.slice(0,5).map((s,i)=><div key={i} className={`flex h-9 w-9 items-center justify-center rounded-full border-[3px] border-neutral-900 ${s.bg} text-[10px] font-bold text-white`}>{s.init}</div>)}
+            {REVIEWS.slice(0,5).map((s,i)=><div key={i} className={`flex h-9 w-9 items-center justify-center rounded-full border-[3px] border-neutral-900 ${s.bg} text-[10px] font-bold text-white`}>{s.init}</div>)}
           </div>
           <div className="mb-3 flex items-center justify-center gap-1"><div className="flex gap-0.5">{[...Array(5)].map((_,i)=><Star key={i}/>)}</div><span className="text-xs font-bold text-white">4.8/5</span></div>
           <h2 className="mb-2 text-xl font-extrabold text-white sm:text-2xl">Rejoignez +1 200 clients satisfaits</h2>
@@ -525,13 +506,13 @@ export default function VerrueTkLanding() {
         </div>
       </div>
 
-      {/* ══ 1. LIVE TOAST ══ */}
+      {/* ══ LIVE TOAST ══ */}
       {toast && (
-        <div className="toast-in fixed bottom-20 left-3 z-50 flex max-w-[280px] items-center gap-2.5 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 shadow-xl sm:bottom-20 sm:left-5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm">🛒</div>
+        <div className={`${toast.visible ? 'toast-in' : 'toast-out'} fixed bottom-20 left-3 z-50 flex max-w-[300px] items-center gap-2.5 rounded-xl border border-neutral-100 bg-white/95 px-3.5 py-3 shadow-2xl backdrop-blur sm:bottom-20 sm:left-5`}>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-sm text-white">✓</div>
           <div>
-            <p className="text-[11px] font-bold text-neutral-800">{toast.n} de {toast.v}</p>
-            <p className="text-[10px] text-neutral-400">vient de commander — il y a {toast.t}</p>
+            <p className="text-[12px] font-bold text-neutral-800">{toast.n} vient de commander</p>
+            <p className="text-[10px] text-neutral-400">Creme Anti-Verrue · il y a {toast.t}</p>
           </div>
         </div>
       )}
@@ -552,30 +533,6 @@ export default function VerrueTkLanding() {
               Commander maintenant
             </button>
             <p className="mt-2 text-[10px] text-neutral-400">Offre disponible encore aujourd'hui</p>
-          </div>
-        </div>
-      )}
-
-      {/* ══ 9. STORY MODAL ══ */}
-      {storyIdx !== null && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4" onClick={() => setStoryIdx(null)}>
-          <div className="relative w-full max-w-xs rounded-2xl bg-white p-5 shadow-2xl" onClick={e => e.stopPropagation()}>
-            <button onClick={() => setStoryIdx(null)} className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-neutral-100 text-neutral-400">
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
-            {(() => { const s = STORIES[storyIdx]; return (<>
-              <div className="mb-4 flex items-center gap-3">
-                <div className={`flex h-12 w-12 items-center justify-center rounded-full ${s.bg} text-sm font-bold text-white shadow-md`}>{s.init}</div>
-                <div><p className="text-sm font-bold">{s.n}</p><p className="text-[11px] text-neutral-400">{s.v}</p></div>
-              </div>
-              <div className="mb-3 flex gap-0.5">{[...Array(s.s)].map((_,j)=><Star key={j}/>)}</div>
-              <p className="mb-4 text-[13px] leading-relaxed text-neutral-600">"{s.q}"</p>
-              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-600"><Check/> Achat verifie</span>
-              <div className="mt-4 flex gap-2">
-                {storyIdx > 0 && <button onClick={() => setStoryIdx(storyIdx - 1)} className="flex-1 rounded-lg border border-neutral-200 py-2 text-[12px] font-bold text-neutral-600">← Precedent</button>}
-                {storyIdx < STORIES.length - 1 && <button onClick={() => setStoryIdx(storyIdx + 1)} className="flex-1 rounded-lg bg-neutral-900 py-2 text-[12px] font-bold text-white">Suivant →</button>}
-              </div>
-            </>); })()}
           </div>
         </div>
       )}
