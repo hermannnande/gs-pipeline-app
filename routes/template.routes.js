@@ -4,9 +4,54 @@ import { authenticate, authorize } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
+let tableReady = false;
+async function ensureTable() {
+  if (tableReady) return;
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "landing_templates" (
+        "id" SERIAL PRIMARY KEY,
+        "nom" TEXT NOT NULL,
+        "slug" TEXT NOT NULL UNIQUE,
+        "description" TEXT,
+        "productCode" TEXT,
+        "productId" INTEGER REFERENCES "products"("id"),
+        "config" TEXT NOT NULL,
+        "assetsFolder" TEXT,
+        "actif" BOOLEAN DEFAULT true,
+        "companyId" INTEGER DEFAULT 1 REFERENCES "companies"("id"),
+        "createdAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "landing_templates_companyId_idx" ON "landing_templates"("companyId");`);
+    tableReady = true;
+  } catch (e) {
+    if (e?.message?.includes('already exists')) { tableReady = true; return; }
+    console.error('ensureTable error:', e?.message);
+  }
+}
+
+// GET /api/templates/public/:slug — accès public pour le rendu (MUST be before /:id)
+router.get('/public/:slug', async (req, res) => {
+  try {
+    await ensureTable();
+    const template = await prisma.landingTemplate.findUnique({
+      where: { slug: req.params.slug },
+      include: { product: { select: { id: true, nom: true, code: true, prixUnitaire: true, prix2Unites: true, prix3Unites: true, imageUrl: true } } },
+    });
+    if (!template || !template.actif) return res.status(404).json({ error: 'Page introuvable.' });
+    res.json({ template });
+  } catch (error) {
+    console.error('Erreur get public template:', error);
+    res.status(500).json({ error: 'Erreur serveur.' });
+  }
+});
+
 // GET /api/templates — liste tous les templates (admin only)
 router.get('/', authenticate, authorize('ADMIN'), async (req, res) => {
   try {
+    await ensureTable();
     const templates = await prisma.landingTemplate.findMany({
       where: { companyId: req.user.companyId },
       include: { product: { select: { id: true, nom: true, code: true, imageUrl: true } } },
@@ -22,6 +67,7 @@ router.get('/', authenticate, authorize('ADMIN'), async (req, res) => {
 // GET /api/templates/:id — un template
 router.get('/:id', authenticate, authorize('ADMIN'), async (req, res) => {
   try {
+    await ensureTable();
     const template = await prisma.landingTemplate.findFirst({
       where: { id: parseInt(req.params.id), companyId: req.user.companyId },
       include: { product: { select: { id: true, nom: true, code: true, imageUrl: true } } },
@@ -37,6 +83,7 @@ router.get('/:id', authenticate, authorize('ADMIN'), async (req, res) => {
 // POST /api/templates — créer un template
 router.post('/', authenticate, authorize('ADMIN'), async (req, res) => {
   try {
+    await ensureTable();
     const { nom, slug, description, productCode, productId, config, assetsFolder, actif } = req.body;
     if (!nom || !slug) return res.status(400).json({ error: 'Nom et slug requis.' });
 
@@ -67,6 +114,7 @@ router.post('/', authenticate, authorize('ADMIN'), async (req, res) => {
 // PUT /api/templates/:id — modifier un template
 router.put('/:id', authenticate, authorize('ADMIN'), async (req, res) => {
   try {
+    await ensureTable();
     const id = parseInt(req.params.id);
     const existing = await prisma.landingTemplate.findFirst({
       where: { id, companyId: req.user.companyId },
@@ -105,6 +153,7 @@ router.put('/:id', authenticate, authorize('ADMIN'), async (req, res) => {
 // DELETE /api/templates/:id — supprimer un template
 router.delete('/:id', authenticate, authorize('ADMIN'), async (req, res) => {
   try {
+    await ensureTable();
     const id = parseInt(req.params.id);
     const existing = await prisma.landingTemplate.findFirst({
       where: { id, companyId: req.user.companyId },
@@ -122,6 +171,7 @@ router.delete('/:id', authenticate, authorize('ADMIN'), async (req, res) => {
 // POST /api/templates/:id/duplicate — dupliquer un template
 router.post('/:id/duplicate', authenticate, authorize('ADMIN'), async (req, res) => {
   try {
+    await ensureTable();
     const id = parseInt(req.params.id);
     const source = await prisma.landingTemplate.findFirst({
       where: { id, companyId: req.user.companyId },
@@ -149,21 +199,6 @@ router.post('/:id/duplicate', authenticate, authorize('ADMIN'), async (req, res)
     res.status(201).json({ template });
   } catch (error) {
     console.error('Erreur duplication template:', error);
-    res.status(500).json({ error: 'Erreur serveur.' });
-  }
-});
-
-// GET /api/templates/public/:slug — accès public pour le rendu
-router.get('/public/:slug', async (req, res) => {
-  try {
-    const template = await prisma.landingTemplate.findUnique({
-      where: { slug: req.params.slug },
-      include: { product: { select: { id: true, nom: true, code: true, prixUnitaire: true, prix2Unites: true, prix3Unites: true, imageUrl: true } } },
-    });
-    if (!template || !template.actif) return res.status(404).json({ error: 'Page introuvable.' });
-    res.json({ template });
-  } catch (error) {
-    console.error('Erreur get public template:', error);
     res.status(500).json({ error: 'Erreur serveur.' });
   }
 });
