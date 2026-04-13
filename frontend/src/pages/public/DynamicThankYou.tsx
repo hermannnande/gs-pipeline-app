@@ -164,16 +164,11 @@ export default function DynamicThankYou() {
             </div>
 
             {/* Action buttons */}
-            <div className="flex flex-col gap-2.5 pt-1 sm:flex-row">
+            <div className="pt-1">
               <Link to={`/landing/${slug}?company=${company}`}
-                className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-neutral-200 bg-white px-4 py-3.5 text-[13px] font-bold text-neutral-700 transition-all hover:border-neutral-300 hover:shadow-md active:scale-[.98]">
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-neutral-200 bg-white px-4 py-3.5 text-[13px] font-bold text-neutral-700 transition-all hover:border-neutral-300 hover:shadow-md active:scale-[.98]">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                 Retour au produit
-              </Link>
-              <Link to={`/commander?company=${company}`}
-                className={`flex flex-1 items-center justify-center gap-2 rounded-2xl ${T.btnBg} px-4 py-3.5 text-[13px] font-extrabold text-white shadow-lg ${T.btnHover} transition-all active:scale-[.98]`}>
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
-                Voir tous les produits
               </Link>
             </div>
           </div>
