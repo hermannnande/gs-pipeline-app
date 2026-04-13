@@ -91,6 +91,8 @@ export default function VerrueTkLanding() {
         .fade-up{animation:fadeUp .5s ease both}
         .marquee-track{animation:marquee 22s linear infinite}
         details[open] summary .chevron{transform:rotate(180deg)}
+        .scrollbar-hide::-webkit-scrollbar{display:none}
+        .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
       `}</style>
 
       {/* ══ ANNOUNCEMENT BAR ══ */}
@@ -204,57 +206,64 @@ export default function VerrueTkLanding() {
         </div>
       </div>
 
-      {/* ══ VIDEOS ══ */}
+      {/* ══ VIDEOS — horizontal scroll, auto-play loop ══ */}
       <section className="py-10 sm:py-14">
         <div className="mx-auto max-w-6xl px-4">
           <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-widest text-amber-600">Preuves en video</p>
           <h2 className="mb-2 text-center text-xl font-extrabold sm:text-2xl">Voyez les resultats vous-meme</h2>
-          <p className="mx-auto mb-7 max-w-lg text-center text-[13px] text-neutral-400 sm:text-sm">Des utilisateurs partagent leur experience.</p>
-          <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
-            {VID.map((v,i) => (
-              <video key={i} src={v} controls playsInline preload="metadata"
-                className="aspect-[9/16] w-full rounded-xl border border-neutral-100 bg-neutral-100 object-cover shadow-sm sm:rounded-2xl"/>
-            ))}
+          <p className="mx-auto mb-5 max-w-lg text-center text-[13px] text-neutral-400">Des utilisateurs partagent leur experience.</p>
+        </div>
+        <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 scrollbar-hide sm:justify-center sm:gap-4 sm:overflow-visible sm:px-0">
+          {VID.map((v,i) => (
+            <div key={i} className="w-[200px] shrink-0 snap-center sm:w-[220px] md:w-[260px]">
+              <video src={v} autoPlay loop muted playsInline preload="metadata"
+                className="aspect-[9/16] w-full rounded-2xl border border-neutral-100 bg-neutral-100 object-cover shadow-md"/>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ══ PROBLEM / SOLUTION — side by side on desktop ══ */}
+      <section className="border-y border-neutral-100 bg-neutral-50 py-10 sm:py-14">
+        <div className="mx-auto grid max-w-5xl gap-6 px-4 sm:grid-cols-2 sm:gap-8">
+          <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+            <img src={I.r1} alt="Verrues sur la peau" className="aspect-[4/3] w-full object-cover" loading="lazy"/>
+            <div className="p-4 sm:p-5">
+              <span className="mb-1.5 inline-block rounded-md bg-red-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-red-500">Le probleme</span>
+              <h3 className="mb-1 text-[15px] font-extrabold">Les verrues genent au quotidien</h3>
+              <p className="text-[12px] leading-relaxed text-neutral-400">Elles creent un malaise visible et affectent la confiance.</p>
+            </div>
+          </div>
+          <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+            <img src={I.r2} alt="Resultat creme" className="aspect-[4/3] w-full object-cover" loading="lazy"/>
+            <div className="p-4 sm:p-5">
+              <span className="mb-1.5 inline-block rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-600">La solution</span>
+              <h3 className="mb-1 text-[15px] font-extrabold">VERRUE TK agit localement</h3>
+              <p className="text-[12px] leading-relaxed text-neutral-400">La zone seche. La peau retrouve son aspect normal.</p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ══ PROBLEM ══ */}
-      <section className="border-y border-neutral-100 bg-neutral-50 py-10 sm:py-14">
-        <div className="mx-auto max-w-5xl px-4 text-center">
-          <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-red-500">Le probleme</p>
-          <h2 className="mb-2 text-xl font-extrabold sm:text-2xl">Les verrues genent au quotidien</h2>
-          <p className="mx-auto mb-7 max-w-lg text-[13px] text-neutral-400 sm:text-sm">Elles affectent la confiance en soi et creent un malaise visible.</p>
-          <img src={I.r1} alt="Verrues sur la peau" className="mx-auto w-full max-w-xl rounded-2xl border border-neutral-200 object-cover shadow-lg sm:rounded-3xl" loading="lazy"/>
-        </div>
-      </section>
-
-      {/* ══ SOLUTION ══ */}
-      <section className="py-10 sm:py-14">
-        <div className="mx-auto max-w-5xl px-4 text-center">
-          <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-emerald-600">La solution</p>
-          <h2 className="mb-2 text-xl font-extrabold sm:text-2xl">VERRUE TK agit localement</h2>
-          <p className="mx-auto mb-7 max-w-lg text-[13px] text-neutral-400 sm:text-sm">La zone seche progressivement. La peau retrouve son aspect normal.</p>
-          <img src={I.r2} alt="Resultat creme" className="mx-auto w-full max-w-xl rounded-2xl border border-neutral-200 object-cover shadow-lg sm:rounded-3xl" loading="lazy"/>
-        </div>
-      </section>
-
       {/* ══ HOW TO USE ══ */}
-      <section className="border-y border-neutral-100 bg-neutral-50 py-10 sm:py-14">
+      <section className="py-10 sm:py-14">
         <div className="mx-auto max-w-5xl px-4">
           <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-widest text-amber-600">Mode d'emploi</p>
           <h2 className="mb-2 text-center text-xl font-extrabold sm:text-2xl">Simple a utiliser</h2>
-          <p className="mx-auto mb-7 max-w-lg text-center text-[13px] text-neutral-400 sm:text-sm">4 etapes faciles pour une application optimale.</p>
+          <p className="mx-auto mb-7 max-w-lg text-center text-[13px] text-neutral-400">4 etapes faciles.</p>
           <img src={I.usage} alt="Utilisation" className="mx-auto mb-8 w-full max-w-xl rounded-2xl border border-neutral-200 object-cover shadow-lg sm:rounded-3xl" loading="lazy"/>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { n: '01', t: 'Nettoyez', d: 'Lavez la zone concernee a l\'eau propre.' },
-              { n: '02', t: 'Appliquez', d: 'Deposez une petite quantite de creme.' },
-              { n: '03', t: 'Repetez', d: 'Suivez la routine conseillee regulierement.' },
-              { n: '04', t: 'Observez', d: 'Constatez l\'amelioration au fil des jours.' },
+              { n: '01', t: 'Nettoyez', d: 'Lavez la zone concernee a l\'eau propre.', ico: '💧' },
+              { n: '02', t: 'Appliquez', d: 'Deposez une petite quantite de creme.', ico: '🧴' },
+              { n: '03', t: 'Repetez', d: 'Suivez la routine conseillee regulierement.', ico: '🔁' },
+              { n: '04', t: 'Observez', d: 'Constatez l\'amelioration au fil des jours.', ico: '✨' },
             ].map(s => (
               <div key={s.n} className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
-                <span className="mb-2 inline-block rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-black text-amber-600">{s.n}</span>
+                <div className="mb-2.5 flex items-center gap-2">
+                  <span className="text-lg">{s.ico}</span>
+                  <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-black text-amber-600">ETAPE {s.n}</span>
+                </div>
                 <h3 className="mb-1 text-sm font-bold">{s.t}</h3>
                 <p className="text-xs leading-relaxed text-neutral-400">{s.d}</p>
               </div>
@@ -264,7 +273,7 @@ export default function VerrueTkLanding() {
       </section>
 
       {/* ══ MID CTA ══ */}
-      <section className="py-8 sm:py-10">
+      <section className="py-4 sm:py-6">
         <div className="mx-auto max-w-lg px-4 text-center">
           <button onClick={open}
             className="group flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-6 py-4 text-[15px] font-bold text-white shadow-xl transition hover:bg-neutral-800 active:scale-[.98]">
@@ -275,40 +284,81 @@ export default function VerrueTkLanding() {
         </div>
       </section>
 
-      {/* ══ TESTIMONIALS ══ */}
+      {/* ══ TESTIMONIALS — premium horizontal scroll cards ══ */}
       <section className="border-y border-neutral-100 bg-neutral-50 py-10 sm:py-14">
-        <div className="mx-auto max-w-5xl px-4">
-          <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-widest text-amber-600">Temoignages</p>
-          <h2 className="mb-2 text-center text-xl font-extrabold sm:text-2xl">Nos clients temoignent</h2>
-          <p className="mx-auto mb-7 max-w-lg text-center text-[13px] text-neutral-400 sm:text-sm">Des retours reels de personnes satisfaites.</p>
-          <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
-            {[
-              { q: 'En quelques jours la zone est devenue propre. Je recommande a tout le monde.', n: 'Awa K.', v: 'Abidjan', d: 'Il y a 3 jours' },
-              { q: 'Commande rapide, livraison le lendemain, et resultat visible des la premiere semaine.', n: 'Jean M.', v: 'Bouake', d: 'Il y a 1 semaine' },
-              { q: 'Le suivi client est tres serieux. Produit de qualite. Je suis satisfaite.', n: 'Mariam D.', v: 'Yopougon', d: 'Il y a 5 jours' },
-            ].map((t, i) => (
-              <div key={i} className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
-                <div className="mb-2.5 flex gap-0.5">{[...Array(5)].map((_,j) => <Star key={j}/>)}</div>
-                <p className="mb-3 text-[13px] leading-relaxed text-neutral-600">"{t.q}"</p>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-bold">{t.n}</p>
-                    <p className="text-[10px] text-neutral-400">{t.v}</p>
-                  </div>
-                  <span className="flex items-center gap-1 text-[10px] text-emerald-500"><Check/> Achat verifie</span>
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="mb-6 flex flex-col items-center gap-1 sm:mb-8">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-amber-600">Avis clients verifies</p>
+            <h2 className="text-xl font-extrabold sm:text-2xl">+1 200 clients satisfaits</h2>
+            <div className="mt-1 flex items-center gap-1.5">
+              <div className="flex gap-0.5">{[...Array(5)].map((_,i)=><Star key={i}/>)}</div>
+              <span className="text-xs font-bold text-neutral-700">4.8/5</span>
+              <span className="text-[11px] text-neutral-400">— base sur 1 247 avis</span>
+            </div>
+          </div>
+        </div>
+        <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 scrollbar-hide sm:justify-center sm:gap-4 sm:overflow-visible sm:px-0">
+          {[
+            { q: 'En 5 jours la verrue a seche completement. Ma peau est redevenue lisse. Je ne pensais pas que ca marcherait aussi vite.', n: 'Awa Kone', v: 'Abidjan, Cocody', d: 'Il y a 2 jours', stars: 5, init: 'AK', bg: 'bg-amber-500' },
+            { q: 'La livraison etait tres rapide. Le livreur m\'a appelee 1h avant. Le produit est bien emballe. Resultat visible en 1 semaine.', n: 'Jean-Marc B.', v: 'Bouake', d: 'Il y a 5 jours', stars: 5, init: 'JM', bg: 'bg-sky-500' },
+            { q: 'J\'ai commande pour ma mere. Elle avait des verrues depuis 2 ans. Apres 10 jours d\'utilisation, c\'est presque fini.', n: 'Mariam Diallo', v: 'Yopougon', d: 'Il y a 1 semaine', stars: 5, init: 'MD', bg: 'bg-emerald-500' },
+            { q: 'Tres satisfait. C\'est la premiere creme qui a fonctionne. Application facile, pas de douleur. Merci a l\'equipe.', n: 'Kouassi F.', v: 'Daloa', d: 'Il y a 3 jours', stars: 5, init: 'KF', bg: 'bg-violet-500' },
+            { q: 'Service client au top. Ils m\'ont appelee pour me conseiller. 2 semaines plus tard, plus rien. Je recommande.', n: 'Fatou S.', v: 'San Pedro', d: 'Il y a 4 jours', stars: 4, init: 'FS', bg: 'bg-rose-500' },
+          ].map((t, i) => (
+            <div key={i} className="w-[280px] shrink-0 snap-center rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm sm:w-[300px] sm:p-5">
+              <div className="mb-3 flex items-center gap-3">
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${t.bg} text-xs font-bold text-white shadow-md`}>{t.init}</div>
+                <div className="min-w-0">
+                  <p className="truncate text-[13px] font-bold">{t.n}</p>
+                  <p className="text-[10px] text-neutral-400">{t.v}</p>
                 </div>
               </div>
-            ))}
+              <div className="mb-2 flex items-center gap-2">
+                <div className="flex gap-0.5">{[...Array(t.stars)].map((_,j)=><Star key={j}/>)}</div>
+                <span className="text-[10px] text-neutral-300">{t.d}</span>
+              </div>
+              <p className="mb-3 text-[12px] leading-relaxed text-neutral-600">"{t.q}"</p>
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-600"><Check/> Achat verifie</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ══ GUARANTEE ══ */}
+      <section className="py-10 sm:py-14">
+        <div className="mx-auto max-w-3xl px-4">
+          <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-6 sm:p-8">
+            <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-3xl shadow-sm">🛡️</div>
+              <div>
+                <h3 className="mb-1 text-[15px] font-extrabold text-emerald-900 sm:text-base">Commandez en toute confiance</h3>
+                <p className="text-[12px] leading-relaxed text-emerald-700 sm:text-[13px]">
+                  Paiement uniquement a la livraison. Vous verifiez le colis avant de payer. Notre equipe vous appelle pour confirmer chaque commande. Support disponible 7j/7.
+                </p>
+              </div>
+            </div>
+            <div className="mt-5 grid grid-cols-3 gap-3">
+              {[
+                { ico: '📦', t: 'Livraison securisee' },
+                { ico: '💰', t: 'Paiement a la reception' },
+                { ico: '📞', t: 'Support 7j/7' },
+              ].map((g,i) => (
+                <div key={i} className="rounded-xl bg-white/80 p-3 text-center shadow-sm">
+                  <span className="text-xl">{g.ico}</span>
+                  <p className="mt-1 text-[10px] font-bold text-emerald-800">{g.t}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* ══ FAQ ══ */}
-      <section className="py-10 sm:py-14">
+      <section className="border-y border-neutral-100 bg-neutral-50 py-10 sm:py-14">
         <div className="mx-auto max-w-2xl px-4">
           <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-widest text-amber-600">FAQ</p>
           <h2 className="mb-2 text-center text-xl font-extrabold sm:text-2xl">Questions frequentes</h2>
-          <p className="mx-auto mb-7 max-w-lg text-center text-[13px] text-neutral-400 sm:text-sm">Tout savoir avant de commander.</p>
+          <p className="mx-auto mb-7 max-w-lg text-center text-[13px] text-neutral-400">Tout savoir avant de commander.</p>
           <div className="space-y-2">
             {[
               { q: 'Est-ce douloureux ?', a: 'Non. L\'application est locale, douce et rapide. Aucune douleur.' },
@@ -316,6 +366,7 @@ export default function VerrueTkLanding() {
               { q: 'En combien de temps je vois les resultats ?', a: 'La plupart des clients constatent une amelioration en quelques jours.' },
               { q: 'Comment suis-je contacte apres la commande ?', a: 'Notre equipe vous appelle dans les heures qui suivent pour confirmer.' },
               { q: 'La creme convient a tous les types de peau ?', a: 'Oui, la formule est concue pour tous les types de peau.' },
+              { q: 'Puis-je commander plusieurs boites ?', a: 'Oui. 2 boites a 14 900 FCFA ou 3 boites a 24 900 FCFA. Les offres groupees sont les plus populaires.' },
             ].map((f, i) => (
               <details key={i} className="group rounded-xl border border-neutral-200 bg-white shadow-sm">
                 <summary className="flex cursor-pointer items-center justify-between px-4 py-3.5 text-[13px] font-bold sm:text-sm">
@@ -332,20 +383,48 @@ export default function VerrueTkLanding() {
       {/* ══ FINAL CTA SECTION ══ */}
       <section className="bg-neutral-900 py-12 sm:py-16">
         <div className="mx-auto max-w-lg px-4 text-center">
-          <h2 className="mb-2 text-xl font-extrabold text-white sm:text-2xl">Pret a retrouver une peau nette ?</h2>
+          <div className="mx-auto mb-4 flex justify-center -space-x-2">
+            {['bg-amber-400','bg-emerald-400','bg-sky-400','bg-rose-400','bg-violet-400'].map((c,i)=>(
+              <div key={i} className={`flex h-9 w-9 items-center justify-center rounded-full border-[3px] border-neutral-900 ${c} text-[10px] font-bold text-white`}>
+                {['AK','JM','MD','KF','FS'][i]}
+              </div>
+            ))}
+          </div>
+          <div className="mb-3 flex items-center justify-center gap-1">
+            <div className="flex gap-0.5">{[...Array(5)].map((_,i)=><svg key={i} className="h-4 w-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>)}</div>
+            <span className="text-xs font-bold text-white">4.8/5</span>
+          </div>
+          <h2 className="mb-2 text-xl font-extrabold text-white sm:text-2xl">Rejoignez +1 200 clients satisfaits</h2>
           <p className="mb-6 text-[13px] text-neutral-400">Commandez maintenant. Paiement a la livraison uniquement.</p>
           <button onClick={open}
             className="group mx-auto flex items-center justify-center gap-2 rounded-xl bg-amber-400 px-8 py-3.5 text-[15px] font-extrabold text-neutral-900 shadow-[0_12px_35px_rgba(251,191,36,.4)] transition hover:bg-amber-300 active:scale-[.98]">
             <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-900 opacity-40"/><span className="relative inline-flex h-2 w-2 rounded-full bg-neutral-900"/></span>
-            Commander ici
+            Commander ici — {fmt(PRICES[1])}
           </button>
+          <p className="mt-3 text-[11px] text-neutral-500">Aucun compte requis · Formulaire en 30 secondes</p>
         </div>
       </section>
 
       {/* ══ FOOTER ══ */}
-      <footer className="border-t border-neutral-100 bg-white py-6 pb-24 sm:pb-6">
-        <div className="mx-auto max-w-6xl px-4 text-center text-[11px] text-neutral-300">
-          Paiement a la livraison · Livraison rapide en Cote d'Ivoire · Support client 7j/7
+      <footer className="border-t border-neutral-100 bg-white pb-24 pt-6 sm:pb-8">
+        <div className="mx-auto max-w-4xl px-4">
+          <div className="flex flex-wrap justify-center gap-6 text-center">
+            {[
+              { ico: '🚚', t: 'Livraison rapide', d: '24h Abidjan' },
+              { ico: '💰', t: 'Paiement a la livraison', d: 'Aucun risque' },
+              { ico: '📞', t: 'Support client', d: '7j/7 par telephone' },
+              { ico: '🛡️', t: 'Commande securisee', d: 'Verifiez avant de payer' },
+            ].map((f,i)=>(
+              <div key={i} className="w-[140px]">
+                <span className="text-xl">{f.ico}</span>
+                <p className="mt-1 text-[11px] font-bold text-neutral-700">{f.t}</p>
+                <p className="text-[10px] text-neutral-400">{f.d}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-6 text-center text-[10px] text-neutral-300">
+            © 2026 Creme Anti-Verrue TK · Paiement a la livraison · Cote d'Ivoire
+          </p>
         </div>
       </footer>
 
