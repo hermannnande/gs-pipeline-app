@@ -5,50 +5,39 @@ import axios from 'axios';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '/api');
 const TARGET_CODE = 'VERRUE_TK';
-
 const PRICES: Record<number, number> = { 1: 9900, 2: 14900, 3: 24900 };
-const PRICE_LABELS: Record<number, string> = {
-  1: '1 boite — 9 900 FCFA',
-  2: '2 boites — 14 900 FCFA',
-  3: '3 boites — 24 900 FCFA',
-};
+const QTY_OPTS = [
+  { v: 1, label: '1 boite', sub: '9 900 FCFA' },
+  { v: 2, label: '2 boites', sub: '14 900 FCFA', tag: 'Populaire' },
+  { v: 3, label: '3 boites', sub: '24 900 FCFA', tag: 'Meilleure offre' },
+];
 
-interface Product {
-  id: number;
-  code: string;
-  nom: string;
-  prixUnitaire: number;
-  imageUrl: string | null;
-}
+interface Product { id: number; code: string; nom: string; prixUnitaire: number; imageUrl: string | null }
 
-function slug(): string {
-  return new URLSearchParams(window.location.search).get('company') || 'ci';
-}
+const co = () => new URLSearchParams(window.location.search).get('company') || 'ci';
+const fmt = (v: number) => v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
 
-function fmt(v: number): string {
-  return v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
-}
-
-const IMG = {
-  hero: '/verrue-tk/hero.png',
-  g1: '/verrue-tk/gallery-1.png',
-  g2: '/verrue-tk/gallery-2.png',
-  g3: '/verrue-tk/gallery-3.png',
-  r1: '/verrue-tk/result-1.png',
-  r2: '/verrue-tk/result-2.png',
+const I = {
+  hero: '/verrue-tk/hero.png', g1: '/verrue-tk/gallery-1.png',
+  g2: '/verrue-tk/gallery-2.png', g3: '/verrue-tk/gallery-3.png',
+  r1: '/verrue-tk/result-1.png', r2: '/verrue-tk/result-2.png',
   usage: '/verrue-tk/usage.png',
 };
+const VID = ['/verrue-tk/video-1.mp4', '/verrue-tk/video-2.mp4', '/verrue-tk/video-3.mp4'];
 
-const VIDEOS = ['/verrue-tk/video-1.mp4', '/verrue-tk/video-2.mp4', '/verrue-tk/video-3.mp4'];
+const Check = () => (
+  <svg className="h-4 w-4 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+);
+const Star = () => (
+  <svg className="h-3.5 w-3.5 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+);
 
 export default function VerrueTkLanding() {
   const navigate = useNavigate();
-  const company = useMemo(() => slug(), []);
-
+  const company = useMemo(co, []);
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
   const [modal, setModal] = useState(false);
   const [qty, setQty] = useState(1);
   const [name, setName] = useState('');
@@ -56,417 +45,400 @@ export default function VerrueTkLanding() {
   const [phone, setPhone] = useState('');
   const [sending, setSending] = useState(false);
   const [formErr, setFormErr] = useState('');
+  const [gi, setGi] = useState(0);
   const formRef = useRef<HTMLDivElement>(null);
-
-  const [galleryIdx, setGalleryIdx] = useState(0);
-  const galleryImages = [IMG.hero, IMG.g1, IMG.g2, IMG.g3];
+  const gallery = [I.hero, I.g1, I.g2, I.g3];
 
   useEffect(() => {
-    axios
-      .get(`${API_URL}/public/products`, { params: { company } })
-      .then((r) => {
-        const list: Product[] = r.data?.products || [];
-        setProduct(list.find((p) => p.code?.toUpperCase() === TARGET_CODE) || null);
-      })
+    axios.get(`${API_URL}/public/products`, { params: { company } })
+      .then(r => setProduct((r.data?.products || []).find((p: Product) => p.code?.toUpperCase() === TARGET_CODE) || null))
       .catch(() => setError('Impossible de charger le produit.'))
       .finally(() => setLoading(false));
   }, [company]);
 
-  useEffect(() => {
-    document.body.style.overflow = modal ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
-  }, [modal]);
+  useEffect(() => { document.body.style.overflow = modal ? 'hidden' : ''; return () => { document.body.style.overflow = ''; }; }, [modal]);
 
-  const open = () => {
-    setFormErr('');
-    setName('');
-    setCity('');
-    setPhone('');
-    setQty(1);
-    setModal(true);
-  };
+  const open = () => { setFormErr(''); setName(''); setCity(''); setPhone(''); setQty(1); setModal(true); };
 
   const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormErr('');
+    e.preventDefault(); setFormErr('');
     if (!product) return;
     if (!name.trim()) return setFormErr('Entrez votre nom complet.');
     if (!city.trim()) return setFormErr('Entrez votre ville / commune.');
     if (!phone.trim()) return setFormErr('Entrez votre numero de telephone.');
-
     setSending(true);
     try {
-      const res = await axios.post(`${API_URL}/public/order`, {
-        company,
-        productId: product.id,
-        customerName: name.trim(),
-        customerPhone: phone.trim(),
-        customerCity: city.trim(),
-        quantity: qty,
-      });
+      const res = await axios.post(`${API_URL}/public/order`, { company, productId: product.id, customerName: name.trim(), customerPhone: phone.trim(), customerCity: city.trim(), quantity: qty });
       const ref = res.data?.orderReference || '';
-      const p = new URLSearchParams();
-      p.set('company', company);
-      if (ref) p.set('ref', ref);
+      const p = new URLSearchParams(); p.set('company', company); if (ref) p.set('ref', ref);
       navigate(`/anti-verrue/merci?${p.toString()}`);
-    } catch (err: any) {
-      setFormErr(err?.response?.data?.error || 'Erreur. Reessayez.');
-    } finally {
-      setSending(false);
-    }
+    } catch (err: any) { setFormErr(err?.response?.data?.error || 'Erreur. Reessayez.'); }
+    finally { setSending(false); }
   };
 
-  /* ───── Loading / Error ───── */
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#fffdf5]">
-        <div className="text-center">
-          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-yellow-200 border-t-yellow-500" />
-          <p className="mt-4 text-sm text-neutral-500">Chargement...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !product) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#fffdf5] px-4">
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center text-red-700">
-          {error || 'Produit VERRUE_TK non disponible.'}
-        </div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="flex min-h-screen items-center justify-center bg-white"><div className="text-center"><div className="mx-auto h-10 w-10 animate-spin rounded-full border-[3px] border-neutral-200 border-t-amber-500"/><p className="mt-3 text-xs text-neutral-400">Chargement...</p></div></div>
+  );
+  if (error || !product) return (
+    <div className="flex min-h-screen items-center justify-center bg-white px-4"><div className="rounded-2xl border border-red-100 bg-red-50 p-6 text-center text-sm text-red-600">{error || 'Produit non disponible.'}</div></div>
+  );
 
   return (
-    <div className="min-h-screen bg-[#fffdf5] text-neutral-900" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <div className="min-h-screen bg-white text-neutral-900" style={{ fontFamily: "'Inter',system-ui,-apple-system,sans-serif" }}>
+      <style>{`
+        @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+        .fade-up{animation:fadeUp .5s ease both}
+        .marquee-track{animation:marquee 22s linear infinite}
+        details[open] summary .chevron{transform:rotate(180deg)}
+      `}</style>
 
-      {/* ═══════ TICKER BAR ═══════ */}
-      <div className="sticky top-0 z-50 overflow-hidden bg-neutral-900">
-        <div className="flex w-[200%] animate-[ticker_18s_linear_infinite] items-center gap-10 py-2.5 text-[11px] font-bold uppercase tracking-widest text-yellow-300">
-          {[...Array(2)].map((_, i) => (
-            <div key={i} className="flex shrink-0 items-center gap-10">
-              <span>Paiement a la livraison</span>
-              <span className="h-1 w-1 rounded-full bg-yellow-400" />
-              <span>Livraison 24h Abidjan</span>
-              <span className="h-1 w-1 rounded-full bg-yellow-400" />
-              <span>Resultat visible en quelques jours</span>
-              <span className="h-1 w-1 rounded-full bg-yellow-400" />
-              <span>Support client 7j/7</span>
-              <span className="h-1 w-1 rounded-full bg-yellow-400" />
+      {/* ══ ANNOUNCEMENT BAR ══ */}
+      <div className="overflow-hidden bg-neutral-900 py-2">
+        <div className="marquee-track flex w-[200%] items-center gap-8 text-[10px] font-bold uppercase tracking-[.18em] text-amber-300 sm:text-[11px]">
+          {[0,1].map(k=>(
+            <div key={k} className="flex shrink-0 items-center gap-8">
+              <span>Livraison 24h Abidjan</span><span className="h-1 w-1 rounded-full bg-amber-400/60"/>
+              <span>Paiement a la livraison</span><span className="h-1 w-1 rounded-full bg-amber-400/60"/>
+              <span>Resultat visible en quelques jours</span><span className="h-1 w-1 rounded-full bg-amber-400/60"/>
+              <span>Support client 7j/7</span><span className="h-1 w-1 rounded-full bg-amber-400/60"/>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ═══════ HERO ═══════ */}
-      <section className="mx-auto grid max-w-6xl items-center gap-8 px-4 pb-10 pt-10 md:grid-cols-2 md:pt-16">
-        {/* Galerie */}
-        <div className="space-y-3">
-          <div className="relative overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-xl">
-            <img src={galleryImages[galleryIdx]} alt="Creme anti verrue" className="aspect-square w-full object-cover" />
+      {/* ══ HERO — Mobile-first product section ══ */}
+      <section className="mx-auto max-w-6xl px-4 pb-6 pt-5 sm:pb-10 sm:pt-8 md:pt-12">
+        <div className="grid items-start gap-6 md:grid-cols-2 md:gap-10">
+
+          {/* Gallery */}
+          <div className="fade-up">
+            <div className="relative aspect-square overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 sm:rounded-3xl">
+              <img src={gallery[gi]} alt="Creme anti verrue TK" className="h-full w-full object-cover transition-opacity duration-300"/>
+              {/* Badges flottants */}
+              <span className="absolute left-3 top-3 rounded-full bg-red-500 px-2.5 py-1 text-[10px] font-bold text-white shadow-lg sm:left-4 sm:top-4 sm:text-xs">BEST-SELLER</span>
+            </div>
+            <div className="mt-2.5 flex gap-2 sm:mt-3">
+              {gallery.map((src, i) => (
+                <button key={i} onClick={() => setGi(i)}
+                  className={`h-14 w-14 overflow-hidden rounded-lg border-2 transition-all sm:h-[72px] sm:w-[72px] sm:rounded-xl ${i === gi ? 'border-amber-500 ring-2 ring-amber-200' : 'border-transparent opacity-60 hover:opacity-100'}`}>
+                  <img src={src} alt="" className="h-full w-full object-cover"/>
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex gap-2">
-            {galleryImages.map((src, i) => (
-              <button
-                key={i}
-                onClick={() => setGalleryIdx(i)}
-                className={`h-16 w-16 overflow-hidden rounded-xl border-2 transition sm:h-20 sm:w-20 ${i === galleryIdx ? 'border-yellow-500 shadow-lg shadow-yellow-200' : 'border-neutral-200 opacity-70 hover:opacity-100'}`}
-              >
-                <img src={src} alt="" className="h-full w-full object-cover" />
+
+          {/* Product info */}
+          <div className="fade-up space-y-4 sm:space-y-5" style={{ animationDelay: '.1s' }}>
+            <div>
+              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-amber-600 sm:text-xs">Soin anti-verrue</p>
+              <h1 className="text-[22px] font-extrabold leading-[1.2] sm:text-3xl md:text-[2.2rem]">
+                Creme Anti-Verrue VERRUE TK
+              </h1>
+            </div>
+
+            {/* Rating */}
+            <div className="flex items-center gap-2">
+              <div className="flex gap-0.5">{[...Array(5)].map((_,i)=><Star key={i}/>)}</div>
+              <span className="text-xs font-semibold text-neutral-600">4.8</span>
+              <span className="text-xs text-neutral-400">(1 247 avis)</span>
+            </div>
+
+            {/* Price */}
+            <div className="flex items-baseline gap-2.5">
+              <span className="text-2xl font-black sm:text-3xl">{fmt(PRICES[1])}</span>
+              <span className="text-sm text-neutral-400 line-through">15 000 FCFA</span>
+              <span className="rounded-md bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-600">-34%</span>
+            </div>
+
+            <p className="text-[13px] leading-relaxed text-neutral-500 sm:text-sm">
+              Formule ciblee pour les verrues visibles. Application simple et sans douleur. Resultats constates en quelques jours par nos clients.
+            </p>
+
+            {/* Trust signals */}
+            <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[12px] text-neutral-600 sm:text-[13px]">
+              <span className="flex items-center gap-1.5"><Check/> Paiement a la livraison</span>
+              <span className="flex items-center gap-1.5"><Check/> Livraison rapide</span>
+              <span className="flex items-center gap-1.5"><Check/> Support 7j/7</span>
+            </div>
+
+            {/* Desktop CTA */}
+            <div className="hidden sm:block">
+              <button onClick={open}
+                className="group mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-6 py-3.5 text-[15px] font-bold text-white shadow-xl transition hover:bg-neutral-800 active:scale-[.98]">
+                <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60"/><span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400"/></span>
+                Commander maintenant — {fmt(PRICES[1])}
               </button>
-            ))}
-          </div>
-        </div>
+              <p className="mt-2 text-center text-[11px] text-neutral-400">Aucun compte requis. Formulaire rapide en 30 secondes.</p>
+            </div>
 
-        {/* Texte hero */}
-        <div className="space-y-5">
-          <span className="inline-flex items-center gap-2 rounded-full border border-yellow-300 bg-yellow-50 px-3 py-1 text-xs font-bold text-yellow-700">
-            Creme anti verrue VERRUE TK
-          </span>
-          <h1 className="text-3xl font-black leading-tight sm:text-[2.8rem]">
-            Finis la gene causee par les verrues visibles
-          </h1>
-          <p className="text-[15px] leading-relaxed text-neutral-600">
-            De nombreuses personnes choisissent cette creme pour retrouver une peau nette et se sentir plus a l'aise au quotidien.
-          </p>
-
-          <div className="flex items-baseline gap-3">
-            <span className="text-3xl font-black text-neutral-900">{fmt(PRICES[1])}</span>
-          </div>
-
-          <button
-            onClick={open}
-            className="group relative flex w-full items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 px-8 py-4 text-base font-extrabold text-neutral-900 shadow-[0_14px_38px_rgba(250,204,21,.35)] transition hover:shadow-[0_22px_55px_rgba(250,204,21,.45)] active:scale-[.98] sm:w-auto"
-          >
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-900 opacity-40" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-neutral-900" />
-            </span>
-            Commander ici
-          </button>
-
-          <div className="flex flex-wrap gap-3 text-xs text-neutral-500">
-            <span className="flex items-center gap-1"><svg className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg> Paiement a la livraison</span>
-            <span className="flex items-center gap-1"><svg className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg> Livraison rapide</span>
-            <span className="flex items-center gap-1"><svg className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg> Support 7j/7</span>
+            {/* Trust badges row */}
+            <div className="flex items-center gap-3 rounded-xl border border-neutral-100 bg-neutral-50 px-4 py-3">
+              <div className="flex -space-x-1.5">
+                {['bg-amber-400','bg-emerald-400','bg-sky-400'].map((c,i)=>(
+                  <div key={i} className={`h-7 w-7 rounded-full ${c} border-2 border-white flex items-center justify-center text-[10px] font-bold text-white`}>
+                    {['AK','JM','MD'][i]}
+                  </div>
+                ))}
+              </div>
+              <div>
+                <p className="text-[11px] font-bold text-neutral-700 sm:text-xs">+1 200 clients satisfaits</p>
+                <p className="text-[10px] text-neutral-400">Cote d'Ivoire et Afrique de l'Ouest</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ═══════ VIDEOS ═══════ */}
-      <section className="bg-white py-12">
+      {/* ══ SOCIAL PROOF STRIP ══ */}
+      <div className="border-y border-neutral-100 bg-neutral-50 py-5">
+        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-6 px-4 text-center sm:gap-10">
+          {[
+            { n: '1 200+', l: 'Clients satisfaits' },
+            { n: '24h', l: 'Livraison Abidjan' },
+            { n: '4.8/5', l: 'Note moyenne' },
+            { n: '98%', l: 'Recommandent' },
+          ].map((s,i) => (
+            <div key={i}><p className="text-lg font-black sm:text-xl">{s.n}</p><p className="text-[10px] text-neutral-400 sm:text-[11px]">{s.l}</p></div>
+          ))}
+        </div>
+      </div>
+
+      {/* ══ VIDEOS ══ */}
+      <section className="py-10 sm:py-14">
         <div className="mx-auto max-w-6xl px-4">
-          <h2 className="mb-2 text-center text-2xl font-black sm:text-3xl">Voyez les resultats en video</h2>
-          <p className="mx-auto mb-8 max-w-xl text-center text-sm text-neutral-500">
-            Des utilisateurs partagent leur experience apres quelques jours d'utilisation.
-          </p>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {VIDEOS.map((v, i) => (
-              <video
-                key={i}
-                src={v}
-                controls
-                playsInline
-                preload="metadata"
-                className="aspect-[9/16] w-full rounded-2xl border border-neutral-200 bg-neutral-100 object-cover shadow-md"
-              />
+          <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-widest text-amber-600">Preuves en video</p>
+          <h2 className="mb-2 text-center text-xl font-extrabold sm:text-2xl">Voyez les resultats vous-meme</h2>
+          <p className="mx-auto mb-7 max-w-lg text-center text-[13px] text-neutral-400 sm:text-sm">Des utilisateurs partagent leur experience.</p>
+          <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
+            {VID.map((v,i) => (
+              <video key={i} src={v} controls playsInline preload="metadata"
+                className="aspect-[9/16] w-full rounded-xl border border-neutral-100 bg-neutral-100 object-cover shadow-sm sm:rounded-2xl"/>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ═══════ PROBLEME ═══════ */}
-      <section className="py-12">
-        <div className="mx-auto max-w-5xl px-4">
-          <h2 className="mb-2 text-center text-2xl font-black sm:text-3xl">Les verrues vous genent au quotidien ?</h2>
-          <p className="mx-auto mb-8 max-w-xl text-center text-sm text-neutral-500">
-            Elles peuvent affecter la confiance en soi et creer un malaise visible.
-          </p>
-          <img src={IMG.r1} alt="Verrues sur la peau" className="mx-auto h-72 w-full max-w-2xl rounded-3xl border border-neutral-200 object-cover shadow-lg sm:h-96" loading="lazy" />
+      {/* ══ PROBLEM ══ */}
+      <section className="border-y border-neutral-100 bg-neutral-50 py-10 sm:py-14">
+        <div className="mx-auto max-w-5xl px-4 text-center">
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-red-500">Le probleme</p>
+          <h2 className="mb-2 text-xl font-extrabold sm:text-2xl">Les verrues genent au quotidien</h2>
+          <p className="mx-auto mb-7 max-w-lg text-[13px] text-neutral-400 sm:text-sm">Elles affectent la confiance en soi et creent un malaise visible.</p>
+          <img src={I.r1} alt="Verrues sur la peau" className="mx-auto w-full max-w-xl rounded-2xl border border-neutral-200 object-cover shadow-lg sm:rounded-3xl" loading="lazy"/>
         </div>
       </section>
 
-      {/* ═══════ SOLUTION ═══════ */}
-      <section className="bg-white py-12">
-        <div className="mx-auto max-w-5xl px-4">
-          <h2 className="mb-2 text-center text-2xl font-black sm:text-3xl">La creme VERRUE TK agit localement</h2>
-          <p className="mx-auto mb-8 max-w-xl text-center text-sm text-neutral-500">
-            La zone seche progressivement. La peau retrouve son aspect normal.
-          </p>
-          <img src={IMG.r2} alt="Resultat creme anti verrue" className="mx-auto h-72 w-full max-w-2xl rounded-3xl border border-neutral-200 object-cover shadow-lg sm:h-96" loading="lazy" />
+      {/* ══ SOLUTION ══ */}
+      <section className="py-10 sm:py-14">
+        <div className="mx-auto max-w-5xl px-4 text-center">
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-emerald-600">La solution</p>
+          <h2 className="mb-2 text-xl font-extrabold sm:text-2xl">VERRUE TK agit localement</h2>
+          <p className="mx-auto mb-7 max-w-lg text-[13px] text-neutral-400 sm:text-sm">La zone seche progressivement. La peau retrouve son aspect normal.</p>
+          <img src={I.r2} alt="Resultat creme" className="mx-auto w-full max-w-xl rounded-2xl border border-neutral-200 object-cover shadow-lg sm:rounded-3xl" loading="lazy"/>
         </div>
       </section>
 
-      {/* ═══════ COMMENT UTILISER ═══════ */}
-      <section className="py-12">
+      {/* ══ HOW TO USE ══ */}
+      <section className="border-y border-neutral-100 bg-neutral-50 py-10 sm:py-14">
         <div className="mx-auto max-w-5xl px-4">
-          <h2 className="mb-2 text-center text-2xl font-black sm:text-3xl">Comment l'utiliser ?</h2>
-          <p className="mx-auto mb-8 max-w-xl text-center text-sm text-neutral-500">
-            Un protocole simple en 4 etapes. Application rapide et sans douleur.
-          </p>
-          <img src={IMG.usage} alt="Utilisation creme" className="mx-auto mb-8 h-72 w-full max-w-2xl rounded-3xl border border-neutral-200 object-cover shadow-lg sm:h-96" loading="lazy" />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-widest text-amber-600">Mode d'emploi</p>
+          <h2 className="mb-2 text-center text-xl font-extrabold sm:text-2xl">Simple a utiliser</h2>
+          <p className="mx-auto mb-7 max-w-lg text-center text-[13px] text-neutral-400 sm:text-sm">4 etapes faciles pour une application optimale.</p>
+          <img src={I.usage} alt="Utilisation" className="mx-auto mb-8 w-full max-w-xl rounded-2xl border border-neutral-200 object-cover shadow-lg sm:rounded-3xl" loading="lazy"/>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { n: '1', t: 'Nettoyez', d: 'Lavez la zone concernee avec de l\'eau propre.' },
-              { n: '2', t: 'Appliquez', d: 'Mettez une petite quantite de creme sur la verrue.' },
-              { n: '3', t: 'Repetez', d: 'Appliquez regulierement selon la routine conseillee.' },
-              { n: '4', t: 'Observez', d: 'Constatez l\'evolution positive au fil des jours.' },
-            ].map((s) => (
-              <div key={s.n} className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-yellow-400 text-sm font-black text-neutral-900">{s.n}</div>
+              { n: '01', t: 'Nettoyez', d: 'Lavez la zone concernee a l\'eau propre.' },
+              { n: '02', t: 'Appliquez', d: 'Deposez une petite quantite de creme.' },
+              { n: '03', t: 'Repetez', d: 'Suivez la routine conseillee regulierement.' },
+              { n: '04', t: 'Observez', d: 'Constatez l\'amelioration au fil des jours.' },
+            ].map(s => (
+              <div key={s.n} className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
+                <span className="mb-2 inline-block rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-black text-amber-600">{s.n}</span>
                 <h3 className="mb-1 text-sm font-bold">{s.t}</h3>
-                <p className="text-xs leading-relaxed text-neutral-500">{s.d}</p>
+                <p className="text-xs leading-relaxed text-neutral-400">{s.d}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ═══════ TEMOIGNAGES ═══════ */}
-      <section className="bg-white py-12">
+      {/* ══ MID CTA ══ */}
+      <section className="py-8 sm:py-10">
+        <div className="mx-auto max-w-lg px-4 text-center">
+          <button onClick={open}
+            className="group flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-6 py-4 text-[15px] font-bold text-white shadow-xl transition hover:bg-neutral-800 active:scale-[.98]">
+            <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60"/><span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400"/></span>
+            Je commande maintenant
+          </button>
+          <p className="mt-2 text-[11px] text-neutral-400">Paiement a la livraison — Formulaire en 30 secondes</p>
+        </div>
+      </section>
+
+      {/* ══ TESTIMONIALS ══ */}
+      <section className="border-y border-neutral-100 bg-neutral-50 py-10 sm:py-14">
         <div className="mx-auto max-w-5xl px-4">
-          <h2 className="mb-2 text-center text-2xl font-black sm:text-3xl">Ce que nos clients disent</h2>
-          <p className="mx-auto mb-8 max-w-xl text-center text-sm text-neutral-500">
-            Des retours reels de personnes qui ont utilise la creme VERRUE TK.
-          </p>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-widest text-amber-600">Temoignages</p>
+          <h2 className="mb-2 text-center text-xl font-extrabold sm:text-2xl">Nos clients temoignent</h2>
+          <p className="mx-auto mb-7 max-w-lg text-center text-[13px] text-neutral-400 sm:text-sm">Des retours reels de personnes satisfaites.</p>
+          <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
             {[
-              { q: '"En quelques jours la zone est devenue propre. Je recommande."', n: 'Awa K.', v: 'Abidjan' },
-              { q: '"Commande rapide, livraison simple, et resultat visible."', n: 'Jean M.', v: 'Bouake' },
-              { q: '"Le suivi client est tres serieux. Produit de qualite."', n: 'Mariam D.', v: 'Yopougon' },
+              { q: 'En quelques jours la zone est devenue propre. Je recommande a tout le monde.', n: 'Awa K.', v: 'Abidjan', d: 'Il y a 3 jours' },
+              { q: 'Commande rapide, livraison le lendemain, et resultat visible des la premiere semaine.', n: 'Jean M.', v: 'Bouake', d: 'Il y a 1 semaine' },
+              { q: 'Le suivi client est tres serieux. Produit de qualite. Je suis satisfaite.', n: 'Mariam D.', v: 'Yopougon', d: 'Il y a 5 jours' },
             ].map((t, i) => (
-              <div key={i} className="rounded-2xl border border-neutral-200 bg-[#fffdf5] p-5 shadow-sm">
-                <div className="mb-3 flex gap-1">
-                  {[...Array(5)].map((_, j) => (
-                    <svg key={j} className="h-4 w-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                  ))}
+              <div key={i} className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
+                <div className="mb-2.5 flex gap-0.5">{[...Array(5)].map((_,j) => <Star key={j}/>)}</div>
+                <p className="mb-3 text-[13px] leading-relaxed text-neutral-600">"{t.q}"</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold">{t.n}</p>
+                    <p className="text-[10px] text-neutral-400">{t.v}</p>
+                  </div>
+                  <span className="flex items-center gap-1 text-[10px] text-emerald-500"><Check/> Achat verifie</span>
                 </div>
-                <p className="mb-3 text-sm leading-relaxed text-neutral-700">{t.q}</p>
-                <p className="text-xs font-bold text-neutral-900">{t.n} <span className="font-normal text-neutral-400">— {t.v}</span></p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ═══════ FAQ ═══════ */}
-      <section className="py-12">
-        <div className="mx-auto max-w-3xl px-4">
-          <h2 className="mb-2 text-center text-2xl font-black sm:text-3xl">Questions frequentes</h2>
-          <p className="mx-auto mb-8 max-w-xl text-center text-sm text-neutral-500">
-            Tout ce que vous devez savoir avant de commander.
-          </p>
-          <div className="space-y-3">
+      {/* ══ FAQ ══ */}
+      <section className="py-10 sm:py-14">
+        <div className="mx-auto max-w-2xl px-4">
+          <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-widest text-amber-600">FAQ</p>
+          <h2 className="mb-2 text-center text-xl font-extrabold sm:text-2xl">Questions frequentes</h2>
+          <p className="mx-auto mb-7 max-w-lg text-center text-[13px] text-neutral-400 sm:text-sm">Tout savoir avant de commander.</p>
+          <div className="space-y-2">
             {[
-              { q: 'Est-ce douloureux ?', a: 'Non. L\'application est locale, douce et rapide.' },
-              { q: 'Dois-je payer avant la livraison ?', a: 'Non. Vous payez uniquement a la reception du produit.' },
-              { q: 'En combien de temps je vois les resultats ?', a: 'Beaucoup de clients constatent une amelioration en quelques jours.' },
-              { q: 'Comment serai-je contacte ?', a: 'Notre equipe vous appelle pour confirmer votre commande et organiser la livraison.' },
-              { q: 'La creme convient a tous les types de peau ?', a: 'Oui, la formule est adaptee pour tous les types de peau.' },
+              { q: 'Est-ce douloureux ?', a: 'Non. L\'application est locale, douce et rapide. Aucune douleur.' },
+              { q: 'Dois-je payer avant la livraison ?', a: 'Non. Vous payez uniquement quand vous recevez votre colis.' },
+              { q: 'En combien de temps je vois les resultats ?', a: 'La plupart des clients constatent une amelioration en quelques jours.' },
+              { q: 'Comment suis-je contacte apres la commande ?', a: 'Notre equipe vous appelle dans les heures qui suivent pour confirmer.' },
+              { q: 'La creme convient a tous les types de peau ?', a: 'Oui, la formule est concue pour tous les types de peau.' },
             ].map((f, i) => (
-              <details key={i} className="group rounded-2xl border border-neutral-200 bg-white shadow-sm">
-                <summary className="flex cursor-pointer items-center justify-between px-5 py-4 text-sm font-bold">
+              <details key={i} className="group rounded-xl border border-neutral-200 bg-white shadow-sm">
+                <summary className="flex cursor-pointer items-center justify-between px-4 py-3.5 text-[13px] font-bold sm:text-sm">
                   {f.q}
-                  <svg className="h-4 w-4 shrink-0 text-neutral-400 transition group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                  <svg className="chevron h-4 w-4 shrink-0 text-neutral-300 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
                 </summary>
-                <p className="px-5 pb-4 text-sm leading-relaxed text-neutral-500">{f.a}</p>
+                <p className="px-4 pb-4 text-[13px] leading-relaxed text-neutral-500">{f.a}</p>
               </details>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ═══════ CTA FINAL ═══════ */}
-      <section className="bg-neutral-900 py-14">
-        <div className="mx-auto max-w-2xl px-4 text-center">
-          <h2 className="mb-3 text-2xl font-black text-white sm:text-3xl">Pret a retrouver une peau nette ?</h2>
-          <p className="mb-6 text-sm text-neutral-300">Commandez maintenant. Paiement a la livraison.</p>
-          <button
-            onClick={open}
-            className="group relative mx-auto flex items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 px-10 py-4 text-base font-extrabold text-neutral-900 shadow-[0_14px_38px_rgba(250,204,21,.35)] transition hover:shadow-[0_22px_55px_rgba(250,204,21,.45)] active:scale-[.98]"
-          >
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-900 opacity-40" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-neutral-900" />
-            </span>
+      {/* ══ FINAL CTA SECTION ══ */}
+      <section className="bg-neutral-900 py-12 sm:py-16">
+        <div className="mx-auto max-w-lg px-4 text-center">
+          <h2 className="mb-2 text-xl font-extrabold text-white sm:text-2xl">Pret a retrouver une peau nette ?</h2>
+          <p className="mb-6 text-[13px] text-neutral-400">Commandez maintenant. Paiement a la livraison uniquement.</p>
+          <button onClick={open}
+            className="group mx-auto flex items-center justify-center gap-2 rounded-xl bg-amber-400 px-8 py-3.5 text-[15px] font-extrabold text-neutral-900 shadow-[0_12px_35px_rgba(251,191,36,.4)] transition hover:bg-amber-300 active:scale-[.98]">
+            <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-900 opacity-40"/><span className="relative inline-flex h-2 w-2 rounded-full bg-neutral-900"/></span>
             Commander ici
           </button>
         </div>
       </section>
 
-      {/* ═══════ STICKY BOTTOM BAR ═══════ */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/95 p-2.5 backdrop-blur-md sm:p-3">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="truncate text-xs font-bold sm:text-sm">Creme Anti Verrue TK</p>
-            <p className="text-xs text-neutral-500">{fmt(PRICES[1])} — Paiement a la livraison</p>
+      {/* ══ FOOTER ══ */}
+      <footer className="border-t border-neutral-100 bg-white py-6 pb-24 sm:pb-6">
+        <div className="mx-auto max-w-6xl px-4 text-center text-[11px] text-neutral-300">
+          Paiement a la livraison · Livraison rapide en Cote d'Ivoire · Support client 7j/7
+        </div>
+      </footer>
+
+      {/* ══ STICKY BOTTOM BAR ══ */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200/80 bg-white/95 backdrop-blur-lg safe-bottom">
+        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5 sm:py-3">
+          <img src={I.hero} alt="" className="h-11 w-11 shrink-0 rounded-lg border border-neutral-100 object-cover sm:h-12 sm:w-12"/>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-bold sm:text-sm">Creme Anti-Verrue TK</p>
+            <p className="text-[11px] text-neutral-400">{fmt(PRICES[1])} · Paiement a la livraison</p>
           </div>
-          <button
-            onClick={open}
-            className="shrink-0 rounded-full bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 px-5 py-2.5 text-xs font-extrabold text-neutral-900 shadow-[0_8px_24px_rgba(250,204,21,.3)] transition hover:shadow-[0_16px_36px_rgba(250,204,21,.45)] active:scale-[.97] sm:text-sm"
-          >
-            Commander ici
+          <button onClick={open}
+            className="shrink-0 rounded-xl bg-neutral-900 px-4 py-2.5 text-[13px] font-bold text-white shadow-lg transition hover:bg-neutral-800 active:scale-[.97] sm:px-6 sm:text-sm">
+            Commander
           </button>
         </div>
       </div>
 
-      {/* ═══════ MODAL FORMULAIRE ═══════ */}
+      {/* ══ MODAL ══ */}
       {modal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" onClick={(e) => { if (e.target === e.currentTarget) setModal(false); }}>
-          <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" />
+        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" onClick={e => { if (e.target === e.currentTarget) setModal(false); }}>
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"/>
+          <div ref={formRef} className="relative w-full overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:max-w-[420px] sm:rounded-2xl" style={{ maxHeight: '94vh', overflowY: 'auto' }}>
 
-          <div ref={formRef} className="relative w-full overflow-hidden rounded-t-[22px] border border-neutral-200/60 bg-gradient-to-b from-[#fffdf5] to-[#fff9e6] shadow-2xl sm:max-w-[430px] sm:rounded-[22px]" style={{ maxHeight: '92vh', overflowY: 'auto' }}>
-            {/* Glow */}
-            <div className="pointer-events-none absolute -bottom-20 -right-10 h-44 w-44 rounded-full bg-yellow-300/30 blur-3xl" />
-
-            {/* Close */}
-            <button onClick={() => setModal(false)} className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-lg shadow-md transition hover:bg-white">×</button>
+            <button onClick={() => setModal(false)} className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 transition hover:bg-neutral-200">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
 
             {/* Header */}
-            <div className="bg-gradient-to-br from-neutral-900 to-neutral-800 px-5 pb-4 pt-5 text-white">
-              <span className="mb-2 inline-flex items-center gap-2 rounded-full border border-yellow-400/35 bg-yellow-400/15 px-3 py-1 text-[11px] font-bold text-yellow-200">
-                Livraison 24h Abidjan — Paiement a la livraison
-              </span>
-              <h3 className="text-xl font-black">Finaliser votre commande</h3>
-              <p className="mt-1 text-[13px] text-neutral-300">Remplissez ce formulaire. Nous vous contactons rapidement.</p>
+            <div className="bg-neutral-900 px-5 pb-4 pt-5 text-white">
+              <div className="mb-2 flex items-center gap-2">
+                <span className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-0.5 text-[10px] font-bold text-amber-300">Livraison 24h Abidjan</span>
+                <span className="inline-flex rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300">Paiement a la livraison</span>
+              </div>
+              <h3 className="text-lg font-extrabold">Finaliser votre commande</h3>
+              <p className="mt-0.5 text-[12px] text-neutral-400">Remplissez le formulaire. Nous vous appelons pour confirmer.</p>
             </div>
-
-            {/* Progress */}
-            <div className="h-1.5 bg-neutral-100">
-              <div className="h-full w-[78%] bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 shadow-[0_0_12px_rgba(250,204,21,.5)]" />
-            </div>
+            <div className="h-1 bg-neutral-100"><div className="h-full w-4/5 bg-gradient-to-r from-amber-400 to-amber-500"/></div>
 
             {/* Form */}
-            <form onSubmit={submit} className="space-y-3 p-4">
-              <label className="block">
-                <span className="mb-1 block text-[13px] font-bold">Nom complet <span className="text-red-600">*</span></span>
-                <div className="flex items-center gap-2.5 rounded-[14px] border border-neutral-200 bg-white px-3 shadow-sm focus-within:border-yellow-400 focus-within:shadow-[0_0_0_3px_rgba(250,204,21,.18)]">
-                  <span className="text-sm opacity-80">👤</span>
-                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex. Kouadio Fernand" className="h-[46px] w-full border-none bg-transparent text-sm font-semibold outline-none placeholder:text-neutral-400" />
-                </div>
-              </label>
+            <form onSubmit={submit} className="space-y-3 p-4 pb-5">
+              {[
+                { icon: '👤', label: 'Nom complet', val: name, set: setName, ph: 'Ex. Kouadio Fernand', type: 'text' },
+                { icon: '📍', label: 'Ville / Commune', val: city, set: setCity, ph: 'Ex. Abidjan — Yopougon', type: 'text' },
+                { icon: '📱', label: 'Telephone', val: phone, set: setPhone, ph: 'Ex. 07 00 00 00 00', type: 'tel' },
+              ].map(f => (
+                <label key={f.label} className="block">
+                  <span className="mb-1 block text-[12px] font-bold text-neutral-700">{f.label} <span className="text-red-500">*</span></span>
+                  <div className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-3 transition-colors focus-within:border-amber-400 focus-within:bg-white focus-within:shadow-[0_0_0_3px_rgba(251,191,36,.12)]">
+                    <span className="text-sm">{f.icon}</span>
+                    <input type={f.type} inputMode={f.type === 'tel' ? 'tel' : undefined} value={f.val} onChange={e => f.set(e.target.value)} placeholder={f.ph}
+                      className="h-11 w-full border-none bg-transparent text-[13px] font-medium outline-none placeholder:text-neutral-300"/>
+                  </div>
+                </label>
+              ))}
 
-              <label className="block">
-                <span className="mb-1 block text-[13px] font-bold">Ville / Commune <span className="text-red-600">*</span></span>
-                <div className="flex items-center gap-2.5 rounded-[14px] border border-neutral-200 bg-white px-3 shadow-sm focus-within:border-yellow-400 focus-within:shadow-[0_0_0_3px_rgba(250,204,21,.18)]">
-                  <span className="text-sm opacity-80">📍</span>
-                  <input type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Ex. Abidjan — Yopougon" className="h-[46px] w-full border-none bg-transparent text-sm font-semibold outline-none placeholder:text-neutral-400" />
+              {/* Quantity selector */}
+              <div>
+                <span className="mb-1.5 block text-[12px] font-bold text-neutral-700">Quantite</span>
+                <div className="grid gap-2">
+                  {QTY_OPTS.map(o => (
+                    <button key={o.v} type="button" onClick={() => setQty(o.v)}
+                      className={`relative flex items-center justify-between rounded-xl border-2 px-3.5 py-2.5 text-left transition-all ${qty === o.v ? 'border-amber-400 bg-amber-50/60 shadow-sm' : 'border-neutral-200 bg-white hover:border-neutral-300'}`}>
+                      <div className="flex items-center gap-2.5">
+                        <div className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${qty === o.v ? 'border-amber-500 bg-amber-500' : 'border-neutral-300'}`}>
+                          {qty === o.v && <div className="h-2 w-2 rounded-full bg-white"/>}
+                        </div>
+                        <span className="text-[13px] font-bold">{o.label}</span>
+                      </div>
+                      <span className="text-[13px] font-extrabold">{o.sub}</span>
+                      {o.tag && <span className="absolute -top-2 right-3 rounded-full bg-amber-500 px-2 py-0.5 text-[9px] font-bold text-white">{o.tag}</span>}
+                    </button>
+                  ))}
                 </div>
-              </label>
-
-              <label className="block">
-                <span className="mb-1 block text-[13px] font-bold">Numero de telephone <span className="text-red-600">*</span></span>
-                <div className="flex items-center gap-2.5 rounded-[14px] border border-neutral-200 bg-white px-3 shadow-sm focus-within:border-yellow-400 focus-within:shadow-[0_0_0_3px_rgba(250,204,21,.18)]">
-                  <span className="text-sm opacity-80">📱</span>
-                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Ex. 07 00 00 00 00" inputMode="tel" className="h-[46px] w-full border-none bg-transparent text-sm font-semibold outline-none placeholder:text-neutral-400" />
-                </div>
-              </label>
-
-              <label className="block">
-                <span className="mb-1 block text-[13px] font-bold">Quantite</span>
-                <div className="flex items-center gap-2.5 rounded-[14px] border border-neutral-200 bg-white px-3 shadow-sm focus-within:border-yellow-400 focus-within:shadow-[0_0_0_3px_rgba(250,204,21,.18)]">
-                  <span className="text-sm opacity-80">🧴</span>
-                  <select value={qty} onChange={(e) => setQty(Number(e.target.value))} className="h-[46px] w-full border-none bg-transparent text-sm font-semibold outline-none">
-                    {[1, 2, 3].map((q) => (
-                      <option key={q} value={q}>{PRICE_LABELS[q]}</option>
-                    ))}
-                  </select>
-                </div>
-              </label>
+              </div>
 
               {/* Total */}
-              <div className="flex items-center justify-between rounded-2xl border border-neutral-200/60 bg-gradient-to-r from-[#fff7cc] via-[#fde68a] to-[#facc15] p-3 shadow-sm">
-                <span className="text-sm font-bold">Total estime</span>
+              <div className="flex items-center justify-between rounded-xl bg-neutral-900 px-4 py-3 text-white">
+                <span className="text-[13px] font-semibold">Total</span>
                 <span className="text-base font-black">{fmt(PRICES[qty] || PRICES[1])}</span>
               </div>
 
-              {formErr && <p className="rounded-xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">{formErr}</p>}
+              {formErr && <p className="rounded-lg bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-600">{formErr}</p>}
 
-              <button
-                type="submit"
-                disabled={sending}
-                className="flex h-[46px] w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-green-600 via-green-500 to-green-600 text-sm font-black text-white shadow-[0_18px_40px_rgba(34,197,94,.35)] transition hover:shadow-[0_22px_48px_rgba(34,197,94,.45)] active:scale-[.98] disabled:cursor-wait disabled:opacity-80"
-              >
-                {sending && <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />}
-                {sending ? 'Envoi en cours...' : 'Valider ma commande'}
+              <button type="submit" disabled={sending}
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-[14px] font-extrabold text-white shadow-[0_12px_30px_rgba(16,185,129,.3)] transition hover:bg-emerald-500 active:scale-[.98] disabled:cursor-wait disabled:opacity-70">
+                {sending ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"/>Envoi en cours...</> : 'Valider ma commande'}
               </button>
-
-              <p className="text-center text-[11px] text-neutral-500">
-                Nous vous appelons pour confirmer avant la livraison.
-              </p>
+              <p className="text-center text-[10px] text-neutral-400">Nous vous appelons pour confirmer avant la livraison.</p>
             </form>
           </div>
         </div>
       )}
-
-      {/* ═══════ KEYFRAMES ═══════ */}
-      <style>{`
-        @keyframes ticker {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-      `}</style>
     </div>
   );
 }
