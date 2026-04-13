@@ -10,6 +10,8 @@ import AppelantDashboard from './pages/appelant/Dashboard';
 import LivreurDashboard from './pages/livreur/Dashboard';
 import Layout from './components/Layout';
 import OrderForm from './pages/public/OrderForm';
+import VerrueTkLanding from './pages/public/VerrueTkLanding';
+import VerrueTkThankYou from './pages/public/VerrueTkThankYou';
 
 function AuthenticatedApp() {
   const { isAuthenticated, isLoading, loadUser, user } = useAuthStore();
@@ -72,6 +74,8 @@ function App() {
       <Routes>
         {/* Pages publiques — accessibles à TOUS sans authentification */}
         <Route path="/commander" element={<OrderForm />} />
+        <Route path="/anti-verrue" element={<VerrueTkLanding />} />
+        <Route path="/anti-verrue/merci" element={<VerrueTkThankYou />} />
         <Route path="/login" element={<Login />} />
 
         {/* Pages protégées — nécessitent une authentification */}

@@ -66,10 +66,10 @@ router.post('/order', async (req, res) => {
     const companyId = await resolveCompanyId(req);
     const { productId, customerName, customerPhone, customerCity, customerCommune, customerAddress, quantity } = req.body;
 
-    if (!productId || !customerName || !customerPhone || !customerCity) {
+    if (!productId || !customerName || !customerPhone) {
       return res.status(400).json({
         success: false,
-        error: 'Champs requis : productId, customerName, customerPhone, customerCity',
+        error: 'Champs requis : productId, customerName, customerPhone',
       });
     }
 
@@ -84,12 +84,14 @@ router.post('/order', async (req, res) => {
     const orderQuantity = Math.min(Math.max(parseInt(quantity) || 1, 1), 10);
     const totalAmount = computeTotalAmount(product, orderQuantity);
 
+    const resolvedCity = String(customerCity || '').trim() || 'Non precisee';
+
     const createData = {
       orderReference: randomUUID(),
       companyId,
       clientNom: customerName.trim(),
       clientTelephone: customerPhone.trim(),
-      clientVille: customerCity.trim(),
+      clientVille: resolvedCity,
       clientCommune: customerCommune?.trim() || null,
       clientAdresse: customerAddress?.trim() || null,
       produitNom: product.nom,
