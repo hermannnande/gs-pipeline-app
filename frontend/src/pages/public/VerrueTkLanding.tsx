@@ -401,11 +401,25 @@ export default function VerrueTkLanding() {
         </div>
       </div>
 
-      {/* ══ BANNER IMAGE ══ */}
+      {/* ══ BANNER IMAGE + CTA ══ */}
       <div className="relative overflow-hidden py-6 sm:py-8">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-amber-50/40 via-white to-white"/>
         <div className="relative mx-auto max-w-3xl px-4">
-          <img src="/verrue-tk/banner-clients.jpg" alt="Clients satisfaits" className="w-full rounded-2xl border border-neutral-100 object-cover shadow-xl" loading="lazy"/>
+          <img src="/verrue-tk/banner-clients.jpg" alt="Clients satisfaits" className="w-full rounded-t-2xl border border-b-0 border-neutral-100 object-cover shadow-xl" loading="lazy"/>
+          <div className="rounded-b-2xl border border-t-0 border-neutral-100 bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 px-5 py-6 text-center shadow-xl sm:px-8 sm:py-8">
+            <h3 className="mb-2 text-lg font-extrabold leading-tight text-white sm:text-xl">
+              <span className="text-amber-400">✨</span> Dites STOP aux verrues rapidement !
+            </h3>
+            <p className="mx-auto mb-5 max-w-md text-[13px] leading-relaxed text-neutral-300 sm:text-sm">
+              Grace a sa formule puissante, notre creme agit en profondeur pour eliminer les verrues a la racine, assecher la peau infectee et favoriser une regeneration saine.
+            </p>
+            <GlowBtn onClick={open} variant="gold">
+              <span className="relative z-10 flex items-center gap-2">
+                <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-900 opacity-40"/><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-neutral-900"/></span>
+                Commander maintenant — {fmt(PRICES[1])}
+              </span>
+            </GlowBtn>
+          </div>
         </div>
       </div>
 
