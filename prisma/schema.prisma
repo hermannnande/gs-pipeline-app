@@ -24,6 +24,7 @@ model Company {
   products     Product[]
   deliveryLists DeliveryList[]
   storeConfigs StoreConfig[]
+  landingTemplates LandingTemplate[]
 
   @@map("companies")
 }
@@ -471,6 +472,7 @@ model Product {
   orders         Order[]         @relation("ProductOrders")
   adExpenses     AdExpense[]     @relation("ProductAdExpenses")
   purchases      SupplierPurchase[] @relation("ProductPurchases")
+  landingTemplates LandingTemplate[]
 
   @@unique([code, companyId])
   @@index([code])
@@ -870,6 +872,36 @@ model WaRulesLog {
   @@index([conversationId])
   @@index([createdAt])
   @@map("wa_rules_logs")
+}
+
+// Templates de pages de vente (landing pages)
+model LandingTemplate {
+  id          Int      @id @default(autoincrement())
+  nom         String
+  slug        String   @unique
+  description String?  @db.Text
+
+  // Produit cible (optionnel — permet de lier au catalogue)
+  productCode String?
+  productId   Int?
+  product     Product? @relation(fields: [productId], references: [id])
+
+  // Contenu configurable du template (JSON)
+  config      String   @db.Text // JSON: hero, sections, couleurs, textes, images, prix, etc.
+
+  // Assets liés (dossier d'images dans /public)
+  assetsFolder String?
+
+  // Meta
+  actif       Boolean  @default(true)
+  companyId   Int      @default(1)
+  company     Company  @relation(fields: [companyId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
+  @@map("landing_templates")
 }
 
 // Configuration du magasin/bureau (support multi-sites)

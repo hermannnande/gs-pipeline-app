@@ -25,6 +25,7 @@ import {
   PieChart,
   MapPin,
   MessageCircle,
+  FileText,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { api, getActiveCompanyId, setActiveCompanyId } from '@/lib/api';
@@ -89,6 +90,7 @@ export default function Layout({ children }: LayoutProps) {
           { icon: MessageSquare, label: 'Supervision Chat', path: '/admin/chat-supervision' },
           { icon: Eye, label: 'Audit & Sécurité', path: '/admin/audit' },
           { icon: MessageCircle, label: 'WhatsApp Agent', path: '/admin/whatsapp' },
+          { icon: FileText, label: 'Pages de vente', path: '/admin/templates' },
         ];
       case 'GESTIONNAIRE':
         return [

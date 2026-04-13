@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "build": "npx prisma generate",
+    "build": "npx prisma generate && npx prisma db push --skip-generate",
     "postinstall": "npx prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
@@ -36,7 +36,8 @@
   },
   "devDependencies": {
     "nodemon": "^3.0.2",
-    "prisma": "^5.7.0"
+    "prisma": "^5.7.0",
+    "sharp": "^0.34.5"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
