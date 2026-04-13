@@ -447,6 +447,9 @@ export default function VerrueTkLanding() {
           <h2 className="mb-2 text-center text-xl font-extrabold text-white sm:text-2xl">Voyez les resultats vous-meme</h2>
           <p className="mx-auto mb-5 max-w-lg text-center text-[13px] text-neutral-400">Des utilisateurs partagent leur experience.</p>
         </div>
+        <div className="relative mx-auto mb-6 max-w-2xl px-4">
+          <img src="/verrue-tk/promo-video.jpg" alt="Resultats anti-verrue" className="w-full rounded-2xl border border-white/10 object-cover shadow-2xl"/>
+        </div>
         <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 scrollbar-hide sm:justify-center sm:gap-5 sm:overflow-visible sm:px-0">
           {VID.map((v,i) => (
             <div key={i} className="w-[44vw] max-w-[200px] shrink-0 snap-center sm:w-[220px] sm:max-w-none md:w-[260px]">
