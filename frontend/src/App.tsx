@@ -12,8 +12,8 @@ import Layout from './components/Layout';
 import OrderForm from './pages/public/OrderForm';
 import VerrueTkLanding from './pages/public/VerrueTkLanding';
 import VerrueTkThankYou from './pages/public/VerrueTkThankYou';
-import DynamicLanding from './pages/public/DynamicLanding';
-import DynamicThankYou from './pages/public/DynamicThankYou';
+import LandingRouter from './pages/public/LandingRouter';
+import ThankYouRouter from './pages/public/ThankYouRouter';
 
 function AuthenticatedApp() {
   const { isAuthenticated, isLoading, loadUser, user } = useAuthStore();
@@ -78,8 +78,8 @@ function App() {
         <Route path="/commander" element={<OrderForm />} />
         <Route path="/anti-verrue" element={<VerrueTkLanding />} />
         <Route path="/anti-verrue/merci" element={<VerrueTkThankYou />} />
-        <Route path="/landing/:slug" element={<DynamicLanding />} />
-        <Route path="/landing/:slug/merci" element={<DynamicThankYou />} />
+        <Route path="/landing/:slug" element={<LandingRouter />} />
+        <Route path="/landing/:slug/merci" element={<ThankYouRouter />} />
         <Route path="/login" element={<Login />} />
 
         {/* Pages protégées — nécessitent une authentification */}
