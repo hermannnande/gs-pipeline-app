@@ -265,6 +265,13 @@ export default function DynamicLandingV2() {
   const onTouchStart = useCallback((e: React.TouchEvent) => { touchStart.current = e.touches[0].clientX; }, []);
   const onTouchEnd = useCallback((e: React.TouchEvent) => { const d = touchStart.current - e.changedTouches[0].clientX; if (Math.abs(d) > 50) d > 0 ? nextSlide() : prevSlide(); }, [nextSlide, prevSlide]);
 
+  const c = useMemo(() => {
+    const p = cfg?.colors?.primary || '#0d9488';
+    const a = cfg?.colors?.accent || '#10b981';
+    const hexToRgb = (h: string) => { const r = parseInt(h.slice(1, 3), 16), g = parseInt(h.slice(3, 5), 16), b = parseInt(h.slice(5, 7), 16); return `${r},${g},${b}`; };
+    return { p, a, bg: cfg?.colors?.bg || '#fafaf9', pRgb: hexToRgb(p), aRgb: hexToRgb(a) };
+  }, [cfg?.colors?.primary, cfg?.colors?.accent, cfg?.colors?.bg]);
+
   if (loading) return (
     <div className="flex min-h-screen items-center justify-center bg-[#fafaf9]">
       <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-neutral-200 border-t-teal-600"/>
@@ -281,13 +288,6 @@ export default function DynamicLandingV2() {
   const bundles = cfg.bundles || [];
   const marqueeTexts = cfg.sections?.marqueeTexts || [];
   const reviews = cfg.reviews || [];
-
-  const c = useMemo(() => {
-    const p = cfg.colors?.primary || '#0d9488';
-    const a = cfg.colors?.accent || '#10b981';
-    const hexToRgb = (h: string) => { const r = parseInt(h.slice(1, 3), 16), g = parseInt(h.slice(3, 5), 16), b = parseInt(h.slice(5, 7), 16); return `${r},${g},${b}`; };
-    return { p, a, bg: cfg.colors?.bg || '#fafaf9', pRgb: hexToRgb(p), aRgb: hexToRgb(a) };
-  }, [cfg.colors]);
 
   return (
     <div className="min-h-screen text-neutral-900" style={{ fontFamily: "'Inter',system-ui,sans-serif", backgroundColor: c.bg }}>
