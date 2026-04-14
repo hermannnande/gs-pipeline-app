@@ -152,6 +152,8 @@ export default function DynamicLanding() {
   const [sending, setSending] = useState(false);
   const [formErr, setFormErr] = useState('');
   const [gi, setGi] = useState(0);
+  const touchStart = useRef(0);
+  const autoSlideRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [toast, setToast] = useState<{ n: string; v: string; t: string; visible: boolean } | null>(null);
   const toastIdx = useRef(0);
@@ -260,12 +262,39 @@ export default function DynamicLanding() {
   );
 
   const prices = cfg.prices || { 1: 9900 };
-  const gallery = [cfg.images.hero, ...cfg.images.gallery].filter(Boolean);
+  const gallery = useMemo(() => [cfg.images.hero, ...cfg.images.gallery].filter(Boolean), [cfg]);
   const qtyOpts = cfg.qtyOptions || [{ v: 1, label: '1 boite', sub: fmt(prices[1] || 0) }];
   const stockPct = Math.round((stock / 30) * 100);
   const themeKey = cfg.colors?.theme || 'amber';
   const T = THEMES[themeKey] || THEMES.amber;
   const marqueeTexts = cfg.sections?.marqueeTexts || ['Livraison 24h Abidjan', 'Paiement a la livraison', 'Resultat visible', 'Support 7j/7'];
+
+  const startAutoSlide = useCallback(() => {
+    if (autoSlideRef.current) clearInterval(autoSlideRef.current);
+    autoSlideRef.current = setInterval(() => {
+      setGi(prev => (prev + 1) % gallery.length);
+    }, 4000);
+  }, [gallery.length]);
+
+  useEffect(() => {
+    if (gallery.length <= 1) return;
+    startAutoSlide();
+    return () => { if (autoSlideRef.current) clearInterval(autoSlideRef.current); };
+  }, [gallery.length, startAutoSlide]);
+
+  const goToSlide = useCallback((i: number) => {
+    setGi(i);
+    startAutoSlide();
+  }, [startAutoSlide]);
+
+  const nextSlide = useCallback(() => goToSlide((gi + 1) % gallery.length), [gi, gallery.length, goToSlide]);
+  const prevSlide = useCallback(() => goToSlide((gi - 1 + gallery.length) % gallery.length), [gi, gallery.length, goToSlide]);
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => { touchStart.current = e.touches[0].clientX; }, []);
+  const onTouchEnd = useCallback((e: React.TouchEvent) => {
+    const diff = touchStart.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) { diff > 0 ? nextSlide() : prevSlide(); }
+  }, [nextSlide, prevSlide]);
 
   return (
     <div className="min-h-screen bg-white text-neutral-900" style={{ fontFamily: "'Inter',system-ui,-apple-system,sans-serif" }}>
@@ -314,14 +343,33 @@ export default function DynamicLanding() {
       <section className="mx-auto max-w-6xl px-4 pb-6 pt-5 sm:pb-10 sm:pt-8 md:pt-12">
         <div className="grid items-start gap-6 md:grid-cols-2 md:gap-10">
           <div className="fade-up">
-            <div className="relative aspect-square overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 sm:rounded-3xl">
-              <img src={gallery[gi] || cfg.images.hero} alt={cfg.title} className="h-full w-full object-cover transition-opacity duration-300" fetchPriority="high" width={800} height={800} decoding="async"/>
-              <span className={`absolute left-3 top-3 rounded-full ${T.badgeBg} px-2.5 py-1 text-[10px] font-bold ${T.badgeTxt} shadow-lg sm:left-4 sm:top-4 sm:text-xs`}>{cfg.badge || 'BEST-SELLER'}</span>
+            <div className="relative aspect-square overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 sm:rounded-3xl" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+              <div className="relative h-full w-full">
+                {gallery.map((src, i) => (
+                  <img key={i} src={src} alt={i === 0 ? cfg.title : ''} className={`absolute inset-0 h-full w-full object-cover transition-all duration-500 ease-in-out ${i === gi ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`} fetchPriority={i === 0 ? 'high' : 'low'} width={800} height={800} decoding="async" loading={i === 0 ? 'eager' : 'lazy'}/>
+                ))}
+              </div>
+              <span className={`absolute left-3 top-3 z-10 rounded-full ${T.badgeBg} px-2.5 py-1 text-[10px] font-bold ${T.badgeTxt} shadow-lg sm:left-4 sm:top-4 sm:text-xs`}>{cfg.badge || 'BEST-SELLER'}</span>
+              {gallery.length > 1 && (
+                <>
+                  <button onClick={prevSlide} className="absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-neutral-700 shadow-lg backdrop-blur transition-all hover:bg-white hover:scale-110 active:scale-95 sm:h-9 sm:w-9" aria-label="Precedent">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                  </button>
+                  <button onClick={nextSlide} className="absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-neutral-700 shadow-lg backdrop-blur transition-all hover:bg-white hover:scale-110 active:scale-95 sm:h-9 sm:w-9" aria-label="Suivant">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+                  </button>
+                  <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-1.5">
+                    {gallery.map((_, i) => (
+                      <button key={i} onClick={() => goToSlide(i)} className={`h-2 rounded-full transition-all duration-300 ${i === gi ? `w-6 bg-white shadow-md` : 'w-2 bg-white/50 hover:bg-white/70'}`} aria-label={`Image ${i + 1}`}/>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
             {gallery.length > 1 && (
               <div className="mt-2.5 flex gap-2 sm:mt-3">
                 {gallery.map((src, i) => (
-                  <button key={i} onClick={() => setGi(i)} className={`h-14 w-14 overflow-hidden rounded-lg border-2 transition-all sm:h-[72px] sm:w-[72px] sm:rounded-xl ${i === gi ? `border-current ring-2 ${T.ringColor}` : 'border-transparent opacity-60 hover:opacity-100'}`}>
+                  <button key={i} onClick={() => goToSlide(i)} className={`h-14 w-14 overflow-hidden rounded-lg border-2 transition-all sm:h-[72px] sm:w-[72px] sm:rounded-xl ${i === gi ? `border-current ring-2 ${T.ringColor}` : 'border-transparent opacity-60 hover:opacity-100'}`}>
                     <img src={src} alt="" className="h-full w-full object-cover"/>
                   </button>
                 ))}
