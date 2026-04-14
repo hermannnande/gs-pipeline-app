@@ -77,10 +77,10 @@ function useOnScreen(rootMargin = '150px') {
   return { ref, visible };
 }
 
-function LazySection({ children, className, delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
+function LazySection({ children, className, delay = 0, style }: { children: React.ReactNode; className?: string; delay?: number; style?: React.CSSProperties }) {
   const { ref, visible } = useOnScreen('80px');
   return (
-    <div ref={ref} className={className}>
+    <div ref={ref} className={className} style={style}>
       {visible ? <div className="animate-[fadeUp_.5s_ease_both]" style={{ animationDelay: `${delay}ms` }}>{children}</div>
        : <div className="min-h-[100px]"/>}
     </div>
