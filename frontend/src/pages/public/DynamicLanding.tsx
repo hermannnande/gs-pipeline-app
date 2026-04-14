@@ -44,6 +44,18 @@ const THEMES: Record<string, { topBar: string; marquee: string; marqueeTxt: stri
     progressBar: 'bg-gradient-to-r from-emerald-400 to-teal-500', stockBar: 'bg-gradient-to-r from-teal-400 to-emerald-400',
     topBarAccent: 'text-emerald-300', countdownBg: 'bg-white/10',
   },
+  rose: {
+    topBar: 'bg-gradient-to-r from-rose-900 to-pink-900', marquee: 'bg-rose-800', marqueeTxt: 'text-rose-200/80', dotBg: 'bg-rose-300/40',
+    badgeBg: 'bg-rose-500', badgeTxt: 'text-white', subtitleTxt: 'text-rose-600', starColor: 'text-rose-400',
+    discountBg: 'bg-rose-50', discountTxt: 'text-rose-700', stockBorder: 'border-rose-100', stockBg: 'bg-rose-50', stockTxt: 'text-rose-700',
+    btnGrad: 'bg-gradient-to-r from-rose-400 via-pink-400 to-fuchsia-500', btnShadow: 'shadow-[0_8px_32px_rgba(244,63,94,.4)]', btnHoverShadow: 'hover:shadow-[0_12px_40px_rgba(244,63,94,.55)]',
+    ringColor: 'ring-rose-200', tagBg: 'bg-rose-500', offerBorder: 'border-rose-400', offerActiveBg: 'bg-rose-50/50',
+    sectionAccent: 'text-rose-600', stepBadgeBg: 'bg-rose-50', stepBadgeTxt: 'text-rose-700',
+    radioActive: 'border-rose-500 bg-rose-500', formFocus: 'focus-within:border-rose-400', formRing: 'focus-within:shadow-[0_0_0_3px_rgba(244,63,94,.12)]',
+    badgePill1: 'border-rose-400/30 bg-rose-400/10 text-rose-300', badgePill2: 'border-pink-400/30 bg-pink-400/10 text-pink-300',
+    progressBar: 'bg-gradient-to-r from-rose-400 to-pink-500', stockBar: 'bg-gradient-to-r from-pink-400 to-rose-400',
+    topBarAccent: 'text-rose-300', countdownBg: 'bg-white/10',
+  },
 };
 
 interface TemplateConfig {

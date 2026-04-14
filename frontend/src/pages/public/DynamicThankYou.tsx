@@ -41,6 +41,14 @@ const THEME_STYLES: Record<string, {
     glowShadow: 'shadow-[0_0_30px_rgba(16,185,129,.4)]', checkBg: 'bg-emerald-500',
     iconGlow: 'shadow-[0_0_25px_rgba(16,185,129,.5)]',
   },
+  rose: {
+    headerBg: 'bg-gradient-to-br from-rose-900 via-pink-900 to-fuchsia-900',
+    accentBg: 'bg-rose-50', accentBorder: 'border-rose-100', accentText: 'text-rose-800',
+    btnBg: 'bg-gradient-to-r from-rose-400 via-pink-400 to-fuchsia-500', btnHover: 'hover:shadow-[0_8px_30px_rgba(244,63,94,.5)]',
+    pillBg: 'bg-rose-100', pillText: 'text-rose-700',
+    glowShadow: 'shadow-[0_0_30px_rgba(244,63,94,.4)]', checkBg: 'bg-rose-500',
+    iconGlow: 'shadow-[0_0_25px_rgba(244,63,94,.5)]',
+  },
 };
 
 export default function DynamicThankYou() {
