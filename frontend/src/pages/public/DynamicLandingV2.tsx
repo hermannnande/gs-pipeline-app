@@ -102,7 +102,7 @@ const OptimImg = memo(function OptimImg({ src, alt = '', className = '', w = 800
       srcSet={srcSet || undefined}
       sizes={srcSet ? sizes : undefined}
       alt={alt}
-      className={`${className} transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+      className={`max-w-full ${className} transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
       loading={eager ? 'eager' : 'lazy'}
       decoding="async"
       fetchPriority={eager ? 'high' : 'auto'}
@@ -290,9 +290,11 @@ export default function DynamicLandingV2() {
   const reviews = cfg.reviews || [];
 
   return (
-    <div className="min-h-screen text-neutral-900" style={{ fontFamily: "'Inter',system-ui,sans-serif", backgroundColor: c.bg }}>
+    <div className="min-h-screen overflow-x-hidden text-neutral-900" style={{ fontFamily: "'Inter',system-ui,sans-serif", backgroundColor: c.bg }}>
       <style>{`
         :root{--cp:${c.p};--ca:${c.a};--cp-rgb:${c.pRgb};--ca-rgb:${c.aRgb}}
+        *,*::before,*::after{box-sizing:border-box}
+        img,video{max-width:100%;height:auto}
         @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
         @keyframes slideIn{from{opacity:0;transform:translateX(-100%)}to{opacity:1;transform:translateX(0)}}
@@ -345,16 +347,16 @@ export default function DynamicLandingV2() {
       )}
 
       {/* ═══════════ HERO SECTION ═══════════ */}
-      <section className="mx-auto max-w-7xl px-4 pb-8 pt-6 sm:pb-12 sm:pt-10">
+      <section className="mx-auto max-w-7xl overflow-hidden px-4 pb-8 pt-6 sm:pb-12 sm:pt-10">
         <div className="grid items-start gap-6 lg:grid-cols-2 lg:gap-12">
           {/* Gallery */}
           <div className="fade-up">
             <div className="relative aspect-square overflow-hidden rounded-3xl bg-white shadow-xl shadow-neutral-200/50" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
               {gallery.map((src, i) => (
                 isVideo(src) ? (
-                  <video key={i} src={src} autoPlay loop muted playsInline className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out ${i === gi ? 'opacity-100 scale-100' : 'opacity-0 scale-[1.03]'}`}/>
+                  <video key={i} src={src} autoPlay loop muted playsInline className={`absolute inset-0 h-full w-full max-w-full object-cover transition-all duration-700 ease-out ${i === gi ? 'opacity-100 scale-100' : 'opacity-0 scale-[1.03]'}`}/>
                 ) : isGif(src) ? (
-                  <img key={i} src={src} alt="" className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out ${i === gi ? 'opacity-100 scale-100' : 'opacity-0 scale-[1.03]'}`} loading={i === 0 ? 'eager' : 'lazy'}/>
+                  <img key={i} src={src} alt="" className={`absolute inset-0 h-full w-full max-w-full object-cover transition-all duration-700 ease-out ${i === gi ? 'opacity-100 scale-100' : 'opacity-0 scale-[1.03]'}`} loading={i === 0 ? 'eager' : 'lazy'}/>
                 ) : (
                   <OptimImg key={i} src={src} alt={i === 0 ? cfg.title : ''} w={1200} q={80} eager={i === 0} sizes="(max-width:768px) 100vw, 50vw" className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out ${i === gi ? '!opacity-100 scale-100' : '!opacity-0 scale-[1.03]'}`}/>
                 )
@@ -381,7 +383,7 @@ export default function DynamicLandingV2() {
               <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                 {gallery.map((src, i) => (
                   <button key={i} onClick={() => goSlide(i)} className={`h-14 w-14 shrink-0 overflow-hidden rounded-xl border-2 transition-all sm:h-20 sm:w-20 ${i === gi ? 'shadow-md' : 'border-transparent opacity-50 hover:opacity-100'}`} style={i === gi ? { borderColor: c.p, boxShadow: `0 0 0 2px ${c.p}33` } : undefined}>
-                    {isVideo(src) ? <video src={src} muted className="h-full w-full object-cover"/> : isGif(src) ? <img src={src} alt="" className="h-full w-full object-cover"/> : <OptimImg src={src} w={160} q={60} className="h-full w-full object-cover"/>}
+                    {isVideo(src) ? <video src={src} muted className="h-full w-full max-w-full object-cover"/> : isGif(src) ? <img src={src} alt="" className="h-full w-full max-w-full object-cover"/> : <OptimImg src={src} w={160} q={60} className="h-full w-full object-cover"/>}
                   </button>
                 ))}
               </div>
@@ -433,7 +435,7 @@ export default function DynamicLandingV2() {
               <span className="shrink-0 text-[11px] font-bold text-red-600">⚡ Plus que {stock} en stock</span>
             </div>
 
-            <p className="mt-4 text-[14px] leading-relaxed text-neutral-500">{cfg.description}</p>
+            <p className="mt-4 text-[13px] leading-relaxed text-neutral-500 sm:text-[14px]" style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}>{cfg.description}</p>
 
             {/* Quick benefits */}
             <div className="mt-4 grid grid-cols-1 gap-2 min-[360px]:grid-cols-2">
@@ -482,7 +484,7 @@ export default function DynamicLandingV2() {
               {cfg.sections.problemPoints.map((p, i) => (
                 <div key={i} className="group overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl">
                   {cfg.images.lifestyle?.[i] && (
-                    <div className="h-48 overflow-hidden">
+                    <div className="h-40 overflow-hidden sm:h-48">
                       <OptimImg src={cfg.images.lifestyle[i]} w={600} q={70} sizes="(max-width:640px) 100vw, 33vw" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"/>
                     </div>
                   )}
@@ -508,13 +510,13 @@ export default function DynamicLandingV2() {
             </div>
             <div className="grid gap-5 sm:grid-cols-2">
               {cfg.sections.solutionPoints.map((s, i) => (
-                <div key={i} className="group flex gap-4 rounded-2xl border bg-white p-5 shadow-sm transition-all hover:shadow-lg" style={{ borderColor: `${c.p}15` }}>
+                <div key={i} className="group flex flex-col gap-3 rounded-2xl border bg-white p-4 shadow-sm transition-all hover:shadow-lg min-[400px]:flex-row min-[400px]:gap-4 sm:p-5" style={{ borderColor: `${c.p}15` }}>
                   {s.img ? (
-                    <OptimImg src={s.img} w={192} q={70} className="h-20 w-20 shrink-0 rounded-2xl border border-neutral-100 object-cover shadow-sm sm:h-24 sm:w-24"/>
+                    <OptimImg src={s.img} w={192} q={70} className="h-32 w-full shrink-0 rounded-2xl border border-neutral-100 object-cover shadow-sm min-[400px]:h-20 min-[400px]:w-20 sm:h-24 sm:w-24"/>
                   ) : (
                     <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl" style={{ backgroundColor: `${c.p}10` }}>{s.ico}</span>
                   )}
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="text-[15px] font-bold text-neutral-900">{s.title}</h3>
                     <p className="mt-1 text-[13px] leading-relaxed text-neutral-500">{s.desc}</p>
                   </div>
@@ -623,7 +625,7 @@ export default function DynamicLandingV2() {
             {reviews.map((r, i) => (
               <div key={i} className="w-[78vw] max-w-[320px] shrink-0 snap-center overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-all hover:shadow-lg sm:w-[320px] sm:shrink">
                 {r.img && (
-                  <div className="h-48 overflow-hidden">
+                  <div className="h-40 overflow-hidden sm:h-48">
                     <OptimImg src={r.img} alt={r.n} w={680} q={70} sizes="(max-width:640px) 85vw, 340px" className="h-full w-full object-cover"/>
                   </div>
                 )}
