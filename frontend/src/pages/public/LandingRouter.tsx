@@ -1,17 +1,10 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-
-const DynamicLanding = lazy(() => import('./DynamicLanding'));
-const DynamicLandingV2 = lazy(() => import('./DynamicLandingV2'));
+import DynamicLanding from './DynamicLanding';
+import DynamicLandingV2 from './DynamicLandingV2';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '/api');
-
-const Spinner = () => (
-  <div className="flex min-h-screen items-center justify-center bg-[#fafaf9]">
-    <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-neutral-200 border-t-teal-600"/>
-  </div>
-);
 
 export default function LandingRouter() {
   const { slug } = useParams<{ slug: string }>();
@@ -29,11 +22,12 @@ export default function LandingRouter() {
       .catch(() => setVersion(1));
   }, [slug]);
 
-  if (version === null) return <Spinner />;
-
-  return (
-    <Suspense fallback={<Spinner />}>
-      {version === 2 ? <DynamicLandingV2 /> : <DynamicLanding />}
-    </Suspense>
+  if (version === null) return (
+    <div className="flex min-h-screen items-center justify-center bg-[#fafaf9]">
+      <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-neutral-200 border-t-teal-600"/>
+    </div>
   );
+
+  if (version === 2) return <DynamicLandingV2 />;
+  return <DynamicLanding />;
 }

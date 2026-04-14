@@ -1,17 +1,10 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-
-const DynamicThankYou = lazy(() => import('./DynamicThankYou'));
-const DynamicThankYouV2 = lazy(() => import('./DynamicThankYouV2'));
+import DynamicThankYou from './DynamicThankYou';
+import DynamicThankYouV2 from './DynamicThankYouV2';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '/api');
-
-const Spinner = () => (
-  <div className="flex min-h-screen items-center justify-center bg-[#fafaf9]">
-    <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-neutral-200 border-t-teal-600"/>
-  </div>
-);
 
 export default function ThankYouRouter() {
   const { slug } = useParams<{ slug: string }>();
@@ -29,11 +22,12 @@ export default function ThankYouRouter() {
       .catch(() => setVersion(1));
   }, [slug]);
 
-  if (version === null) return <Spinner />;
-
-  return (
-    <Suspense fallback={<Spinner />}>
-      {version === 2 ? <DynamicThankYouV2 /> : <DynamicThankYou />}
-    </Suspense>
+  if (version === null) return (
+    <div className="flex min-h-screen items-center justify-center bg-[#fafaf9]">
+      <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-neutral-200 border-t-teal-600"/>
+    </div>
   );
+
+  if (version === 2) return <DynamicThankYouV2 />;
+  return <DynamicThankYou />;
 }
