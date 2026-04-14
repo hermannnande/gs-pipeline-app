@@ -738,66 +738,114 @@ export default function DynamicLandingV2() {
       {modal && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4" onClick={e => { if (e.target === e.currentTarget) setModal(false); }}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"/>
-          <div className="scale-in relative max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-white shadow-2xl sm:max-w-[420px] sm:rounded-3xl">
-            <button onClick={() => setModal(false)} className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white transition hover:bg-white/30">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          <div className="scale-in relative max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-white shadow-2xl sm:max-w-[480px] sm:rounded-3xl">
+            <button onClick={() => setModal(false)} className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 transition hover:bg-neutral-200 hover:text-neutral-700">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
-            <div className="bg-gradient-to-br from-teal-700 via-teal-600 to-emerald-600 px-5 pb-4 pt-5 text-white">
-              <div className="mb-2.5 flex flex-wrap gap-1.5">
-                <span className="rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-[9px] font-bold backdrop-blur">Livraison 24h</span>
-                <span className="rounded-full border border-emerald-300/20 bg-emerald-400/10 px-2.5 py-0.5 text-[9px] font-bold backdrop-blur">Paiement a la livraison</span>
+
+            {/* Header avec produit */}
+            <div className="flex items-center gap-4 border-b border-neutral-100 px-5 pb-4 pt-5">
+              <OptimImg src={cfg.images.hero} w={120} q={70} className="h-16 w-16 rounded-2xl border border-neutral-100 object-cover shadow-sm"/>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[15px] font-extrabold text-neutral-900">{cfg.title}</p>
+                <div className="mt-1 flex items-center gap-2">
+                  <span className="text-lg font-black text-teal-700">{fmt(prices[qty] || prices[1])}</span>
+                  {cfg.oldPrice && <span className="text-[12px] text-neutral-400 line-through">{fmt(cfg.oldPrice * qty)}</span>}
+                </div>
+                <div className="mt-1.5 flex gap-1.5">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold text-emerald-700 ring-1 ring-emerald-100">
+                    <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    Livraison 24h
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[9px] font-bold text-amber-700 ring-1 ring-amber-100">
+                    <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Paiement a la livraison
+                  </span>
+                </div>
               </div>
-              <h3 className="text-lg font-extrabold">Finalisez votre commande</h3>
             </div>
-            <div className="h-1.5 bg-neutral-100"><div className="h-full w-[85%] rounded-r-full bg-gradient-to-r from-teal-500 to-emerald-400"/></div>
 
-            <form onSubmit={submit} className="space-y-3 p-4 pb-5 sm:p-5">
-              {[
-                { icon: '👤', label: 'Nom complet', val: name, set: setName, ph: 'Ex. Kouadio Fernand', type: 'text' as const },
-                { icon: '📍', label: 'Ville / Commune', val: city, set: setCity, ph: 'Ex. Abidjan — Yopougon', type: 'text' as const },
-                { icon: '📱', label: 'Telephone', val: phone, set: setPhone, ph: 'Ex. 07 00 00 00 00', type: 'tel' as const },
-              ].map(f => (
-                <label key={f.label} className="block">
-                  <span className="mb-1 block text-[11px] font-bold text-neutral-700">{f.label} <span className="text-red-500">*</span></span>
-                  <div className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50/50 px-3 transition-all focus-within:border-teal-400 focus-within:bg-white focus-within:shadow-[0_0_0_3px_rgba(13,148,136,.08)]">
-                    <span className="text-sm">{f.icon}</span>
-                    <input type={f.type} inputMode={f.type === 'tel' ? 'tel' : undefined} value={f.val} onChange={e => f.set(e.target.value)} placeholder={f.ph} className="h-11 w-full border-none bg-transparent text-[13px] font-medium outline-none placeholder:text-neutral-300"/>
-                  </div>
-                </label>
-              ))}
-
-              <div>
-                <span className="mb-1.5 block text-[11px] font-bold text-neutral-700">Quantite</span>
-                <div className="grid gap-1.5">
+            <form onSubmit={submit} className="px-5 pb-5 pt-4">
+              {/* Etape 1 — Quantite */}
+              <div className="mb-4">
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-teal-600 text-[10px] font-black text-white">1</span>
+                  <span className="text-[12px] font-bold text-neutral-800">Choisissez votre pack</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
                   {qtyOpts.map(o => (
-                    <button key={o.v} type="button" onClick={() => setQty(o.v)} className={`relative flex items-center justify-between rounded-xl border-2 px-3.5 py-3 text-left transition-all ${qty === o.v ? 'border-teal-500 bg-teal-50/50 shadow-sm ring-1 ring-teal-200/50' : 'border-neutral-200 bg-white hover:border-neutral-300'}`}>
-                      <div className="flex items-center gap-2.5">
-                        <div className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${qty === o.v ? 'border-teal-500 bg-teal-500' : 'border-neutral-300'}`}>
-                          {qty === o.v && <div className="h-2 w-2 rounded-full bg-white"/>}
-                        </div>
-                        <span className="text-[13px] font-bold">{o.label}</span>
-                        {o.tag && <span className="rounded-full bg-teal-500 px-2 py-0.5 text-[9px] font-bold text-white">{o.tag}</span>}
-                      </div>
-                      <div className="text-right">
-                        <span className="text-[13px] font-black">{o.sub}</span>
-                        {o.save && <p className="text-[10px] font-bold text-emerald-600">{o.save}</p>}
-                      </div>
+                    <button key={o.v} type="button" onClick={() => setQty(o.v)} className={`relative flex flex-col items-center rounded-2xl border-2 px-2 py-3 transition-all ${qty === o.v ? 'border-teal-500 bg-teal-50/60 shadow-md ring-1 ring-teal-200/60' : 'border-neutral-200 bg-white hover:border-neutral-300'}`}>
+                      {o.tag && <span className="absolute -right-1 -top-2 rounded-full bg-red-500 px-1.5 py-0.5 text-[8px] font-black text-white shadow">{o.tag}</span>}
+                      <span className="text-xl font-black text-neutral-800">{o.v}</span>
+                      <span className="mt-0.5 text-[10px] font-bold text-neutral-500">paire{o.v > 1 ? 's' : ''}</span>
+                      <span className="mt-1 text-[12px] font-black text-teal-700">{o.sub}</span>
+                      {o.save && <span className="mt-0.5 text-[9px] font-bold text-emerald-600">{o.save}</span>}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="flex items-center justify-between rounded-xl bg-neutral-900 px-4 py-3 text-white">
-                <span className="text-[13px] font-semibold">Total a payer</span>
-                <span className="text-[17px] font-black">{fmt(prices[qty] || prices[1])}</span>
+              {/* Etape 2 — Coordonnees */}
+              <div className="mb-4">
+                <div className="mb-2.5 flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-teal-600 text-[10px] font-black text-white">2</span>
+                  <span className="text-[12px] font-bold text-neutral-800">Vos coordonnees</span>
+                </div>
+                <div className="space-y-2.5">
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <label className="block">
+                      <span className="mb-1 block text-[10px] font-bold text-neutral-500">Nom complet <span className="text-red-400">*</span></span>
+                      <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Kouadio Fernand" className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50/50 px-3 text-[13px] font-medium outline-none transition placeholder:text-neutral-300 focus:border-teal-400 focus:bg-white focus:shadow-[0_0_0_3px_rgba(13,148,136,.08)]"/>
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-[10px] font-bold text-neutral-500">Ville / Commune <span className="text-red-400">*</span></span>
+                      <input type="text" value={city} onChange={e => setCity(e.target.value)} placeholder="Abidjan — Yopougon" className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50/50 px-3 text-[13px] font-medium outline-none transition placeholder:text-neutral-300 focus:border-teal-400 focus:bg-white focus:shadow-[0_0_0_3px_rgba(13,148,136,.08)]"/>
+                    </label>
+                  </div>
+                  <label className="block">
+                    <span className="mb-1 block text-[10px] font-bold text-neutral-500">Telephone <span className="text-red-400">*</span></span>
+                    <div className="flex overflow-hidden rounded-xl border border-neutral-200 transition focus-within:border-teal-400 focus-within:shadow-[0_0_0_3px_rgba(13,148,136,.08)]">
+                      <span className="flex items-center gap-1 border-r border-neutral-200 bg-neutral-50 px-3 text-[12px] font-bold text-neutral-500">
+                        <span className="text-sm">🇨🇮</span> +225
+                      </span>
+                      <input type="tel" inputMode="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="07 00 00 00 00" className="h-11 w-full border-none bg-neutral-50/50 px-3 text-[13px] font-medium outline-none placeholder:text-neutral-300 focus:bg-white"/>
+                    </div>
+                  </label>
+                </div>
               </div>
 
-              {formErr && <p className="rounded-xl bg-red-50 px-3 py-2.5 text-[12px] font-semibold text-red-600 ring-1 ring-red-100">{formErr}</p>}
+              {/* Recapitulatif */}
+              <div className="mb-4 overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50/80">
+                <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-2.5">
+                  <span className="text-[12px] text-neutral-500">{qty} x {cfg.title?.split(' ').slice(0, 3).join(' ')}...</span>
+                  <span className="text-[12px] font-bold text-neutral-700">{fmt(prices[qty] || prices[1])}</span>
+                </div>
+                <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-2.5">
+                  <span className="text-[12px] text-neutral-500">Livraison</span>
+                  <span className="text-[12px] font-bold text-emerald-600">GRATUITE</span>
+                </div>
+                <div className="flex items-center justify-between bg-neutral-900 px-4 py-3 text-white">
+                  <span className="text-[13px] font-bold">Total a payer</span>
+                  <span className="text-[18px] font-black">{fmt(prices[qty] || prices[1])}</span>
+                </div>
+              </div>
 
-              <button type="submit" disabled={sending} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-500 text-[14px] font-extrabold text-white shadow-xl shadow-teal-200/30 transition hover:shadow-2xl active:scale-[.98] disabled:cursor-wait disabled:opacity-60">
-                {sending ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"/>Envoi...</> : '✅ Valider ma commande'}
+              {formErr && <p className="mb-3 rounded-xl bg-red-50 px-3 py-2.5 text-[12px] font-semibold text-red-600 ring-1 ring-red-100">{formErr}</p>}
+
+              <button type="submit" disabled={sending} className="group relative flex h-[52px] w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-500 text-[15px] font-extrabold text-white shadow-xl shadow-teal-200/40 transition hover:shadow-2xl active:scale-[.98] disabled:cursor-wait disabled:opacity-60">
+                <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full"/>
+                {sending ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"/>Envoi en cours...</> : (
+                  <>
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    Confirmer ma commande
+                  </>
+                )}
               </button>
-              <p className="text-center text-[10px] text-neutral-400">🔒 Commande securisee · Nous vous appelons pour confirmer</p>
+              <div className="mt-3 flex items-center justify-center gap-4 text-[10px] text-neutral-400">
+                <span className="flex items-center gap-1"><svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>Securise</span>
+                <span className="flex items-center gap-1"><svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>Appel de confirmation</span>
+                <span className="flex items-center gap-1"><svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>Satisfait ou rembourse</span>
+              </div>
             </form>
           </div>
         </div>
