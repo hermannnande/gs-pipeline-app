@@ -7,13 +7,13 @@ const CONFIG = {
   subtitle: 'Traitement professionnel en 7 jours',
   description: 'Fini les douleurs d\'ongles incarnes, les inflammations et les orteils douloureux. Notre creme penetrante soulage des la 1ere application et corrige l\'ongle en 7 jours. Formule naturelle approuvee par les podologues.',
   badge: 'N°1 EN CI',
-  prices: { 1: 7900, 2: 12900, 3: 16900 },
-  oldPrice: 12000,
+  prices: { 1: 9900, 2: 16900, 3: 24900 },
+  oldPrice: 15000,
   discount: '-34%',
   qtyOptions: [
-    { v: 1, label: '1 tube', sub: '7 900 FCFA', save: '' },
-    { v: 2, label: '2 tubes', sub: '12 900 FCFA', tag: 'Populaire', save: 'Economisez 2 900 F' },
-    { v: 3, label: '3 tubes', sub: '16 900 FCFA', tag: 'Meilleure offre', save: 'Economisez 6 800 F' },
+    { v: 1, label: '1 boite', sub: '9 900 FCFA', save: '' },
+    { v: 2, label: '2 boites', sub: '16 900 FCFA', tag: 'Populaire', save: 'Economisez 2 900 F' },
+    { v: 3, label: '3 boites', sub: '24 900 FCFA', tag: 'Meilleure offre', save: 'Economisez 4 800 F' },
   ],
   images: {
     hero: 'https://obrille.com/wp-content/uploads/2026/04/Traitement-efficace-des-ongles-incarnes.png',
@@ -94,19 +94,19 @@ const CONFIG = {
   ],
   bundles: [
     {
-      v: 1, label: '1 tube (30ml)', unitPrice: 7900, totalPrice: 7900,
+      v: 1, label: '1 boite', unitPrice: 9900, totalPrice: 9900,
       perDay: 'Traitement 1 pied',
       img: 'https://obrille.com/wp-content/uploads/2026/04/Traitement-efficace-des-ongles-incarnes.png',
     },
     {
-      v: 2, label: '2 tubes (60ml)', unitPrice: 6450, totalPrice: 12900,
+      v: 2, label: '2 boites', unitPrice: 8450, totalPrice: 16900,
       save: 'Economisez 2 900 F', tag: 'POPULAIRE',
       perDay: 'Traitement complet 2 pieds',
       img: 'https://obrille.com/wp-content/uploads/2026/04/Soulagement-rapide-des-ongles-incarnes.png',
     },
     {
-      v: 3, label: '3 tubes (90ml)', unitPrice: 5633, totalPrice: 16900,
-      save: 'Economisez 6 800 F', tag: 'CURE COMPLETE',
+      v: 3, label: '3 boites', unitPrice: 8300, totalPrice: 24900,
+      save: 'Economisez 4 800 F', tag: 'CURE COMPLETE',
       perDay: 'Traitement famille entiere',
       img: 'https://obrille.com/wp-content/uploads/2026/04/Comparaison-avant-apres-dun-ongle-incarne.png',
     },

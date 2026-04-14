@@ -799,7 +799,7 @@ export default function DynamicLandingV2() {
                     <button key={o.v} type="button" onClick={() => setQty(o.v)} className={`relative flex flex-col items-center rounded-2xl border-2 px-2 py-3 transition-all ${qty === o.v ? 'shadow-md' : 'border-neutral-200 bg-white hover:border-neutral-300'}`} style={qty === o.v ? { borderColor: c.p, backgroundColor: `${c.p}08`, boxShadow: `0 0 0 1px ${c.p}20, 0 4px 6px -1px rgba(0,0,0,.1)` } : undefined}>
                       {o.tag && <span className="absolute -right-1 -top-2 rounded-full bg-red-500 px-1.5 py-0.5 text-[8px] font-black text-white shadow">{o.tag}</span>}
                       <span className="text-xl font-black text-neutral-800">{o.v}</span>
-                      <span className="mt-0.5 text-[10px] font-bold text-neutral-500">paire{o.v > 1 ? 's' : ''}</span>
+                      <span className="mt-0.5 text-[10px] font-bold text-neutral-500">{o.label}</span>
                       <span className="mt-1 text-[12px] font-black" style={{ color: c.p }}>{o.sub}</span>
                       {o.save && <span className="mt-0.5 text-[9px] font-bold text-emerald-600">{o.save}</span>}
                     </button>
