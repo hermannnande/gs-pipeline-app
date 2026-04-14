@@ -378,9 +378,9 @@ export default function DynamicLandingV2() {
               )}
             </div>
             {gallery.length > 1 && (
-              <div className="mt-3 flex gap-2.5">
+              <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                 {gallery.map((src, i) => (
-                  <button key={i} onClick={() => goSlide(i)} className={`h-16 w-16 overflow-hidden rounded-xl border-2 transition-all sm:h-20 sm:w-20 ${i === gi ? 'shadow-md' : 'border-transparent opacity-50 hover:opacity-100'}`} style={i === gi ? { borderColor: c.p, boxShadow: `0 0 0 2px ${c.p}33` } : undefined}>
+                  <button key={i} onClick={() => goSlide(i)} className={`h-14 w-14 shrink-0 overflow-hidden rounded-xl border-2 transition-all sm:h-20 sm:w-20 ${i === gi ? 'shadow-md' : 'border-transparent opacity-50 hover:opacity-100'}`} style={i === gi ? { borderColor: c.p, boxShadow: `0 0 0 2px ${c.p}33` } : undefined}>
                     {isVideo(src) ? <video src={src} muted className="h-full w-full object-cover"/> : isGif(src) ? <img src={src} alt="" className="h-full w-full object-cover"/> : <OptimImg src={src} w={160} q={60} className="h-full w-full object-cover"/>}
                   </button>
                 ))}
@@ -394,12 +394,12 @@ export default function DynamicLandingV2() {
             {cfg.sections?.stickers && (
               <div className="mb-3 flex flex-wrap gap-2">
                 {cfg.sections.stickers.map((s, i) => (
-                  <span key={i} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${s.color}`}>{s.text}</span>
+                  <span key={i} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider sm:px-3 sm:py-1 sm:text-[10px] ${s.color}`}>{s.text}</span>
                 ))}
               </div>
             )}
             <p className="mb-1 text-[11px] font-bold uppercase tracking-[.2em]" style={{ color: c.p }}>{cfg.subtitle}</p>
-            <h1 className="text-[24px] font-extrabold leading-tight sm:text-[32px] lg:text-[36px]">{cfg.title}</h1>
+            <h1 className="text-[20px] font-extrabold leading-tight min-[360px]:text-[24px] sm:text-[32px] lg:text-[36px]">{cfg.title}</h1>
 
             {/* Rating */}
             <div className="mt-3 flex items-center gap-2">
@@ -419,10 +419,10 @@ export default function DynamicLandingV2() {
             )}
 
             {/* Price */}
-            <div className="mt-5 flex items-baseline gap-3">
-              <span className="text-3xl font-black text-neutral-900 sm:text-4xl">{fmt(prices[1])}</span>
-              {cfg.oldPrice && <span className="text-lg text-neutral-400 line-through">{fmt(cfg.oldPrice)}</span>}
-              {cfg.discount && <span className="rounded-lg bg-red-50 px-2.5 py-1 text-[12px] font-black text-red-600 ring-1 ring-red-100">{cfg.discount}</span>}
+            <div className="mt-5 flex flex-wrap items-baseline gap-2 sm:gap-3">
+              <span className="text-2xl font-black text-neutral-900 sm:text-3xl lg:text-4xl">{fmt(prices[1])}</span>
+              {cfg.oldPrice && <span className="text-sm text-neutral-400 line-through sm:text-lg">{fmt(cfg.oldPrice)}</span>}
+              {cfg.discount && <span className="rounded-lg bg-red-50 px-2 py-0.5 text-[11px] font-black text-red-600 ring-1 ring-red-100 sm:px-2.5 sm:py-1 sm:text-[12px]">{cfg.discount}</span>}
             </div>
 
             {/* Stock urgency */}
@@ -436,9 +436,9 @@ export default function DynamicLandingV2() {
             <p className="mt-4 text-[14px] leading-relaxed text-neutral-500">{cfg.description}</p>
 
             {/* Quick benefits */}
-            <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="mt-4 grid grid-cols-1 gap-2 min-[360px]:grid-cols-2">
               {['Paiement a la livraison', 'Livraison 24h', 'Resultat immediat', 'Support 7j/7'].map(b => (
-                <div key={b} className="flex items-center gap-2 rounded-xl border border-neutral-100 bg-white px-3 py-2.5 text-[12px] font-semibold text-neutral-600 shadow-sm">
+                <div key={b} className="flex items-center gap-2 rounded-xl border border-neutral-100 bg-white px-2.5 py-2 text-[11px] font-semibold text-neutral-600 shadow-sm sm:px-3 sm:py-2.5 sm:text-[12px]">
                   <CheckIcon/>{b}
                 </div>
               ))}
@@ -461,10 +461,10 @@ export default function DynamicLandingV2() {
 
       {/* ═══════════ STATS BAR ═══════════ */}
       {cfg.sections?.stats && (
-        <div className="border-y border-neutral-100 bg-white py-6">
-          <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-8 px-4 text-center sm:gap-12">
+        <div className="border-y border-neutral-100 bg-white py-4 sm:py-6">
+          <div className="mx-auto grid max-w-5xl grid-cols-2 gap-3 px-4 text-center sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-12">
             {cfg.sections.stats.map((s, i) => (
-              <div key={i}><p className="text-xl font-black text-neutral-900 sm:text-2xl">{s.n}</p><p className="text-[11px] font-medium text-neutral-400">{s.l}</p></div>
+              <div key={i}><p className="text-lg font-black text-neutral-900 sm:text-2xl">{s.n}</p><p className="text-[10px] font-medium text-neutral-400 sm:text-[11px]">{s.l}</p></div>
             ))}
           </div>
         </div>
@@ -476,7 +476,7 @@ export default function DynamicLandingV2() {
           <div className="mx-auto max-w-6xl px-4">
             <div className="mb-8 text-center">
               <span className="mb-2 inline-block rounded-full bg-red-50 px-4 py-1.5 text-[11px] font-black uppercase tracking-wider text-red-600 ring-1 ring-red-100">Le probleme</span>
-              <h2 className="mt-3 text-2xl font-extrabold sm:text-3xl">{cfg.sections.problemTitle || 'Vous souffrez au quotidien ?'}</h2>
+              <h2 className="mt-3 text-xl font-extrabold sm:text-2xl md:text-3xl">{cfg.sections.problemTitle || 'Vous souffrez au quotidien ?'}</h2>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {cfg.sections.problemPoints.map((p, i) => (
@@ -504,7 +504,7 @@ export default function DynamicLandingV2() {
           <div className="mx-auto max-w-6xl px-4">
             <div className="mb-8 text-center">
               <span className="mb-2 inline-block rounded-full px-4 py-1.5 text-[11px] font-black uppercase tracking-wider" style={{ backgroundColor: `${c.p}10`, color: c.p, boxShadow: `0 0 0 1px ${c.p}25` }}>La solution</span>
-              <h2 className="mt-3 text-2xl font-extrabold sm:text-3xl">{cfg.sections.solutionTitle || 'La solution approuvee'}</h2>
+              <h2 className="mt-3 text-xl font-extrabold sm:text-2xl md:text-3xl">{cfg.sections.solutionTitle || 'La solution approuvee'}</h2>
             </div>
             <div className="grid gap-5 sm:grid-cols-2">
               {cfg.sections.solutionPoints.map((s, i) => (
@@ -529,16 +529,16 @@ export default function DynamicLandingV2() {
       {cfg.sections?.comparisonTable && (
         <LazySection className="py-12 sm:py-16">
           <div className="mx-auto max-w-3xl px-4">
-            <h2 className="mb-8 text-center text-2xl font-extrabold sm:text-3xl">Pourquoi nous choisir ?</h2>
+            <h2 className="mb-6 text-center text-xl font-extrabold sm:mb-8 sm:text-2xl md:text-3xl">Pourquoi nous choisir ?</h2>
             <div className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-lg">
-              <div className="grid grid-cols-3 border-b border-neutral-100 bg-neutral-50 px-4 py-3 text-center">
-                <span className="text-[12px] font-bold text-neutral-500">Caracteristique</span>
-                <span className="text-[12px] font-black" style={{ color: c.p }}>Notre produit</span>
-                <span className="text-[12px] font-bold text-neutral-400">Autres</span>
+              <div className="grid grid-cols-[1fr_70px_70px] border-b border-neutral-100 bg-neutral-50 px-3 py-3 text-center sm:grid-cols-3 sm:px-4">
+                <span className="text-left text-[11px] font-bold text-neutral-500 sm:text-center sm:text-[12px]">Caracteristique</span>
+                <span className="text-[11px] font-black sm:text-[12px]" style={{ color: c.p }}>Nous</span>
+                <span className="text-[11px] font-bold text-neutral-400 sm:text-[12px]">Autres</span>
               </div>
               {cfg.sections.comparisonTable.map((row, i) => (
-                <div key={i} className={`grid grid-cols-3 items-center px-4 py-3.5 text-center ${i % 2 === 0 ? 'bg-white' : 'bg-neutral-50/50'}`}>
-                  <span className="text-left text-[13px] font-semibold text-neutral-700">{row.feature}</span>
+                <div key={i} className={`grid grid-cols-[1fr_70px_70px] items-center px-3 py-3 text-center sm:grid-cols-3 sm:px-4 sm:py-3.5 ${i % 2 === 0 ? 'bg-white' : 'bg-neutral-50/50'}`}>
+                  <span className="text-left text-[12px] font-semibold text-neutral-700 sm:text-[13px]">{row.feature}</span>
                   <div className="flex justify-center">{row.us ? <CheckIcon/> : <XIcon/>}</div>
                   <div className="flex justify-center">{row.them ? <CheckIcon/> : <XIcon/>}</div>
                 </div>
@@ -552,7 +552,7 @@ export default function DynamicLandingV2() {
       {cfg.sections?.howItWorks && (
         <LazySection className="border-y border-neutral-100 bg-neutral-900 py-12 sm:py-16">
           <div className="mx-auto max-w-6xl px-4">
-            <h2 className="mb-8 text-center text-2xl font-extrabold text-white sm:text-3xl">Comment ca marche ?</h2>
+            <h2 className="mb-6 text-center text-xl font-extrabold text-white sm:mb-8 sm:text-2xl md:text-3xl">Comment ca marche ?</h2>
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {cfg.sections.howItWorks.map((s, i) => (
                 <div key={i} className="group rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur transition-all hover:bg-white/10">
@@ -577,15 +577,15 @@ export default function DynamicLandingV2() {
           <div className="relative mx-auto max-w-5xl px-4">
             <div className="mb-8 text-center">
               <span className="mb-2 inline-block rounded-full bg-amber-50 px-4 py-1.5 text-[11px] font-black uppercase tracking-wider text-amber-700 ring-1 ring-amber-100">Offres speciales</span>
-              <h2 className="mt-3 text-2xl font-extrabold sm:text-3xl">Choisissez votre pack</h2>
+              <h2 className="mt-3 text-xl font-extrabold sm:text-2xl md:text-3xl">Choisissez votre pack</h2>
             </div>
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
               {bundles.map((b, i) => (
-                <button key={i} onClick={() => open(b.v)} className={`group relative overflow-hidden rounded-2xl border-2 p-5 text-left transition-all hover:-translate-y-1 hover:shadow-xl ${b.tag ? 'shadow-lg' : 'border-neutral-200 bg-white shadow-sm hover:border-neutral-300'}`} style={b.tag ? { borderColor: c.p, backgroundColor: `${c.p}08`, boxShadow: `0 0 0 2px ${c.p}20, 0 10px 15px -3px rgba(0,0,0,.1)` } : undefined}>
-                  {b.tag && <span className="absolute -right-1 -top-1 rounded-bl-xl rounded-tr-xl px-3 py-1 text-[10px] font-black text-white shadow-md" style={{ backgroundColor: c.p }}>{b.tag}</span>}
-                  {b.img && <OptimImg src={b.img} w={400} q={70} className="mb-3 h-28 w-full rounded-xl object-cover"/>}
-                  <p className="text-[17px] font-black">{b.label}</p>
-                  <p className="mt-1 text-2xl font-black" style={{ color: c.p }}>{fmt(b.totalPrice)}</p>
+                <button key={i} onClick={() => open(b.v)} className={`group relative overflow-hidden rounded-2xl border-2 p-4 text-left transition-all hover:-translate-y-1 hover:shadow-xl sm:p-5 ${b.tag ? 'shadow-lg' : 'border-neutral-200 bg-white shadow-sm hover:border-neutral-300'}`} style={b.tag ? { borderColor: c.p, backgroundColor: `${c.p}08`, boxShadow: `0 0 0 2px ${c.p}20, 0 10px 15px -3px rgba(0,0,0,.1)` } : undefined}>
+                  {b.tag && <span className="absolute -right-1 -top-1 rounded-bl-xl rounded-tr-xl px-2.5 py-0.5 text-[9px] font-black text-white shadow-md sm:px-3 sm:py-1 sm:text-[10px]" style={{ backgroundColor: c.p }}>{b.tag}</span>}
+                  {b.img && <OptimImg src={b.img} w={400} q={70} className="mb-3 hidden h-28 w-full rounded-xl object-cover sm:block"/>}
+                  <p className="text-[15px] font-black sm:text-[17px]">{b.label}</p>
+                  <p className="mt-1 text-xl font-black sm:text-2xl" style={{ color: c.p }}>{fmt(b.totalPrice)}</p>
                   {b.save && <p className="mt-1 text-[12px] font-bold text-emerald-600">{b.save}</p>}
                   {b.perDay && <p className="mt-0.5 text-[11px] text-neutral-400">{b.perDay}</p>}
                   <div className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-neutral-900 py-2.5 text-[13px] font-bold text-white transition" style={{ '--hover-bg': c.p } as React.CSSProperties} onMouseEnter={e => (e.currentTarget.style.backgroundColor = c.p)} onMouseLeave={e => (e.currentTarget.style.backgroundColor = '')}>
@@ -617,11 +617,11 @@ export default function DynamicLandingV2() {
               <div className="mb-3 flex items-center justify-center gap-1">{[...Array(5)].map((_, i) => <Star key={i}/>)}</div>
               <p className="text-sm font-bold text-neutral-800">4.9 — {reviews.length * 1247} avis verifies</p>
             </div>
-            <h2 className="mb-8 text-center text-2xl font-extrabold sm:text-3xl">Ce que disent nos clients</h2>
+            <h2 className="mb-6 text-center text-xl font-extrabold sm:mb-8 sm:text-2xl md:text-3xl">Ce que disent nos clients</h2>
           </div>
-          <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 scrollbar-hide sm:justify-center sm:overflow-visible">
+          <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 scrollbar-hide sm:flex-wrap sm:justify-center sm:gap-4 sm:overflow-visible">
             {reviews.map((r, i) => (
-              <div key={i} className="w-[85vw] max-w-[340px] shrink-0 snap-center overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-all hover:shadow-lg sm:w-[340px]">
+              <div key={i} className="w-[78vw] max-w-[320px] shrink-0 snap-center overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-all hover:shadow-lg sm:w-[320px] sm:shrink">
                 {r.img && (
                   <div className="h-48 overflow-hidden">
                     <OptimImg src={r.img} alt={r.n} w={680} q={70} sizes="(max-width:640px) 85vw, 340px" className="h-full w-full object-cover"/>
@@ -653,7 +653,7 @@ export default function DynamicLandingV2() {
       {cfg.sections?.faq && (
         <LazySection className="bg-[#fafaf9] py-12 sm:py-16">
           <div className="mx-auto max-w-3xl px-4">
-            <h2 className="mb-8 text-center text-2xl font-extrabold sm:text-3xl">Questions frequentes</h2>
+            <h2 className="mb-6 text-center text-xl font-extrabold sm:mb-8 sm:text-2xl md:text-3xl">Questions frequentes</h2>
             <div className="space-y-2.5">
               {cfg.sections.faq.map((f, i) => (
                 <div key={i} className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-all hover:shadow-md">
@@ -673,13 +673,13 @@ export default function DynamicLandingV2() {
 
       {/* ═══════════ TRUST BADGES ═══════════ */}
       {cfg.sections?.trustBadges && (
-        <div className="border-t border-neutral-100 bg-white py-10">
-          <div className="mx-auto flex max-w-4xl flex-wrap justify-center gap-8 px-4 text-center">
+        <div className="border-t border-neutral-100 bg-white py-8 sm:py-10">
+          <div className="mx-auto grid max-w-4xl grid-cols-2 gap-4 px-4 text-center sm:grid-cols-3 md:grid-cols-5 md:gap-8">
             {cfg.sections.trustBadges.map((b, i) => (
-              <div key={i} className="w-36">
-                <span className="mb-2 inline-block text-3xl">{b.ico}</span>
-                <p className="text-[12px] font-bold text-neutral-800">{b.t}</p>
-                <p className="text-[11px] text-neutral-400">{b.d}</p>
+              <div key={i}>
+                <span className="mb-1.5 inline-block text-2xl sm:text-3xl">{b.ico}</span>
+                <p className="text-[11px] font-bold text-neutral-800 sm:text-[12px]">{b.t}</p>
+                <p className="text-[10px] text-neutral-400 sm:text-[11px]">{b.d}</p>
               </div>
             ))}
           </div>
@@ -690,7 +690,7 @@ export default function DynamicLandingV2() {
       <LazySection className="relative overflow-hidden py-16 sm:py-20">
         <div className="pointer-events-none absolute inset-0" style={{ background: `linear-gradient(135deg, #171717, ${c.p}40, #171717)` }}/>
         <div className="relative mx-auto max-w-lg px-4 text-center">
-          <h2 className="mb-2 text-2xl font-extrabold text-white sm:text-3xl">{cfg.sections?.finalCtaTitle || 'Commandez maintenant'}</h2>
+          <h2 className="mb-2 text-xl font-extrabold text-white sm:text-2xl md:text-3xl">{cfg.sections?.finalCtaTitle || 'Commandez maintenant'}</h2>
           <p className="mb-6 text-[14px] text-neutral-400">{cfg.sections?.finalCtaSub || 'Rejoignez nos clients satisfaits'}</p>
           <button onClick={() => open(1)} className="cta-glow group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl px-8 py-5 text-[16px] font-black text-white shadow-2xl transition-all active:scale-[.98]" style={{ background: `linear-gradient(to right, ${c.p}, ${c.a})`, boxShadow: `0 0 30px ${c.p}40` }}>
             <span className="cta-sheen absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent"/>
@@ -701,28 +701,28 @@ export default function DynamicLandingV2() {
       </LazySection>
 
       {/* ═══════════ FOOTER ═══════════ */}
-      <footer className="border-t border-neutral-100 bg-white pb-28 pt-8 sm:pb-8">
+      <footer className="border-t border-neutral-100 bg-white pb-20 pt-8 sm:pb-8">
         <p className="text-center text-[10px] text-neutral-300">© 2026 · Tous droits reserves · Cote d'Ivoire</p>
       </footer>
 
       {/* ═══════════ STICKY BAR ═══════════ */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200/80 bg-white/95 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5">
-          <OptimImg src={cfg.images.hero} w={96} q={60} className="h-12 w-12 shrink-0 rounded-xl border border-neutral-100 object-cover shadow-sm"/>
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200/80 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
+          <OptimImg src={cfg.images.hero} w={96} q={60} className="hidden h-10 w-10 shrink-0 rounded-lg border border-neutral-100 object-cover shadow-sm min-[360px]:block sm:h-12 sm:w-12 sm:rounded-xl"/>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-bold">{cfg.title}</p>
-            <div className="flex items-center gap-2">
-              <span className="text-[12px] font-black" style={{ color: c.p }}>{fmt(prices[1])}</span>
-              {cfg.oldPrice && <span className="text-[11px] text-neutral-400 line-through">{fmt(cfg.oldPrice)}</span>}
+            <p className="truncate text-[12px] font-bold sm:text-[13px]">{cfg.title}</p>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-black sm:text-[12px]" style={{ color: c.p }}>{fmt(prices[1])}</span>
+              {cfg.oldPrice && <span className="text-[10px] text-neutral-400 line-through sm:text-[11px]">{fmt(cfg.oldPrice)}</span>}
             </div>
           </div>
-          <button onClick={() => open(1)} className="shrink-0 rounded-xl px-5 py-3 text-[13px] font-black text-white shadow-lg transition hover:shadow-xl active:scale-[.97]" style={{ background: `linear-gradient(to right, ${c.p}, ${c.a})`, boxShadow: `0 4px 14px ${c.p}30` }}>Commander</button>
+          <button onClick={() => open(1)} className="shrink-0 rounded-xl px-4 py-2.5 text-[12px] font-black text-white shadow-lg transition hover:shadow-xl active:scale-[.97] sm:px-5 sm:py-3 sm:text-[13px]" style={{ background: `linear-gradient(to right, ${c.p}, ${c.a})`, boxShadow: `0 4px 14px ${c.p}30` }}>Commander</button>
         </div>
       </div>
 
       {/* ═══════════ TOAST ═══════════ */}
       {toast && (
-        <div className={`${toast.visible ? 'toast-in' : 'toast-out'} fixed bottom-24 left-3 z-50 flex max-w-[320px] items-center gap-3 rounded-2xl border border-neutral-100 bg-white/95 px-4 py-3.5 shadow-2xl backdrop-blur`}>
+        <div className={`${toast.visible ? 'toast-in' : 'toast-out'} fixed bottom-[72px] left-3 right-3 z-50 flex items-center gap-3 rounded-2xl border border-neutral-100 bg-white/95 px-4 py-3 shadow-2xl backdrop-blur sm:bottom-24 sm:left-3 sm:right-auto sm:max-w-[320px]`}>
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white shadow-md" style={{ backgroundColor: c.p }}>✓</div>
           <div>
             <p className="text-[12px] font-bold text-neutral-800">{toast.n} vient de commander</p>
@@ -733,9 +733,9 @@ export default function DynamicLandingV2() {
 
       {/* ═══════════ EXIT INTENT ═══════════ */}
       {exitPopup && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) setExitPopup(false); }}>
+        <div className="fixed inset-0 z-[60] flex items-end justify-center p-3 sm:items-center sm:p-4" onClick={e => { if (e.target === e.currentTarget) setExitPopup(false); }}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"/>
-          <div className="scale-in relative w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl">
+          <div className="scale-in relative w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-2xl sm:rounded-3xl">
             <button onClick={() => setExitPopup(false)} className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 text-neutral-400 transition hover:bg-neutral-200">
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
@@ -812,10 +812,10 @@ export default function DynamicLandingV2() {
                   <span className="text-[12px] font-bold text-neutral-800">Vos coordonnees</span>
                 </div>
                 <div className="space-y-2.5">
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid gap-2.5 sm:grid-cols-2">
                     <label className="block">
                       <span className="mb-1 block text-[10px] font-bold text-neutral-500">Nom complet <span className="text-red-400">*</span></span>
-                      <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Kouadio Fernand" className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50/50 px-3 text-[13px] font-medium outline-none transition placeholder:text-neutral-300 focus:bg-white" style={{ '--tw-ring-color': `${c.p}15` } as React.CSSProperties} onFocus={e => { e.currentTarget.style.borderColor = c.p; e.currentTarget.style.boxShadow = `0 0 0 3px ${c.p}12`; }} onBlur={e => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = ''; }}/>
+                      <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Kouadio Fernand" className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50/50 px-3 text-[13px] font-medium outline-none transition placeholder:text-neutral-300 focus:bg-white" onFocus={e => { e.currentTarget.style.borderColor = c.p; e.currentTarget.style.boxShadow = `0 0 0 3px ${c.p}12`; }} onBlur={e => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = ''; }}/>
                     </label>
                     <label className="block">
                       <span className="mb-1 block text-[10px] font-bold text-neutral-500">Ville / Commune <span className="text-red-400">*</span></span>
