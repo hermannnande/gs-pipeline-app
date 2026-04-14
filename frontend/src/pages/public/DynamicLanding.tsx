@@ -32,6 +32,18 @@ const THEMES: Record<string, { topBar: string; marquee: string; marqueeTxt: stri
     progressBar: 'bg-gradient-to-r from-cyan-400 to-sky-500', stockBar: 'bg-gradient-to-r from-sky-400 to-cyan-400',
     topBarAccent: 'text-cyan-300', countdownBg: 'bg-white/10',
   },
+  emerald: {
+    topBar: 'bg-gradient-to-r from-emerald-900 to-teal-900', marquee: 'bg-emerald-800', marqueeTxt: 'text-emerald-200/80', dotBg: 'bg-emerald-300/40',
+    badgeBg: 'bg-emerald-500', badgeTxt: 'text-white', subtitleTxt: 'text-emerald-600', starColor: 'text-emerald-400',
+    discountBg: 'bg-emerald-50', discountTxt: 'text-emerald-700', stockBorder: 'border-emerald-100', stockBg: 'bg-emerald-50', stockTxt: 'text-emerald-700',
+    btnGrad: 'bg-gradient-to-r from-emerald-400 via-teal-400 to-green-500', btnShadow: 'shadow-[0_8px_32px_rgba(16,185,129,.4)]', btnHoverShadow: 'hover:shadow-[0_12px_40px_rgba(16,185,129,.55)]',
+    ringColor: 'ring-emerald-200', tagBg: 'bg-emerald-500', offerBorder: 'border-emerald-400', offerActiveBg: 'bg-emerald-50/50',
+    sectionAccent: 'text-emerald-600', stepBadgeBg: 'bg-emerald-50', stepBadgeTxt: 'text-emerald-700',
+    radioActive: 'border-emerald-500 bg-emerald-500', formFocus: 'focus-within:border-emerald-400', formRing: 'focus-within:shadow-[0_0_0_3px_rgba(16,185,129,.12)]',
+    badgePill1: 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300', badgePill2: 'border-lime-400/30 bg-lime-400/10 text-lime-300',
+    progressBar: 'bg-gradient-to-r from-emerald-400 to-teal-500', stockBar: 'bg-gradient-to-r from-teal-400 to-emerald-400',
+    topBarAccent: 'text-emerald-300', countdownBg: 'bg-white/10',
+  },
 };
 
 interface TemplateConfig {

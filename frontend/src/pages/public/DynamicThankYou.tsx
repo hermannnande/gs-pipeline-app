@@ -33,6 +33,14 @@ const THEME_STYLES: Record<string, {
     glowShadow: 'shadow-[0_0_30px_rgba(6,182,212,.4)]', checkBg: 'bg-emerald-500',
     iconGlow: 'shadow-[0_0_25px_rgba(16,185,129,.5)]',
   },
+  emerald: {
+    headerBg: 'bg-gradient-to-br from-emerald-900 via-teal-900 to-green-900',
+    accentBg: 'bg-emerald-50', accentBorder: 'border-emerald-100', accentText: 'text-emerald-800',
+    btnBg: 'bg-gradient-to-r from-emerald-400 via-teal-400 to-green-500', btnHover: 'hover:shadow-[0_8px_30px_rgba(16,185,129,.5)]',
+    pillBg: 'bg-emerald-100', pillText: 'text-emerald-700',
+    glowShadow: 'shadow-[0_0_30px_rgba(16,185,129,.4)]', checkBg: 'bg-emerald-500',
+    iconGlow: 'shadow-[0_0_25px_rgba(16,185,129,.5)]',
+  },
 };
 
 export default function DynamicThankYou() {
