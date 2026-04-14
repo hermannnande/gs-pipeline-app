@@ -1,15 +1,12 @@
 {
-  "buildCommand": "npx vite build",
-  "outputDirectory": "dist",
-  "routes": [
-    { "handle": "filesystem" },
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "https://gs-pipeline-app-2.vercel.app/api/$1"
+      "source": "/api/(.*)",
+      "destination": "https://gs-pipeline-app-2.vercel.app/api/$1"
     },
     {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
