@@ -1,10 +1,20 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '/api');
 const fmt = (v: number) => v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
 const pad = (n: number) => String(n).padStart(2, '0');
+
+const IMG_PROXY = 'https://wsrv.nl/?';
+function optimImg(src: string, w = 800, q = 75): string {
+  if (!src || src.startsWith('data:') || src.startsWith('/')) return src;
+  return `${IMG_PROXY}url=${encodeURIComponent(src)}&w=${w}&q=${q}&output=webp&il`;
+}
+function optimImgSrcSet(src: string, sizes: number[] = [400, 800, 1200], q = 75): string {
+  if (!src || src.startsWith('data:') || src.startsWith('/')) return '';
+  return sizes.map(w => `${optimImg(src, w, q)} ${w}w`).join(', ');
+}
 
 interface V2Config {
   productCode: string;
@@ -71,23 +81,47 @@ function LazySection({ children, className, delay = 0 }: { children: React.React
   );
 }
 
-const Star = ({ fill = true }: { fill?: boolean }) => (
+const OptimImg = memo(function OptimImg({ src, alt = '', className = '', w = 800, q = 75, eager = false, sizes = '100vw' }: {
+  src: string; alt?: string; className?: string; w?: number; q?: number; eager?: boolean; sizes?: string;
+}) {
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [loaded, setLoaded] = useState(false);
+  const optimSrc = optimImg(src, w, q);
+  const srcSet = optimImgSrcSet(src, [400, 800, 1200], q);
+
+  return (
+    <img
+      ref={imgRef}
+      src={optimSrc}
+      srcSet={srcSet || undefined}
+      sizes={srcSet ? sizes : undefined}
+      alt={alt}
+      className={`${className} transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+      loading={eager ? 'eager' : 'lazy'}
+      decoding="async"
+      fetchPriority={eager ? 'high' : 'auto'}
+      onLoad={() => setLoaded(true)}
+    />
+  );
+});
+
+const Star = memo(({ fill = true }: { fill?: boolean }) => (
   <svg className={`h-4 w-4 ${fill ? 'text-amber-400' : 'text-neutral-200'}`} fill="currentColor" viewBox="0 0 20 20">
     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
   </svg>
-);
+));
 
-const CheckIcon = () => (
+const CheckIcon = memo(() => (
   <svg className="h-5 w-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
   </svg>
-);
+));
 
-const XIcon = () => (
+const XIcon = memo(() => (
   <svg className="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
   </svg>
-);
+));
 
 export default function DynamicLandingV2() {
   const { slug } = useParams<{ slug: string }>();
@@ -303,7 +337,7 @@ export default function DynamicLandingV2() {
           <div className="fade-up">
             <div className="relative aspect-square overflow-hidden rounded-3xl bg-white shadow-xl shadow-neutral-200/50" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
               {gallery.map((src, i) => (
-                <img key={i} src={src} alt={i === 0 ? cfg.title : ''} className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out ${i === gi ? 'opacity-100 scale-100' : 'opacity-0 scale-[1.03]'}`} loading={i === 0 ? 'eager' : 'lazy'} decoding="async"/>
+                <OptimImg key={i} src={src} alt={i === 0 ? cfg.title : ''} w={1200} q={80} eager={i === 0} sizes="(max-width:768px) 100vw, 50vw" className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out ${i === gi ? '!opacity-100 scale-100' : '!opacity-0 scale-[1.03]'}`}/>
               ))}
               {cfg.badge && <span className="absolute left-4 top-4 z-10 rounded-full bg-red-500 px-3.5 py-1.5 text-[11px] font-black text-white shadow-lg shadow-red-200/50">{cfg.badge}</span>}
               {cfg.discount && <span className="absolute right-4 top-4 z-10 rounded-full bg-teal-600 px-3 py-1.5 text-[11px] font-black text-white shadow-lg">{cfg.discount}</span>}
@@ -327,7 +361,7 @@ export default function DynamicLandingV2() {
               <div className="mt-3 flex gap-2.5">
                 {gallery.map((src, i) => (
                   <button key={i} onClick={() => goSlide(i)} className={`h-16 w-16 overflow-hidden rounded-xl border-2 transition-all sm:h-20 sm:w-20 ${i === gi ? 'border-teal-600 ring-2 ring-teal-200 shadow-md' : 'border-transparent opacity-50 hover:opacity-100'}`}>
-                    <img src={src} alt="" className="h-full w-full object-cover"/>
+                    <OptimImg src={src} w={160} q={60} className="h-full w-full object-cover"/>
                   </button>
                 ))}
               </div>
@@ -358,7 +392,7 @@ export default function DynamicLandingV2() {
             {cfg.images.trustStrip && cfg.images.trustStrip.length > 0 && (
               <div className="mt-4 flex items-center gap-3 overflow-x-auto scrollbar-hide">
                 {cfg.images.trustStrip.map((src, i) => (
-                  <img key={i} src={src} alt="" className="h-12 w-12 shrink-0 rounded-xl border border-neutral-100 bg-white object-cover shadow-sm sm:h-14 sm:w-14"/>
+                  <OptimImg key={i} src={src} w={112} q={60} className="h-12 w-12 shrink-0 rounded-xl border border-neutral-100 bg-white object-cover shadow-sm sm:h-14 sm:w-14"/>
                 ))}
                 <span className="shrink-0 text-[11px] font-semibold text-neutral-400">+94 350 clients</span>
               </div>
@@ -429,7 +463,7 @@ export default function DynamicLandingV2() {
                 <div key={i} className="group overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl">
                   {cfg.images.lifestyle?.[i] && (
                     <div className="h-48 overflow-hidden">
-                      <img src={cfg.images.lifestyle[i]} alt="" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy"/>
+                      <OptimImg src={cfg.images.lifestyle[i]} w={600} q={70} sizes="(max-width:640px) 100vw, 33vw" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"/>
                     </div>
                   )}
                   <div className="p-5">
@@ -456,7 +490,7 @@ export default function DynamicLandingV2() {
               {cfg.sections.solutionPoints.map((s, i) => (
                 <div key={i} className="group flex gap-4 rounded-2xl border border-teal-100/60 bg-white p-5 shadow-sm transition-all hover:shadow-lg">
                   {s.img ? (
-                    <img src={s.img} alt="" className="h-20 w-20 shrink-0 rounded-2xl border border-neutral-100 object-cover shadow-sm sm:h-24 sm:w-24"/>
+                    <OptimImg src={s.img} w={192} q={70} className="h-20 w-20 shrink-0 rounded-2xl border border-neutral-100 object-cover shadow-sm sm:h-24 sm:w-24"/>
                   ) : (
                     <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-2xl">{s.ico}</span>
                   )}
@@ -506,7 +540,7 @@ export default function DynamicLandingV2() {
                     <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-500/20 text-lg font-black text-teal-400">{s.n}</span>
                     {s.ico && <span className="text-2xl">{s.ico}</span>}
                   </div>
-                  {s.img && <img src={s.img} alt="" className="mb-3 h-32 w-full rounded-xl object-cover" loading="lazy"/>}
+                  {s.img && <OptimImg src={s.img} w={400} q={70} className="mb-3 h-32 w-full rounded-xl object-cover"/>}
                   <h3 className="text-[15px] font-bold text-white">{s.title}</h3>
                   <p className="mt-1.5 text-[13px] leading-relaxed text-neutral-400">{s.desc}</p>
                 </div>
@@ -529,7 +563,7 @@ export default function DynamicLandingV2() {
               {bundles.map((b, i) => (
                 <button key={i} onClick={() => open(b.v)} className={`group relative overflow-hidden rounded-2xl border-2 p-5 text-left transition-all hover:-translate-y-1 hover:shadow-xl ${b.tag ? 'border-teal-500 bg-teal-50/30 shadow-lg ring-2 ring-teal-200/50' : 'border-neutral-200 bg-white shadow-sm hover:border-neutral-300'}`}>
                   {b.tag && <span className="absolute -right-1 -top-1 rounded-bl-xl rounded-tr-xl bg-teal-600 px-3 py-1 text-[10px] font-black text-white shadow-md">{b.tag}</span>}
-                  {b.img && <img src={b.img} alt="" className="mb-3 h-28 w-full rounded-xl object-cover"/>}
+                  {b.img && <OptimImg src={b.img} w={400} q={70} className="mb-3 h-28 w-full rounded-xl object-cover"/>}
                   <p className="text-[17px] font-black">{b.label}</p>
                   <p className="mt-1 text-2xl font-black text-teal-700">{fmt(b.totalPrice)}</p>
                   {b.save && <p className="mt-1 text-[12px] font-bold text-emerald-600">{b.save}</p>}
@@ -570,7 +604,7 @@ export default function DynamicLandingV2() {
               <div key={i} className="w-[85vw] max-w-[340px] shrink-0 snap-center overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-all hover:shadow-lg sm:w-[340px]">
                 {r.img && (
                   <div className="h-48 overflow-hidden">
-                    <img src={r.img} alt={r.n} className="h-full w-full object-cover" loading="lazy"/>
+                    <OptimImg src={r.img} alt={r.n} w={680} q={70} sizes="(max-width:640px) 85vw, 340px" className="h-full w-full object-cover"/>
                   </div>
                 )}
                 <div className="p-5">
@@ -654,7 +688,7 @@ export default function DynamicLandingV2() {
       {/* ═══════════ STICKY BAR ═══════════ */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200/80 bg-white/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5">
-          <img src={cfg.images.hero} alt="" className="h-12 w-12 shrink-0 rounded-xl border border-neutral-100 object-cover shadow-sm"/>
+          <OptimImg src={cfg.images.hero} w={96} q={60} className="h-12 w-12 shrink-0 rounded-xl border border-neutral-100 object-cover shadow-sm"/>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-bold">{cfg.title}</p>
             <div className="flex items-center gap-2">
