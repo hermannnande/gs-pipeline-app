@@ -9,12 +9,16 @@ const pad = (n: number) => String(n).padStart(2, '0');
 const IMG_PROXY = 'https://wsrv.nl/?';
 function optimImg(src: string, w = 800, q = 75): string {
   if (!src || src.startsWith('data:') || src.startsWith('/')) return src;
+  if (/\.(gif|mp4|webm)$/i.test(src)) return src;
   return `${IMG_PROXY}url=${encodeURIComponent(src)}&w=${w}&q=${q}&output=webp&il`;
 }
 function optimImgSrcSet(src: string, sizes: number[] = [400, 800, 1200], q = 75): string {
   if (!src || src.startsWith('data:') || src.startsWith('/')) return '';
+  if (/\.(gif|mp4|webm)$/i.test(src)) return '';
   return sizes.map(w => `${optimImg(src, w, q)} ${w}w`).join(', ');
 }
+function isVideo(src: string) { return /\.(mp4|webm)$/i.test(src); }
+function isGif(src: string) { return /\.gif$/i.test(src); }
 
 interface V2Config {
   productCode: string;
@@ -51,6 +55,8 @@ interface V2Config {
     faq?: { q: string; a: string }[];
     trustBadges?: { ico: string; t: string; d: string }[];
     stickers?: { text: string; color: string }[];
+    finalCtaTitle?: string;
+    finalCtaSub?: string;
   };
   colors?: { primary: string; accent: string; bg: string };
   thankYouUrl?: string;
@@ -276,14 +282,22 @@ export default function DynamicLandingV2() {
   const marqueeTexts = cfg.sections?.marqueeTexts || [];
   const reviews = cfg.reviews || [];
 
+  const c = useMemo(() => {
+    const p = cfg.colors?.primary || '#0d9488';
+    const a = cfg.colors?.accent || '#10b981';
+    const hexToRgb = (h: string) => { const r = parseInt(h.slice(1, 3), 16), g = parseInt(h.slice(3, 5), 16), b = parseInt(h.slice(5, 7), 16); return `${r},${g},${b}`; };
+    return { p, a, bg: cfg.colors?.bg || '#fafaf9', pRgb: hexToRgb(p), aRgb: hexToRgb(a) };
+  }, [cfg.colors]);
+
   return (
-    <div className="min-h-screen bg-[#fafaf9] text-neutral-900" style={{ fontFamily: "'Inter',system-ui,sans-serif" }}>
+    <div className="min-h-screen text-neutral-900" style={{ fontFamily: "'Inter',system-ui,sans-serif", backgroundColor: c.bg }}>
       <style>{`
+        :root{--cp:${c.p};--ca:${c.a};--cp-rgb:${c.pRgb};--ca-rgb:${c.aRgb}}
         @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
         @keyframes slideIn{from{opacity:0;transform:translateX(-100%)}to{opacity:1;transform:translateX(0)}}
         @keyframes slideOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(-100%)}}
-        @keyframes pulse-glow{0%,100%{box-shadow:0 0 20px rgba(13,148,136,.3)}50%{box-shadow:0 0 40px rgba(13,148,136,.6)}}
+        @keyframes pulse-glow{0%,100%{box-shadow:0 0 20px rgba(var(--cp-rgb),.3)}50%{box-shadow:0 0 40px rgba(var(--cp-rgb),.6)}}
         @keyframes bounce-soft{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
         @keyframes sheen{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
         @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
@@ -304,7 +318,7 @@ export default function DynamicLandingV2() {
       `}</style>
 
       {/* ═══════════ ANNOUNCEMENT BAR ═══════════ */}
-      <div className="sticky top-0 z-50 bg-gradient-to-r from-teal-700 via-teal-600 to-emerald-600">
+      <div className="sticky top-0 z-50" style={{ background: `linear-gradient(to right, ${c.p}, ${c.a})` }}>
         <div className="flex items-center justify-center gap-3 px-4 py-2">
           <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white backdrop-blur">Offre limitee</span>
           <div className="flex items-center gap-1">
@@ -324,7 +338,7 @@ export default function DynamicLandingV2() {
         <div className="overflow-hidden border-b border-neutral-100 bg-neutral-900 py-1.5">
           <div className="marquee-track flex w-[200%] items-center gap-10 text-[10px] font-bold uppercase tracking-[.2em] text-neutral-400">
             {[0,1].map(k => <div key={k} className="flex shrink-0 items-center gap-10">
-              {marqueeTexts.map((t, i) => <span key={i} className="flex items-center gap-10">{t}<span className="ml-10 inline-block h-1 w-1 rounded-full bg-teal-500/50"/></span>)}
+              {marqueeTexts.map((t, i) => <span key={i} className="flex items-center gap-10">{t}<span className="ml-10 inline-block h-1 w-1 rounded-full" style={{ backgroundColor: `${c.p}80` }}/></span>)}
             </div>)}
           </div>
         </div>
@@ -337,10 +351,16 @@ export default function DynamicLandingV2() {
           <div className="fade-up">
             <div className="relative aspect-square overflow-hidden rounded-3xl bg-white shadow-xl shadow-neutral-200/50" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
               {gallery.map((src, i) => (
-                <OptimImg key={i} src={src} alt={i === 0 ? cfg.title : ''} w={1200} q={80} eager={i === 0} sizes="(max-width:768px) 100vw, 50vw" className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out ${i === gi ? '!opacity-100 scale-100' : '!opacity-0 scale-[1.03]'}`}/>
+                isVideo(src) ? (
+                  <video key={i} src={src} autoPlay loop muted playsInline className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out ${i === gi ? 'opacity-100 scale-100' : 'opacity-0 scale-[1.03]'}`}/>
+                ) : isGif(src) ? (
+                  <img key={i} src={src} alt="" className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out ${i === gi ? 'opacity-100 scale-100' : 'opacity-0 scale-[1.03]'}`} loading={i === 0 ? 'eager' : 'lazy'}/>
+                ) : (
+                  <OptimImg key={i} src={src} alt={i === 0 ? cfg.title : ''} w={1200} q={80} eager={i === 0} sizes="(max-width:768px) 100vw, 50vw" className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out ${i === gi ? '!opacity-100 scale-100' : '!opacity-0 scale-[1.03]'}`}/>
+                )
               ))}
               {cfg.badge && <span className="absolute left-4 top-4 z-10 rounded-full bg-red-500 px-3.5 py-1.5 text-[11px] font-black text-white shadow-lg shadow-red-200/50">{cfg.badge}</span>}
-              {cfg.discount && <span className="absolute right-4 top-4 z-10 rounded-full bg-teal-600 px-3 py-1.5 text-[11px] font-black text-white shadow-lg">{cfg.discount}</span>}
+              {cfg.discount && <span className="absolute right-4 top-4 z-10 rounded-full px-3 py-1.5 text-[11px] font-black text-white shadow-lg" style={{ backgroundColor: c.p }}>{cfg.discount}</span>}
               {gallery.length > 1 && (
                 <>
                   <button onClick={prevSlide} className="absolute left-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-neutral-600 shadow-lg backdrop-blur transition hover:bg-white hover:scale-110" aria-label="Precedent">
@@ -351,7 +371,7 @@ export default function DynamicLandingV2() {
                   </button>
                   <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-2">
                     {gallery.map((_, i) => (
-                      <button key={i} onClick={() => goSlide(i)} className={`h-2.5 rounded-full transition-all duration-300 ${i === gi ? 'w-8 bg-teal-600 shadow-md' : 'w-2.5 bg-black/20 hover:bg-black/40'}`}/>
+                      <button key={i} onClick={() => goSlide(i)} className={`h-2.5 rounded-full transition-all duration-300 ${i === gi ? 'w-8 shadow-md' : 'w-2.5 bg-black/20 hover:bg-black/40'}`} style={i === gi ? { backgroundColor: c.p } : undefined}/>
                     ))}
                   </div>
                 </>
@@ -360,8 +380,8 @@ export default function DynamicLandingV2() {
             {gallery.length > 1 && (
               <div className="mt-3 flex gap-2.5">
                 {gallery.map((src, i) => (
-                  <button key={i} onClick={() => goSlide(i)} className={`h-16 w-16 overflow-hidden rounded-xl border-2 transition-all sm:h-20 sm:w-20 ${i === gi ? 'border-teal-600 ring-2 ring-teal-200 shadow-md' : 'border-transparent opacity-50 hover:opacity-100'}`}>
-                    <OptimImg src={src} w={160} q={60} className="h-full w-full object-cover"/>
+                  <button key={i} onClick={() => goSlide(i)} className={`h-16 w-16 overflow-hidden rounded-xl border-2 transition-all sm:h-20 sm:w-20 ${i === gi ? 'shadow-md' : 'border-transparent opacity-50 hover:opacity-100'}`} style={i === gi ? { borderColor: c.p, boxShadow: `0 0 0 2px ${c.p}33` } : undefined}>
+                    {isVideo(src) ? <video src={src} muted className="h-full w-full object-cover"/> : isGif(src) ? <img src={src} alt="" className="h-full w-full object-cover"/> : <OptimImg src={src} w={160} q={60} className="h-full w-full object-cover"/>}
                   </button>
                 ))}
               </div>
@@ -378,7 +398,7 @@ export default function DynamicLandingV2() {
                 ))}
               </div>
             )}
-            <p className="mb-1 text-[11px] font-bold uppercase tracking-[.2em] text-teal-600">{cfg.subtitle}</p>
+            <p className="mb-1 text-[11px] font-bold uppercase tracking-[.2em]" style={{ color: c.p }}>{cfg.subtitle}</p>
             <h1 className="text-[24px] font-extrabold leading-tight sm:text-[32px] lg:text-[36px]">{cfg.title}</h1>
 
             {/* Rating */}
@@ -426,7 +446,7 @@ export default function DynamicLandingV2() {
 
             {/* CTA Desktop */}
             <div className="mt-6 hidden lg:block">
-              <button onClick={() => open(1)} className="cta-bounce cta-glow group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-teal-600 via-teal-500 to-emerald-500 px-8 py-5 text-[16px] font-black text-white shadow-xl transition-all hover:shadow-2xl active:scale-[.98]">
+              <button onClick={() => open(1)} className="cta-bounce cta-glow group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl px-8 py-5 text-[16px] font-black text-white shadow-xl transition-all hover:shadow-2xl active:scale-[.98]" style={{ background: `linear-gradient(to right, ${c.p}, ${c.a})` }}>
                 <span className="cta-sheen absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent"/>
                 <span className="relative z-10 flex items-center gap-2">
                   <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-50"/><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white"/></span>
@@ -480,19 +500,19 @@ export default function DynamicLandingV2() {
 
       {/* ═══════════ SOLUTION SECTION ═══════════ */}
       {cfg.sections?.solutionPoints && (
-        <LazySection className="border-y border-neutral-100 bg-gradient-to-b from-teal-50/50 to-white py-12 sm:py-16">
+        <LazySection className="border-y border-neutral-100 py-12 sm:py-16" style={{ background: `linear-gradient(to bottom, ${c.p}08, white)` }}>
           <div className="mx-auto max-w-6xl px-4">
             <div className="mb-8 text-center">
-              <span className="mb-2 inline-block rounded-full bg-teal-50 px-4 py-1.5 text-[11px] font-black uppercase tracking-wider text-teal-700 ring-1 ring-teal-100">La solution</span>
+              <span className="mb-2 inline-block rounded-full px-4 py-1.5 text-[11px] font-black uppercase tracking-wider" style={{ backgroundColor: `${c.p}10`, color: c.p, boxShadow: `0 0 0 1px ${c.p}25` }}>La solution</span>
               <h2 className="mt-3 text-2xl font-extrabold sm:text-3xl">{cfg.sections.solutionTitle || 'La solution approuvee'}</h2>
             </div>
             <div className="grid gap-5 sm:grid-cols-2">
               {cfg.sections.solutionPoints.map((s, i) => (
-                <div key={i} className="group flex gap-4 rounded-2xl border border-teal-100/60 bg-white p-5 shadow-sm transition-all hover:shadow-lg">
+                <div key={i} className="group flex gap-4 rounded-2xl border bg-white p-5 shadow-sm transition-all hover:shadow-lg" style={{ borderColor: `${c.p}15` }}>
                   {s.img ? (
                     <OptimImg src={s.img} w={192} q={70} className="h-20 w-20 shrink-0 rounded-2xl border border-neutral-100 object-cover shadow-sm sm:h-24 sm:w-24"/>
                   ) : (
-                    <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-2xl">{s.ico}</span>
+                    <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl" style={{ backgroundColor: `${c.p}10` }}>{s.ico}</span>
                   )}
                   <div>
                     <h3 className="text-[15px] font-bold text-neutral-900">{s.title}</h3>
@@ -513,7 +533,7 @@ export default function DynamicLandingV2() {
             <div className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-lg">
               <div className="grid grid-cols-3 border-b border-neutral-100 bg-neutral-50 px-4 py-3 text-center">
                 <span className="text-[12px] font-bold text-neutral-500">Caracteristique</span>
-                <span className="text-[12px] font-black text-teal-700">Nos chaussettes</span>
+                <span className="text-[12px] font-black" style={{ color: c.p }}>Notre produit</span>
                 <span className="text-[12px] font-bold text-neutral-400">Autres</span>
               </div>
               {cfg.sections.comparisonTable.map((row, i) => (
@@ -537,7 +557,7 @@ export default function DynamicLandingV2() {
               {cfg.sections.howItWorks.map((s, i) => (
                 <div key={i} className="group rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur transition-all hover:bg-white/10">
                   <div className="mb-3 flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-500/20 text-lg font-black text-teal-400">{s.n}</span>
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl text-lg font-black" style={{ backgroundColor: `${c.p}25`, color: c.p }}>{s.n}</span>
                     {s.ico && <span className="text-2xl">{s.ico}</span>}
                   </div>
                   {s.img && <OptimImg src={s.img} w={400} q={70} className="mb-3 h-32 w-full rounded-xl object-cover"/>}
@@ -561,14 +581,14 @@ export default function DynamicLandingV2() {
             </div>
             <div className="grid gap-4 sm:grid-cols-3">
               {bundles.map((b, i) => (
-                <button key={i} onClick={() => open(b.v)} className={`group relative overflow-hidden rounded-2xl border-2 p-5 text-left transition-all hover:-translate-y-1 hover:shadow-xl ${b.tag ? 'border-teal-500 bg-teal-50/30 shadow-lg ring-2 ring-teal-200/50' : 'border-neutral-200 bg-white shadow-sm hover:border-neutral-300'}`}>
-                  {b.tag && <span className="absolute -right-1 -top-1 rounded-bl-xl rounded-tr-xl bg-teal-600 px-3 py-1 text-[10px] font-black text-white shadow-md">{b.tag}</span>}
+                <button key={i} onClick={() => open(b.v)} className={`group relative overflow-hidden rounded-2xl border-2 p-5 text-left transition-all hover:-translate-y-1 hover:shadow-xl ${b.tag ? 'shadow-lg' : 'border-neutral-200 bg-white shadow-sm hover:border-neutral-300'}`} style={b.tag ? { borderColor: c.p, backgroundColor: `${c.p}08`, boxShadow: `0 0 0 2px ${c.p}20, 0 10px 15px -3px rgba(0,0,0,.1)` } : undefined}>
+                  {b.tag && <span className="absolute -right-1 -top-1 rounded-bl-xl rounded-tr-xl px-3 py-1 text-[10px] font-black text-white shadow-md" style={{ backgroundColor: c.p }}>{b.tag}</span>}
                   {b.img && <OptimImg src={b.img} w={400} q={70} className="mb-3 h-28 w-full rounded-xl object-cover"/>}
                   <p className="text-[17px] font-black">{b.label}</p>
-                  <p className="mt-1 text-2xl font-black text-teal-700">{fmt(b.totalPrice)}</p>
+                  <p className="mt-1 text-2xl font-black" style={{ color: c.p }}>{fmt(b.totalPrice)}</p>
                   {b.save && <p className="mt-1 text-[12px] font-bold text-emerald-600">{b.save}</p>}
                   {b.perDay && <p className="mt-0.5 text-[11px] text-neutral-400">{b.perDay}</p>}
-                  <div className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-neutral-900 py-2.5 text-[13px] font-bold text-white transition group-hover:bg-teal-600">
+                  <div className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-neutral-900 py-2.5 text-[13px] font-bold text-white transition" style={{ '--hover-bg': c.p } as React.CSSProperties} onMouseEnter={e => (e.currentTarget.style.backgroundColor = c.p)} onMouseLeave={e => (e.currentTarget.style.backgroundColor = '')}>
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
                     Ajouter au panier
                   </div>
@@ -582,7 +602,7 @@ export default function DynamicLandingV2() {
       {/* ═══════════ MID CTA ═══════════ */}
       <LazySection className="py-6 sm:py-8">
         <div className="mx-auto max-w-lg px-4 text-center">
-          <button onClick={() => open(1)} className="cta-bounce cta-glow group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-teal-600 via-teal-500 to-emerald-500 px-8 py-5 text-[15px] font-black text-white shadow-xl transition-all hover:shadow-2xl active:scale-[.98]">
+          <button onClick={() => open(1)} className="cta-bounce cta-glow group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl px-8 py-5 text-[15px] font-black text-white shadow-xl transition-all hover:shadow-2xl active:scale-[.98]" style={{ background: `linear-gradient(to right, ${c.p}, ${c.a})` }}>
             <span className="cta-sheen absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent"/>
             <span className="relative z-10">🛒 Je commande maintenant</span>
           </button>
@@ -668,11 +688,11 @@ export default function DynamicLandingV2() {
 
       {/* ═══════════ FINAL CTA ═══════════ */}
       <LazySection className="relative overflow-hidden py-16 sm:py-20">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-neutral-900 via-teal-900 to-neutral-900"/>
+        <div className="pointer-events-none absolute inset-0" style={{ background: `linear-gradient(135deg, #171717, ${c.p}40, #171717)` }}/>
         <div className="relative mx-auto max-w-lg px-4 text-center">
-          <h2 className="mb-2 text-2xl font-extrabold text-white sm:text-3xl">Soulagez vos jambes maintenant</h2>
-          <p className="mb-6 text-[14px] text-neutral-400">Rejoignez +94 000 clients satisfaits</p>
-          <button onClick={() => open(1)} className="cta-glow group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-teal-500 to-emerald-400 px-8 py-5 text-[16px] font-black text-white shadow-2xl transition-all hover:shadow-[0_0_50px_rgba(13,148,136,.5)] active:scale-[.98]">
+          <h2 className="mb-2 text-2xl font-extrabold text-white sm:text-3xl">{cfg.sections?.finalCtaTitle || 'Commandez maintenant'}</h2>
+          <p className="mb-6 text-[14px] text-neutral-400">{cfg.sections?.finalCtaSub || 'Rejoignez nos clients satisfaits'}</p>
+          <button onClick={() => open(1)} className="cta-glow group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl px-8 py-5 text-[16px] font-black text-white shadow-2xl transition-all active:scale-[.98]" style={{ background: `linear-gradient(to right, ${c.p}, ${c.a})`, boxShadow: `0 0 30px ${c.p}40` }}>
             <span className="cta-sheen absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent"/>
             <span className="relative z-10">Commander — {fmt(prices[1])}</span>
           </button>
@@ -692,18 +712,18 @@ export default function DynamicLandingV2() {
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-bold">{cfg.title}</p>
             <div className="flex items-center gap-2">
-              <span className="text-[12px] font-black text-teal-700">{fmt(prices[1])}</span>
+              <span className="text-[12px] font-black" style={{ color: c.p }}>{fmt(prices[1])}</span>
               {cfg.oldPrice && <span className="text-[11px] text-neutral-400 line-through">{fmt(cfg.oldPrice)}</span>}
             </div>
           </div>
-          <button onClick={() => open(1)} className="shrink-0 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-500 px-5 py-3 text-[13px] font-black text-white shadow-lg shadow-teal-200/40 transition hover:shadow-xl active:scale-[.97]">Commander</button>
+          <button onClick={() => open(1)} className="shrink-0 rounded-xl px-5 py-3 text-[13px] font-black text-white shadow-lg transition hover:shadow-xl active:scale-[.97]" style={{ background: `linear-gradient(to right, ${c.p}, ${c.a})`, boxShadow: `0 4px 14px ${c.p}30` }}>Commander</button>
         </div>
       </div>
 
       {/* ═══════════ TOAST ═══════════ */}
       {toast && (
         <div className={`${toast.visible ? 'toast-in' : 'toast-out'} fixed bottom-24 left-3 z-50 flex max-w-[320px] items-center gap-3 rounded-2xl border border-neutral-100 bg-white/95 px-4 py-3.5 shadow-2xl backdrop-blur`}>
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-500 text-sm font-bold text-white shadow-md">✓</div>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white shadow-md" style={{ backgroundColor: c.p }}>✓</div>
           <div>
             <p className="text-[12px] font-bold text-neutral-800">{toast.n} vient de commander</p>
             <p className="text-[10px] text-neutral-400">{toast.v} · il y a {toast.t}</p>
@@ -719,10 +739,10 @@ export default function DynamicLandingV2() {
             <button onClick={() => setExitPopup(false)} className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 text-neutral-400 transition hover:bg-neutral-200">
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
-            <div className="bg-gradient-to-br from-teal-600 to-emerald-600 px-6 py-8 text-center text-white">
+            <div className="px-6 py-8 text-center text-white" style={{ background: `linear-gradient(135deg, ${c.p}, ${c.a})` }}>
               <span className="mb-3 inline-block text-5xl">⚡</span>
               <h3 className="text-xl font-extrabold">Attendez !</h3>
-              <p className="mt-2 text-[14px] text-teal-100">Profitez de la livraison GRATUITE</p>
+              <p className="mt-2 text-[14px] opacity-80">Profitez de la livraison GRATUITE</p>
             </div>
             <div className="p-6 text-center">
               <p className="mb-4 text-[14px] text-neutral-500">Ne partez pas les mains vides. Payez uniquement a la livraison.</p>
@@ -749,7 +769,7 @@ export default function DynamicLandingV2() {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[15px] font-extrabold text-neutral-900">{cfg.title}</p>
                 <div className="mt-1 flex items-center gap-2">
-                  <span className="text-lg font-black text-teal-700">{fmt(prices[qty] || prices[1])}</span>
+                  <span className="text-lg font-black" style={{ color: c.p }}>{fmt(prices[qty] || prices[1])}</span>
                   {cfg.oldPrice && <span className="text-[12px] text-neutral-400 line-through">{fmt(cfg.oldPrice * qty)}</span>}
                 </div>
                 <div className="mt-1.5 flex gap-1.5">
@@ -769,16 +789,16 @@ export default function DynamicLandingV2() {
               {/* Etape 1 — Quantite */}
               <div className="mb-4">
                 <div className="mb-2 flex items-center gap-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-teal-600 text-[10px] font-black text-white">1</span>
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-white" style={{ backgroundColor: c.p }}>1</span>
                   <span className="text-[12px] font-bold text-neutral-800">Choisissez votre pack</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {qtyOpts.map(o => (
-                    <button key={o.v} type="button" onClick={() => setQty(o.v)} className={`relative flex flex-col items-center rounded-2xl border-2 px-2 py-3 transition-all ${qty === o.v ? 'border-teal-500 bg-teal-50/60 shadow-md ring-1 ring-teal-200/60' : 'border-neutral-200 bg-white hover:border-neutral-300'}`}>
+                    <button key={o.v} type="button" onClick={() => setQty(o.v)} className={`relative flex flex-col items-center rounded-2xl border-2 px-2 py-3 transition-all ${qty === o.v ? 'shadow-md' : 'border-neutral-200 bg-white hover:border-neutral-300'}`} style={qty === o.v ? { borderColor: c.p, backgroundColor: `${c.p}08`, boxShadow: `0 0 0 1px ${c.p}20, 0 4px 6px -1px rgba(0,0,0,.1)` } : undefined}>
                       {o.tag && <span className="absolute -right-1 -top-2 rounded-full bg-red-500 px-1.5 py-0.5 text-[8px] font-black text-white shadow">{o.tag}</span>}
                       <span className="text-xl font-black text-neutral-800">{o.v}</span>
                       <span className="mt-0.5 text-[10px] font-bold text-neutral-500">paire{o.v > 1 ? 's' : ''}</span>
-                      <span className="mt-1 text-[12px] font-black text-teal-700">{o.sub}</span>
+                      <span className="mt-1 text-[12px] font-black" style={{ color: c.p }}>{o.sub}</span>
                       {o.save && <span className="mt-0.5 text-[9px] font-bold text-emerald-600">{o.save}</span>}
                     </button>
                   ))}
@@ -788,23 +808,23 @@ export default function DynamicLandingV2() {
               {/* Etape 2 — Coordonnees */}
               <div className="mb-4">
                 <div className="mb-2.5 flex items-center gap-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-teal-600 text-[10px] font-black text-white">2</span>
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-white" style={{ backgroundColor: c.p }}>2</span>
                   <span className="text-[12px] font-bold text-neutral-800">Vos coordonnees</span>
                 </div>
                 <div className="space-y-2.5">
                   <div className="grid grid-cols-2 gap-2.5">
                     <label className="block">
                       <span className="mb-1 block text-[10px] font-bold text-neutral-500">Nom complet <span className="text-red-400">*</span></span>
-                      <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Kouadio Fernand" className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50/50 px-3 text-[13px] font-medium outline-none transition placeholder:text-neutral-300 focus:border-teal-400 focus:bg-white focus:shadow-[0_0_0_3px_rgba(13,148,136,.08)]"/>
+                      <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Kouadio Fernand" className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50/50 px-3 text-[13px] font-medium outline-none transition placeholder:text-neutral-300 focus:bg-white" style={{ '--tw-ring-color': `${c.p}15` } as React.CSSProperties} onFocus={e => { e.currentTarget.style.borderColor = c.p; e.currentTarget.style.boxShadow = `0 0 0 3px ${c.p}12`; }} onBlur={e => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = ''; }}/>
                     </label>
                     <label className="block">
                       <span className="mb-1 block text-[10px] font-bold text-neutral-500">Ville / Commune <span className="text-red-400">*</span></span>
-                      <input type="text" value={city} onChange={e => setCity(e.target.value)} placeholder="Abidjan — Yopougon" className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50/50 px-3 text-[13px] font-medium outline-none transition placeholder:text-neutral-300 focus:border-teal-400 focus:bg-white focus:shadow-[0_0_0_3px_rgba(13,148,136,.08)]"/>
+                      <input type="text" value={city} onChange={e => setCity(e.target.value)} placeholder="Abidjan — Yopougon" className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50/50 px-3 text-[13px] font-medium outline-none transition placeholder:text-neutral-300 focus:bg-white" onFocus={e => { e.currentTarget.style.borderColor = c.p; e.currentTarget.style.boxShadow = `0 0 0 3px ${c.p}12`; }} onBlur={e => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = ''; }}/>
                     </label>
                   </div>
                   <label className="block">
                     <span className="mb-1 block text-[10px] font-bold text-neutral-500">Telephone <span className="text-red-400">*</span></span>
-                    <div className="flex overflow-hidden rounded-xl border border-neutral-200 transition focus-within:border-teal-400 focus-within:shadow-[0_0_0_3px_rgba(13,148,136,.08)]">
+                    <div className="flex overflow-hidden rounded-xl border border-neutral-200 transition">
                       <span className="flex items-center gap-1 border-r border-neutral-200 bg-neutral-50 px-3 text-[12px] font-bold text-neutral-500">
                         <span className="text-sm">🇨🇮</span> +225
                       </span>
@@ -832,7 +852,7 @@ export default function DynamicLandingV2() {
 
               {formErr && <p className="mb-3 rounded-xl bg-red-50 px-3 py-2.5 text-[12px] font-semibold text-red-600 ring-1 ring-red-100">{formErr}</p>}
 
-              <button type="submit" disabled={sending} className="group relative flex h-[52px] w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-500 text-[15px] font-extrabold text-white shadow-xl shadow-teal-200/40 transition hover:shadow-2xl active:scale-[.98] disabled:cursor-wait disabled:opacity-60">
+              <button type="submit" disabled={sending} className="group relative flex h-[52px] w-full items-center justify-center gap-2 overflow-hidden rounded-2xl text-[15px] font-extrabold text-white shadow-xl transition hover:shadow-2xl active:scale-[.98] disabled:cursor-wait disabled:opacity-60" style={{ background: `linear-gradient(to right, ${c.p}, ${c.a})`, boxShadow: `0 10px 25px ${c.p}30` }}>
                 <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full"/>
                 {sending ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"/>Envoi en cours...</> : (
                   <>
