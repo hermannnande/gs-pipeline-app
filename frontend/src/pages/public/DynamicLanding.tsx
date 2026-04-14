@@ -262,27 +262,11 @@ export default function DynamicLanding() {
     finally { setSending(false); }
   };
 
-  if (loading) return (
-    <div className="flex min-h-screen items-center justify-center bg-white">
-      <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-neutral-200 border-t-amber-500"/>
-    </div>
-  );
-  if (error || !cfg) return (
-    <div className="flex min-h-screen items-center justify-center bg-white px-4">
-      <div className="rounded-2xl border border-red-100 bg-red-50 p-6 text-center text-sm text-red-600">{error || 'Page non disponible.'}</div>
-    </div>
-  );
-
-  const prices = cfg.prices || { 1: 9900 };
-  const gallery = useMemo(() => [cfg.images.hero, ...cfg.images.gallery].filter(Boolean), [cfg]);
-  const qtyOpts = cfg.qtyOptions || [{ v: 1, label: '1 boite', sub: fmt(prices[1] || 0) }];
-  const stockPct = Math.round((stock / 30) * 100);
-  const themeKey = cfg.colors?.theme || 'amber';
-  const T = THEMES[themeKey] || THEMES.amber;
-  const marqueeTexts = cfg.sections?.marqueeTexts || ['Livraison 24h Abidjan', 'Paiement a la livraison', 'Resultat visible', 'Support 7j/7'];
+  const gallery = useMemo(() => cfg ? [cfg.images.hero, ...cfg.images.gallery].filter(Boolean) : [], [cfg]);
 
   const startAutoSlide = useCallback(() => {
     if (autoSlideRef.current) clearInterval(autoSlideRef.current);
+    if (gallery.length <= 1) return;
     autoSlideRef.current = setInterval(() => {
       setGi(prev => (prev + 1) % gallery.length);
     }, 4000);
@@ -299,14 +283,32 @@ export default function DynamicLanding() {
     startAutoSlide();
   }, [startAutoSlide]);
 
-  const nextSlide = useCallback(() => goToSlide((gi + 1) % gallery.length), [gi, gallery.length, goToSlide]);
-  const prevSlide = useCallback(() => goToSlide((gi - 1 + gallery.length) % gallery.length), [gi, gallery.length, goToSlide]);
+  const nextSlide = useCallback(() => goToSlide((gi + 1) % (gallery.length || 1)), [gi, gallery.length, goToSlide]);
+  const prevSlide = useCallback(() => goToSlide((gi - 1 + (gallery.length || 1)) % (gallery.length || 1)), [gi, gallery.length, goToSlide]);
 
   const onTouchStart = useCallback((e: React.TouchEvent) => { touchStart.current = e.touches[0].clientX; }, []);
   const onTouchEnd = useCallback((e: React.TouchEvent) => {
     const diff = touchStart.current - e.changedTouches[0].clientX;
     if (Math.abs(diff) > 50) { diff > 0 ? nextSlide() : prevSlide(); }
   }, [nextSlide, prevSlide]);
+
+  if (loading) return (
+    <div className="flex min-h-screen items-center justify-center bg-white">
+      <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-neutral-200 border-t-amber-500"/>
+    </div>
+  );
+  if (error || !cfg) return (
+    <div className="flex min-h-screen items-center justify-center bg-white px-4">
+      <div className="rounded-2xl border border-red-100 bg-red-50 p-6 text-center text-sm text-red-600">{error || 'Page non disponible.'}</div>
+    </div>
+  );
+
+  const prices = cfg.prices || { 1: 9900 };
+  const qtyOpts = cfg.qtyOptions || [{ v: 1, label: '1 boite', sub: fmt(prices[1] || 0) }];
+  const stockPct = Math.round((stock / 30) * 100);
+  const themeKey = cfg.colors?.theme || 'amber';
+  const T = THEMES[themeKey] || THEMES.amber;
+  const marqueeTexts = cfg.sections?.marqueeTexts || ['Livraison 24h Abidjan', 'Paiement a la livraison', 'Resultat visible', 'Support 7j/7'];
 
   return (
     <div className="min-h-screen bg-white text-neutral-900" style={{ fontFamily: "'Inter',system-ui,-apple-system,sans-serif" }}>
