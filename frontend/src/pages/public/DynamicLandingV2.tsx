@@ -839,113 +839,97 @@ export default function DynamicLandingV2() {
       {modal && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4" onClick={e => { if (e.target === e.currentTarget) setModal(false); }}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"/>
-          <div className="scale-in relative max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-white shadow-2xl sm:max-w-[480px] sm:rounded-3xl">
-            <button onClick={() => setModal(false)} className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 transition hover:bg-neutral-200 hover:text-neutral-700">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          <div className="scale-in relative flex max-h-[100dvh] w-full flex-col rounded-t-3xl bg-white shadow-2xl sm:max-h-[92vh] sm:max-w-[480px] sm:rounded-3xl">
+            <button onClick={() => setModal(false)} className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 transition hover:bg-neutral-200 hover:text-neutral-700 sm:right-4 sm:top-4 sm:h-9 sm:w-9">
+              <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
 
-            {/* Header avec produit */}
-            <div className="flex items-center gap-4 border-b border-neutral-100 px-5 pb-4 pt-5">
-              <OptimImg src={cfg.images.hero} w={96} q={60} className="h-16 w-16 rounded-2xl border border-neutral-100 object-cover shadow-sm"/>
+            {/* Header compact */}
+            <div className="flex items-center gap-3 border-b border-neutral-100 px-4 py-3 sm:gap-4 sm:px-5 sm:pb-4 sm:pt-5">
+              <OptimImg src={cfg.images.hero} w={96} q={60} className="h-12 w-12 rounded-xl border border-neutral-100 object-cover shadow-sm sm:h-16 sm:w-16 sm:rounded-2xl"/>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[15px] font-extrabold text-neutral-900">{cfg.title}</p>
-                <div className="mt-1 flex items-center gap-2">
-                  <span className="text-lg font-black" style={{ color: c.p }}>{fmt(prices[qty] || prices[1])}</span>
-                  {cfg.oldPrice && <span className="text-[12px] text-neutral-400 line-through">{fmt(cfg.oldPrice * qty)}</span>}
-                </div>
-                <div className="mt-1.5 flex gap-1.5">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold text-emerald-700 ring-1 ring-emerald-100">
-                    <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
-                    Livraison 24h
-                  </span>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[9px] font-bold text-amber-700 ring-1 ring-amber-100">
-                    <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    Paiement a la livraison
-                  </span>
+                <p className="truncate text-[13px] font-extrabold text-neutral-900 sm:text-[15px]">{cfg.title}</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-base font-black sm:text-lg" style={{ color: c.p }}>{fmt(prices[qty] || prices[1])}</span>
+                  {cfg.oldPrice && <span className="text-[11px] text-neutral-400 line-through sm:text-[12px]">{fmt(cfg.oldPrice * qty)}</span>}
                 </div>
               </div>
             </div>
 
-            <form onSubmit={submit} className="px-5 pb-5 pt-4">
+            <form onSubmit={submit} className="flex-1 overflow-y-auto px-4 pb-3 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
               {/* Etape 1 — Quantite */}
-              <div className="mb-4">
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-white" style={{ backgroundColor: c.p }}>1</span>
-                  <span className="text-[12px] font-bold text-neutral-800">Choisissez votre pack</span>
+              <div className="mb-2.5 sm:mb-4">
+                <div className="mb-1.5 flex items-center gap-2 sm:mb-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-black text-white sm:h-6 sm:w-6 sm:text-[10px]" style={{ backgroundColor: c.p }}>1</span>
+                  <span className="text-[11px] font-bold text-neutral-800 sm:text-[12px]">Choisissez votre pack</span>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                   {qtyOpts.map(o => (
-                    <button key={o.v} type="button" onClick={() => setQty(o.v)} className={`relative flex flex-col items-center rounded-2xl border-2 px-2 py-3 transition-all ${qty === o.v ? 'shadow-md' : 'border-neutral-200 bg-white hover:border-neutral-300'}`} style={qty === o.v ? { borderColor: c.p, backgroundColor: `${c.p}08`, boxShadow: `0 0 0 1px ${c.p}20, 0 4px 6px -1px rgba(0,0,0,.1)` } : undefined}>
-                      {o.tag && <span className="absolute -right-1 -top-2 rounded-full bg-red-500 px-1.5 py-0.5 text-[8px] font-black text-white shadow">{o.tag}</span>}
-                      <span className="text-xl font-black text-neutral-800">{o.v}</span>
-                      <span className="mt-0.5 text-[10px] font-bold text-neutral-500">{o.label}</span>
-                      <span className="mt-1 text-[12px] font-black" style={{ color: c.p }}>{o.sub}</span>
-                      {o.save && <span className="mt-0.5 text-[9px] font-bold text-emerald-600">{o.save}</span>}
+                    <button key={o.v} type="button" onClick={() => setQty(o.v)} className={`relative flex flex-col items-center rounded-xl border-2 px-1.5 py-2 transition-all sm:rounded-2xl sm:px-2 sm:py-3 ${qty === o.v ? 'shadow-md' : 'border-neutral-200 bg-white hover:border-neutral-300'}`} style={qty === o.v ? { borderColor: c.p, backgroundColor: `${c.p}08`, boxShadow: `0 0 0 1px ${c.p}20, 0 4px 6px -1px rgba(0,0,0,.1)` } : undefined}>
+                      {o.tag && <span className="absolute -right-1 -top-2 rounded-full bg-red-500 px-1.5 py-0.5 text-[7px] font-black text-white shadow sm:text-[8px]">{o.tag}</span>}
+                      <span className="text-lg font-black text-neutral-800 sm:text-xl">{o.v}</span>
+                      <span className="text-[9px] font-bold text-neutral-500 sm:mt-0.5 sm:text-[10px]">{o.label}</span>
+                      <span className="mt-0.5 text-[11px] font-black sm:mt-1 sm:text-[12px]" style={{ color: c.p }}>{o.sub}</span>
+                      {o.save && <span className="text-[8px] font-bold text-emerald-600 sm:mt-0.5 sm:text-[9px]">{o.save}</span>}
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Etape 2 — Coordonnees */}
-              <div className="mb-4">
-                <div className="mb-2.5 flex items-center gap-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-white" style={{ backgroundColor: c.p }}>2</span>
-                  <span className="text-[12px] font-bold text-neutral-800">Vos coordonnees</span>
+              <div className="mb-2.5 sm:mb-4">
+                <div className="mb-1.5 flex items-center gap-2 sm:mb-2.5">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-black text-white sm:h-6 sm:w-6 sm:text-[10px]" style={{ backgroundColor: c.p }}>2</span>
+                  <span className="text-[11px] font-bold text-neutral-800 sm:text-[12px]">Vos coordonnees</span>
                 </div>
-                <div className="space-y-2.5">
-                  <div className="grid gap-2.5 sm:grid-cols-2">
+                <div className="space-y-1.5 sm:space-y-2.5">
+                  <div className="grid grid-cols-2 gap-1.5 sm:gap-2.5">
                     <label className="block">
-                      <span className="mb-1 block text-[10px] font-bold text-neutral-500">Nom complet <span className="text-red-400">*</span></span>
-                      <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Kouadio Fernand" className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50/50 px-3 text-[13px] font-medium outline-none transition placeholder:text-neutral-300 focus:bg-white" onFocus={e => { e.currentTarget.style.borderColor = c.p; e.currentTarget.style.boxShadow = `0 0 0 3px ${c.p}12`; }} onBlur={e => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = ''; }}/>
+                      <span className="mb-0.5 block text-[9px] font-bold text-neutral-500 sm:mb-1 sm:text-[10px]">Nom complet <span className="text-red-400">*</span></span>
+                      <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Kouadio Fernand" className="h-9 w-full rounded-lg border border-neutral-200 bg-neutral-50/50 px-2.5 text-[12px] font-medium outline-none transition placeholder:text-neutral-300 focus:bg-white sm:h-11 sm:rounded-xl sm:px-3 sm:text-[13px]" onFocus={e => { e.currentTarget.style.borderColor = c.p; e.currentTarget.style.boxShadow = `0 0 0 3px ${c.p}12`; }} onBlur={e => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = ''; }}/>
                     </label>
                     <label className="block">
-                      <span className="mb-1 block text-[10px] font-bold text-neutral-500">Ville / Commune <span className="text-red-400">*</span></span>
-                      <input type="text" value={city} onChange={e => setCity(e.target.value)} placeholder="Abidjan — Yopougon" className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50/50 px-3 text-[13px] font-medium outline-none transition placeholder:text-neutral-300 focus:bg-white" onFocus={e => { e.currentTarget.style.borderColor = c.p; e.currentTarget.style.boxShadow = `0 0 0 3px ${c.p}12`; }} onBlur={e => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = ''; }}/>
+                      <span className="mb-0.5 block text-[9px] font-bold text-neutral-500 sm:mb-1 sm:text-[10px]">Ville / Commune <span className="text-red-400">*</span></span>
+                      <input type="text" value={city} onChange={e => setCity(e.target.value)} placeholder="Abidjan — Yopougon" className="h-9 w-full rounded-lg border border-neutral-200 bg-neutral-50/50 px-2.5 text-[12px] font-medium outline-none transition placeholder:text-neutral-300 focus:bg-white sm:h-11 sm:rounded-xl sm:px-3 sm:text-[13px]" onFocus={e => { e.currentTarget.style.borderColor = c.p; e.currentTarget.style.boxShadow = `0 0 0 3px ${c.p}12`; }} onBlur={e => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = ''; }}/>
                     </label>
                   </div>
                   <label className="block">
-                    <span className="mb-1 block text-[10px] font-bold text-neutral-500">Telephone <span className="text-red-400">*</span></span>
-                    <div className="flex overflow-hidden rounded-xl border border-neutral-200 transition">
-                      <span className="flex items-center gap-1 border-r border-neutral-200 bg-neutral-50 px-3 text-[12px] font-bold text-neutral-500">
-                        <span className="text-sm">🇨🇮</span> +225
-                      </span>
-                      <input type="tel" inputMode="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="07 00 00 00 00" className="h-11 w-full border-none bg-neutral-50/50 px-3 text-[13px] font-medium outline-none placeholder:text-neutral-300 focus:bg-white"/>
+                    <span className="mb-0.5 block text-[9px] font-bold text-neutral-500 sm:mb-1 sm:text-[10px]">Telephone <span className="text-red-400">*</span></span>
+                    <div className="flex overflow-hidden rounded-lg border border-neutral-200 transition sm:rounded-xl">
+                      <span className="flex items-center gap-1 border-r border-neutral-200 bg-neutral-50 px-2 text-[11px] font-bold text-neutral-500 sm:px-3 sm:text-[12px]">🇨🇮 +225</span>
+                      <input type="tel" inputMode="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="07 00 00 00 00" className="h-9 w-full border-none bg-neutral-50/50 px-2.5 text-[12px] font-medium outline-none placeholder:text-neutral-300 focus:bg-white sm:h-11 sm:px-3 sm:text-[13px]"/>
                     </div>
                   </label>
                 </div>
               </div>
 
-              {/* Recapitulatif */}
-              <div className="mb-4 overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50/80">
-                <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-2.5">
-                  <span className="text-[12px] text-neutral-500">{qty} x {cfg.title?.split(' ').slice(0, 3).join(' ')}...</span>
-                  <span className="text-[12px] font-bold text-neutral-700">{fmt(prices[qty] || prices[1])}</span>
+              {/* Recapitulatif compact */}
+              <div className="mb-2.5 overflow-hidden rounded-xl border border-neutral-100 bg-neutral-50/80 sm:mb-4 sm:rounded-2xl">
+                <div className="flex items-center justify-between px-3 py-1.5 sm:border-b sm:border-neutral-100 sm:px-4 sm:py-2.5">
+                  <span className="text-[11px] text-neutral-500 sm:text-[12px]">{qty} x {cfg.title?.split(' ').slice(0, 3).join(' ')}... <span className="font-semibold text-emerald-600">+ Livraison gratuite</span></span>
+                  <span className="text-[11px] font-bold text-neutral-700 sm:text-[12px]">{fmt(prices[qty] || prices[1])}</span>
                 </div>
-                <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-2.5">
-                  <span className="text-[12px] text-neutral-500">Livraison</span>
-                  <span className="text-[12px] font-bold text-emerald-600">GRATUITE</span>
-                </div>
-                <div className="flex items-center justify-between bg-neutral-900 px-4 py-3 text-white">
-                  <span className="text-[13px] font-bold">Total a payer</span>
-                  <span className="text-[18px] font-black">{fmt(prices[qty] || prices[1])}</span>
+                <div className="flex items-center justify-between bg-neutral-900 px-3 py-2 text-white sm:px-4 sm:py-3">
+                  <span className="text-[12px] font-bold sm:text-[13px]">Total a payer</span>
+                  <span className="text-[16px] font-black sm:text-[18px]">{fmt(prices[qty] || prices[1])}</span>
                 </div>
               </div>
 
-              {formErr && <p className="mb-3 rounded-xl bg-red-50 px-3 py-2.5 text-[12px] font-semibold text-red-600 ring-1 ring-red-100">{formErr}</p>}
+              {formErr && <p className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-[11px] font-semibold text-red-600 ring-1 ring-red-100 sm:mb-3 sm:rounded-xl sm:py-2.5 sm:text-[12px]">{formErr}</p>}
 
-              <button type="submit" disabled={sending} className="group relative flex h-[52px] w-full items-center justify-center gap-2 overflow-hidden rounded-2xl text-[15px] font-extrabold text-white shadow-xl transition hover:shadow-2xl active:scale-[.98] disabled:cursor-wait disabled:opacity-60" style={{ background: `linear-gradient(to right, ${c.p}, ${c.a})`, boxShadow: `0 10px 25px ${c.p}30` }}>
+              <button type="submit" disabled={sending} className="group relative flex h-11 w-full items-center justify-center gap-2 overflow-hidden rounded-xl text-[14px] font-extrabold text-white shadow-xl transition hover:shadow-2xl active:scale-[.98] disabled:cursor-wait disabled:opacity-60 sm:h-[52px] sm:rounded-2xl sm:text-[15px]" style={{ background: `linear-gradient(to right, ${c.p}, ${c.a})`, boxShadow: `0 10px 25px ${c.p}30` }}>
                 <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full"/>
                 {sending ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"/>Envoi en cours...</> : (
                   <>
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
                     Confirmer ma commande
                   </>
                 )}
               </button>
-              <div className="mt-3 flex items-center justify-center gap-4 text-[10px] text-neutral-400">
+              <div className="mt-2 flex items-center justify-center gap-3 text-[9px] text-neutral-400 sm:mt-3 sm:gap-4 sm:text-[10px]">
                 <span className="flex items-center gap-1"><svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>Securise</span>
-                <span className="flex items-center gap-1"><svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>Appel de confirmation</span>
-                <span className="flex items-center gap-1"><svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>Satisfait ou rembourse</span>
+                <span className="flex items-center gap-1"><svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>Confirmation</span>
+                <span className="flex items-center gap-1"><svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>Garanti</span>
               </div>
             </form>
           </div>

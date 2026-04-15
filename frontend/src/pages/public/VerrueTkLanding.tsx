@@ -690,57 +690,64 @@ export default function VerrueTkLanding() {
       {modal && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4" onClick={e => { if (e.target === e.currentTarget) setModal(false); }}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"/>
-          <div ref={formRef} className="relative max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-white shadow-2xl sm:max-h-[92vh] sm:max-w-[400px] sm:rounded-2xl">
+          <div ref={formRef} className="relative flex max-h-[100dvh] w-full flex-col rounded-t-2xl bg-white shadow-2xl sm:max-h-[92vh] sm:max-w-[400px] sm:rounded-2xl">
             <button onClick={() => setModal(false)} className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-white transition hover:bg-white/30 sm:h-8 sm:w-8">
               <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
-            <div className="bg-neutral-900 px-4 pb-3 pt-4 text-white sm:px-5 sm:pb-4 sm:pt-5">
-              <div className="mb-2 flex flex-wrap items-center gap-1.5">
-                <span className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[9px] font-bold text-amber-300 sm:text-[10px]">Livraison 24h</span>
-                <span className="inline-flex rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[9px] font-bold text-emerald-300 sm:text-[10px]">Paiement a la livraison</span>
+            <div className="bg-neutral-900 px-4 pb-2 pt-3 text-white sm:px-5 sm:pb-4 sm:pt-5">
+              <div className="mb-1 flex flex-wrap items-center gap-1.5 sm:mb-2">
+                <span className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[8px] font-bold text-amber-300 sm:text-[10px]">Livraison 24h</span>
+                <span className="inline-flex rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[8px] font-bold text-emerald-300 sm:text-[10px]">Paiement a la livraison</span>
               </div>
-              <h3 className="text-base font-extrabold sm:text-lg">Finaliser votre commande</h3>
-              <p className="mt-0.5 text-[11px] text-neutral-400 sm:text-[12px]">Nous vous appelons pour confirmer.</p>
+              <h3 className="text-sm font-extrabold sm:text-lg">Finaliser votre commande</h3>
             </div>
-            <div className="h-1 bg-neutral-100"><div className="h-full w-4/5 bg-gradient-to-r from-amber-400 to-amber-500"/></div>
-            <form onSubmit={submit} className="space-y-2.5 p-3 pb-4 sm:space-y-3 sm:p-4 sm:pb-5">
-              {[
-                { icon: '👤', label: 'Nom complet', val: name, set: setName, ph: 'Ex. Kouadio Fernand', type: 'text' as const },
-                { icon: '📍', label: 'Ville / Commune', val: city, set: setCity, ph: 'Ex. Abidjan — Yopougon', type: 'text' as const },
-                { icon: '📱', label: 'Telephone', val: phone, set: setPhone, ph: 'Ex. 07 00 00 00 00', type: 'tel' as const },
-              ].map(f => (
-                <label key={f.label} className="block">
-                  <span className="mb-0.5 block text-[11px] font-bold text-neutral-700 sm:mb-1 sm:text-[12px]">{f.label} <span className="text-red-500">*</span></span>
-                  <div className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-3 transition-colors focus-within:border-amber-400 focus-within:bg-white focus-within:shadow-[0_0_0_3px_rgba(251,191,36,.12)]">
-                    <span className="text-sm">{f.icon}</span>
-                    <input type={f.type} inputMode={f.type === 'tel' ? 'tel' : undefined} value={f.val} onChange={e => f.set(e.target.value)} placeholder={f.ph} className="h-10 w-full border-none bg-transparent text-[13px] font-medium outline-none placeholder:text-neutral-300 sm:h-11"/>
-                  </div>
-                </label>
-              ))}
+            <div className="h-0.5 bg-neutral-100 sm:h-1"><div className="h-full w-4/5 bg-gradient-to-r from-amber-400 to-amber-500"/></div>
+            <form onSubmit={submit} className="flex-1 space-y-1.5 overflow-y-auto p-3 pb-3 sm:space-y-3 sm:p-4 sm:pb-5">
+              <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-1 sm:gap-3">
+                {[
+                  { icon: '👤', label: 'Nom complet', val: name, set: setName, ph: 'Kouadio Fernand', type: 'text' as const },
+                  { icon: '📍', label: 'Ville / Commune', val: city, set: setCity, ph: 'Abidjan — Yopougon', type: 'text' as const },
+                ].map(f => (
+                  <label key={f.label} className="block">
+                    <span className="mb-0.5 block text-[10px] font-bold text-neutral-700 sm:text-[12px]">{f.label} <span className="text-red-500">*</span></span>
+                    <div className="flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 transition-colors focus-within:border-amber-400 focus-within:bg-white focus-within:shadow-[0_0_0_3px_rgba(251,191,36,.12)] sm:gap-2 sm:rounded-xl sm:px-3">
+                      <span className="text-xs sm:text-sm">{f.icon}</span>
+                      <input type={f.type} value={f.val} onChange={e => f.set(e.target.value)} placeholder={f.ph} className="h-9 w-full border-none bg-transparent text-[12px] font-medium outline-none placeholder:text-neutral-300 sm:h-11 sm:text-[13px]"/>
+                    </div>
+                  </label>
+                ))}
+              </div>
+              <label className="block">
+                <span className="mb-0.5 block text-[10px] font-bold text-neutral-700 sm:text-[12px]">Telephone <span className="text-red-500">*</span></span>
+                <div className="flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 transition-colors focus-within:border-amber-400 focus-within:bg-white focus-within:shadow-[0_0_0_3px_rgba(251,191,36,.12)] sm:gap-2 sm:rounded-xl sm:px-3">
+                  <span className="text-xs sm:text-sm">📱</span>
+                  <input type="tel" inputMode="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="07 00 00 00 00" className="h-9 w-full border-none bg-transparent text-[12px] font-medium outline-none placeholder:text-neutral-300 sm:h-11 sm:text-[13px]"/>
+                </div>
+              </label>
               <div>
-                <span className="mb-1 block text-[11px] font-bold text-neutral-700 sm:mb-1.5 sm:text-[12px]">Quantite</span>
-                <div className="grid gap-1.5 sm:gap-2">
+                <span className="mb-1 block text-[10px] font-bold text-neutral-700 sm:text-[12px]">Quantite</span>
+                <div className="grid gap-1 sm:gap-2">
                   {QTY_OPTS.map(o => (
-                    <button key={o.v} type="button" onClick={() => setQty(o.v)} className={`relative flex items-center justify-between rounded-xl border-2 px-3 py-2 text-left transition-all sm:px-3.5 sm:py-2.5 ${qty === o.v ? 'border-amber-400 bg-amber-50/60 shadow-sm' : 'border-neutral-200 bg-white hover:border-neutral-300'}`}>
+                    <button key={o.v} type="button" onClick={() => setQty(o.v)} className={`relative flex items-center justify-between rounded-lg border-2 px-2.5 py-1.5 text-left transition-all sm:rounded-xl sm:px-3.5 sm:py-2.5 ${qty === o.v ? 'border-amber-400 bg-amber-50/60 shadow-sm' : 'border-neutral-200 bg-white hover:border-neutral-300'}`}>
                       <div className="flex items-center gap-2">
-                        <div className={`flex h-4 w-4 items-center justify-center rounded-full border-2 sm:h-5 sm:w-5 ${qty === o.v ? 'border-amber-500 bg-amber-500' : 'border-neutral-300'}`}>{qty === o.v && <div className="h-1.5 w-1.5 rounded-full bg-white sm:h-2 sm:w-2"/>}</div>
-                        <span className="text-[12px] font-bold sm:text-[13px]">{o.label}</span>
+                        <div className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 sm:h-5 sm:w-5 ${qty === o.v ? 'border-amber-500 bg-amber-500' : 'border-neutral-300'}`}>{qty === o.v && <div className="h-1 w-1 rounded-full bg-white sm:h-2 sm:w-2"/>}</div>
+                        <span className="text-[11px] font-bold sm:text-[13px]">{o.label}</span>
                       </div>
-                      <span className="text-[12px] font-extrabold sm:text-[13px]">{o.sub}</span>
-                      {o.tag && <span className="absolute -top-1.5 right-2 rounded-full bg-amber-500 px-1.5 py-px text-[8px] font-bold text-white sm:-top-2 sm:right-3 sm:px-2 sm:py-0.5 sm:text-[9px]">{o.tag}</span>}
+                      <span className="text-[11px] font-extrabold sm:text-[13px]">{o.sub}</span>
+                      {o.tag && <span className="absolute -top-1.5 right-2 rounded-full bg-amber-500 px-1.5 py-px text-[7px] font-bold text-white sm:-top-2 sm:right-3 sm:px-2 sm:py-0.5 sm:text-[9px]">{o.tag}</span>}
                     </button>
                   ))}
                 </div>
               </div>
-              <div className="flex items-center justify-between rounded-xl bg-neutral-900 px-3 py-2.5 text-white sm:px-4 sm:py-3">
-                <span className="text-[12px] font-semibold sm:text-[13px]">Total</span>
-                <span className="text-[15px] font-black sm:text-base">{fmt(PRICES[qty] || PRICES[1])}</span>
+              <div className="flex items-center justify-between rounded-lg bg-neutral-900 px-3 py-2 text-white sm:rounded-xl sm:px-4 sm:py-3">
+                <span className="text-[11px] font-semibold sm:text-[13px]">Total <span className="text-emerald-400">(livraison gratuite)</span></span>
+                <span className="text-[14px] font-black sm:text-base">{fmt(PRICES[qty] || PRICES[1])}</span>
               </div>
-              {formErr && <p className="rounded-lg bg-red-50 px-3 py-2 text-[11px] font-semibold text-red-600 sm:text-[12px]">{formErr}</p>}
-              <button type="submit" disabled={sending} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-[13px] font-extrabold text-white shadow-[0_12px_30px_rgba(16,185,129,.3)] transition hover:bg-emerald-500 active:scale-[.98] disabled:cursor-wait disabled:opacity-70 sm:h-12 sm:text-[14px]">
+              {formErr && <p className="rounded-lg bg-red-50 px-3 py-1.5 text-[10px] font-semibold text-red-600 sm:py-2 sm:text-[12px]">{formErr}</p>}
+              <button type="submit" disabled={sending} className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 text-[13px] font-extrabold text-white shadow-[0_12px_30px_rgba(16,185,129,.3)] transition hover:bg-emerald-500 active:scale-[.98] disabled:cursor-wait disabled:opacity-70 sm:h-12 sm:rounded-xl sm:text-[14px]">
                 {sending ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"/>Envoi...</> : 'Valider ma commande'}
               </button>
-              <p className="text-center text-[9px] text-neutral-400 sm:text-[10px]">Nous vous appelons pour confirmer.</p>
+              <p className="text-center text-[8px] text-neutral-400 sm:text-[10px]">Nous vous appelons pour confirmer.</p>
             </form>
           </div>
         </div>

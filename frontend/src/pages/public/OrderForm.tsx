@@ -245,7 +245,7 @@ export default function OrderForm() {
       <footer className="bg-white border-t border-gray-100 py-6 mt-8">
         <div className="max-w-6xl mx-auto px-4 text-center">
           <p className="text-gray-400 text-sm">
-            Paiement ÃƒÂ  la livraison &middot; Livraison partout {getCompanySlug() === 'bf' ? 'au Burkina Faso' : 'en CÃƒÂ´te d\'Ivoire'}
+            Paiement a la livraison &middot; Livraison partout {getCompanySlug() === 'bf' ? 'au Burkina Faso' : 'en CÃƒÂ´te d\'Ivoire'}
           </p>
         </div>
       </footer>
@@ -264,7 +264,7 @@ export default function OrderForm() {
           {/* Modal */}
           <div
             ref={modalRef}
-            className="relative bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-3xl max-h-[92vh] overflow-y-auto shadow-2xl animate-slide-up sm:animate-scale-in"
+            className="relative bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-3xl max-h-[100dvh] sm:max-h-[92vh] flex flex-col shadow-2xl animate-slide-up sm:animate-scale-in"
           >
             {/* Close */}
             <button
@@ -323,8 +323,8 @@ export default function OrderForm() {
               /* Order form */
               <form onSubmit={handleSubmit}>
                 {/* Product header */}
-                <div className="flex items-center gap-4 p-5 pb-4 border-b border-gray-100">
-                  <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                <div className="flex items-center gap-3 p-3 pb-2 border-b border-gray-100 sm:gap-4 sm:p-5 sm:pb-4">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
                     {selectedProduct.imageUrl ? (
                       <img src={selectedProduct.imageUrl} alt={selectedProduct.nom} className="w-full h-full object-cover" />
                     ) : (
@@ -336,28 +336,28 @@ export default function OrderForm() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h2 className="font-bold text-gray-900 text-lg leading-tight truncate">{selectedProduct.nom}</h2>
-                    <p className="text-sky-600 font-bold text-lg">{formatPrice(selectedProduct.prixUnitaire)}</p>
+                    <h2 className="font-bold text-gray-900 text-base leading-tight truncate sm:text-lg">{selectedProduct.nom}</h2>
+                    <p className="text-sky-600 font-bold text-base sm:text-lg">{formatPrice(selectedProduct.prixUnitaire)}</p>
                   </div>
                 </div>
 
-                <div className="p-5 space-y-4">
+                <div className="flex-1 overflow-y-auto p-3 space-y-2.5 sm:p-5 sm:space-y-4">
                   {/* Quantity */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">QuantitÃƒÂ©</label>
-                    <div className="flex items-center gap-3">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1 sm:text-sm sm:mb-2">Quantite</label>
+                    <div className="flex items-center gap-2 sm:gap-3">
                       <button
                         type="button"
                         onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                        className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-xl text-lg font-bold text-gray-600 hover:bg-gray-200 transition-all active:scale-90"
+                        className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-gray-100 rounded-lg sm:rounded-xl text-base sm:text-lg font-bold text-gray-600 hover:bg-gray-200 transition-all active:scale-90"
                       >-</button>
-                      <span className="w-10 text-center text-lg font-bold text-gray-900">{quantity}</span>
+                      <span className="w-8 text-center text-base sm:text-lg font-bold text-gray-900">{quantity}</span>
                       <button
                         type="button"
                         onClick={() => setQuantity(q => Math.min(10, q + 1))}
-                        className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-xl text-lg font-bold text-gray-600 hover:bg-gray-200 transition-all active:scale-90"
+                        className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-gray-100 rounded-lg sm:rounded-xl text-base sm:text-lg font-bold text-gray-600 hover:bg-gray-200 transition-all active:scale-90"
                       >+</button>
-                      <span className="ml-auto text-lg font-bold text-sky-600">
+                      <span className="ml-auto text-base sm:text-lg font-bold text-sky-600">
                         {formatPrice(getTotal(selectedProduct, quantity))}
                       </span>
                     </div>
@@ -380,40 +380,40 @@ export default function OrderForm() {
 
                   <hr className="border-gray-100" />
 
-                  {/* Nom */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                      Nom complet <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Ex: Kouadio Jean"
-                      value={customerName}
-                      onChange={e => setCustomerName(e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all bg-gray-50/50 text-base placeholder:text-gray-400"
-                    />
-                  </div>
-
-                  {/* TÃƒÂ©lÃƒÂ©phone */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                      TÃƒÂ©lÃƒÂ©phone <span className="text-red-400">*</span>
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium select-none">+225</span>
+                  {/* Nom + Telephone side by side on mobile */}
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 sm:gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1 sm:text-sm sm:mb-1.5">
+                        Nom complet <span className="text-red-400">*</span>
+                      </label>
                       <input
-                        type="tel"
-                        placeholder="07 XX XX XX XX"
-                        value={customerPhone}
-                        onChange={e => setCustomerPhone(e.target.value)}
-                        className="w-full pl-16 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all bg-gray-50/50 text-base placeholder:text-gray-400"
+                        type="text"
+                        placeholder="Kouadio Jean"
+                        value={customerName}
+                        onChange={e => setCustomerName(e.target.value)}
+                        className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all bg-gray-50/50 text-sm sm:text-base placeholder:text-gray-400"
                       />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1 sm:text-sm sm:mb-1.5">
+                        Telephone <span className="text-red-400">*</span>
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-2.5 sm:left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs sm:text-base font-medium select-none">+225</span>
+                        <input
+                          type="tel"
+                          placeholder="07 XX XX XX XX"
+                          value={customerPhone}
+                          onChange={e => setCustomerPhone(e.target.value)}
+                          className="w-full pl-12 sm:pl-16 pr-3 sm:pr-4 py-2 sm:py-3 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all bg-gray-50/50 text-sm sm:text-base placeholder:text-gray-400"
+                        />
+                      </div>
                     </div>
                   </div>
 
                   {/* Ville */}
                   <div className="relative">
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1 sm:text-sm sm:mb-1.5">
                       Ville <span className="text-red-400">*</span>
                     </label>
                     <div
@@ -436,7 +436,7 @@ export default function OrderForm() {
                           setShowCityDropdown(true);
                           if (customerCity) { setCitySearch(customerCity); setCustomerCity(''); }
                         }}
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all bg-gray-50/50 text-base placeholder:text-gray-400"
+                        className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all bg-gray-50/50 text-sm sm:text-base placeholder:text-gray-400"
                       />
                       {showCityDropdown && (
                         <div className="absolute z-30 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl max-h-40 overflow-y-auto">
@@ -463,32 +463,32 @@ export default function OrderForm() {
                     </div>
                   </div>
 
-                  {/* Commune */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                      Commune <span className="text-gray-300">(optionnel)</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Ex: Cocody, Yopougon..."
-                      value={customerCommune}
-                      onChange={e => setCustomerCommune(e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all bg-gray-50/50 text-base placeholder:text-gray-400"
-                    />
-                  </div>
-
-                  {/* Adresse */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                      Adresse de livraison <span className="text-gray-300">(optionnel)</span>
-                    </label>
-                    <textarea
-                      placeholder="Indications pour faciliter la livraison..."
-                      value={customerAddress}
-                      onChange={e => setCustomerAddress(e.target.value)}
-                      rows={2}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all bg-gray-50/50 text-base placeholder:text-gray-400 resize-none"
-                    />
+                  {/* Commune + Adresse side by side on mobile */}
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 sm:gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1 sm:text-sm sm:mb-1.5">
+                        Commune <span className="text-gray-300 text-[10px] sm:text-xs">(optionnel)</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Cocody, Yopougon..."
+                        value={customerCommune}
+                        onChange={e => setCustomerCommune(e.target.value)}
+                        className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all bg-gray-50/50 text-sm sm:text-base placeholder:text-gray-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1 sm:text-sm sm:mb-1.5">
+                        Adresse <span className="text-gray-300 text-[10px] sm:text-xs">(optionnel)</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Indications livraison..."
+                        value={customerAddress}
+                        onChange={e => setCustomerAddress(e.target.value)}
+                        className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all bg-gray-50/50 text-sm sm:text-base placeholder:text-gray-400"
+                      />
+                    </div>
                   </div>
 
                   {/* Error */}
@@ -503,11 +503,11 @@ export default function OrderForm() {
                 </div>
 
                 {/* Submit bar */}
-                <div className="sticky bottom-0 p-5 pt-3 bg-white border-t border-gray-100">
+                <div className="sticky bottom-0 p-3 pt-2 bg-white border-t border-gray-100 sm:p-5 sm:pt-3">
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full py-3.5 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold text-base rounded-xl hover:from-sky-600 hover:to-blue-700 transition-all duration-300 shadow-lg shadow-blue-300/40 disabled:from-gray-300 disabled:to-gray-400 disabled:shadow-none disabled:cursor-not-allowed active:scale-[0.98] flex items-center justify-center gap-2"
+                    className="w-full py-2.5 sm:py-3.5 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold text-sm sm:text-base rounded-lg sm:rounded-xl hover:from-sky-600 hover:to-blue-700 transition-all duration-300 shadow-lg shadow-blue-300/40 disabled:from-gray-300 disabled:to-gray-400 disabled:shadow-none disabled:cursor-not-allowed active:scale-[0.98] flex items-center justify-center gap-2"
                   >
                     {submitting ? (
                       <>
@@ -520,7 +520,7 @@ export default function OrderForm() {
                       </>
                     )}
                   </button>
-                  <p className="text-center text-xs text-gray-400 mt-2">
+                  <p className="text-center text-[10px] text-gray-400 mt-1 sm:text-xs sm:mt-2">
                     Paiement ÃƒÂ  la livraison
                   </p>
                 </div>
