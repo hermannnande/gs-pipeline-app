@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-const API_URL = ((import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api')).trim()).replace(/\/api$/, '/api');
+const API_URL = '/api';
 const TARGET_CODE = 'VERRUE_TK';
 const PRICES: Record<number, number> = { 1: 9900, 2: 14900, 3: 24900 };
 const QTY_OPTS = [
@@ -275,7 +275,7 @@ export default function VerrueTkLanding() {
         .glow-sheen{animation:sheen 3s ease-in-out infinite}
       `}</style>
 
-      {/* â•â• STICKY COUNTDOWN TOP BAR â€” always visible â•â• */}
+      {/* Ã¢â€¢ÂÃ¢â€¢Â STICKY COUNTDOWN TOP BAR Ã¢â‚¬â€ always visible Ã¢â€¢ÂÃ¢â€¢Â */}
       <div className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-neutral-900 px-3 py-2 sm:gap-3">
         <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 sm:text-[11px]">Offre du jour</span>
         <div className="flex items-center gap-1">
@@ -286,10 +286,10 @@ export default function VerrueTkLanding() {
             </div>
           ))}
         </div>
-        <span className="hidden text-[10px] text-amber-300/70 sm:inline">Â· Livraison 24h Â· Paiement a la livraison</span>
+        <span className="hidden text-[10px] text-amber-300/70 sm:inline">Ã‚Â· Livraison 24h Ã‚Â· Paiement a la livraison</span>
       </div>
 
-      {/* â•â• MARQUEE â€” immediate â•â• */}
+      {/* Ã¢â€¢ÂÃ¢â€¢Â MARQUEE Ã¢â‚¬â€ immediate Ã¢â€¢ÂÃ¢â€¢Â */}
       <div className="overflow-hidden bg-neutral-800 py-1.5">
         <div className="marquee-track flex w-[200%] items-center gap-8 text-[9px] font-bold uppercase tracking-[.18em] text-amber-300/80 sm:text-[10px]">
           {[0,1].map(k=><div key={k} className="flex shrink-0 items-center gap-8">
@@ -301,7 +301,7 @@ export default function VerrueTkLanding() {
         </div>
       </div>
 
-      {/* â•â• HERO â€” loads immediately (priority) â•â• */}
+      {/* Ã¢â€¢ÂÃ¢â€¢Â HERO Ã¢â‚¬â€ loads immediately (priority) Ã¢â€¢ÂÃ¢â€¢Â */}
       <section className="mx-auto max-w-6xl px-4 pb-6 pt-5 sm:pb-10 sm:pt-8 md:pt-12">
         <div className="grid items-start gap-6 md:grid-cols-2 md:gap-10">
           <div className="fade-up">
@@ -335,7 +335,7 @@ export default function VerrueTkLanding() {
               <span className="rounded-md bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-600">-34%</span>
             </div>
             <div className="flex items-center gap-1.5 self-start rounded-lg border border-amber-100 bg-amber-50 px-2.5 py-1.5">
-              <span className="text-xs">ðŸ“¦</span>
+              <span className="text-xs">Ã°Å¸â€œÂ¦</span>
               <span className="text-[12px] font-bold text-amber-700">Plus que {stock} en stock</span>
             </div>
             <p className="text-[13px] leading-relaxed text-neutral-500 sm:text-sm">
@@ -350,7 +350,7 @@ export default function VerrueTkLanding() {
               <GlowBtn onClick={open} variant="gold">
                 <span className="relative z-10 flex items-center gap-2">
                   <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-900 opacity-40"/><span className="relative inline-flex h-2 w-2 rounded-full bg-neutral-900"/></span>
-                  Commander maintenant â€” {fmt(PRICES[1])}
+                  Commander maintenant Ã¢â‚¬â€ {fmt(PRICES[1])}
                 </span>
               </GlowBtn>
               <p className="mt-2 text-center text-[11px] text-neutral-400">Aucun compte requis. Formulaire rapide en 30 secondes.</p>
@@ -370,10 +370,10 @@ export default function VerrueTkLanding() {
         </div>
       </section>
 
-      {/* â•â• TRUST STRIPS â€” lightweight, immediate â•â• */}
+      {/* Ã¢â€¢ÂÃ¢â€¢Â TRUST STRIPS Ã¢â‚¬â€ lightweight, immediate Ã¢â€¢ÂÃ¢â€¢Â */}
       <div className="border-y border-neutral-100 bg-neutral-50 py-4">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-5 px-4 text-center sm:gap-8">
-          {[{ ico: 'ðŸ“±', l: 'Vu sur TikTok' },{ ico: 'â­', l: '4.8/5 â€” 1247 avis' },{ ico: 'ðŸ†', l: '+1 200 commandes' },{ ico: 'ðŸ‘¨â€âš•ï¸', l: 'Recommande' }].map((s,i) => (
+          {[{ ico: 'Ã°Å¸â€œÂ±', l: 'Vu sur TikTok' },{ ico: 'Ã¢Â­Â', l: '4.8/5 Ã¢â‚¬â€ 1247 avis' },{ ico: 'Ã°Å¸Ââ€ ', l: '+1 200 commandes' },{ ico: 'Ã°Å¸â€˜Â¨Ã¢â‚¬ÂÃ¢Å¡â€¢Ã¯Â¸Â', l: 'Recommande' }].map((s,i) => (
             <div key={i} className="flex items-center gap-1.5">
               <span className="text-sm">{s.ico}</span>
               <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 sm:text-[11px]">{s.l}</span>
@@ -389,14 +389,14 @@ export default function VerrueTkLanding() {
         </div>
       </div>
 
-      {/* â•â• BANNER IMAGE + CTA â•â• */}
+      {/* Ã¢â€¢ÂÃ¢â€¢Â BANNER IMAGE + CTA Ã¢â€¢ÂÃ¢â€¢Â */}
       <div className="relative overflow-hidden py-6 sm:py-8">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-amber-50/40 via-white to-white"/>
         <div className="relative mx-auto max-w-3xl px-4">
           <img src="/verrue-tk/banner-clients.webp" alt="Clients satisfaits" className="w-full rounded-t-2xl border border-b-0 border-neutral-100 object-cover shadow-xl" loading="lazy"/>
           <div className="rounded-b-2xl border border-t-0 border-neutral-100 bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 px-5 py-6 text-center shadow-xl sm:px-8 sm:py-8">
             <h3 className="mb-2 text-lg font-extrabold leading-tight text-white sm:text-xl">
-              <span className="text-amber-400">âœ¨</span> Dites STOP aux verrues rapidement !
+              <span className="text-amber-400">Ã¢Å“Â¨</span> Dites STOP aux verrues rapidement !
             </h3>
             <p className="mx-auto mb-5 max-w-md text-[13px] leading-relaxed text-neutral-300 sm:text-sm">
               Grace a sa formule puissante, notre creme agit en profondeur pour eliminer les verrues a la racine, assecher la peau infectee et favoriser une regeneration saine.
@@ -404,17 +404,17 @@ export default function VerrueTkLanding() {
             <GlowBtn onClick={open} variant="gold">
               <span className="relative z-10 flex items-center gap-2">
                 <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-900 opacity-40"/><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-neutral-900"/></span>
-                Commander maintenant â€” {fmt(PRICES[1])}
+                Commander maintenant Ã¢â‚¬â€ {fmt(PRICES[1])}
               </span>
             </GlowBtn>
           </div>
         </div>
       </div>
 
-      {/* â•â• EXTRA IMAGES STRIP 1 â•â• */}
+      {/* Ã¢â€¢ÂÃ¢â€¢Â EXTRA IMAGES STRIP 1 Ã¢â€¢ÂÃ¢â€¢Â */}
       <ExtraImageStrip indices={[0, 1]}/>
 
-      {/* â•â• PACK OFFERS â€” lazy â•â• */}
+      {/* Ã¢â€¢ÂÃ¢â€¢Â PACK OFFERS Ã¢â‚¬â€ lazy Ã¢â€¢ÂÃ¢â€¢Â */}
       <LazySection className="relative overflow-hidden py-10 sm:py-14">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-50/80 via-white to-amber-50/60"/>
         <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-amber-200/20 blur-3xl"/>
@@ -445,10 +445,10 @@ export default function VerrueTkLanding() {
         </div>
       </LazySection>
 
-      {/* â•â• EXTRA IMAGES STRIP 2 â•â• */}
+      {/* Ã¢â€¢ÂÃ¢â€¢Â EXTRA IMAGES STRIP 2 Ã¢â€¢ÂÃ¢â€¢Â */}
       <ExtraImageStrip indices={[2, 3]}/>
 
-      {/* â•â• VIDEOS â€” lazy loaded individually â•â• */}
+      {/* Ã¢â€¢ÂÃ¢â€¢Â VIDEOS Ã¢â‚¬â€ lazy loaded individually Ã¢â€¢ÂÃ¢â€¢Â */}
       <LazySection className="relative overflow-hidden border-y border-neutral-100 py-10 sm:py-14">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-neutral-900 via-neutral-800 to-neutral-900"/>
         <div className="pointer-events-none absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-amber-500/10 blur-[80px]"/>
@@ -466,7 +466,7 @@ export default function VerrueTkLanding() {
         </div>
       </LazySection>
 
-      {/* â•â• AVANT / APRES â€” lazy â•â• */}
+      {/* Ã¢â€¢ÂÃ¢â€¢Â AVANT / APRES Ã¢â‚¬â€ lazy Ã¢â€¢ÂÃ¢â€¢Â */}
       <LazySection className="py-10 sm:py-14">
         <div className="mx-auto max-w-5xl px-4">
           <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-widest text-amber-600">Resultats constates</p>
@@ -491,7 +491,7 @@ export default function VerrueTkLanding() {
         </div>
       </LazySection>
 
-      {/* â•â• HOW TO USE â€” lazy â•â• */}
+      {/* Ã¢â€¢ÂÃ¢â€¢Â HOW TO USE Ã¢â‚¬â€ lazy Ã¢â€¢ÂÃ¢â€¢Â */}
       <LazySection className="border-y border-neutral-100 bg-neutral-50 py-10 sm:py-14">
         <div className="mx-auto max-w-5xl px-4">
           <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-widest text-amber-600">Mode d'emploi</p>
@@ -500,10 +500,10 @@ export default function VerrueTkLanding() {
           <LazyImg src={I.usage} alt="Utilisation" className="mx-auto mb-8 w-full max-w-xl rounded-2xl border border-neutral-200 object-cover shadow-lg sm:rounded-3xl"/>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { n: '01', t: 'Nettoyez', d: 'Lavez la zone concernee a l\'eau propre.', ico: 'ðŸ’§' },
-              { n: '02', t: 'Appliquez', d: 'Deposez une petite quantite de creme.', ico: 'ðŸ§´' },
-              { n: '03', t: 'Repetez', d: 'Suivez la routine conseillee.', ico: 'ðŸ”' },
-              { n: '04', t: 'Observez', d: 'Constatez l\'amelioration.', ico: 'âœ¨' },
+              { n: '01', t: 'Nettoyez', d: 'Lavez la zone concernee a l\'eau propre.', ico: 'Ã°Å¸â€™Â§' },
+              { n: '02', t: 'Appliquez', d: 'Deposez une petite quantite de creme.', ico: 'Ã°Å¸Â§Â´' },
+              { n: '03', t: 'Repetez', d: 'Suivez la routine conseillee.', ico: 'Ã°Å¸â€Â' },
+              { n: '04', t: 'Observez', d: 'Constatez l\'amelioration.', ico: 'Ã¢Å“Â¨' },
             ].map(s => (
               <div key={s.n} className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
                 <div className="mb-2.5 flex items-center gap-2"><span className="text-lg">{s.ico}</span><span className="rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-black text-amber-600">ETAPE {s.n}</span></div>
@@ -515,10 +515,10 @@ export default function VerrueTkLanding() {
         </div>
       </LazySection>
 
-      {/* â•â• EXTRA IMAGES STRIP 3 â•â• */}
+      {/* Ã¢â€¢ÂÃ¢â€¢Â EXTRA IMAGES STRIP 3 Ã¢â€¢ÂÃ¢â€¢Â */}
       <ExtraImageStrip indices={[4, 5]}/>
 
-      {/* â•â• MID CTA â€” lazy â•â• */}
+      {/* Ã¢â€¢ÂÃ¢â€¢Â MID CTA Ã¢â‚¬â€ lazy Ã¢â€¢ÂÃ¢â€¢Â */}
       <LazySection className="relative overflow-hidden py-8 sm:py-10">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-50/60 via-white to-amber-50/50"/>
         <div className="pointer-events-none absolute -left-16 top-1/2 h-40 w-40 -translate-y-1/2 rounded-full bg-emerald-200/20 blur-3xl"/>
@@ -534,17 +534,17 @@ export default function VerrueTkLanding() {
               Je commande maintenant
             </span>
           </GlowBtn>
-          <p className="mt-3 text-[11px] text-neutral-400">Paiement a la livraison â€” Formulaire en 30 secondes</p>
+          <p className="mt-3 text-[11px] text-neutral-400">Paiement a la livraison Ã¢â‚¬â€ Formulaire en 30 secondes</p>
         </div>
       </LazySection>
 
-      {/* â•â• TESTIMONIALS â€” lazy â•â• */}
+      {/* Ã¢â€¢ÂÃ¢â€¢Â TESTIMONIALS Ã¢â‚¬â€ lazy Ã¢â€¢ÂÃ¢â€¢Â */}
       <LazySection className="border-y border-neutral-100 bg-neutral-50 py-10 sm:py-14">
         <div className="mx-auto max-w-6xl px-4">
           <div className="mb-6 flex flex-col items-center gap-1 sm:mb-8">
             <p className="text-[11px] font-semibold uppercase tracking-widest text-amber-600">Avis clients verifies</p>
             <h2 className="text-xl font-extrabold sm:text-2xl">+1 200 clients satisfaits</h2>
-            <div className="mt-1 flex items-center gap-1.5"><div className="flex gap-0.5">{[...Array(5)].map((_,i)=><Star key={i}/>)}</div><span className="text-xs font-bold text-neutral-700">4.8/5</span><span className="text-[11px] text-neutral-400">â€” 1 247 avis</span></div>
+            <div className="mt-1 flex items-center gap-1.5"><div className="flex gap-0.5">{[...Array(5)].map((_,i)=><Star key={i}/>)}</div><span className="text-xs font-bold text-neutral-700">4.8/5</span><span className="text-[11px] text-neutral-400">Ã¢â‚¬â€ 1 247 avis</span></div>
           </div>
         </div>
         <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 scrollbar-hide sm:justify-center sm:gap-4 sm:overflow-visible sm:px-0">
@@ -562,21 +562,21 @@ export default function VerrueTkLanding() {
         </div>
       </LazySection>
 
-      {/* â•â• GUARANTEE â€” lazy â•â• */}
+      {/* Ã¢â€¢ÂÃ¢â€¢Â GUARANTEE Ã¢â‚¬â€ lazy Ã¢â€¢ÂÃ¢â€¢Â */}
       <LazySection className="relative overflow-hidden py-10 sm:py-14">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-50/50 via-white to-emerald-50/30"/>
         <div className="pointer-events-none absolute -right-16 top-1/2 h-52 w-52 -translate-y-1/2 rounded-full bg-emerald-200/15 blur-3xl"/>
         <div className="relative mx-auto max-w-3xl px-4">
           <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-6 shadow-lg sm:p-8">
             <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-3xl shadow-sm">ðŸ›¡ï¸</div>
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-3xl shadow-sm">Ã°Å¸â€ºÂ¡Ã¯Â¸Â</div>
               <div>
                 <h3 className="mb-1 text-[15px] font-extrabold text-emerald-900 sm:text-base">Commandez en toute confiance</h3>
                 <p className="text-[12px] leading-relaxed text-emerald-700 sm:text-[13px]">Paiement uniquement a la livraison. Verifiez le colis avant de payer. Support 7j/7.</p>
               </div>
             </div>
             <div className="mt-5 grid grid-cols-3 gap-3">
-              {[{ ico: 'ðŸ“¦', t: 'Livraison securisee' },{ ico: 'ðŸ’°', t: 'Paiement reception' },{ ico: 'ðŸ“ž', t: 'Support 7j/7' }].map((g,i) => (
+              {[{ ico: 'Ã°Å¸â€œÂ¦', t: 'Livraison securisee' },{ ico: 'Ã°Å¸â€™Â°', t: 'Paiement reception' },{ ico: 'Ã°Å¸â€œÅ¾', t: 'Support 7j/7' }].map((g,i) => (
                 <div key={i} className="rounded-xl bg-white/80 p-3 text-center shadow-sm"><span className="text-xl">{g.ico}</span><p className="mt-1 text-[10px] font-bold text-emerald-800">{g.t}</p></div>
               ))}
             </div>
@@ -584,7 +584,7 @@ export default function VerrueTkLanding() {
         </div>
       </LazySection>
 
-      {/* â•â• FAQ â€” lazy â•â• */}
+      {/* Ã¢â€¢ÂÃ¢â€¢Â FAQ Ã¢â‚¬â€ lazy Ã¢â€¢ÂÃ¢â€¢Â */}
       <LazySection className="border-y border-neutral-100 bg-neutral-50 py-10 sm:py-14">
         <div className="mx-auto max-w-2xl px-4">
           <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-widest text-amber-600">FAQ</p>
@@ -608,7 +608,7 @@ export default function VerrueTkLanding() {
         </div>
       </LazySection>
 
-      {/* â•â• FINAL CTA â€” lazy â•â• */}
+      {/* Ã¢â€¢ÂÃ¢â€¢Â FINAL CTA Ã¢â‚¬â€ lazy Ã¢â€¢ÂÃ¢â€¢Â */}
       <LazySection className="relative overflow-hidden py-14 sm:py-20">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900"/>
         <div className="pointer-events-none absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-500/10 blur-[100px]"/>
@@ -624,49 +624,49 @@ export default function VerrueTkLanding() {
           <GlowBtn onClick={open} variant="gold">
             <span className="relative z-10 flex items-center gap-2">
               <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-900 opacity-40"/><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-neutral-900"/></span>
-              Commander ici â€” {fmt(PRICES[1])}
+              Commander ici Ã¢â‚¬â€ {fmt(PRICES[1])}
             </span>
           </GlowBtn>
-          <p className="mt-3 text-[11px] text-neutral-500">Aucun compte requis Â· Formulaire en 30 secondes</p>
+          <p className="mt-3 text-[11px] text-neutral-500">Aucun compte requis Ã‚Â· Formulaire en 30 secondes</p>
         </div>
       </LazySection>
 
-      {/* â•â• FOOTER â•â• */}
+      {/* Ã¢â€¢ÂÃ¢â€¢Â FOOTER Ã¢â€¢ÂÃ¢â€¢Â */}
       <footer className="border-t border-neutral-100 bg-white pb-24 pt-6 sm:pb-8">
         <div className="mx-auto max-w-4xl px-4">
           <div className="flex flex-wrap justify-center gap-6 text-center">
-            {[{ ico: 'ðŸšš', t: 'Livraison rapide', d: '24h Abidjan' },{ ico: 'ðŸ’°', t: 'Paiement livraison', d: 'Aucun risque' },{ ico: 'ðŸ“ž', t: 'Support client', d: '7j/7' },{ ico: 'ðŸ›¡ï¸', t: 'Commande securisee', d: 'Verifiez avant de payer' }].map((f,i)=>(
+            {[{ ico: 'Ã°Å¸Å¡Å¡', t: 'Livraison rapide', d: '24h Abidjan' },{ ico: 'Ã°Å¸â€™Â°', t: 'Paiement livraison', d: 'Aucun risque' },{ ico: 'Ã°Å¸â€œÅ¾', t: 'Support client', d: '7j/7' },{ ico: 'Ã°Å¸â€ºÂ¡Ã¯Â¸Â', t: 'Commande securisee', d: 'Verifiez avant de payer' }].map((f,i)=>(
               <div key={i} className="w-[140px]"><span className="text-xl">{f.ico}</span><p className="mt-1 text-[11px] font-bold text-neutral-700">{f.t}</p><p className="text-[10px] text-neutral-400">{f.d}</p></div>
             ))}
           </div>
-          <p className="mt-6 text-center text-[10px] text-neutral-300">Â© 2026 Creme Anti-Verrue TK Â· Cote d'Ivoire</p>
+          <p className="mt-6 text-center text-[10px] text-neutral-300">Ã‚Â© 2026 Creme Anti-Verrue TK Ã‚Â· Cote d'Ivoire</p>
         </div>
       </footer>
 
-      {/* â•â• STICKY BAR â•â• */}
+      {/* Ã¢â€¢ÂÃ¢â€¢Â STICKY BAR Ã¢â€¢ÂÃ¢â€¢Â */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200/80 bg-white/95 backdrop-blur-lg">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5 sm:py-3">
           <img src={I.hero} alt="" className="h-11 w-11 shrink-0 rounded-lg border border-neutral-100 object-cover sm:h-12 sm:w-12"/>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-bold sm:text-sm">Creme Anti-Verrue TK</p>
-            <p className="text-[11px] text-neutral-400">{fmt(PRICES[1])} Â· Paiement a la livraison</p>
+            <p className="text-[11px] text-neutral-400">{fmt(PRICES[1])} Ã‚Â· Paiement a la livraison</p>
           </div>
           <button onClick={open} className="shrink-0 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-300 px-4 py-2.5 text-[13px] font-extrabold text-neutral-900 shadow-[0_4px_16px_rgba(251,191,36,.35)] transition hover:shadow-[0_6px_24px_rgba(251,191,36,.5)] active:scale-[.97] sm:px-6 sm:text-sm">Commander</button>
         </div>
       </div>
 
-      {/* â•â• LIVE TOAST â•â• */}
+      {/* Ã¢â€¢ÂÃ¢â€¢Â LIVE TOAST Ã¢â€¢ÂÃ¢â€¢Â */}
       {toast && (
         <div className={`${toast.visible ? 'toast-in' : 'toast-out'} fixed bottom-20 left-3 z-50 flex max-w-[300px] items-center gap-2.5 rounded-xl border border-neutral-100 bg-white/95 px-3.5 py-3 shadow-2xl backdrop-blur sm:bottom-20 sm:left-5`}>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-sm text-white">âœ“</div>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-sm text-white">Ã¢Å“â€œ</div>
           <div>
             <p className="text-[12px] font-bold text-neutral-800">{toast.n} vient de commander</p>
-            <p className="text-[10px] text-neutral-400">Creme Anti-Verrue Â· il y a {toast.t}</p>
+            <p className="text-[10px] text-neutral-400">Creme Anti-Verrue Ã‚Â· il y a {toast.t}</p>
           </div>
         </div>
       )}
 
-      {/* â•â• EXIT INTENT â•â• */}
+      {/* Ã¢â€¢ÂÃ¢â€¢Â EXIT INTENT Ã¢â€¢ÂÃ¢â€¢Â */}
       {exitPopup && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) setExitPopup(false); }}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"/>
@@ -674,7 +674,7 @@ export default function VerrueTkLanding() {
             <button onClick={() => setExitPopup(false)} className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-neutral-100 text-neutral-400 transition hover:bg-neutral-200">
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
-            <span className="mb-3 inline-block text-4xl">âš¡</span>
+            <span className="mb-3 inline-block text-4xl">Ã¢Å¡Â¡</span>
             <h3 className="mb-1 text-lg font-extrabold">Attendez !</h3>
             <p className="mb-4 text-[13px] text-neutral-500">Ne partez pas sans votre creme anti-verrue. Commandez maintenant, payez a la livraison.</p>
             <button onClick={open} className="flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-neutral-800 active:scale-[.98]">
@@ -686,7 +686,7 @@ export default function VerrueTkLanding() {
         </div>
       )}
 
-      {/* â•â• MODAL FORM â•â• */}
+      {/* Ã¢â€¢ÂÃ¢â€¢Â MODAL FORM Ã¢â€¢ÂÃ¢â€¢Â */}
       {modal && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4" onClick={e => { if (e.target === e.currentTarget) setModal(false); }}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"/>
@@ -705,9 +705,9 @@ export default function VerrueTkLanding() {
             <div className="h-1 bg-neutral-100"><div className="h-full w-4/5 bg-gradient-to-r from-amber-400 to-amber-500"/></div>
             <form onSubmit={submit} className="space-y-2.5 p-3 pb-4 sm:space-y-3 sm:p-4 sm:pb-5">
               {[
-                { icon: 'ðŸ‘¤', label: 'Nom complet', val: name, set: setName, ph: 'Ex. Kouadio Fernand', type: 'text' as const },
-                { icon: 'ðŸ“', label: 'Ville / Commune', val: city, set: setCity, ph: 'Ex. Abidjan â€” Yopougon', type: 'text' as const },
-                { icon: 'ðŸ“±', label: 'Telephone', val: phone, set: setPhone, ph: 'Ex. 07 00 00 00 00', type: 'tel' as const },
+                { icon: 'Ã°Å¸â€˜Â¤', label: 'Nom complet', val: name, set: setName, ph: 'Ex. Kouadio Fernand', type: 'text' as const },
+                { icon: 'Ã°Å¸â€œÂ', label: 'Ville / Commune', val: city, set: setCity, ph: 'Ex. Abidjan Ã¢â‚¬â€ Yopougon', type: 'text' as const },
+                { icon: 'Ã°Å¸â€œÂ±', label: 'Telephone', val: phone, set: setPhone, ph: 'Ex. 07 00 00 00 00', type: 'tel' as const },
               ].map(f => (
                 <label key={f.label} className="block">
                   <span className="mb-0.5 block text-[11px] font-bold text-neutral-700 sm:mb-1 sm:text-[12px]">{f.label} <span className="text-red-500">*</span></span>

@@ -5,7 +5,7 @@ import axios from 'axios';
 import DynamicLanding from './DynamicLanding';
 import DynamicLandingV2 from './DynamicLandingV2';
 
-const API_URL = ((import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api')).trim()).replace(/\/api$/, '/api');
+const API_URL = '/api';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
   state = { error: null as string | null };

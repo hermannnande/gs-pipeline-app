@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import axios from 'axios';
 
-const API_URL = ((import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api')).trim()).replace(/\/api$/, '/api');
+const API_URL = '/api';
 declare global { interface Window { fbq: any; _fbq: any; } }
 
 function initMetaPixel(pixelId: string) {
@@ -143,9 +143,9 @@ export default function DynamicThankYou() {
           {/* Header */}
           <div className={`relative ${T.headerBg} px-6 py-10 text-center text-white`}>
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
-              <span className="confetti-1 absolute left-[20%] top-4 text-lg">ðŸŽ‰</span>
-              <span className="confetti-2 absolute right-[25%] top-6 text-base">âœ¨</span>
-              <span className="confetti-3 absolute left-[60%] top-3 text-lg">ðŸŽŠ</span>
+              <span className="confetti-1 absolute left-[20%] top-4 text-lg">Ã°Å¸Å½â€°</span>
+              <span className="confetti-2 absolute right-[25%] top-6 text-base">Ã¢Å“Â¨</span>
+              <span className="confetti-3 absolute left-[60%] top-3 text-lg">Ã°Å¸Å½Å </span>
             </div>
 
             {data?.heroImg && (

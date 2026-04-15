@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
 
-const API_URL = ((import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api')).trim()).replace(/\/api$/, '/api');
+const API_URL = '/api';
 
 function getCompanySlug(): string {
   const params = new URLSearchParams(window.location.search);
@@ -20,22 +20,22 @@ interface Product {
 }
 
 const VILLES_CI = [
-  'Abidjan','Yamoussoukro','BouakÃ©','Daloa','San Pedro','Korhogo','Man',
-  'Gagnoa','Divo','SoubrÃ©','Abengourou','Anyama','Bingerville','Grand-Bassam',
-  'Dabou','AdzopÃ©','Agboville','Issia','Sinfra','DuÃ©kouÃ©','BouaflÃ©','Dimbokro',
-  'Toumodi','TiÃ©bissou','Bonon','Beoumi','Bocanda','Gabiadji','GonatÃ©',
-  'GuibÃ©roua','HirÃ©','MÃ©agui','Yabayo','OumÃ©','Lakota','Sassandra','Tabou',
-  'FerkessÃ©dougou','Boundiali','OdiennÃ©','SÃ©guÃ©la','Mankono','Katiola',
-  'Bondoukou','Bouna','Tanda','AgnibilÃ©krou','BettiÃ©','DananÃ©','Guiglo',
-  'Bangolo','ZuÃ©noula','Vavoua','TiassalÃ©','Jacqueville','Taabo',
+  'Abidjan','Yamoussoukro','BouakÃƒÂ©','Daloa','San Pedro','Korhogo','Man',
+  'Gagnoa','Divo','SoubrÃƒÂ©','Abengourou','Anyama','Bingerville','Grand-Bassam',
+  'Dabou','AdzopÃƒÂ©','Agboville','Issia','Sinfra','DuÃƒÂ©kouÃƒÂ©','BouaflÃƒÂ©','Dimbokro',
+  'Toumodi','TiÃƒÂ©bissou','Bonon','Beoumi','Bocanda','Gabiadji','GonatÃƒÂ©',
+  'GuibÃƒÂ©roua','HirÃƒÂ©','MÃƒÂ©agui','Yabayo','OumÃƒÂ©','Lakota','Sassandra','Tabou',
+  'FerkessÃƒÂ©dougou','Boundiali','OdiennÃƒÂ©','SÃƒÂ©guÃƒÂ©la','Mankono','Katiola',
+  'Bondoukou','Bouna','Tanda','AgnibilÃƒÂ©krou','BettiÃƒÂ©','DananÃƒÂ©','Guiglo',
+  'Bangolo','ZuÃƒÂ©noula','Vavoua','TiassalÃƒÂ©','Jacqueville','Taabo',
 ];
 
 const VILLES_BF = [
   'Ouagadougou','Bobo-Dioulasso','Koudougou','Ouahigouya','Banfora',
-  'DÃ©dougou','Kaya','Tenkodogo','Fada N\'Gourma','ZiniarÃ©',
-  'Manga','Gaoua','Dori','Djibo','RÃ©o','LÃ©o','PÃ´','Yako',
+  'DÃƒÂ©dougou','Kaya','Tenkodogo','Fada N\'Gourma','ZiniarÃƒÂ©',
+  'Manga','Gaoua','Dori','Djibo','RÃƒÂ©o','LÃƒÂ©o','PÃƒÂ´','Yako',
   'Kongoussi','Boulsa','Nouna','Tougan','Solenzo','Boromo',
-  'HoundÃ©','Orodara','DiÃ©bougou','Kombissiri','KoupÃ©la',
+  'HoundÃƒÂ©','Orodara','DiÃƒÂ©bougou','Kombissiri','KoupÃƒÂ©la',
 ];
 
 function getVilles(): string[] {
@@ -128,8 +128,8 @@ export default function OrderForm() {
 
     if (!selectedProduct) return;
     if (!customerName.trim()) { setFormError('Veuillez entrer votre nom.'); return; }
-    if (!customerPhone.trim()) { setFormError('Veuillez entrer votre numÃ©ro de tÃ©lÃ©phone.'); return; }
-    if (!customerCity.trim()) { setFormError('Veuillez sÃ©lectionner votre ville.'); return; }
+    if (!customerPhone.trim()) { setFormError('Veuillez entrer votre numÃƒÂ©ro de tÃƒÂ©lÃƒÂ©phone.'); return; }
+    if (!customerCity.trim()) { setFormError('Veuillez sÃƒÂ©lectionner votre ville.'); return; }
 
     setSubmitting(true);
     try {
@@ -146,7 +146,7 @@ export default function OrderForm() {
       setSuccess(true);
       setOrderRef(res.data.orderReference || '');
     } catch (err: any) {
-      setFormError(err.response?.data?.error || 'Une erreur est survenue. Veuillez rÃ©essayer.');
+      setFormError(err.response?.data?.error || 'Une erreur est survenue. Veuillez rÃƒÂ©essayer.');
     } finally {
       setSubmitting(false);
     }
@@ -245,7 +245,7 @@ export default function OrderForm() {
       <footer className="bg-white border-t border-gray-100 py-6 mt-8">
         <div className="max-w-6xl mx-auto px-4 text-center">
           <p className="text-gray-400 text-sm">
-            Paiement Ã  la livraison &middot; Livraison partout {getCompanySlug() === 'bf' ? 'au Burkina Faso' : 'en CÃ´te d\'Ivoire'}
+            Paiement ÃƒÂ  la livraison &middot; Livraison partout {getCompanySlug() === 'bf' ? 'au Burkina Faso' : 'en CÃƒÂ´te d\'Ivoire'}
           </p>
         </div>
       </footer>
@@ -284,13 +284,13 @@ export default function OrderForm() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2" style={{ fontFamily: 'Poppins, sans-serif' }}>Commande envoyÃ©e !</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2" style={{ fontFamily: 'Poppins, sans-serif' }}>Commande envoyÃƒÂ©e !</h2>
                 <p className="text-gray-500 mb-6">
-                  Votre commande de <strong>{selectedProduct.nom}</strong> a Ã©tÃ© enregistrÃ©e. Notre Ã©quipe vous contactera trÃ¨s bientÃ´t.
+                  Votre commande de <strong>{selectedProduct.nom}</strong> a ÃƒÂ©tÃƒÂ© enregistrÃƒÂ©e. Notre ÃƒÂ©quipe vous contactera trÃƒÂ¨s bientÃƒÂ´t.
                 </p>
                 {orderRef && (
                   <div className="bg-gray-50 rounded-2xl p-4 mb-6 inline-block">
-                    <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">RÃ©fÃ©rence</p>
+                    <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">RÃƒÂ©fÃƒÂ©rence</p>
                     <p className="text-sm font-mono text-gray-700">{orderRef.slice(0, 8).toUpperCase()}</p>
                   </div>
                 )}
@@ -344,7 +344,7 @@ export default function OrderForm() {
                 <div className="p-5 space-y-4">
                   {/* Quantity */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">QuantitÃ©</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">QuantitÃƒÂ©</label>
                     <div className="flex items-center gap-3">
                       <button
                         type="button"
@@ -366,12 +366,12 @@ export default function OrderForm() {
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         {selectedProduct.prix2Unites && (
                           <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded-lg">
-                            2 unitÃ©s : {formatPrice(selectedProduct.prix2Unites)}
+                            2 unitÃƒÂ©s : {formatPrice(selectedProduct.prix2Unites)}
                           </span>
                         )}
                         {selectedProduct.prix3Unites && (
                           <span className="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-lg">
-                            3+ unitÃ©s : {formatPrice(selectedProduct.prix3Unites)}
+                            3+ unitÃƒÂ©s : {formatPrice(selectedProduct.prix3Unites)}
                           </span>
                         )}
                       </div>
@@ -394,10 +394,10 @@ export default function OrderForm() {
                     />
                   </div>
 
-                  {/* TÃ©lÃ©phone */}
+                  {/* TÃƒÂ©lÃƒÂ©phone */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                      TÃ©lÃ©phone <span className="text-red-400">*</span>
+                      TÃƒÂ©lÃƒÂ©phone <span className="text-red-400">*</span>
                     </label>
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium select-none">+225</span>
@@ -441,7 +441,7 @@ export default function OrderForm() {
                       {showCityDropdown && (
                         <div className="absolute z-30 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl max-h-40 overflow-y-auto">
                           {filteredCities.length === 0 ? (
-                            <div className="p-3 text-center text-gray-400 text-sm">Aucune ville trouvÃ©e</div>
+                            <div className="p-3 text-center text-gray-400 text-sm">Aucune ville trouvÃƒÂ©e</div>
                           ) : (
                             filteredCities.map(v => (
                               <button
@@ -521,7 +521,7 @@ export default function OrderForm() {
                     )}
                   </button>
                   <p className="text-center text-xs text-gray-400 mt-2">
-                    Paiement Ã  la livraison
+                    Paiement ÃƒÂ  la livraison
                   </p>
                 </div>
               </form>
