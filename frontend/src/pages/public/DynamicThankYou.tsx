@@ -143,9 +143,9 @@ export default function DynamicThankYou() {
           {/* Header */}
           <div className={`relative ${T.headerBg} px-6 py-10 text-center text-white`}>
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
-              <span className="confetti-1 absolute left-[20%] top-4 text-lg">Ã°Å¸Å½â€°</span>
-              <span className="confetti-2 absolute right-[25%] top-6 text-base">Ã¢Å“Â¨</span>
-              <span className="confetti-3 absolute left-[60%] top-3 text-lg">Ã°Å¸Å½Å </span>
+              <span className="confetti-1 absolute left-[20%] top-4 text-lg">🎉</span>
+              <span className="confetti-2 absolute right-[25%] top-6 text-base">✨</span>
+              <span className="confetti-3 absolute left-[60%] top-3 text-lg">🎊</span>
             </div>
 
             {data?.heroImg && (
