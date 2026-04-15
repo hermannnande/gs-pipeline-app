@@ -2,7 +2,7 @@ import { createHash } from 'crypto';
 
 const DEFAULT_PIXEL_ID = process.env.META_PIXEL_ID || '';
 const DEFAULT_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN || '';
-const API_VERSION = 'v21.0';
+const API_VERSION = 'v22.0';
 
 function getTokenForPixel(pixelId) {
   const tokens = process.env.META_PIXEL_TOKENS || '';
