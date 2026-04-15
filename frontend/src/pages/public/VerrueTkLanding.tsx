@@ -5,10 +5,10 @@ import axios from 'axios';
 
 const API_URL = '/api';
 const TARGET_CODE = 'VERRUE_TK';
-const PRICES: Record<number, number> = { 1: 9900, 2: 14900, 3: 24900 };
+const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
 const QTY_OPTS = [
   { v: 1, label: '1 boite', sub: '9 900 FCFA', save: '' },
-  { v: 2, label: '2 boites', sub: '14 900 FCFA', tag: 'Populaire', save: 'Economisez 4 900 F' },
+  { v: 2, label: '2 boites', sub: '16 900 FCFA', tag: 'Populaire', save: 'Economisez 2 900 F' },
   { v: 3, label: '3 boites', sub: '24 900 FCFA', tag: 'Meilleure offre', save: 'Economisez 4 800 F' },
 ];
 
