@@ -132,6 +132,7 @@ router.post('/order', async (req, res) => {
       const fbc = req.body.fbc || null;
       const fbp = req.body.fbp || null;
       const sourceUrl = req.body.sourceUrl || null;
+      const metaPixelId = req.body.metaPixelId || null;
 
       await sendPurchaseEvent({
         orderId: order.id,
@@ -148,6 +149,7 @@ router.post('/order', async (req, res) => {
         fbc,
         fbp,
         sourceUrl,
+        pixelId: metaPixelId,
       });
     } catch (metaErr) {
       console.error('Erreur Meta CAPI (non bloquante):', metaErr);

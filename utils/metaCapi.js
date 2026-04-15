@@ -1,8 +1,20 @@
 import { createHash } from 'crypto';
 
-const PIXEL_ID = process.env.META_PIXEL_ID || '';
-const ACCESS_TOKEN = process.env.META_ACCESS_TOKEN || '';
+const DEFAULT_PIXEL_ID = process.env.META_PIXEL_ID || '';
+const DEFAULT_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN || '';
 const API_VERSION = 'v21.0';
+
+function getTokenForPixel(pixelId) {
+  const tokens = process.env.META_PIXEL_TOKENS || '';
+  if (tokens) {
+    for (const pair of tokens.split(',')) {
+      const [pid, tok] = pair.split(':');
+      if (pid?.trim() === pixelId) return tok?.trim() || '';
+    }
+  }
+  if (pixelId === DEFAULT_PIXEL_ID) return DEFAULT_ACCESS_TOKEN;
+  return DEFAULT_ACCESS_TOKEN;
+}
 
 function sha256(value) {
   if (!value) return null;
@@ -21,8 +33,11 @@ function normalizePhone(phone) {
   return p;
 }
 
-export async function sendMetaEvent({ eventName, eventId, sourceUrl, userData = {}, customData = {}, actionSource = 'website' }) {
-  if (!PIXEL_ID || !ACCESS_TOKEN) {
+export async function sendMetaEvent({ eventName, eventId, sourceUrl, userData = {}, customData = {}, actionSource = 'website', pixelId: overridePixelId } = {}) {
+  const pixelId = overridePixelId || DEFAULT_PIXEL_ID;
+  const accessToken = getTokenForPixel(pixelId);
+
+  if (!pixelId || !accessToken) {
     console.warn('[Meta CAPI] PIXEL_ID ou ACCESS_TOKEN manquant — event ignore:', eventName);
     return null;
   }
@@ -56,7 +71,7 @@ export async function sendMetaEvent({ eventName, eventId, sourceUrl, userData = 
   const payload = { data: [eventData] };
 
   try {
-    const url = `https://graph.facebook.com/${API_VERSION}/${PIXEL_ID}/events?access_token=${ACCESS_TOKEN}`;
+    const url = `https://graph.facebook.com/${API_VERSION}/${pixelId}/events?access_token=${accessToken}`;
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -78,7 +93,7 @@ export async function sendMetaEvent({ eventName, eventId, sourceUrl, userData = 
   }
 }
 
-export async function sendPurchaseEvent({ orderId, orderRef, amount, currency = 'XOF', productName, productCode, quantity, customerPhone, customerCity, clientIp, userAgent, fbc, fbp, sourceUrl }) {
+export async function sendPurchaseEvent({ orderId, orderRef, amount, currency = 'XOF', productName, productCode, quantity, customerPhone, customerCity, clientIp, userAgent, fbc, fbp, sourceUrl, pixelId }) {
   return sendMetaEvent({
     eventName: 'Purchase',
     eventId: `purchase_${orderRef || orderId}`,
@@ -100,5 +115,6 @@ export async function sendPurchaseEvent({ orderId, orderRef, amount, currency = 
       num_items: quantity,
       order_id: orderRef || String(orderId),
     },
+    pixelId,
   });
 }

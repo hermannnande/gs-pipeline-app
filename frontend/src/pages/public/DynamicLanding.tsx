@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '/api');
-const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID || '';
 const fmt = (v: number) => v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
 const pad = (n: number) => String(n).padStart(2, '0');
 const co = () => new URLSearchParams(window.location.search).get('company') || 'ci';
@@ -103,6 +102,7 @@ interface TemplateConfig {
     stats?: { n: string; l: string }[];
   };
   colors?: { theme?: string; primary?: string; accent?: string };
+  metaPixelId?: string;
   thankYouUrl?: string;
 }
 
@@ -232,8 +232,8 @@ export default function DynamicLanding() {
   useEffect(() => {
     if (!cfg || pixelFired.current) return;
     pixelFired.current = true;
-    if (META_PIXEL_ID) {
-      initMetaPixel(META_PIXEL_ID);
+    if (cfg.metaPixelId) {
+      initMetaPixel(cfg.metaPixelId);
       window.fbq?.('track', 'ViewContent', {
         content_name: cfg.title,
         content_ids: [cfg.productCode],
@@ -287,7 +287,7 @@ export default function DynamicLanding() {
 
   const open = useCallback(() => {
     setFormErr(''); setName(''); setCity(''); setPhone(''); setQty(1); setModal(true); setExitPopup(false);
-    if (META_PIXEL_ID && window.fbq && cfg) {
+    if (cfg?.metaPixelId && window.fbq) {
       window.fbq('track', 'AddToCart', {
         content_name: cfg.title, content_ids: [cfg.productCode], content_type: 'product',
         value: cfg.prices?.[1] || 0, currency: 'XOF',
@@ -302,7 +302,7 @@ export default function DynamicLanding() {
     if (!phone.trim()) return setFormErr('Entrez votre numero de telephone.');
     setSending(true);
 
-    if (META_PIXEL_ID && window.fbq && cfg) {
+    if (cfg?.metaPixelId && window.fbq) {
       window.fbq('track', 'InitiateCheckout', {
         content_name: cfg.title, content_ids: [cfg.productCode], content_type: 'product',
         value: cfg.prices?.[qty] || cfg.prices?.[1] || 0, currency: 'XOF', num_items: qty,
@@ -324,6 +324,7 @@ export default function DynamicLanding() {
         company, productId: prod.id, customerName: name.trim(), customerPhone: phone.trim(),
         customerCity: city.trim(), quantity: qty,
         fbc: fbc || undefined, fbp: fbp || undefined, sourceUrl: window.location.href,
+        metaPixelId: cfg?.metaPixelId || undefined,
       });
       const ref = res.data?.orderReference || '';
       const thankUrl = cfg?.thankYouUrl || `/landing/${slug}/merci`;

@@ -3,8 +3,6 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import axios from 'axios';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '/api');
-const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID || '';
-
 declare global { interface Window { fbq: any; _fbq: any; } }
 
 function initMetaPixel(pixelId: string) {
@@ -25,6 +23,7 @@ interface TYData {
   slug: string;
   productCode: string;
   price: number;
+  metaPixelId: string;
 }
 
 export default function DynamicThankYouV2() {
@@ -49,6 +48,7 @@ export default function DynamicThankYouV2() {
           slug: t.slug,
           productCode: cfg.productCode || '',
           price: cfg.prices?.[1] || 0,
+          metaPixelId: cfg.metaPixelId || '',
         });
       })
       .catch(() => {})
@@ -58,8 +58,8 @@ export default function DynamicThankYouV2() {
   useEffect(() => {
     if (!data || purchaseFired.current) return;
     purchaseFired.current = true;
-    if (META_PIXEL_ID) {
-      initMetaPixel(META_PIXEL_ID);
+    if (data.metaPixelId) {
+      initMetaPixel(data.metaPixelId);
       window.fbq?.('track', 'Purchase', {
         content_name: data.title,
         content_ids: [data.productCode],
