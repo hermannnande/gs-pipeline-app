@@ -201,6 +201,15 @@ export default function DynamicLandingV2() {
   }, [cfg, company, product]);
 
   useEffect(() => {
+    if (!cfg?.images?.hero) return;
+    const heroSrc = optimImg(cfg.images.hero, 1200, 80);
+    const link = document.createElement('link');
+    link.rel = 'preload'; link.as = 'image'; link.href = heroSrc; link.type = 'image/webp';
+    document.head.appendChild(link);
+    return () => { document.head.removeChild(link); };
+  }, [cfg?.images?.hero]);
+
+  useEffect(() => {
     if (!cfg || pixelFired.current) return;
     pixelFired.current = true;
     if (cfg.metaPixelId) {
@@ -419,15 +428,18 @@ export default function DynamicLandingV2() {
           {/* Gallery */}
           <div className="fade-up">
             <div className="relative aspect-square overflow-hidden rounded-3xl bg-white shadow-xl shadow-neutral-200/50" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-              {gallery.map((src, i) => (
-                isVideo(src) ? (
-                  <video key={i} src={src} autoPlay loop muted playsInline className={`absolute inset-0 h-full w-full max-w-full object-cover transition-all duration-700 ease-out ${i === gi ? 'opacity-100 scale-100' : 'opacity-0 scale-[1.03]'}`}/>
+              {gallery.map((src, i) => {
+                const active = i === gi;
+                const near = Math.abs(i - gi) <= 1 || (gi === 0 && i === gallery.length - 1) || (gi === gallery.length - 1 && i === 0);
+                const cls = `absolute inset-0 h-full w-full max-w-full object-cover transition-all duration-700 ease-out ${active ? 'opacity-100 scale-100' : 'opacity-0 scale-[1.03]'}`;
+                return isVideo(src) ? (
+                  <video key={i} src={near ? src : undefined} autoPlay={active} loop muted playsInline preload="none" className={cls}/>
                 ) : isGif(src) ? (
-                  <img key={i} src={src} alt="" className={`absolute inset-0 h-full w-full max-w-full object-cover transition-all duration-700 ease-out ${i === gi ? 'opacity-100 scale-100' : 'opacity-0 scale-[1.03]'}`} loading={i === 0 ? 'eager' : 'lazy'}/>
+                  <img key={i} src={near ? src : undefined} alt="" className={cls} loading={i === 0 ? 'eager' : 'lazy'}/>
                 ) : (
-                  <OptimImg key={i} src={src} alt={i === 0 ? cfg.title : ''} w={1200} q={80} eager={i === 0} sizes="(max-width:768px) 100vw, 50vw" className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out ${i === gi ? '!opacity-100 scale-100' : '!opacity-0 scale-[1.03]'}`}/>
-                )
-              ))}
+                  <OptimImg key={i} src={src} alt={i === 0 ? cfg.title : ''} w={i === 0 ? 1200 : 800} q={i === 0 ? 80 : 70} eager={i === 0} sizes="(max-width:768px) 100vw, 50vw" className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out ${active ? '!opacity-100 scale-100' : '!opacity-0 scale-[1.03]'}`}/>
+                );
+              })}
               {cfg.badge && <span className="absolute left-4 top-4 z-10 rounded-full bg-red-500 px-3.5 py-1.5 text-[11px] font-black text-white shadow-lg shadow-red-200/50">{cfg.badge}</span>}
               {cfg.discount && <span className="absolute right-4 top-4 z-10 rounded-full px-3 py-1.5 text-[11px] font-black text-white shadow-lg" style={{ backgroundColor: c.p }}>{cfg.discount}</span>}
               {gallery.length > 1 && (
@@ -450,7 +462,7 @@ export default function DynamicLandingV2() {
               <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                 {gallery.map((src, i) => (
                   <button key={i} onClick={() => goSlide(i)} className={`h-14 w-14 shrink-0 overflow-hidden rounded-xl border-2 transition-all sm:h-20 sm:w-20 ${i === gi ? 'shadow-md' : 'border-transparent opacity-50 hover:opacity-100'}`} style={i === gi ? { borderColor: c.p, boxShadow: `0 0 0 2px ${c.p}33` } : undefined}>
-                    {isVideo(src) ? <video src={src} muted className="h-full w-full max-w-full object-cover"/> : isGif(src) ? <img src={src} alt="" className="h-full w-full max-w-full object-cover"/> : <OptimImg src={src} w={160} q={60} className="h-full w-full object-cover"/>}
+                    {isVideo(src) ? <div className="flex h-full w-full items-center justify-center bg-neutral-200"><svg className="h-5 w-5 text-neutral-500" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div> : isGif(src) ? <img src={src} alt="" className="h-full w-full max-w-full object-cover" loading="lazy"/> : <OptimImg src={src} w={160} q={50} className="h-full w-full object-cover"/>}
                   </button>
                 ))}
               </div>
@@ -481,7 +493,7 @@ export default function DynamicLandingV2() {
             {cfg.images.trustStrip && cfg.images.trustStrip.length > 0 && (
               <div className="mt-4 flex items-center gap-3 overflow-x-auto scrollbar-hide">
                 {cfg.images.trustStrip.map((src, i) => (
-                  <OptimImg key={i} src={src} w={112} q={60} className="h-12 w-12 shrink-0 rounded-xl border border-neutral-100 bg-white object-cover shadow-sm sm:h-14 sm:w-14"/>
+                  <OptimImg key={i} src={src} w={80} q={50} className="h-12 w-12 shrink-0 rounded-xl border border-neutral-100 bg-white object-cover shadow-sm sm:h-14 sm:w-14"/>
                 ))}
                 <span className="shrink-0 text-[11px] font-semibold text-neutral-400">+94 350 clients</span>
               </div>
@@ -552,7 +564,7 @@ export default function DynamicLandingV2() {
                 <div key={i} className="group overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl">
                   {cfg.images.lifestyle?.[i] && (
                     <div className="h-40 overflow-hidden sm:h-48">
-                      <OptimImg src={cfg.images.lifestyle[i]} w={600} q={70} sizes="(max-width:640px) 100vw, 33vw" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"/>
+                      <OptimImg src={cfg.images.lifestyle[i]} w={400} q={60} sizes="(max-width:640px) 100vw, 33vw" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"/>
                     </div>
                   )}
                   <div className="p-5">
@@ -579,7 +591,7 @@ export default function DynamicLandingV2() {
               {cfg.sections.solutionPoints.map((s, i) => (
                 <div key={i} className="group flex flex-col gap-3 rounded-2xl border bg-white p-4 shadow-sm transition-all hover:shadow-lg min-[400px]:flex-row min-[400px]:gap-4 sm:p-5" style={{ borderColor: `${c.p}15` }}>
                   {s.img ? (
-                    <OptimImg src={s.img} w={192} q={70} className="h-32 w-full shrink-0 rounded-2xl border border-neutral-100 object-cover shadow-sm min-[400px]:h-20 min-[400px]:w-20 sm:h-24 sm:w-24"/>
+                    <OptimImg src={s.img} w={160} q={60} className="h-32 w-full shrink-0 rounded-2xl border border-neutral-100 object-cover shadow-sm min-[400px]:h-20 min-[400px]:w-20 sm:h-24 sm:w-24"/>
                   ) : (
                     <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl" style={{ backgroundColor: `${c.p}10` }}>{s.ico}</span>
                   )}
@@ -629,7 +641,7 @@ export default function DynamicLandingV2() {
                     <span className="flex h-10 w-10 items-center justify-center rounded-xl text-lg font-black" style={{ backgroundColor: `${c.p}25`, color: c.p }}>{s.n}</span>
                     {s.ico && <span className="text-2xl">{s.ico}</span>}
                   </div>
-                  {s.img && <OptimImg src={s.img} w={400} q={70} className="mb-3 h-32 w-full rounded-xl object-cover"/>}
+                  {s.img && <OptimImg src={s.img} w={300} q={60} className="mb-3 h-32 w-full rounded-xl object-cover"/>}
                   <h3 className="text-[15px] font-bold text-white">{s.title}</h3>
                   <p className="mt-1.5 text-[13px] leading-relaxed text-neutral-400">{s.desc}</p>
                 </div>
@@ -652,7 +664,7 @@ export default function DynamicLandingV2() {
               {bundles.map((b, i) => (
                 <button key={i} onClick={() => open(b.v)} className={`group relative overflow-hidden rounded-2xl border-2 p-4 text-left transition-all hover:-translate-y-1 hover:shadow-xl sm:p-5 ${b.tag ? 'shadow-lg' : 'border-neutral-200 bg-white shadow-sm hover:border-neutral-300'}`} style={b.tag ? { borderColor: c.p, backgroundColor: `${c.p}08`, boxShadow: `0 0 0 2px ${c.p}20, 0 10px 15px -3px rgba(0,0,0,.1)` } : undefined}>
                   {b.tag && <span className="absolute -right-1 -top-1 rounded-bl-xl rounded-tr-xl px-2.5 py-0.5 text-[9px] font-black text-white shadow-md sm:px-3 sm:py-1 sm:text-[10px]" style={{ backgroundColor: c.p }}>{b.tag}</span>}
-                  {b.img && <OptimImg src={b.img} w={400} q={70} className="mb-3 hidden h-28 w-full rounded-xl object-cover sm:block"/>}
+                  {b.img && <OptimImg src={b.img} w={300} q={60} className="mb-3 hidden h-28 w-full rounded-xl object-cover sm:block"/>}
                   <p className="text-[15px] font-black sm:text-[17px]">{b.label}</p>
                   <p className="mt-1 text-xl font-black sm:text-2xl" style={{ color: c.p }}>{fmt(b.totalPrice)}</p>
                   {b.save && <p className="mt-1 text-[12px] font-bold text-emerald-600">{b.save}</p>}
@@ -693,7 +705,7 @@ export default function DynamicLandingV2() {
               <div key={i} className="w-[78vw] max-w-[320px] shrink-0 snap-center overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-all hover:shadow-lg sm:w-[320px] sm:shrink">
                 {r.img && (
                   <div className="h-40 overflow-hidden sm:h-48">
-                    <OptimImg src={r.img} alt={r.n} w={680} q={70} sizes="(max-width:640px) 85vw, 340px" className="h-full w-full object-cover"/>
+                    <OptimImg src={r.img} alt={r.n} w={400} q={60} sizes="(max-width:640px) 85vw, 340px" className="h-full w-full object-cover"/>
                   </div>
                 )}
                 <div className="p-5">
@@ -834,7 +846,7 @@ export default function DynamicLandingV2() {
 
             {/* Header avec produit */}
             <div className="flex items-center gap-4 border-b border-neutral-100 px-5 pb-4 pt-5">
-              <OptimImg src={cfg.images.hero} w={120} q={70} className="h-16 w-16 rounded-2xl border border-neutral-100 object-cover shadow-sm"/>
+              <OptimImg src={cfg.images.hero} w={96} q={60} className="h-16 w-16 rounded-2xl border border-neutral-100 object-cover shadow-sm"/>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[15px] font-extrabold text-neutral-900">{cfg.title}</p>
                 <div className="mt-1 flex items-center gap-2">

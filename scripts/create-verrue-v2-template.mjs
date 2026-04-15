@@ -4,7 +4,7 @@ const IMG = 'https://obrille.com/wp-content/uploads/2026/04/';
 
 const CONFIG = {
   templateVersion: 2,
-  productCode: 'VERRUE_TK',
+  productCode: 'CREME_ANTI_VERRUES',
   title: 'Creme Eliminatrice de Verrues',
   subtitle: 'Traitement professionnel — resultats en 7 jours',
   description: 'Eliminez definitivement les verrues, cors et callosites sans douleur. Notre formule concentree a base d\'ingredients naturels penetre en profondeur pour detruire la racine de la verrue. Resultats visibles des les premiers jours — peau nette et lisse retrouvee.',
@@ -21,10 +21,10 @@ const CONFIG = {
     hero: IMG + 'ChatGPT-Image-15-avr.-2026-10_11_48.png',
     gallery: [
       IMG + 'ChatGPT-Image-15-avr.-2026-10_04_54.png',
-      IMG + 'Sans-titre-2026-04-14-19-03-03copy-2026-04-14-20-47-10copy.mp4',
       IMG + 'ChatGPT-Image-15-avr.-2026-10_10_03.png',
-      IMG + 'ChatGPT-Image-15-avr.-2026-10_11_43.png',
       IMG + 'ChatGPT-Image-15-avr.-2026-10_05_14.png',
+      IMG + 'ChatGPT-Image-15-avr.-2026-10_11_43.png',
+      IMG + 'Sans-titre-2026-04-14-19-03-03copy-2026-04-14-20-47-10copy.mp4',
     ],
     lifestyle: [
       IMG + 'ChatGPT-Image-15-avr.-2026-10_05_28-1.png',
@@ -38,11 +38,6 @@ const CONFIG = {
       IMG + 'ChatGPT-Image-15-avr.-2026-10_11_43.png',
     ],
   },
-  videos: [
-    IMG + 'Sans-titre-2026-04-14-19-03-03copy-2026-04-14-20-47-10copy-2.mp4',
-    IMG + 'Sans-titre-2026-04-14-19-03-03copy-2026-04-14-20-47-10copy-1.mp4',
-    IMG + 'Sans-titre-2026-04-14-19-03-03copy-2026-04-14-20-47-10copy.mp4',
-  ],
   reviews: [
     {
       img: IMG + 'ChatGPT-Image-15-avr.-2026-10_05_14.png',
@@ -254,7 +249,7 @@ const PAYLOAD = {
   nom: 'Creme Eliminatrice de Verrues — V2',
   slug: 'creme-verrue-tk',
   description: 'Landing page V2 premium pour la creme anti-verrues',
-  productCode: 'VERRUE_TK',
+  productCode: 'CREME_ANTI_VERRUES',
   config: JSON.stringify(CONFIG),
 };
 
