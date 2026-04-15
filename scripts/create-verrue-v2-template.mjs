@@ -242,6 +242,7 @@ const CONFIG = {
     accent: '#0891b2',
     bg: '#fafaf9',
   },
+  metaPixelId: '1607715340249349',
   thankYouUrl: '/landing/creme-verrue-tk/merci',
 };
 
