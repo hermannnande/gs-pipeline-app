@@ -2,6 +2,7 @@ import express from 'express';
 import { prisma } from '../utils/prisma.js';
 import { computeTotalAmount } from '../utils/pricing.js';
 import { notifyNewOrder } from '../utils/notifications.js';
+import { sendPurchaseEvent } from '../utils/metaCapi.js';
 import { randomUUID } from 'crypto';
 
 const router = express.Router();
@@ -123,6 +124,33 @@ router.post('/order', async (req, res) => {
       await notifyNewOrder(order);
     } catch (notifError) {
       console.error('Erreur notification (non bloquante):', notifError);
+    }
+
+    try {
+      const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip;
+      const userAgent = req.headers['user-agent'] || '';
+      const fbc = req.body.fbc || null;
+      const fbp = req.body.fbp || null;
+      const sourceUrl = req.body.sourceUrl || null;
+
+      await sendPurchaseEvent({
+        orderId: order.id,
+        orderRef: order.orderReference,
+        amount: totalAmount,
+        currency: 'XOF',
+        productName: product.nom,
+        productCode: product.code,
+        quantity: orderQuantity,
+        customerPhone: customerPhone.trim(),
+        customerCity: resolvedCity,
+        clientIp,
+        userAgent,
+        fbc,
+        fbp,
+        sourceUrl,
+      });
+    } catch (metaErr) {
+      console.error('Erreur Meta CAPI (non bloquante):', metaErr);
     }
 
     res.status(201).json({
