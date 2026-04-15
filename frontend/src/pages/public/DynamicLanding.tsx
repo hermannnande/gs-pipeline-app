@@ -3,9 +3,29 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '/api');
+const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID || '';
 const fmt = (v: number) => v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
 const pad = (n: number) => String(n).padStart(2, '0');
 const co = () => new URLSearchParams(window.location.search).get('company') || 'ci';
+
+declare global { interface Window { fbq: any; _fbq: any; } }
+
+function initMetaPixel(pixelId: string) {
+  if (!pixelId || window.fbq) return;
+  const f: any = window.fbq = function (...args: any[]) { f.callMethod ? f.callMethod(...args) : f.queue.push(args); };
+  if (!window._fbq) window._fbq = f;
+  f.push = f; f.loaded = true; f.version = '2.0'; f.queue = [];
+  const s = document.createElement('script');
+  s.async = true; s.src = 'https://connect.facebook.net/en_US/fbevents.js';
+  document.head.appendChild(s);
+  window.fbq('init', pixelId);
+  window.fbq('track', 'PageView');
+}
+
+function getCookie(name: string) {
+  const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+  return v ? v.pop() : '';
+}
 
 const THEMES: Record<string, { topBar: string; marquee: string; marqueeTxt: string; dotBg: string; badgeBg: string; badgeTxt: string; subtitleTxt: string; starColor: string; discountBg: string; discountTxt: string; stockBorder: string; stockBg: string; stockTxt: string; btnGrad: string; btnShadow: string; btnHoverShadow: string; ringColor: string; tagBg: string; offerBorder: string; offerActiveBg: string; sectionAccent: string; stepBadgeBg: string; stepBadgeTxt: string; radioActive: string; formFocus: string; formRing: string; badgePill1: string; badgePill2: string; progressBar: string; stockBar: string; topBarAccent: string; countdownBg: string }> = {
   amber: {
@@ -185,6 +205,7 @@ export default function DynamicLanding() {
   const [countdown, setCountdown] = useState({ h: 0, m: 0, s: 0 });
   const [exitPopup, setExitPopup] = useState(false);
   const exitShown = useRef(false);
+  const pixelFired = useRef(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -207,6 +228,21 @@ export default function DynamicLanding() {
         if (p) setProduct(p);
       }).catch(() => {});
   }, [cfg, company, product]);
+
+  useEffect(() => {
+    if (!cfg || pixelFired.current) return;
+    pixelFired.current = true;
+    if (META_PIXEL_ID) {
+      initMetaPixel(META_PIXEL_ID);
+      window.fbq?.('track', 'ViewContent', {
+        content_name: cfg.title,
+        content_ids: [cfg.productCode],
+        content_type: 'product',
+        value: cfg.prices?.[1] || 0,
+        currency: 'XOF',
+      });
+    }
+  }, [cfg]);
 
   useEffect(() => {
     if (!cfg?.toasts?.length) return;
@@ -249,7 +285,15 @@ export default function DynamicLanding() {
 
   useEffect(() => { document.body.style.overflow = (modal || exitPopup) ? 'hidden' : ''; return () => { document.body.style.overflow = ''; }; }, [modal, exitPopup]);
 
-  const open = useCallback(() => { setFormErr(''); setName(''); setCity(''); setPhone(''); setQty(1); setModal(true); setExitPopup(false); }, []);
+  const open = useCallback(() => {
+    setFormErr(''); setName(''); setCity(''); setPhone(''); setQty(1); setModal(true); setExitPopup(false);
+    if (META_PIXEL_ID && window.fbq && cfg) {
+      window.fbq('track', 'AddToCart', {
+        content_name: cfg.title, content_ids: [cfg.productCode], content_type: 'product',
+        value: cfg.prices?.[1] || 0, currency: 'XOF',
+      });
+    }
+  }, [cfg]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setFormErr('');
@@ -257,6 +301,14 @@ export default function DynamicLanding() {
     if (!city.trim()) return setFormErr('Entrez votre ville / commune.');
     if (!phone.trim()) return setFormErr('Entrez votre numero de telephone.');
     setSending(true);
+
+    if (META_PIXEL_ID && window.fbq && cfg) {
+      window.fbq('track', 'InitiateCheckout', {
+        content_name: cfg.title, content_ids: [cfg.productCode], content_type: 'product',
+        value: cfg.prices?.[qty] || cfg.prices?.[1] || 0, currency: 'XOF', num_items: qty,
+      });
+    }
+
     try {
       let prod = product;
       if (!prod && cfg) {
@@ -265,7 +317,14 @@ export default function DynamicLanding() {
         if (prod) setProduct(prod);
       }
       if (!prod) { setFormErr('Produit introuvable. Reessayez.'); setSending(false); return; }
-      const res = await axios.post(`${API_URL}/public/order`, { company, productId: prod.id, customerName: name.trim(), customerPhone: phone.trim(), customerCity: city.trim(), quantity: qty });
+
+      const fbc = getCookie('_fbc');
+      const fbp = getCookie('_fbp');
+      const res = await axios.post(`${API_URL}/public/order`, {
+        company, productId: prod.id, customerName: name.trim(), customerPhone: phone.trim(),
+        customerCity: city.trim(), quantity: qty,
+        fbc: fbc || undefined, fbp: fbp || undefined, sourceUrl: window.location.href,
+      });
       const ref = res.data?.orderReference || '';
       const thankUrl = cfg?.thankYouUrl || `/landing/${slug}/merci`;
       const p = new URLSearchParams(); p.set('company', company); if (ref) p.set('ref', ref);

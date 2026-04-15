@@ -1,8 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import axios from 'axios';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '/api');
+const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID || '';
+
+declare global { interface Window { fbq: any; _fbq: any; } }
+
+function initMetaPixel(pixelId: string) {
+  if (!pixelId || window.fbq) return;
+  const f: any = window.fbq = function (...args: any[]) { f.callMethod ? f.callMethod(...args) : f.queue.push(args); };
+  if (!window._fbq) window._fbq = f;
+  f.push = f; f.loaded = true; f.version = '2.0'; f.queue = [];
+  const s = document.createElement('script');
+  s.async = true; s.src = 'https://connect.facebook.net/en_US/fbevents.js';
+  document.head.appendChild(s);
+  window.fbq('init', pixelId);
+  window.fbq('track', 'PageView');
+}
 
 interface ThankYouData {
   title: string;
@@ -10,6 +25,8 @@ interface ThankYouData {
   heroImg: string;
   theme: string;
   slug: string;
+  productCode: string;
+  price: number;
 }
 
 const THEME_STYLES: Record<string, {
@@ -59,6 +76,7 @@ export default function DynamicThankYou() {
 
   const [data, setData] = useState<ThankYouData | null>(null);
   const [loading, setLoading] = useState(true);
+  const purchaseFired = useRef(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -72,11 +90,28 @@ export default function DynamicThankYou() {
           heroImg: cfg.images?.hero || '',
           theme: cfg.colors?.theme || 'amber',
           slug: t.slug,
+          productCode: cfg.productCode || '',
+          price: cfg.prices?.[1] || 0,
         });
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [slug]);
+
+  useEffect(() => {
+    if (!data || purchaseFired.current) return;
+    purchaseFired.current = true;
+    if (META_PIXEL_ID) {
+      initMetaPixel(META_PIXEL_ID);
+      window.fbq?.('track', 'Purchase', {
+        content_name: data.title,
+        content_ids: [data.productCode],
+        content_type: 'product',
+        value: data.price,
+        currency: 'XOF',
+      });
+    }
+  }, [data]);
 
   if (loading) {
     return (
