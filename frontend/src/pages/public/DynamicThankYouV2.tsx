@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import axios from 'axios';
 
-const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '/api');
+const API_URL = ((import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api')).trim()).replace(/\/api$/, '/api');
 declare global { interface Window { fbq: any; _fbq: any; } }
 
 function initMetaPixel(pixelId: string) {
@@ -96,10 +96,10 @@ export default function DynamicThankYouV2() {
           {/* Header */}
           <div className="relative bg-gradient-to-br from-teal-700 via-teal-600 to-emerald-600 px-6 py-12 text-center text-white">
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
-              <span className="confetti-a absolute left-[15%] top-5 text-xl">🎉</span>
-              <span className="confetti-b absolute right-[20%] top-8 text-lg">✨</span>
-              <span className="confetti-c absolute left-[55%] top-4 text-xl">🎊</span>
-              <span className="confetti-a absolute right-[40%] top-6 text-base">⭐</span>
+              <span className="confetti-a absolute left-[15%] top-5 text-xl">ðŸŽ‰</span>
+              <span className="confetti-b absolute right-[20%] top-8 text-lg">âœ¨</span>
+              <span className="confetti-c absolute left-[55%] top-4 text-xl">ðŸŽŠ</span>
+              <span className="confetti-a absolute right-[40%] top-6 text-base">â­</span>
             </div>
 
             {data?.heroImg && (
@@ -177,7 +177,7 @@ export default function DynamicThankYouV2() {
           </div>
         </div>
 
-        <p className="mt-6 text-center text-[11px] text-neutral-400">Merci pour votre confiance · Support 7j/7</p>
+        <p className="mt-6 text-center text-[11px] text-neutral-400">Merci pour votre confiance Â· Support 7j/7</p>
       </div>
     </div>
   );

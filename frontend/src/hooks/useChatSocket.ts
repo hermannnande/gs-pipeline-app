@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-const SOCKET_URL = API_URL.replace('/api', '');
+const API_URL = (import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api')).trim();
+const SOCKET_URL = import.meta.env.PROD ? 'https://gs-pipeline-app-2.vercel.app' : API_URL.replace('/api', '');
 
 export function useChatSocket() {
   const socketRef = useRef<Socket | null>(null);

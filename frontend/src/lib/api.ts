@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { AuthResponse, LoginCredentials, User, Order } from '@/types';
 
-const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const baseUrl = (import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api')).trim();
 const API_URL = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
 
 export const api = axios.create({

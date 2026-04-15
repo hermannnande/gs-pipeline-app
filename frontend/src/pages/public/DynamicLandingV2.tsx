@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 
-const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '/api');
+const API_URL = ((import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api')).trim()).replace(/\/api$/, '/api');
 const fmt = (v: number) => v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -395,7 +395,7 @@ export default function DynamicLandingV2() {
         details[open] .faq-chevron{transform:rotate(180deg)}
       `}</style>
 
-      {/* ═══════════ ANNOUNCEMENT BAR ═══════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â• ANNOUNCEMENT BAR â•â•â•â•â•â•â•â•â•â•â• */}
       <div className="sticky top-0 z-50" style={{ background: `linear-gradient(to right, ${c.p}, ${c.a})` }}>
         <div className="flex items-center justify-center gap-3 px-4 py-2">
           <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white backdrop-blur">Offre limitee</span>
@@ -411,7 +411,7 @@ export default function DynamicLandingV2() {
         </div>
       </div>
 
-      {/* ═══════════ MARQUEE ═══════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â• MARQUEE â•â•â•â•â•â•â•â•â•â•â• */}
       {marqueeTexts.length > 0 && (
         <div className="overflow-hidden border-b border-neutral-100 bg-neutral-900 py-1.5">
           <div className="marquee-track flex w-[200%] items-center gap-10 text-[10px] font-bold uppercase tracking-[.2em] text-neutral-400">
@@ -422,7 +422,7 @@ export default function DynamicLandingV2() {
         </div>
       )}
 
-      {/* ═══════════ HERO SECTION ═══════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â• HERO SECTION â•â•â•â•â•â•â•â•â•â•â• */}
       <section className="mx-auto max-w-7xl overflow-hidden px-4 pb-8 pt-6 sm:pb-12 sm:pt-10">
         <div className="grid items-start gap-6 lg:grid-cols-2 lg:gap-12">
           {/* Gallery */}
@@ -511,7 +511,7 @@ export default function DynamicLandingV2() {
               <div className="h-2 flex-1 rounded-full bg-neutral-100">
                 <div className="h-full rounded-full bg-gradient-to-r from-red-500 to-amber-400 transition-all" style={{ width: `${Math.round((stock / 60) * 100)}%` }}/>
               </div>
-              <span className="shrink-0 text-[11px] font-bold text-red-600">⚡ Plus que {stock} en stock</span>
+              <span className="shrink-0 text-[11px] font-bold text-red-600">âš¡ Plus que {stock} en stock</span>
             </div>
 
             <p className="mt-4 text-[13px] leading-relaxed text-neutral-500 sm:text-[14px]" style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}>{cfg.description}</p>
@@ -531,16 +531,16 @@ export default function DynamicLandingV2() {
                 <span className="cta-sheen absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent"/>
                 <span className="relative z-10 flex items-center gap-2">
                   <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-50"/><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white"/></span>
-                  COMMANDER — {fmt(prices[1])}
+                  COMMANDER â€” {fmt(prices[1])}
                 </span>
               </button>
-              <p className="mt-2 text-center text-[11px] text-neutral-400">🔒 Commande securisee · Aucun paiement a l'avance</p>
+              <p className="mt-2 text-center text-[11px] text-neutral-400">ðŸ”’ Commande securisee Â· Aucun paiement a l'avance</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ═══════════ STATS BAR ═══════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â• STATS BAR â•â•â•â•â•â•â•â•â•â•â• */}
       {cfg.sections?.stats && (
         <div className="border-y border-neutral-100 bg-white py-4 sm:py-6">
           <div className="mx-auto grid max-w-5xl grid-cols-2 gap-3 px-4 text-center sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-12">
@@ -551,7 +551,7 @@ export default function DynamicLandingV2() {
         </div>
       )}
 
-      {/* ═══════════ PROBLEM SECTION (image heavy) ═══════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â• PROBLEM SECTION (image heavy) â•â•â•â•â•â•â•â•â•â•â• */}
       {cfg.sections?.problemPoints && (
         <LazySection className="py-12 sm:py-16">
           <div className="mx-auto max-w-6xl px-4">
@@ -579,7 +579,7 @@ export default function DynamicLandingV2() {
         </LazySection>
       )}
 
-      {/* ═══════════ SOLUTION SECTION ═══════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â• SOLUTION SECTION â•â•â•â•â•â•â•â•â•â•â• */}
       {cfg.sections?.solutionPoints && (
         <LazySection className="border-y border-neutral-100 py-12 sm:py-16" style={{ background: `linear-gradient(to bottom, ${c.p}08, white)` }}>
           <div className="mx-auto max-w-6xl px-4">
@@ -606,7 +606,7 @@ export default function DynamicLandingV2() {
         </LazySection>
       )}
 
-      {/* ═══════════ COMPARISON TABLE ═══════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â• COMPARISON TABLE â•â•â•â•â•â•â•â•â•â•â• */}
       {cfg.sections?.comparisonTable && (
         <LazySection className="py-12 sm:py-16">
           <div className="mx-auto max-w-3xl px-4">
@@ -629,7 +629,7 @@ export default function DynamicLandingV2() {
         </LazySection>
       )}
 
-      {/* ═══════════ HOW IT WORKS ═══════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â• HOW IT WORKS â•â•â•â•â•â•â•â•â•â•â• */}
       {cfg.sections?.howItWorks && (
         <LazySection className="border-y border-neutral-100 bg-neutral-900 py-12 sm:py-16">
           <div className="mx-auto max-w-6xl px-4">
@@ -651,7 +651,7 @@ export default function DynamicLandingV2() {
         </LazySection>
       )}
 
-      {/* ═══════════ BUNDLES ═══════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â• BUNDLES â•â•â•â•â•â•â•â•â•â•â• */}
       {bundles.length > 0 && (
         <LazySection className="relative overflow-hidden py-12 sm:py-16">
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-amber-50/40 via-white to-amber-50/20"/>
@@ -680,23 +680,23 @@ export default function DynamicLandingV2() {
         </LazySection>
       )}
 
-      {/* ═══════════ MID CTA ═══════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â• MID CTA â•â•â•â•â•â•â•â•â•â•â• */}
       <LazySection className="py-6 sm:py-8">
         <div className="mx-auto max-w-lg px-4 text-center">
           <button onClick={() => open(1)} className="cta-bounce cta-glow group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl px-8 py-5 text-[15px] font-black text-white shadow-xl transition-all hover:shadow-2xl active:scale-[.98]" style={{ background: `linear-gradient(to right, ${c.p}, ${c.a})` }}>
             <span className="cta-sheen absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent"/>
-            <span className="relative z-10">🛒 Je commande maintenant</span>
+            <span className="relative z-10">ðŸ›’ Je commande maintenant</span>
           </button>
         </div>
       </LazySection>
 
-      {/* ═══════════ REVIEWS (with images) ═══════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â• REVIEWS (with images) â•â•â•â•â•â•â•â•â•â•â• */}
       {reviews.length > 0 && (
         <LazySection className="border-y border-neutral-100 bg-white py-12 sm:py-16">
           <div className="mx-auto max-w-6xl px-4">
             <div className="mb-2 text-center">
               <div className="mb-3 flex items-center justify-center gap-1">{[...Array(5)].map((_, i) => <Star key={i}/>)}</div>
-              <p className="text-sm font-bold text-neutral-800">4.9 — {reviews.length * 1247} avis verifies</p>
+              <p className="text-sm font-bold text-neutral-800">4.9 â€” {reviews.length * 1247} avis verifies</p>
             </div>
             <h2 className="mb-6 text-center text-xl font-extrabold sm:mb-8 sm:text-2xl md:text-3xl">Ce que disent nos clients</h2>
           </div>
@@ -730,7 +730,7 @@ export default function DynamicLandingV2() {
         </LazySection>
       )}
 
-      {/* ═══════════ FAQ ═══════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â• FAQ â•â•â•â•â•â•â•â•â•â•â• */}
       {cfg.sections?.faq && (
         <LazySection className="bg-[#fafaf9] py-12 sm:py-16">
           <div className="mx-auto max-w-3xl px-4">
@@ -752,7 +752,7 @@ export default function DynamicLandingV2() {
         </LazySection>
       )}
 
-      {/* ═══════════ TRUST BADGES ═══════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â• TRUST BADGES â•â•â•â•â•â•â•â•â•â•â• */}
       {cfg.sections?.trustBadges && (
         <div className="border-t border-neutral-100 bg-white py-8 sm:py-10">
           <div className="mx-auto grid max-w-4xl grid-cols-2 gap-4 px-4 text-center sm:grid-cols-3 md:grid-cols-5 md:gap-8">
@@ -767,7 +767,7 @@ export default function DynamicLandingV2() {
         </div>
       )}
 
-      {/* ═══════════ FINAL CTA ═══════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â• FINAL CTA â•â•â•â•â•â•â•â•â•â•â• */}
       <LazySection className="relative overflow-hidden py-16 sm:py-20">
         <div className="pointer-events-none absolute inset-0" style={{ background: `linear-gradient(135deg, #171717, ${c.p}40, #171717)` }}/>
         <div className="relative mx-auto max-w-lg px-4 text-center">
@@ -775,18 +775,18 @@ export default function DynamicLandingV2() {
           <p className="mb-6 text-[14px] text-neutral-400">{cfg.sections?.finalCtaSub || 'Rejoignez nos clients satisfaits'}</p>
           <button onClick={() => open(1)} className="cta-glow group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl px-8 py-5 text-[16px] font-black text-white shadow-2xl transition-all active:scale-[.98]" style={{ background: `linear-gradient(to right, ${c.p}, ${c.a})`, boxShadow: `0 0 30px ${c.p}40` }}>
             <span className="cta-sheen absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent"/>
-            <span className="relative z-10">Commander — {fmt(prices[1])}</span>
+            <span className="relative z-10">Commander â€” {fmt(prices[1])}</span>
           </button>
-          <p className="mt-3 text-[11px] text-neutral-500">Aucun paiement a l'avance · Livraison rapide</p>
+          <p className="mt-3 text-[11px] text-neutral-500">Aucun paiement a l'avance Â· Livraison rapide</p>
         </div>
       </LazySection>
 
-      {/* ═══════════ FOOTER ═══════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â• FOOTER â•â•â•â•â•â•â•â•â•â•â• */}
       <footer className="border-t border-neutral-100 bg-white pb-20 pt-8 sm:pb-8">
-        <p className="text-center text-[10px] text-neutral-300">© 2026 · Tous droits reserves · Cote d'Ivoire</p>
+        <p className="text-center text-[10px] text-neutral-300">Â© 2026 Â· Tous droits reserves Â· Cote d'Ivoire</p>
       </footer>
 
-      {/* ═══════════ STICKY BAR ═══════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â• STICKY BAR â•â•â•â•â•â•â•â•â•â•â• */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200/80 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
           <OptimImg src={cfg.images.hero} w={96} q={60} className="hidden h-10 w-10 shrink-0 rounded-lg border border-neutral-100 object-cover shadow-sm min-[360px]:block sm:h-12 sm:w-12 sm:rounded-xl"/>
@@ -801,18 +801,18 @@ export default function DynamicLandingV2() {
         </div>
       </div>
 
-      {/* ═══════════ TOAST ═══════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â• TOAST â•â•â•â•â•â•â•â•â•â•â• */}
       {toast && (
         <div className={`${toast.visible ? 'toast-in' : 'toast-out'} fixed bottom-[72px] left-3 right-3 z-50 flex items-center gap-3 rounded-2xl border border-neutral-100 bg-white/95 px-4 py-3 shadow-2xl backdrop-blur sm:bottom-24 sm:left-3 sm:right-auto sm:max-w-[320px]`}>
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white shadow-md" style={{ backgroundColor: c.p }}>✓</div>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white shadow-md" style={{ backgroundColor: c.p }}>âœ“</div>
           <div>
             <p className="text-[12px] font-bold text-neutral-800">{toast.n} vient de commander</p>
-            <p className="text-[10px] text-neutral-400">{toast.v} · il y a {toast.t}</p>
+            <p className="text-[10px] text-neutral-400">{toast.v} Â· il y a {toast.t}</p>
           </div>
         </div>
       )}
 
-      {/* ═══════════ EXIT INTENT ═══════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â• EXIT INTENT â•â•â•â•â•â•â•â•â•â•â• */}
       {exitPopup && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center p-3 sm:items-center sm:p-4" onClick={e => { if (e.target === e.currentTarget) setExitPopup(false); }}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"/>
@@ -821,21 +821,21 @@ export default function DynamicLandingV2() {
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
             <div className="px-6 py-8 text-center text-white" style={{ background: `linear-gradient(135deg, ${c.p}, ${c.a})` }}>
-              <span className="mb-3 inline-block text-5xl">⚡</span>
+              <span className="mb-3 inline-block text-5xl">âš¡</span>
               <h3 className="text-xl font-extrabold">Attendez !</h3>
               <p className="mt-2 text-[14px] opacity-80">Profitez de la livraison GRATUITE</p>
             </div>
             <div className="p-6 text-center">
               <p className="mb-4 text-[14px] text-neutral-500">Ne partez pas les mains vides. Payez uniquement a la livraison.</p>
               <button onClick={() => open(1)} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-neutral-900 px-6 py-4 text-[14px] font-bold text-white shadow-lg transition hover:bg-neutral-800 active:scale-[.98]">
-                Commander maintenant — {fmt(prices[1])}
+                Commander maintenant â€” {fmt(prices[1])}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ═══════════ ORDER MODAL ═══════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â• ORDER MODAL â•â•â•â•â•â•â•â•â•â•â• */}
       {modal && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4" onClick={e => { if (e.target === e.currentTarget) setModal(false); }}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"/>
@@ -867,7 +867,7 @@ export default function DynamicLandingV2() {
             </div>
 
             <form onSubmit={submit} className="px-5 pb-5 pt-4">
-              {/* Etape 1 — Quantite */}
+              {/* Etape 1 â€” Quantite */}
               <div className="mb-4">
                 <div className="mb-2 flex items-center gap-2">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-white" style={{ backgroundColor: c.p }}>1</span>
@@ -886,7 +886,7 @@ export default function DynamicLandingV2() {
                 </div>
               </div>
 
-              {/* Etape 2 — Coordonnees */}
+              {/* Etape 2 â€” Coordonnees */}
               <div className="mb-4">
                 <div className="mb-2.5 flex items-center gap-2">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-white" style={{ backgroundColor: c.p }}>2</span>
@@ -900,14 +900,14 @@ export default function DynamicLandingV2() {
                     </label>
                     <label className="block">
                       <span className="mb-1 block text-[10px] font-bold text-neutral-500">Ville / Commune <span className="text-red-400">*</span></span>
-                      <input type="text" value={city} onChange={e => setCity(e.target.value)} placeholder="Abidjan — Yopougon" className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50/50 px-3 text-[13px] font-medium outline-none transition placeholder:text-neutral-300 focus:bg-white" onFocus={e => { e.currentTarget.style.borderColor = c.p; e.currentTarget.style.boxShadow = `0 0 0 3px ${c.p}12`; }} onBlur={e => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = ''; }}/>
+                      <input type="text" value={city} onChange={e => setCity(e.target.value)} placeholder="Abidjan â€” Yopougon" className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50/50 px-3 text-[13px] font-medium outline-none transition placeholder:text-neutral-300 focus:bg-white" onFocus={e => { e.currentTarget.style.borderColor = c.p; e.currentTarget.style.boxShadow = `0 0 0 3px ${c.p}12`; }} onBlur={e => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = ''; }}/>
                     </label>
                   </div>
                   <label className="block">
                     <span className="mb-1 block text-[10px] font-bold text-neutral-500">Telephone <span className="text-red-400">*</span></span>
                     <div className="flex overflow-hidden rounded-xl border border-neutral-200 transition">
                       <span className="flex items-center gap-1 border-r border-neutral-200 bg-neutral-50 px-3 text-[12px] font-bold text-neutral-500">
-                        <span className="text-sm">🇨🇮</span> +225
+                        <span className="text-sm">ðŸ‡¨ðŸ‡®</span> +225
                       </span>
                       <input type="tel" inputMode="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="07 00 00 00 00" className="h-11 w-full border-none bg-neutral-50/50 px-3 text-[13px] font-medium outline-none placeholder:text-neutral-300 focus:bg-white"/>
                     </div>

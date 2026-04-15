@@ -4,7 +4,7 @@ import axios from 'axios';
 import DynamicThankYou from './DynamicThankYou';
 import DynamicThankYouV2 from './DynamicThankYouV2';
 
-const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '/api');
+const API_URL = ((import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api')).trim()).replace(/\/api$/, '/api');
 
 export default function ThankYouRouter() {
   const { slug } = useParams<{ slug: string }>();

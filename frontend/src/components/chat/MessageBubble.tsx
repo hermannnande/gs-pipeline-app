@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useQueryClient } from '@tanstack/react-query';
 import { chatApi } from '@/lib/chatApi';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = (import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api')).trim();
 const BASE_URL = API_URL.replace('/api', '');
 
 interface MessageBubbleProps {

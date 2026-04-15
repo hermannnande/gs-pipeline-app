@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 
-const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '/api');
+const API_URL = ((import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api')).trim()).replace(/\/api$/, '/api');
 const fmt = (v: number) => v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
 const pad = (n: number) => String(n).padStart(2, '0');
 const co = () => new URLSearchParams(window.location.search).get('company') || 'ci';
@@ -478,7 +478,7 @@ export default function DynamicLanding() {
               {cfg.discount && <span className={`rounded-md ${T.discountBg} px-2 py-0.5 text-[11px] font-bold ${T.discountTxt}`}>{cfg.discount}</span>}
             </div>
             <div className={`flex items-center gap-1.5 self-start rounded-lg border ${T.stockBorder} ${T.stockBg} px-2.5 py-1.5`}>
-              <span className="text-xs">📦</span>
+              <span className="text-xs">ðŸ“¦</span>
               <span className={`text-[12px] font-bold ${T.stockTxt}`}>Plus que {stock} en stock</span>
             </div>
             <p className="text-[13px] leading-relaxed text-neutral-500 sm:text-sm">{cfg.description}</p>
@@ -491,7 +491,7 @@ export default function DynamicLanding() {
               <GlowBtn onClick={open} theme={themeKey}>
                 <span className="relative z-10 flex items-center gap-2">
                   <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-40"/><span className="relative inline-flex h-2 w-2 rounded-full bg-white"/></span>
-                  Commander maintenant — {fmt(prices[1] || 0)}
+                  Commander maintenant â€” {fmt(prices[1] || 0)}
                 </span>
               </GlowBtn>
             </div>
@@ -523,7 +523,7 @@ export default function DynamicLanding() {
                 </div>
               )}
               <GlowBtn onClick={open} theme={themeKey}>
-                <span className="relative z-10 flex items-center gap-2">Commander maintenant — {fmt(prices[1] || 0)}</span>
+                <span className="relative z-10 flex items-center gap-2">Commander maintenant â€” {fmt(prices[1] || 0)}</span>
               </GlowBtn>
             </div>
           </div>
@@ -667,9 +667,9 @@ export default function DynamicLanding() {
         <div className="relative mx-auto max-w-lg px-4 text-center">
           <h2 className="mb-6 text-xl font-extrabold text-white sm:text-2xl">Commandez maintenant</h2>
           <GlowBtn onClick={open} theme={themeKey}>
-            <span className="relative z-10">Commander ici — {fmt(prices[1] || 0)}</span>
+            <span className="relative z-10">Commander ici â€” {fmt(prices[1] || 0)}</span>
           </GlowBtn>
-          <p className="mt-3 text-[11px] text-neutral-500">Aucun compte requis · Paiement a la livraison</p>
+          <p className="mt-3 text-[11px] text-neutral-500">Aucun compte requis Â· Paiement a la livraison</p>
         </div>
       </LazySection>
 
@@ -678,14 +678,14 @@ export default function DynamicLanding() {
         <div className="mx-auto max-w-4xl px-4">
           <div className="flex flex-wrap justify-center gap-6 text-center">
             {(cfg.sections?.trustBadges || [
-              { ico: '🚚', t: 'Livraison rapide', d: '24h Abidjan' },
-              { ico: '💰', t: 'Paiement livraison', d: 'Aucun risque' },
-              { ico: '📞', t: 'Support client', d: '7j/7' },
+              { ico: 'ðŸšš', t: 'Livraison rapide', d: '24h Abidjan' },
+              { ico: 'ðŸ’°', t: 'Paiement livraison', d: 'Aucun risque' },
+              { ico: 'ðŸ“ž', t: 'Support client', d: '7j/7' },
             ]).map((f, i) => (
               <div key={i} className="w-[140px]"><span className="text-xl">{f.ico}</span><p className="mt-1 text-[11px] font-bold text-neutral-700">{f.t}</p><p className="text-[10px] text-neutral-400">{f.d}</p></div>
             ))}
           </div>
-          <p className="mt-6 text-center text-[10px] text-neutral-300">© 2026 · Cote d'Ivoire</p>
+          <p className="mt-6 text-center text-[10px] text-neutral-300">Â© 2026 Â· Cote d'Ivoire</p>
         </div>
       </footer>
 
@@ -695,7 +695,7 @@ export default function DynamicLanding() {
           <img src={cfg.images.hero} alt="" className="h-11 w-11 shrink-0 rounded-lg border border-neutral-100 object-cover sm:h-12 sm:w-12"/>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-bold sm:text-sm">{cfg.title}</p>
-            <p className="text-[11px] text-neutral-400">{fmt(prices[1] || 0)} · Paiement a la livraison</p>
+            <p className="text-[11px] text-neutral-400">{fmt(prices[1] || 0)} Â· Paiement a la livraison</p>
           </div>
           <button onClick={open} className={`shrink-0 rounded-xl ${T.btnGrad} px-4 py-2.5 text-[13px] font-extrabold text-white ${T.btnShadow} transition ${T.btnHoverShadow} active:scale-[.97] sm:px-6 sm:text-sm`}>Commander</button>
         </div>
@@ -704,7 +704,7 @@ export default function DynamicLanding() {
       {/* TOAST */}
       {toast && (
         <div className={`${toast.visible ? 'toast-in' : 'toast-out'} fixed bottom-20 left-3 z-50 flex max-w-[300px] items-center gap-2.5 rounded-xl border border-neutral-100 bg-white/95 px-3.5 py-3 shadow-2xl backdrop-blur`}>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-sm text-white">✓</div>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-sm text-white">âœ“</div>
           <div>
             <p className="text-[12px] font-bold text-neutral-800">{toast.n} vient de commander</p>
             <p className="text-[10px] text-neutral-400">il y a {toast.t}</p>
@@ -720,7 +720,7 @@ export default function DynamicLanding() {
             <button onClick={() => setExitPopup(false)} className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-neutral-100 text-neutral-400 hover:bg-neutral-200">
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
-            <span className="mb-3 inline-block text-4xl">⚡</span>
+            <span className="mb-3 inline-block text-4xl">âš¡</span>
             <h3 className="mb-1 text-lg font-extrabold">Attendez !</h3>
             <p className="mb-4 text-[13px] text-neutral-500">Ne partez pas sans commander. Payez a la livraison.</p>
             <button onClick={open} className="flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-bold text-white shadow-lg hover:bg-neutral-800 active:scale-[.98]">Commander maintenant</button>
@@ -746,9 +746,9 @@ export default function DynamicLanding() {
             <div className="h-1 bg-neutral-100"><div className={`h-full w-4/5 ${T.progressBar}`}/></div>
             <form onSubmit={submit} className="space-y-2.5 p-3 pb-4 sm:space-y-3 sm:p-4 sm:pb-5">
               {[
-                { icon: '👤', label: 'Nom complet', val: name, set: setName, ph: 'Ex. Kouadio Fernand', type: 'text' as const },
-                { icon: '📍', label: 'Ville / Commune', val: city, set: setCity, ph: 'Ex. Abidjan — Yopougon', type: 'text' as const },
-                { icon: '📱', label: 'Telephone', val: phone, set: setPhone, ph: 'Ex. 07 00 00 00 00', type: 'tel' as const },
+                { icon: 'ðŸ‘¤', label: 'Nom complet', val: name, set: setName, ph: 'Ex. Kouadio Fernand', type: 'text' as const },
+                { icon: 'ðŸ“', label: 'Ville / Commune', val: city, set: setCity, ph: 'Ex. Abidjan â€” Yopougon', type: 'text' as const },
+                { icon: 'ðŸ“±', label: 'Telephone', val: phone, set: setPhone, ph: 'Ex. 07 00 00 00 00', type: 'tel' as const },
               ].map(f => (
                 <label key={f.label} className="block">
                   <span className="mb-0.5 block text-[11px] font-bold text-neutral-700">{f.label} <span className="text-red-500">*</span></span>
