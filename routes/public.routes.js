@@ -166,6 +166,53 @@ router.post('/order', async (req, res) => {
   }
 });
 
+// Auto-init de la table page_views (le build Vercel n'a pas accès à Supabase pour migrate deploy)
+let pageViewTableReady = false;
+async function ensurePageViewTable() {
+  if (pageViewTableReady) return;
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "page_views" (
+        "id" SERIAL PRIMARY KEY,
+        "companyId" INTEGER NOT NULL DEFAULT 1,
+        "slug" TEXT NOT NULL,
+        "path" TEXT NOT NULL,
+        "templateId" INTEGER,
+        "visitorId" TEXT NOT NULL,
+        "sessionId" TEXT NOT NULL,
+        "isUnique" BOOLEAN NOT NULL DEFAULT true,
+        "isNewSession" BOOLEAN NOT NULL DEFAULT true,
+        "referrer" TEXT,
+        "utmSource" TEXT,
+        "utmMedium" TEXT,
+        "utmCampaign" TEXT,
+        "fbclid" TEXT,
+        "gclid" TEXT,
+        "userAgent" TEXT,
+        "ip" TEXT,
+        "country" TEXT,
+        "city" TEXT,
+        "device" TEXT,
+        "browser" TEXT,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "page_views_companyId_createdAt_idx" ON "page_views"("companyId", "createdAt")`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "page_views_slug_createdAt_idx" ON "page_views"("slug", "createdAt")`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "page_views_visitorId_idx" ON "page_views"("visitorId")`);
+    try {
+      await prisma.$executeRawUnsafe(`
+        ALTER TABLE "page_views"
+        ADD CONSTRAINT "page_views_companyId_fkey"
+        FOREIGN KEY ("companyId") REFERENCES "companies"("id") ON DELETE RESTRICT ON UPDATE CASCADE
+      `);
+    } catch {} // FK déjà créée
+    pageViewTableReady = true;
+  } catch (e) {
+    console.error('Erreur création table page_views:', e.message);
+  }
+}
+
 function detectDevice(ua = '') {
   const u = ua.toLowerCase();
   if (/ipad|tablet/.test(u)) return 'tablet';
@@ -186,6 +233,7 @@ function detectBrowser(ua = '') {
 // POST /api/public/pageview - Enregistre une visite sur une landing page
 router.post('/pageview', async (req, res) => {
   try {
+    await ensurePageViewTable();
     const companyId = await resolveCompanyId(req);
     const {
       slug, path, visitorId, sessionId, isUnique, isNewSession,
