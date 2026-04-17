@@ -461,4 +461,164 @@ router.get('/products/:id', authorize('ADMIN'), async (req, res) => {
   }
 });
 
+// GET /api/analytics/landing - Statistiques des pages de vente (landing pages)
+router.get('/landing', authorize('ADMIN'), async (req, res) => {
+  try {
+    const { startDate, endDate, period = 'day' } = req.query;
+    const companyId = req.user.companyId;
+
+    const parseUtcDayStart = (dateStr) => new Date(`${dateStr}T00:00:00.000Z`);
+    const parseUtcNextDayStart = (dateStr) => {
+      const d = parseUtcDayStart(dateStr);
+      d.setUTCDate(d.getUTCDate() + 1);
+      return d;
+    };
+
+    const whereClause = { companyId };
+    if (startDate) whereClause.createdAt = { gte: parseUtcDayStart(startDate) };
+    if (endDate) whereClause.createdAt = { ...whereClause.createdAt, lt: parseUtcNextDayStart(endDate) };
+
+    const templates = await prisma.landingTemplate.findMany({
+      where: { companyId },
+      select: { id: true, nom: true, slug: true, productCode: true, productId: true, actif: true, config: true },
+    });
+
+    const orders = await prisma.order.findMany({
+      where: whereClause,
+      select: {
+        id: true, createdAt: true, status: true, montant: true, quantite: true,
+        sourcePage: true, sourceCampagne: true, productId: true, produitNom: true,
+        clientVille: true, deliveryType: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const templateProductIds = new Set(templates.map(t => t.productId).filter(Boolean));
+    const templateProductCodes = new Set(templates.map(t => t.productCode?.toUpperCase()).filter(Boolean));
+    const templateByProduct = {};
+    templates.forEach(t => {
+      if (t.productId) templateByProduct[`pid:${t.productId}`] = t;
+      if (t.productCode) templateByProduct[`code:${t.productCode.toUpperCase()}`] = t;
+    });
+
+    const findTemplate = (order) => {
+      if (order.sourcePage) {
+        const sp = order.sourcePage.toLowerCase();
+        const match = templates.find(t =>
+          sp.includes(t.slug) || sp.includes(`/landing/${t.slug}`)
+        );
+        if (match) return match;
+      }
+      if (order.productId && templateByProduct[`pid:${order.productId}`])
+        return templateByProduct[`pid:${order.productId}`];
+      if (order.produitNom) {
+        const code = order.produitNom.trim().toUpperCase();
+        if (templateByProduct[`code:${code}`]) return templateByProduct[`code:${code}`];
+      }
+      return null;
+    };
+
+    const VALIDATED = ['VALIDEE', 'ASSIGNEE', 'LIVREE', 'EXPRESS', 'EXPRESS_ARRIVE', 'EXPRESS_LIVRE', 'EXPEDITION'];
+    const DELIVERED = ['LIVREE', 'EXPRESS_LIVRE'];
+    const CANCELLED = ['ANNULEE', 'INJOIGNABLE', 'RETOUR'];
+
+    const byTemplate = {};
+    const timelineMap = {};
+    const byCity = {};
+    const byStatus = {};
+    let totalLanding = 0;
+    let totalOther = 0;
+
+    orders.forEach(order => {
+      const tpl = findTemplate(order);
+      const key = tpl ? `tpl:${tpl.id}` : '_other';
+
+      if (tpl) totalLanding++; else totalOther++;
+
+      if (!byTemplate[key]) {
+        byTemplate[key] = {
+          templateId: tpl?.id || null,
+          templateName: tpl?.nom || 'Autres sources',
+          slug: tpl?.slug || null,
+          actif: tpl?.actif ?? null,
+          total: 0, validated: 0, delivered: 0, cancelled: 0,
+          revenue: 0, quantite: 0,
+        };
+      }
+      const entry = byTemplate[key];
+      entry.total++;
+      entry.quantite += order.quantite || 0;
+      if (VALIDATED.includes(order.status)) entry.validated++;
+      if (DELIVERED.includes(order.status)) {
+        entry.delivered++;
+        entry.revenue += order.montant || 0;
+      }
+      if (CANCELLED.includes(order.status)) entry.cancelled++;
+
+      let dateKey;
+      const d = new Date(order.createdAt);
+      if (period === 'month') dateKey = d.toISOString().substring(0, 7);
+      else if (period === 'week') {
+        const day = d.getUTCDay();
+        const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1);
+        const monday = new Date(d);
+        monday.setUTCDate(diff);
+        dateKey = monday.toISOString().substring(0, 10);
+      } else dateKey = d.toISOString().substring(0, 10);
+
+      if (!timelineMap[dateKey]) timelineMap[dateKey] = { date: dateKey, total: 0, validated: 0, delivered: 0, cancelled: 0, revenue: 0 };
+      timelineMap[dateKey].total++;
+      if (VALIDATED.includes(order.status)) timelineMap[dateKey].validated++;
+      if (DELIVERED.includes(order.status)) { timelineMap[dateKey].delivered++; timelineMap[dateKey].revenue += order.montant || 0; }
+      if (CANCELLED.includes(order.status)) timelineMap[dateKey].cancelled++;
+
+      const city = (order.clientVille || 'Non précisée').trim();
+      if (!byCity[city]) byCity[city] = { city, total: 0, delivered: 0, revenue: 0 };
+      byCity[city].total++;
+      if (DELIVERED.includes(order.status)) { byCity[city].delivered++; byCity[city].revenue += order.montant || 0; }
+
+      if (!byStatus[order.status]) byStatus[order.status] = 0;
+      byStatus[order.status]++;
+    });
+
+    const templateStats = Object.values(byTemplate)
+      .sort((a, b) => b.total - a.total);
+
+    const timeline = Object.values(timelineMap)
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    const topCities = Object.values(byCity)
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 15);
+
+    const totalAll = orders.length;
+    const totalValidated = orders.filter(o => VALIDATED.includes(o.status)).length;
+    const totalDelivered = orders.filter(o => DELIVERED.includes(o.status)).length;
+    const totalRevenue = orders.filter(o => DELIVERED.includes(o.status)).reduce((s, o) => s + (o.montant || 0), 0);
+    const totalCancelled = orders.filter(o => CANCELLED.includes(o.status)).length;
+
+    res.json({
+      overview: {
+        totalOrders: totalAll,
+        totalFromLanding: totalLanding,
+        totalOther,
+        totalValidated,
+        totalDelivered,
+        totalCancelled,
+        totalRevenue,
+        conversionRate: totalAll > 0 ? ((totalDelivered / totalAll) * 100).toFixed(1) : '0',
+        validationRate: totalAll > 0 ? ((totalValidated / totalAll) * 100).toFixed(1) : '0',
+      },
+      templateStats,
+      timeline,
+      topCities,
+      statusBreakdown: Object.entries(byStatus).map(([status, count]) => ({ status, count })),
+      filters: { startDate: startDate || null, endDate: endDate || null, period },
+    });
+  } catch (error) {
+    console.error('Erreur analytics landing:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des analytics landing.', details: error.message });
+  }
+});
+
 export default router;

@@ -91,6 +91,7 @@ export default function Layout({ children }: LayoutProps) {
           { icon: Eye, label: 'Audit & Sécurité', path: '/admin/audit' },
           { icon: MessageCircle, label: 'WhatsApp Agent', path: '/admin/whatsapp' },
           { icon: FileText, label: 'Pages de vente', path: '/admin/templates' },
+          { icon: TrendingUp, label: 'Analytics Landing', path: '/admin/landing-analytics' },
         ];
       case 'GESTIONNAIRE':
         return [

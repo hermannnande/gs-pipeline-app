@@ -23,6 +23,7 @@ import Attendances from './Attendances';
 import Audit from './Audit';
 import WhatsAppInbox from './WhatsAppInbox';
 import LandingTemplates from './LandingTemplates';
+import LandingAnalytics from './LandingAnalytics';
 
 export default function AdminDashboard() {
   return (
@@ -51,6 +52,7 @@ export default function AdminDashboard() {
       <Route path="audit" element={<Audit />} />
       <Route path="whatsapp" element={<WhatsAppInbox />} />
       <Route path="templates" element={<LandingTemplates />} />
+      <Route path="landing-analytics" element={<LandingAnalytics />} />
     </Routes>
   );
 }
