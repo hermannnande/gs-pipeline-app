@@ -285,12 +285,15 @@ export default function DynamicLanding() {
 
   useEffect(() => { document.body.style.overflow = (modal || exitPopup) ? 'hidden' : ''; return () => { document.body.style.overflow = ''; }; }, [modal, exitPopup]);
 
-  const open = useCallback(() => {
-    setFormErr(''); setName(''); setCity(''); setPhone(''); setQty(1); setModal(true); setExitPopup(false);
+  const open = useCallback((q?: number) => {
+    setFormErr(''); setName(''); setCity(''); setPhone('');
+    if (q) setQty(q); else setQty(1);
+    setModal(true); setExitPopup(false);
     if (cfg?.metaPixelId && window.fbq) {
+      const selectedQty = q || 1;
       window.fbq('track', 'AddToCart', {
         content_name: cfg.title, content_ids: [cfg.productCode], content_type: 'product',
-        value: cfg.prices?.[1] || 0, currency: 'XOF',
+        value: cfg.prices?.[selectedQty] || cfg.prices?.[1] || 0, currency: 'XOF', num_items: selectedQty,
       });
     }
   }, [cfg]);
@@ -328,7 +331,7 @@ export default function DynamicLanding() {
       });
       const ref = res.data?.orderReference || '';
       const thankUrl = cfg?.thankYouUrl || `/landing/${slug}/merci`;
-      const p = new URLSearchParams(); p.set('company', company); if (ref) p.set('ref', ref);
+      const p = new URLSearchParams(); p.set('company', company); if (ref) p.set('ref', ref); p.set('qty', String(qty));
       navigate(`${thankUrl}?${p.toString()}`);
     } catch (err: any) { setFormErr(err?.response?.data?.error || 'Erreur. Reessayez.'); }
     finally { setSending(false); }
@@ -488,7 +491,7 @@ export default function DynamicLanding() {
               <span className="flex items-center gap-1.5"><Check/> Support 7j/7</span>
             </div>
             <div className="hidden sm:block">
-              <GlowBtn onClick={open} theme={themeKey}>
+              <GlowBtn onClick={() => open()} theme={themeKey}>
                 <span className="relative z-10 flex items-center gap-2">
                   <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-40"/><span className="relative inline-flex h-2 w-2 rounded-full bg-white"/></span>
                   Commander maintenant — {fmt(prices[1] || 0)}
@@ -522,7 +525,7 @@ export default function DynamicLanding() {
                   <p className="mt-1.5 text-[13px] leading-relaxed text-neutral-400">{cfg.sections.catchphrase.sub}</p>
                 </div>
               )}
-              <GlowBtn onClick={open} theme={themeKey}>
+              <GlowBtn onClick={() => open()} theme={themeKey}>
                 <span className="relative z-10 flex items-center gap-2">Commander maintenant — {fmt(prices[1] || 0)}</span>
               </GlowBtn>
             </div>
@@ -539,7 +542,7 @@ export default function DynamicLanding() {
             <h2 className="mb-6 text-center text-xl font-extrabold sm:text-2xl">Choisissez votre offre</h2>
             <div className="grid gap-3 sm:grid-cols-3">
               {qtyOpts.map(o => (
-                <button key={o.v} onClick={() => { setQty(o.v); open(); }}
+                <button key={o.v} onClick={() => open(o.v)}
                   className={`relative rounded-2xl border-2 px-4 py-4 text-center transition-all hover:shadow-lg sm:p-5 ${o.v === 2 ? `${T.offerBorder} ${T.offerActiveBg} shadow-md ring-2 ${T.ringColor}` : 'border-neutral-200 bg-white hover:border-neutral-300'}`}>
                   {o.tag && <span className={`absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full ${T.tagBg} px-3 py-0.5 text-[10px] font-bold text-white shadow`}>{o.tag}</span>}
                   <p className="text-[15px] font-black sm:text-lg">{o.label}</p>
@@ -615,7 +618,7 @@ export default function DynamicLanding() {
             <div className="h-2.5 flex-1 rounded-full bg-neutral-100"><div className={`h-full rounded-full ${T.stockBar} transition-all`} style={{ width: `${stockPct}%` }}/></div>
             <span className="shrink-0 text-[11px] font-bold text-red-500">Plus que {stock} unites</span>
           </div>
-          <GlowBtn onClick={open} theme={themeKey}>
+          <GlowBtn onClick={() => open()} theme={themeKey}>
             <span className="relative z-10">Je commande maintenant</span>
           </GlowBtn>
         </div>
@@ -666,7 +669,7 @@ export default function DynamicLanding() {
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900"/>
         <div className="relative mx-auto max-w-lg px-4 text-center">
           <h2 className="mb-6 text-xl font-extrabold text-white sm:text-2xl">Commandez maintenant</h2>
-          <GlowBtn onClick={open} theme={themeKey}>
+          <GlowBtn onClick={() => open()} theme={themeKey}>
             <span className="relative z-10">Commander ici — {fmt(prices[1] || 0)}</span>
           </GlowBtn>
           <p className="mt-3 text-[11px] text-neutral-500">Aucun compte requis · Paiement a la livraison</p>
@@ -697,7 +700,7 @@ export default function DynamicLanding() {
             <p className="truncate text-[13px] font-bold sm:text-sm">{cfg.title}</p>
             <p className="text-[11px] text-neutral-400">{fmt(prices[1] || 0)} · Paiement a la livraison</p>
           </div>
-          <button onClick={open} className={`shrink-0 rounded-xl ${T.btnGrad} px-4 py-2.5 text-[13px] font-extrabold text-white ${T.btnShadow} transition ${T.btnHoverShadow} active:scale-[.97] sm:px-6 sm:text-sm`}>Commander</button>
+          <button onClick={() => open()} className={`shrink-0 rounded-xl ${T.btnGrad} px-4 py-2.5 text-[13px] font-extrabold text-white ${T.btnShadow} transition ${T.btnHoverShadow} active:scale-[.97] sm:px-6 sm:text-sm`}>Commander</button>
         </div>
       </div>
 
@@ -723,7 +726,7 @@ export default function DynamicLanding() {
             <span className="mb-3 inline-block text-4xl">⚡</span>
             <h3 className="mb-1 text-lg font-extrabold">Attendez !</h3>
             <p className="mb-4 text-[13px] text-neutral-500">Ne partez pas sans commander. Payez a la livraison.</p>
-            <button onClick={open} className="flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-bold text-white shadow-lg hover:bg-neutral-800 active:scale-[.98]">Commander maintenant</button>
+            <button onClick={() => open()} className="flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-bold text-white shadow-lg hover:bg-neutral-800 active:scale-[.98]">Commander maintenant</button>
           </div>
         </div>
       )}

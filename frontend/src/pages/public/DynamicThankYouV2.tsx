@@ -23,6 +23,7 @@ interface TYData {
   slug: string;
   productCode: string;
   price: number;
+  prices: Record<number, number>;
   metaPixelId: string;
 }
 
@@ -48,6 +49,7 @@ export default function DynamicThankYouV2() {
           slug: t.slug,
           productCode: cfg.productCode || '',
           price: cfg.prices?.[1] || 0,
+          prices: cfg.prices || {},
           metaPixelId: cfg.metaPixelId || '',
         });
       })
@@ -60,12 +62,15 @@ export default function DynamicThankYouV2() {
     purchaseFired.current = true;
     if (data.metaPixelId) {
       initMetaPixel(data.metaPixelId);
+      const qtyParam = parseInt(q.get('qty') || '1') || 1;
+      const purchaseValue = data.prices?.[qtyParam] || data.price;
       window.fbq?.('track', 'Purchase', {
         content_name: data.title,
         content_ids: [data.productCode],
         content_type: 'product',
-        value: data.price,
+        value: purchaseValue,
         currency: 'XOF',
+        num_items: qtyParam,
       });
     }
   }, [data]);

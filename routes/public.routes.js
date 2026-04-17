@@ -10,7 +10,7 @@ const router = express.Router();
 /** Résout companyId à partir de req.query.company ou req.headers['x-company-slug'] */
 async function resolveCompanyId(req) {
   const slug = String(
-    req.query.company || req.headers['x-company-slug'] || ''
+    req.body?.company || req.query.company || req.headers['x-company-slug'] || ''
   ).trim().toLowerCase();
   if (!slug) return 1;
   const company = await prisma.company.findUnique({ where: { slug } });

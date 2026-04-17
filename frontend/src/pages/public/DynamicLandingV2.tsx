@@ -319,7 +319,7 @@ export default function DynamicLandingV2() {
       });
       const ref = res.data?.orderReference || '';
       const thankUrl = cfg?.thankYouUrl || `/landing/${slug}/merci`;
-      const p = new URLSearchParams(); p.set('company', company); if (ref) p.set('ref', ref);
+      const p = new URLSearchParams(); p.set('company', company); if (ref) p.set('ref', ref); p.set('qty', String(qty));
       navigate(`${thankUrl}?${p.toString()}`);
     } catch (err: any) { setFormErr(err?.response?.data?.error || 'Erreur. Reessayez.'); }
     finally { setSending(false); }

@@ -5,6 +5,21 @@ import axios from 'axios';
 
 const API_URL = '/api';
 const TARGET_CODE = 'VERRUE_TK';
+const META_PIXEL_ID = '1607715340249349';
+
+declare global { interface Window { fbq: any; _fbq: any; } }
+
+function initMetaPixel(pixelId: string) {
+  if (!pixelId || window.fbq) return;
+  const f: any = window.fbq = function (...args: any[]) { f.callMethod ? f.callMethod(...args) : f.queue.push(args); };
+  if (!window._fbq) window._fbq = f;
+  f.push = f; f.loaded = true; f.version = '2.0'; f.queue = [];
+  const s = document.createElement('script');
+  s.async = true; s.src = 'https://connect.facebook.net/en_US/fbevents.js';
+  document.head.appendChild(s);
+  window.fbq('init', pixelId);
+  window.fbq('track', 'PageView');
+}
 const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
 const QTY_OPTS = [
   { v: 1, label: '1 boite', sub: '9 900 FCFA', save: '' },
@@ -26,10 +41,7 @@ const I = {
 };
 const VID = ['/verrue-tk/video-1.mp4', '/verrue-tk/video-2.mp4', '/verrue-tk/video-3.mp4'];
 
-const EXTRA_IMGS = [
-  '/verrue-tk/extra-1.webp', '/verrue-tk/extra-2.webp', '/verrue-tk/extra-3.webp',
-  '/verrue-tk/extra-4.webp', '/verrue-tk/extra-5.webp', '/verrue-tk/extra-6.webp',
-];
+const EXTRA_IMGS: string[] = [];
 
 const TOASTS = [
   { n: 'Awa K.', v: 'Abidjan', t: '2 min' },
@@ -219,15 +231,35 @@ export default function VerrueTkLanding() {
     return () => document.removeEventListener('mousemove', handler);
   }, [modal]);
 
+  const pixelFired = useRef(false);
+  useEffect(() => {
+    if (pixelFired.current) return;
+    pixelFired.current = true;
+    initMetaPixel(META_PIXEL_ID);
+    window.fbq?.('track', 'ViewContent', {
+      content_name: 'Creme Anti-Verrue VERRUE TK', content_ids: [TARGET_CODE],
+      content_type: 'product', value: PRICES[1], currency: 'XOF',
+    });
+  }, []);
+
   useEffect(() => {
     axios.get(`${API_URL}/public/products`, { params: { company } })
       .then(r => setProduct((r.data?.products || []).find((p: Product) => p.code?.toUpperCase() === TARGET_CODE) || null))
-      .catch(() => { /* loaded lazily at submit time if needed */ });
+      .catch(() => {});
   }, [company]);
 
   useEffect(() => { document.body.style.overflow = (modal || exitPopup) ? 'hidden' : ''; return () => { document.body.style.overflow = ''; }; }, [modal, exitPopup]);
 
-  const open = useCallback(() => { setFormErr(''); setName(''); setCity(''); setPhone(''); setQty(1); setModal(true); setExitPopup(false); }, []);
+  const open = useCallback((q?: number) => {
+    setFormErr(''); setName(''); setCity(''); setPhone('');
+    if (q) setQty(q); else setQty(1);
+    setModal(true); setExitPopup(false);
+    const selectedQty = q || 1;
+    window.fbq?.('track', 'AddToCart', {
+      content_name: 'Creme Anti-Verrue VERRUE TK', content_ids: [TARGET_CODE],
+      content_type: 'product', value: PRICES[selectedQty] || PRICES[1], currency: 'XOF', num_items: selectedQty,
+    });
+  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setFormErr('');
@@ -235,6 +267,10 @@ export default function VerrueTkLanding() {
     if (!city.trim()) return setFormErr('Entrez votre ville / commune.');
     if (!phone.trim()) return setFormErr('Entrez votre numero de telephone.');
     setSending(true);
+    window.fbq?.('track', 'InitiateCheckout', {
+      content_name: 'Creme Anti-Verrue VERRUE TK', content_ids: [TARGET_CODE],
+      content_type: 'product', value: PRICES[qty] || PRICES[1], currency: 'XOF', num_items: qty,
+    });
     try {
       let prod = product;
       if (!prod) {
@@ -243,7 +279,14 @@ export default function VerrueTkLanding() {
         if (prod) setProduct(prod);
       }
       if (!prod) { setFormErr('Produit introuvable. Reessayez.'); setSending(false); return; }
-      const res = await axios.post(`${API_URL}/public/order`, { company, productId: prod.id, customerName: name.trim(), customerPhone: phone.trim(), customerCity: city.trim(), quantity: qty });
+      const fbc = document.cookie.match('(^|;)\\s*_fbc\\s*=\\s*([^;]+)')?.pop() || '';
+      const fbp = document.cookie.match('(^|;)\\s*_fbp\\s*=\\s*([^;]+)')?.pop() || '';
+      const res = await axios.post(`${API_URL}/public/order`, {
+        company, productId: prod.id, customerName: name.trim(), customerPhone: phone.trim(),
+        customerCity: city.trim(), quantity: qty,
+        fbc: fbc || undefined, fbp: fbp || undefined, sourceUrl: window.location.href,
+        metaPixelId: META_PIXEL_ID,
+      });
       const ref = res.data?.orderReference || '';
       const p = new URLSearchParams(); p.set('company', company); if (ref) p.set('ref', ref);
       navigate(`/anti-verrue/merci?${p.toString()}`);
@@ -347,7 +390,7 @@ export default function VerrueTkLanding() {
               <span className="flex items-center gap-1.5"><Check/> Support 7j/7</span>
             </div>
             <div className="hidden sm:block">
-              <GlowBtn onClick={open} variant="gold">
+              <GlowBtn onClick={() => open()} variant="gold">
                 <span className="relative z-10 flex items-center gap-2">
                   <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-900 opacity-40"/><span className="relative inline-flex h-2 w-2 rounded-full bg-neutral-900"/></span>
                   Commander maintenant — {fmt(PRICES[1])}
@@ -401,7 +444,7 @@ export default function VerrueTkLanding() {
             <p className="mx-auto mb-5 max-w-md text-[13px] leading-relaxed text-neutral-300 sm:text-sm">
               Grace a sa formule puissante, notre creme agit en profondeur pour eliminer les verrues a la racine, assecher la peau infectee et favoriser une regeneration saine.
             </p>
-            <GlowBtn onClick={open} variant="gold">
+            <GlowBtn onClick={() => open()} variant="gold">
               <span className="relative z-10 flex items-center gap-2">
                 <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-900 opacity-40"/><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-neutral-900"/></span>
                 Commander maintenant — {fmt(PRICES[1])}
@@ -425,7 +468,7 @@ export default function VerrueTkLanding() {
           <p className="mx-auto mb-6 max-w-lg text-center text-[13px] text-neutral-400">Plus vous commandez, plus vous economisez.</p>
           <div className="grid gap-3 sm:grid-cols-3">
             {QTY_OPTS.map(o => (
-              <button key={o.v} onClick={() => { setQty(o.v); open(); }}
+              <button key={o.v} onClick={() => open(o.v)}
                 className={`relative rounded-2xl border-2 px-4 py-4 text-center transition-all hover:shadow-lg sm:p-5 ${o.v === 2 ? 'border-amber-400 bg-amber-50/50 shadow-md ring-2 ring-amber-200' : 'border-neutral-200 bg-white hover:border-amber-300'}`}>
                 {o.tag && <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-amber-500 px-3 py-0.5 text-[10px] font-bold text-white shadow">{o.tag}</span>}
                 <div className="flex items-center justify-between sm:flex-col sm:items-center sm:gap-1">
@@ -528,7 +571,7 @@ export default function VerrueTkLanding() {
             <div className="h-2.5 flex-1 rounded-full bg-neutral-100"><div className="h-full rounded-full bg-gradient-to-r from-red-400 to-amber-400 transition-all" style={{ width: `${stockPct}%` }}/></div>
             <span className="shrink-0 text-[11px] font-bold text-red-500">Plus que {stock} unites</span>
           </div>
-          <GlowBtn onClick={open} variant="gold">
+          <GlowBtn onClick={() => open()} variant="gold">
             <span className="relative z-10 flex items-center gap-2">
               <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-900 opacity-40"/><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-neutral-900"/></span>
               Je commande maintenant
@@ -597,7 +640,7 @@ export default function VerrueTkLanding() {
               { q: 'Quand je vois les resultats ?', a: 'La plupart des clients voient une amelioration en quelques jours.' },
               { q: 'Comment suis-je contacte ?', a: 'Notre equipe vous appelle dans les heures qui suivent.' },
               { q: 'Convient a tous types de peau ?', a: 'Oui, formule concue pour tous les types de peau.' },
-              { q: 'Plusieurs boites ?', a: '2 boites a 14 900 F ou 3 boites a 24 900 F. Offres groupees populaires.' },
+              { q: 'Plusieurs boites ?', a: '2 boites a 16 900 F ou 3 boites a 24 900 F. Offres groupees populaires.' },
             ].map((f, i) => (
               <details key={i} className="group rounded-xl border border-neutral-200 bg-white shadow-sm">
                 <summary className="flex cursor-pointer items-center justify-between px-4 py-3.5 text-[13px] font-bold sm:text-sm">{f.q}<svg className="chevron h-4 w-4 shrink-0 text-neutral-300 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg></summary>
@@ -621,7 +664,7 @@ export default function VerrueTkLanding() {
           <div className="mb-3 flex items-center justify-center gap-1"><div className="flex gap-0.5">{[...Array(5)].map((_,i)=><Star key={i}/>)}</div><span className="text-xs font-bold text-white">4.8/5</span></div>
           <h2 className="mb-2 text-xl font-extrabold text-white sm:text-2xl">Rejoignez +1 200 clients satisfaits</h2>
           <p className="mb-6 text-[13px] text-neutral-400">Commandez maintenant. Paiement a la livraison.</p>
-          <GlowBtn onClick={open} variant="gold">
+          <GlowBtn onClick={() => open()} variant="gold">
             <span className="relative z-10 flex items-center gap-2">
               <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-900 opacity-40"/><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-neutral-900"/></span>
               Commander ici — {fmt(PRICES[1])}
@@ -651,7 +694,7 @@ export default function VerrueTkLanding() {
             <p className="truncate text-[13px] font-bold sm:text-sm">Creme Anti-Verrue TK</p>
             <p className="text-[11px] text-neutral-400">{fmt(PRICES[1])} · Paiement a la livraison</p>
           </div>
-          <button onClick={open} className="shrink-0 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-300 px-4 py-2.5 text-[13px] font-extrabold text-neutral-900 shadow-[0_4px_16px_rgba(251,191,36,.35)] transition hover:shadow-[0_6px_24px_rgba(251,191,36,.5)] active:scale-[.97] sm:px-6 sm:text-sm">Commander</button>
+          <button onClick={() => open()} className="shrink-0 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-300 px-4 py-2.5 text-[13px] font-extrabold text-neutral-900 shadow-[0_4px_16px_rgba(251,191,36,.35)] transition hover:shadow-[0_6px_24px_rgba(251,191,36,.5)] active:scale-[.97] sm:px-6 sm:text-sm">Commander</button>
         </div>
       </div>
 
@@ -677,7 +720,7 @@ export default function VerrueTkLanding() {
             <span className="mb-3 inline-block text-4xl">⚡</span>
             <h3 className="mb-1 text-lg font-extrabold">Attendez !</h3>
             <p className="mb-4 text-[13px] text-neutral-500">Ne partez pas sans votre creme anti-verrue. Commandez maintenant, payez a la livraison.</p>
-            <button onClick={open} className="flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-neutral-800 active:scale-[.98]">
+            <button onClick={() => open()} className="flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-neutral-800 active:scale-[.98]">
               <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60"/><span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400"/></span>
               Commander maintenant
             </button>
