@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
+import { trackPageView } from '../../utils/pageTracking';
 
 const API_URL = '/api';
 const fmt = (v: number) => v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
@@ -212,6 +213,7 @@ export default function DynamicLandingV2() {
   useEffect(() => {
     if (!cfg || pixelFired.current) return;
     pixelFired.current = true;
+    if (slug) trackPageView(slug, company);
     if (cfg.metaPixelId) {
       initMetaPixel(cfg.metaPixelId);
       window.fbq?.('track', 'ViewContent', {
@@ -222,7 +224,7 @@ export default function DynamicLandingV2() {
         currency: 'XOF',
       });
     }
-  }, [cfg]);
+  }, [cfg, slug, company]);
 
   useEffect(() => {
     if (!cfg?.toasts?.length) return;

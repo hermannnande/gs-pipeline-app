@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   TrendingUp, ShoppingCart, Truck, DollarSign,
-  Calendar, XCircle, CheckCircle
+  Calendar, XCircle, CheckCircle, Eye, Users, Smartphone, Monitor, Tablet, Globe
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -39,22 +39,34 @@ interface TemplateStats {
   cancelled: number;
   revenue: number;
   quantite: number;
+  views: number;
+  uniqueVisitors: number;
+  sessions: number;
+  orderConversionRate: string | null;
 }
 
-interface TimelineEntry { date: string; total: number; validated: number; delivered: number; cancelled: number; revenue: number }
+interface TimelineEntry { date: string; total: number; validated: number; delivered: number; cancelled: number; revenue: number; views: number; uniqueVisitors: number }
 interface CityEntry { city: string; total: number; delivered: number; revenue: number }
 interface StatusEntry { status: string; count: number }
+interface DeviceEntry { device: string; count: number }
+interface BrowserEntry { browser: string; count: number }
+interface SourceEntry { source: string; count: number }
 
 interface LandingData {
   overview: {
     totalOrders: number; totalFromLanding: number; totalOther: number;
     totalValidated: number; totalDelivered: number; totalCancelled: number;
     totalRevenue: number; conversionRate: string; validationRate: string;
+    totalViews: number; totalUniqueVisitors: number; totalSessions: number;
+    visitToOrderRate: string; visitToDeliveredRate: string;
   };
   templateStats: TemplateStats[];
   timeline: TimelineEntry[];
   topCities: CityEntry[];
   statusBreakdown: StatusEntry[];
+  devicesBreakdown: DeviceEntry[];
+  browsersBreakdown: BrowserEntry[];
+  sourcesBreakdown: SourceEntry[];
 }
 
 function KpiCard({ icon: Icon, label, value, sub, color }: {
@@ -170,28 +182,91 @@ export default function LandingAnalytics() {
         </div>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <KpiCard icon={ShoppingCart} label="Total commandes" value={fmt(ov?.totalOrders || 0)}
-          sub={`${ov?.totalFromLanding || 0} via landing`} color="bg-indigo-600" />
-        <KpiCard icon={CheckCircle} label="Validées" value={fmt(ov?.totalValidated || 0)}
-          sub={`${ov?.validationRate || 0}% taux`} color="bg-emerald-600" />
-        <KpiCard icon={Truck} label="Livrées" value={fmt(ov?.totalDelivered || 0)}
-          sub={`${ov?.conversionRate || 0}% conversion`} color="bg-sky-600" />
-        <KpiCard icon={XCircle} label="Annulées" value={fmt(ov?.totalCancelled || 0)}
-          color="bg-red-500" />
-        <KpiCard icon={DollarSign} label="Chiffre d'affaires" value={`${fmt(ov?.totalRevenue || 0)} F`}
-          sub="commandes livrées" color="bg-amber-500" />
+      {/* KPIs Trafic */}
+      <div>
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-neutral-400">Trafic des pages de vente</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <KpiCard icon={Eye} label="Vues totales" value={fmt(ov?.totalViews || 0)}
+            sub="atterrissages" color="bg-violet-600" />
+          <KpiCard icon={Users} label="Visiteurs uniques" value={fmt(ov?.totalUniqueVisitors || 0)}
+            sub={`${ov?.totalSessions || 0} sessions`} color="bg-fuchsia-600" />
+          <KpiCard icon={TrendingUp} label="Visite → Commande" value={`${ov?.visitToOrderRate || 0}%`}
+            sub="taux d'achat" color="bg-pink-600" />
+          <KpiCard icon={Truck} label="Visite → Livrée" value={`${ov?.visitToDeliveredRate || 0}%`}
+            sub="conversion finale" color="bg-rose-600" />
+          <KpiCard icon={Globe} label="% Atterrissage utile" value={ov && ov.totalViews > 0 ? `${((ov.totalUniqueVisitors / ov.totalViews) * 100).toFixed(0)}%` : '0%'}
+            sub="visiteurs uniques / vues" color="bg-purple-600" />
+        </div>
       </div>
+
+      {/* KPIs Conversions */}
+      <div>
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-neutral-400">Conversions et revenus</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <KpiCard icon={ShoppingCart} label="Commandes" value={fmt(ov?.totalOrders || 0)}
+            sub={`${ov?.totalFromLanding || 0} via landing`} color="bg-indigo-600" />
+          <KpiCard icon={CheckCircle} label="Validées" value={fmt(ov?.totalValidated || 0)}
+            sub={`${ov?.validationRate || 0}% taux`} color="bg-emerald-600" />
+          <KpiCard icon={Truck} label="Livrées" value={fmt(ov?.totalDelivered || 0)}
+            sub={`${ov?.conversionRate || 0}% conversion`} color="bg-sky-600" />
+          <KpiCard icon={XCircle} label="Annulées" value={fmt(ov?.totalCancelled || 0)}
+            color="bg-red-500" />
+          <KpiCard icon={DollarSign} label="Chiffre d'affaires" value={`${fmt(ov?.totalRevenue || 0)} F`}
+            sub="commandes livrées" color="bg-amber-500" />
+        </div>
+      </div>
+
+      {/* Funnel de conversion */}
+      <ChartCard title="Entonnoir de conversion (funnel)">
+        {ov && ov.totalViews > 0 ? (
+          <div className="space-y-2">
+            {[
+              { label: 'Vues totales', value: ov.totalViews, max: ov.totalViews, color: 'from-violet-500 to-violet-600', icon: Eye },
+              { label: 'Visiteurs uniques', value: ov.totalUniqueVisitors, max: ov.totalViews, color: 'from-fuchsia-500 to-fuchsia-600', icon: Users },
+              { label: 'Commandes passées', value: ov.totalOrders, max: ov.totalViews, color: 'from-indigo-500 to-indigo-600', icon: ShoppingCart },
+              { label: 'Commandes validées', value: ov.totalValidated, max: ov.totalViews, color: 'from-emerald-500 to-emerald-600', icon: CheckCircle },
+              { label: 'Commandes livrées', value: ov.totalDelivered, max: ov.totalViews, color: 'from-sky-500 to-sky-600', icon: Truck },
+            ].map((step, i) => {
+              const Icon = step.icon;
+              const pct = step.max > 0 ? (step.value / step.max) * 100 : 0;
+              return (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="flex w-44 shrink-0 items-center gap-2">
+                    <Icon className="h-4 w-4 text-neutral-400" />
+                    <span className="text-[12px] font-semibold text-neutral-700">{step.label}</span>
+                  </div>
+                  <div className="relative flex-1">
+                    <div className="h-9 rounded-lg bg-neutral-100">
+                      <div className={`flex h-full items-center justify-end rounded-lg bg-gradient-to-r ${step.color} px-3 text-[12px] font-black text-white shadow-md transition-all`}
+                        style={{ width: `${Math.max(pct, 4)}%` }}>
+                        {fmt(step.value)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="w-14 shrink-0 text-right text-[11px] font-bold text-neutral-500">{pct.toFixed(1)}%</div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex h-[200px] items-center justify-center text-sm text-neutral-400">
+            Aucune donnée de visite. Le tracking va commencer dès que les pages seront visitées après le déploiement.
+          </div>
+        )}
+      </ChartCard>
 
       {/* Main charts row */}
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Timeline */}
-        <ChartCard title="Évolution des commandes" className="lg:col-span-2">
+        <ChartCard title="Évolution: visites & commandes" className="lg:col-span-2">
           {timeline.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={timeline}>
                 <defs>
+                  <linearGradient id="gradViews" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#a855f7" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
+                  </linearGradient>
                   <linearGradient id="gradTotal" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
                     <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
@@ -206,8 +281,9 @@ export default function LandingAnalytics() {
                 <YAxis tick={{ fontSize: 10 }} />
                 <Tooltip content={customTooltip} />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: 11 }} />
+                <Area type="monotone" dataKey="views" name="Vues" stroke="#a855f7" fill="url(#gradViews)" strokeWidth={2} />
+                <Area type="monotone" dataKey="uniqueVisitors" name="Visiteurs uniques" stroke="#ec4899" fill="none" strokeWidth={1.5} />
                 <Area type="monotone" dataKey="total" name="Commandes" stroke="#6366f1" fill="url(#gradTotal)" strokeWidth={2} />
-                <Area type="monotone" dataKey="validated" name="Validées" stroke="#f59e0b" fill="none" strokeWidth={1.5} strokeDasharray="4 4" />
                 <Area type="monotone" dataKey="delivered" name="Livrées" stroke="#22c55e" fill="url(#gradDelivered)" strokeWidth={2} />
                 <Area type="monotone" dataKey="cancelled" name="Annulées" stroke="#ef4444" fill="none" strokeWidth={1.5} strokeDasharray="4 4" />
               </AreaChart>
@@ -316,6 +392,86 @@ export default function LandingAnalytics() {
         )}
       </ChartCard>
 
+      {/* Sources / Devices / Browsers */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <ChartCard title="Sources de trafic">
+          {data?.sourcesBreakdown && data.sourcesBreakdown.length > 0 ? (
+            <div className="space-y-2 max-h-[260px] overflow-y-auto">
+              {data.sourcesBreakdown.map((s, i) => {
+                const max = data.sourcesBreakdown[0]?.count || 1;
+                const pct = (s.count / max) * 100;
+                return (
+                  <div key={i}>
+                    <div className="mb-1 flex items-center justify-between text-[11px]">
+                      <span className="font-semibold text-neutral-700 truncate max-w-[160px]">{s.source}</span>
+                      <span className="font-bold text-neutral-900">{fmt(s.count)}</span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-neutral-100">
+                      <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex h-[200px] items-center justify-center text-sm text-neutral-400">Aucune donnée</div>
+          )}
+        </ChartCard>
+
+        <ChartCard title="Appareils utilisés">
+          {data?.devicesBreakdown && data.devicesBreakdown.length > 0 ? (
+            <div className="space-y-3">
+              {data.devicesBreakdown.map((d, i) => {
+                const total = data.devicesBreakdown.reduce((s, x) => s + x.count, 0);
+                const pct = total > 0 ? (d.count / total) * 100 : 0;
+                const Icon = d.device === 'mobile' ? Smartphone : d.device === 'tablet' ? Tablet : Monitor;
+                const color = d.device === 'mobile' ? 'bg-emerald-500' : d.device === 'tablet' ? 'bg-amber-500' : 'bg-sky-500';
+                return (
+                  <div key={i}>
+                    <div className="mb-1 flex items-center justify-between text-[11px]">
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-4 w-4 text-neutral-500" />
+                        <span className="font-semibold capitalize text-neutral-700">{d.device}</span>
+                      </div>
+                      <span className="font-bold text-neutral-900">{fmt(d.count)} <span className="font-normal text-neutral-400">({pct.toFixed(0)}%)</span></span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-neutral-100">
+                      <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex h-[200px] items-center justify-center text-sm text-neutral-400">Aucune donnée</div>
+          )}
+        </ChartCard>
+
+        <ChartCard title="Navigateurs">
+          {data?.browsersBreakdown && data.browsersBreakdown.length > 0 ? (
+            <div className="space-y-2">
+              {data.browsersBreakdown.slice(0, 8).map((b, i) => {
+                const total = data.browsersBreakdown.reduce((s, x) => s + x.count, 0);
+                const pct = total > 0 ? (b.count / total) * 100 : 0;
+                return (
+                  <div key={i} className="flex items-center justify-between text-[12px]">
+                    <span className="font-semibold text-neutral-700">{b.browser}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 w-20 overflow-hidden rounded-full bg-neutral-100">
+                        <div className="h-full rounded-full bg-indigo-500" style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="w-12 text-right font-bold text-neutral-900">{fmt(b.count)}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex h-[200px] items-center justify-center text-sm text-neutral-400">Aucune donnée</div>
+          )}
+        </ChartCard>
+      </div>
+
       {/* Template table */}
       <ChartCard title="Performance par page de vente">
         <div className="overflow-x-auto">
@@ -323,18 +479,22 @@ export default function LandingAnalytics() {
             <thead>
               <tr className="border-b border-neutral-100 text-left text-[10px] font-bold uppercase tracking-wider text-neutral-400">
                 <th className="pb-2 pr-4">Template</th>
+                <th className="pb-2 px-2 text-right">Vues</th>
+                <th className="pb-2 px-2 text-right">Visiteurs</th>
                 <th className="pb-2 px-2 text-right">Commandes</th>
+                <th className="pb-2 px-2 text-right">V→C</th>
                 <th className="pb-2 px-2 text-right">Validées</th>
                 <th className="pb-2 px-2 text-right">Livrées</th>
                 <th className="pb-2 px-2 text-right">Annulées</th>
                 <th className="pb-2 px-2 text-right">Taux conv.</th>
                 <th className="pb-2 px-2 text-right">CA</th>
-                <th className="pb-2 pl-2 text-right">Quantité</th>
+                <th className="pb-2 pl-2 text-right">Qté</th>
               </tr>
             </thead>
             <tbody>
               {templateData.map((t, i) => {
                 const convRate = t.total > 0 ? ((t.delivered / t.total) * 100).toFixed(1) : '0';
+                const visitToOrder = t.orderConversionRate;
                 return (
                   <tr key={i} className="border-b border-neutral-50 hover:bg-neutral-50/50 transition">
                     <td className="py-2.5 pr-4">
@@ -346,7 +506,20 @@ export default function LandingAnalytics() {
                         )}
                       </div>
                     </td>
+                    <td className="py-2.5 px-2 text-right font-bold text-violet-600">{fmt(t.views || 0)}</td>
+                    <td className="py-2.5 px-2 text-right font-semibold text-fuchsia-600">{fmt(t.uniqueVisitors || 0)}</td>
                     <td className="py-2.5 px-2 text-right font-bold text-neutral-900">{fmt(t.total)}</td>
+                    <td className="py-2.5 px-2 text-right">
+                      {visitToOrder !== null && visitToOrder !== undefined ? (
+                        <span className={`inline-flex rounded-md px-1.5 py-0.5 text-[10px] font-bold ${
+                          parseFloat(visitToOrder) >= 5 ? 'bg-emerald-100 text-emerald-700' :
+                          parseFloat(visitToOrder) >= 2 ? 'bg-amber-100 text-amber-700' :
+                          'bg-red-100 text-red-600'
+                        }`}>{visitToOrder}%</span>
+                      ) : (
+                        <span className="text-neutral-300">—</span>
+                      )}
+                    </td>
                     <td className="py-2.5 px-2 text-right text-emerald-600 font-semibold">{fmt(t.validated)}</td>
                     <td className="py-2.5 px-2 text-right text-sky-600 font-semibold">{fmt(t.delivered)}</td>
                     <td className="py-2.5 px-2 text-right text-red-500 font-semibold">{fmt(t.cancelled)}</td>
@@ -363,7 +536,7 @@ export default function LandingAnalytics() {
                 );
               })}
               {templateData.length === 0 && (
-                <tr><td colSpan={8} className="py-8 text-center text-neutral-400">Aucune donnée pour cette période</td></tr>
+                <tr><td colSpan={11} className="py-8 text-center text-neutral-400">Aucune donnée pour cette période</td></tr>
               )}
             </tbody>
           </table>

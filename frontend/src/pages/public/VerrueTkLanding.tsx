@@ -2,9 +2,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { trackPageView } from '../../utils/pageTracking';
 
 const API_URL = '/api';
 const TARGET_CODE = 'VERRUE_TK';
+const PAGE_SLUG = 'anti-verrue';
 const META_PIXEL_ID = '1607715340249349';
 
 declare global { interface Window { fbq: any; _fbq: any; } }
@@ -235,12 +237,13 @@ export default function VerrueTkLanding() {
   useEffect(() => {
     if (pixelFired.current) return;
     pixelFired.current = true;
+    trackPageView(PAGE_SLUG, company);
     initMetaPixel(META_PIXEL_ID);
     window.fbq?.('track', 'ViewContent', {
       content_name: 'Creme Anti-Verrue VERRUE TK', content_ids: [TARGET_CODE],
       content_type: 'product', value: PRICES[1], currency: 'XOF',
     });
-  }, []);
+  }, [company]);
 
   useEffect(() => {
     axios.get(`${API_URL}/public/products`, { params: { company } })

@@ -25,6 +25,7 @@ model Company {
   deliveryLists DeliveryList[]
   storeConfigs StoreConfig[]
   landingTemplates LandingTemplate[]
+  pageViews    PageView[]
 
   @@map("companies")
 }
@@ -902,6 +903,44 @@ model LandingTemplate {
 
   @@index([companyId])
   @@map("landing_templates")
+}
+
+// Tracking des visites sur les pages de vente / landing pages
+model PageView {
+  id          Int      @id @default(autoincrement())
+  companyId   Int      @default(1)
+  company     Company  @relation(fields: [companyId], references: [id])
+
+  slug        String   // slug du template ou identifiant de la page (ex: "anti-verrue", "verrue-tk")
+  path        String   // chemin URL complet (ex: "/landing/anti-verrue")
+  templateId  Int?     // optionnel: lien vers LandingTemplate si trouvé
+
+  visitorId   String   // identifiant unique anonyme stocké en cookie/localStorage
+  sessionId   String   // identifiant de session (renouvelé toutes les 30min)
+  isUnique    Boolean  @default(true) // true si premier vue de ce visitor sur ce slug
+  isNewSession Boolean @default(true) // true si nouvelle session
+
+  referrer    String?  @db.Text
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  fbclid      String?  // Facebook click ID
+  gclid       String?  // Google click ID
+
+  userAgent   String?  @db.Text
+  ip          String?
+  country     String?
+  city        String?
+
+  device      String?  // "mobile" | "tablet" | "desktop"
+  browser     String?
+
+  createdAt   DateTime @default(now())
+
+  @@index([companyId, createdAt])
+  @@index([slug, createdAt])
+  @@index([visitorId])
+  @@map("page_views")
 }
 
 // Configuration du magasin/bureau (support multi-sites)

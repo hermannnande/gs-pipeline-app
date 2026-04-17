@@ -493,6 +493,25 @@ router.get('/landing', authorize('ADMIN'), async (req, res) => {
       orderBy: { createdAt: 'asc' },
     });
 
+    const pvWhere = { companyId };
+    if (startDate) pvWhere.createdAt = { gte: parseUtcDayStart(startDate) };
+    if (endDate) pvWhere.createdAt = { ...pvWhere.createdAt, lt: parseUtcNextDayStart(endDate) };
+
+    let pageViews = [];
+    try {
+      pageViews = await prisma.pageView.findMany({
+        where: pvWhere,
+        select: {
+          id: true, slug: true, templateId: true, visitorId: true, sessionId: true,
+          isUnique: true, isNewSession: true, createdAt: true, device: true, browser: true,
+          utmSource: true, utmMedium: true, utmCampaign: true, fbclid: true, gclid: true, referrer: true,
+        },
+        orderBy: { createdAt: 'asc' },
+      });
+    } catch (e) {
+      console.warn('PageView non disponible (table peut-être pas migrée):', e.message);
+    }
+
     const templateProductIds = new Set(templates.map(t => t.productId).filter(Boolean));
     const templateProductCodes = new Set(templates.map(t => t.productCode?.toUpperCase()).filter(Boolean));
     const templateByProduct = {};
@@ -528,6 +547,68 @@ router.get('/landing', authorize('ADMIN'), async (req, res) => {
     const byStatus = {};
     let totalLanding = 0;
     let totalOther = 0;
+
+    const pvByTemplate = {};
+    const pvByDate = {};
+    const pvByDevice = { mobile: 0, tablet: 0, desktop: 0 };
+    const pvByBrowser = {};
+    const pvBySource = {};
+    const uniqueVisitorsBySlug = {};
+    const uniqueSessionsBySlug = {};
+    const uniqueVisitorsAll = new Set();
+    const uniqueSessionsAll = new Set();
+
+    pageViews.forEach(pv => {
+      const slug = pv.slug || '_unknown';
+      const tplKey = pv.templateId ? `tpl:${pv.templateId}` : `slug:${slug}`;
+
+      if (!pvByTemplate[tplKey]) pvByTemplate[tplKey] = { templateId: pv.templateId || null, slug, views: 0, uniqueVisitors: new Set(), sessions: new Set() };
+      pvByTemplate[tplKey].views++;
+      pvByTemplate[tplKey].uniqueVisitors.add(pv.visitorId);
+      pvByTemplate[tplKey].sessions.add(pv.sessionId);
+
+      uniqueVisitorsAll.add(pv.visitorId);
+      uniqueSessionsAll.add(pv.sessionId);
+
+      if (!uniqueVisitorsBySlug[slug]) uniqueVisitorsBySlug[slug] = new Set();
+      uniqueVisitorsBySlug[slug].add(pv.visitorId);
+      if (!uniqueSessionsBySlug[slug]) uniqueSessionsBySlug[slug] = new Set();
+      uniqueSessionsBySlug[slug].add(pv.sessionId);
+
+      const d = new Date(pv.createdAt);
+      let dateKey;
+      if (period === 'month') dateKey = d.toISOString().substring(0, 7);
+      else if (period === 'week') {
+        const day = d.getUTCDay();
+        const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1);
+        const monday = new Date(d);
+        monday.setUTCDate(diff);
+        dateKey = monday.toISOString().substring(0, 10);
+      } else dateKey = d.toISOString().substring(0, 10);
+
+      if (!pvByDate[dateKey]) pvByDate[dateKey] = { date: dateKey, views: 0, visitors: new Set(), sessions: new Set() };
+      pvByDate[dateKey].views++;
+      pvByDate[dateKey].visitors.add(pv.visitorId);
+      pvByDate[dateKey].sessions.add(pv.sessionId);
+
+      const dev = pv.device || 'desktop';
+      pvByDevice[dev] = (pvByDevice[dev] || 0) + 1;
+
+      const br = pv.browser || 'Autre';
+      pvByBrowser[br] = (pvByBrowser[br] || 0) + 1;
+
+      let source = 'Direct';
+      if (pv.fbclid || pv.utmSource?.toLowerCase().includes('facebook') || pv.utmSource?.toLowerCase().includes('meta')) source = 'Facebook/Meta';
+      else if (pv.gclid || pv.utmSource?.toLowerCase().includes('google')) source = 'Google';
+      else if (pv.utmSource) source = pv.utmSource;
+      else if (pv.referrer) {
+        try {
+          const host = new URL(pv.referrer).hostname.replace(/^www\./, '');
+          source = host || 'Referrer';
+        } catch { source = 'Referrer'; }
+      }
+      pvBySource[source] = (pvBySource[source] || 0) + 1;
+    });
 
     orders.forEach(order => {
       const tpl = findTemplate(order);
@@ -582,10 +663,43 @@ router.get('/landing', authorize('ADMIN'), async (req, res) => {
     });
 
     const templateStats = Object.values(byTemplate)
-      .sort((a, b) => b.total - a.total);
+      .sort((a, b) => b.total - a.total)
+      .map(t => {
+        let pvKey = t.templateId ? `tpl:${t.templateId}` : (t.slug ? `slug:${t.slug}` : null);
+        const pvData = pvKey ? pvByTemplate[pvKey] : null;
+        const views = pvData?.views || 0;
+        const uniqueVisitors = pvData?.uniqueVisitors.size || 0;
+        return {
+          ...t,
+          views,
+          uniqueVisitors,
+          sessions: pvData?.sessions.size || 0,
+          orderConversionRate: views > 0 ? ((t.total / views) * 100).toFixed(2) : null,
+        };
+      });
 
     const timeline = Object.values(timelineMap)
-      .sort((a, b) => a.date.localeCompare(b.date));
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map(t => {
+        const pv = pvByDate[t.date];
+        return {
+          ...t,
+          views: pv?.views || 0,
+          uniqueVisitors: pv?.visitors?.size || 0,
+        };
+      });
+
+    Object.keys(pvByDate).forEach(date => {
+      if (!timelineMap[date]) {
+        const pv = pvByDate[date];
+        timeline.push({
+          date,
+          total: 0, validated: 0, delivered: 0, cancelled: 0, revenue: 0,
+          views: pv.views, uniqueVisitors: pv.visitors.size,
+        });
+      }
+    });
+    timeline.sort((a, b) => a.date.localeCompare(b.date));
 
     const topCities = Object.values(byCity)
       .sort((a, b) => b.total - a.total)
@@ -596,6 +710,16 @@ router.get('/landing', authorize('ADMIN'), async (req, res) => {
     const totalDelivered = orders.filter(o => DELIVERED.includes(o.status)).length;
     const totalRevenue = orders.filter(o => DELIVERED.includes(o.status)).reduce((s, o) => s + (o.montant || 0), 0);
     const totalCancelled = orders.filter(o => CANCELLED.includes(o.status)).length;
+
+    const totalViews = pageViews.length;
+    const totalUniqueVisitors = uniqueVisitorsAll.size;
+    const totalSessions = uniqueSessionsAll.size;
+    const visitToOrderRate = totalUniqueVisitors > 0 ? ((totalAll / totalUniqueVisitors) * 100).toFixed(2) : '0';
+    const visitToDeliveredRate = totalUniqueVisitors > 0 ? ((totalDelivered / totalUniqueVisitors) * 100).toFixed(2) : '0';
+
+    const sourcesArray = Object.entries(pvBySource)
+      .map(([source, count]) => ({ source, count }))
+      .sort((a, b) => b.count - a.count);
 
     res.json({
       overview: {
@@ -608,11 +732,19 @@ router.get('/landing', authorize('ADMIN'), async (req, res) => {
         totalRevenue,
         conversionRate: totalAll > 0 ? ((totalDelivered / totalAll) * 100).toFixed(1) : '0',
         validationRate: totalAll > 0 ? ((totalValidated / totalAll) * 100).toFixed(1) : '0',
+        totalViews,
+        totalUniqueVisitors,
+        totalSessions,
+        visitToOrderRate,
+        visitToDeliveredRate,
       },
       templateStats,
       timeline,
       topCities,
       statusBreakdown: Object.entries(byStatus).map(([status, count]) => ({ status, count })),
+      devicesBreakdown: Object.entries(pvByDevice).filter(([, c]) => c > 0).map(([device, count]) => ({ device, count })),
+      browsersBreakdown: Object.entries(pvByBrowser).map(([browser, count]) => ({ browser, count })).sort((a, b) => b.count - a.count),
+      sourcesBreakdown: sourcesArray,
       filters: { startDate: startDate || null, endDate: endDate || null, period },
     });
   } catch (error) {
