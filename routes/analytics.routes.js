@@ -753,4 +753,55 @@ router.get('/landing', authorize('ADMIN'), async (req, res) => {
   }
 });
 
+// GET /api/analytics/meta-config?pixelId=xxx - Verifie la config CAPI d'un pixel
+router.get('/meta-config', authorize('ADMIN'), async (req, res) => {
+  const { pixelId } = req.query;
+  if (!pixelId) return res.status(400).json({ error: 'pixelId requis' });
+
+  const defaultPixel = process.env.META_PIXEL_ID || '';
+  const defaultToken = process.env.META_ACCESS_TOKEN || '';
+  const pixelTokens = process.env.META_PIXEL_TOKENS || '';
+
+  let hasToken = false;
+  let tokenSource = null;
+
+  if (pixelTokens) {
+    for (const pair of pixelTokens.split(',')) {
+      const [pid, tok] = pair.split(':');
+      if (pid?.trim() === pixelId && tok?.trim()) {
+        hasToken = true;
+        tokenSource = 'META_PIXEL_TOKENS';
+        break;
+      }
+    }
+  }
+  if (!hasToken && pixelId === defaultPixel && defaultToken) {
+    hasToken = true;
+    tokenSource = 'META_ACCESS_TOKEN (default)';
+  }
+
+  let templates = [];
+  try {
+    const tpls = await prisma.landingTemplate.findMany({
+      where: { companyId: req.user.companyId, actif: true },
+      select: { id: true, slug: true, nom: true, config: true },
+    });
+    templates = tpls
+      .map(t => {
+        let cfg = {};
+        try { cfg = JSON.parse(t.config); } catch {}
+        return { id: t.id, slug: t.slug, nom: t.nom, metaPixelId: cfg.metaPixelId || null };
+      })
+      .filter(t => t.metaPixelId === String(pixelId));
+  } catch {}
+
+  res.json({
+    pixelId: String(pixelId),
+    hasToken,
+    tokenSource,
+    defaultPixelConfigured: !!defaultPixel,
+    templatesUsingPixel: templates,
+  });
+});
+
 export default router;

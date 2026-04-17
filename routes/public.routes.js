@@ -286,4 +286,66 @@ router.post('/pageview', async (req, res) => {
   }
 });
 
+// POST /api/public/track-purchase - Renvoie un Purchase CAPI server-side a chaque atterrissage
+// sur la page de remerciement. Utilise event_id base sur orderRef pour dedoublonnage avec le pixel browser.
+router.post('/track-purchase', async (req, res) => {
+  try {
+    const companyId = await resolveCompanyId(req);
+    const { ref, slug, sourceUrl, fbc, fbp } = req.body;
+
+    if (!ref) {
+      return res.json({ success: false, reason: 'missing_ref' });
+    }
+
+    const order = await prisma.order.findFirst({
+      where: { orderReference: String(ref), companyId },
+      include: { product: true },
+    });
+
+    if (!order) {
+      return res.json({ success: false, reason: 'order_not_found' });
+    }
+
+    let pixelId = null;
+    if (slug) {
+      try {
+        const tpl = await prisma.landingTemplate.findFirst({
+          where: { slug: String(slug), companyId },
+          select: { config: true },
+        });
+        if (tpl) {
+          const cfg = JSON.parse(tpl.config);
+          pixelId = cfg.metaPixelId || null;
+        }
+      } catch {}
+    }
+
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip;
+    const userAgent = req.headers['user-agent'] || '';
+
+    const result = await sendPurchaseEvent({
+      orderId: order.id,
+      orderRef: order.orderReference,
+      amount: order.montant,
+      currency: 'XOF',
+      productName: order.product?.nom || order.produitNom,
+      productCode: order.product?.code || order.sourceCampagne,
+      quantity: order.quantite || 1,
+      customerPhone: order.clientTelephone,
+      customerCity: order.clientVille,
+      clientIp,
+      userAgent,
+      fbc: fbc || null,
+      fbp: fbp || null,
+      sourceUrl: sourceUrl || null,
+      pixelId,
+    });
+
+    res.json({ success: true, sent: !!result, pixelId });
+  } catch (error) {
+    console.error('Erreur track-purchase (non bloquante):', error);
+    res.json({ success: false, error: error.message });
+  }
+});
+
 export default router;

@@ -1,9 +1,65 @@
+import { useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import axios from 'axios';
+
+const API_URL = '/api';
+const META_PIXEL_ID = '1639149310623476';
+const TEMPLATE_SLUG = 'creme-anti-verrue';
+const PRODUCT_CODE = 'VERRUE_TK';
+const PRODUCT_NAME = 'Creme Anti-Verrue VERRUE TK';
+const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+
+declare global { interface Window { fbq: any; _fbq: any; } }
+
+function initMetaPixel(pixelId: string) {
+  if (!pixelId || window.fbq) return;
+  const f: any = window.fbq = function (...args: any[]) { f.callMethod ? f.callMethod(...args) : f.queue.push(args); };
+  if (!window._fbq) window._fbq = f;
+  f.push = f; f.loaded = true; f.version = '2.0'; f.queue = [];
+  const s = document.createElement('script');
+  s.async = true; s.src = 'https://connect.facebook.net/en_US/fbevents.js';
+  document.head.appendChild(s);
+  window.fbq('init', pixelId);
+  window.fbq('track', 'PageView');
+}
 
 export default function VerrueTkThankYou() {
   const q = new URLSearchParams(useLocation().search);
   const ref = q.get('ref') || '';
   const company = q.get('company') || 'ci';
+  const qty = parseInt(q.get('qty') || '1') || 1;
+  const purchaseFired = useRef(false);
+
+  useEffect(() => {
+    if (purchaseFired.current) return;
+    purchaseFired.current = true;
+
+    const eventId = ref ? `purchase_${ref}` : `purchase_${Date.now()}`;
+    const value = PRICES[qty] || PRICES[1];
+
+    initMetaPixel(META_PIXEL_ID);
+    window.fbq?.('track', 'Purchase', {
+      content_name: PRODUCT_NAME,
+      content_ids: [PRODUCT_CODE],
+      content_type: 'product',
+      value,
+      currency: 'XOF',
+      num_items: qty,
+    }, { eventID: eventId });
+
+    if (ref) {
+      const fbc = document.cookie.split('; ').find(c => c.startsWith('_fbc='))?.split('=')[1] || null;
+      const fbp = document.cookie.split('; ').find(c => c.startsWith('_fbp='))?.split('=')[1] || null;
+      axios.post(`${API_URL}/public/track-purchase`, {
+        ref,
+        slug: TEMPLATE_SLUG,
+        company,
+        sourceUrl: window.location.href,
+        fbc,
+        fbp,
+      }).catch(() => {});
+    }
+  }, [ref, company, qty]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-white px-4 py-10" style={{ fontFamily: "'Inter',system-ui,-apple-system,sans-serif" }}>

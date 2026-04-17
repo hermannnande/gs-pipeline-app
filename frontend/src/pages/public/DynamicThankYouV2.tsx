@@ -60,10 +60,13 @@ export default function DynamicThankYouV2() {
   useEffect(() => {
     if (!data || purchaseFired.current) return;
     purchaseFired.current = true;
+
+    const eventId = ref ? `purchase_${ref}` : `purchase_${Date.now()}`;
+    const qtyParam = parseInt(q.get('qty') || '1') || 1;
+    const purchaseValue = data.prices?.[qtyParam] || data.price;
+
     if (data.metaPixelId) {
       initMetaPixel(data.metaPixelId);
-      const qtyParam = parseInt(q.get('qty') || '1') || 1;
-      const purchaseValue = data.prices?.[qtyParam] || data.price;
       window.fbq?.('track', 'Purchase', {
         content_name: data.title,
         content_ids: [data.productCode],
@@ -71,9 +74,22 @@ export default function DynamicThankYouV2() {
         value: purchaseValue,
         currency: 'XOF',
         num_items: qtyParam,
-      });
+      }, { eventID: eventId });
     }
-  }, [data]);
+
+    if (ref) {
+      const fbc = document.cookie.split('; ').find(c => c.startsWith('_fbc='))?.split('=')[1] || null;
+      const fbp = document.cookie.split('; ').find(c => c.startsWith('_fbp='))?.split('=')[1] || null;
+      axios.post(`${API_URL}/public/track-purchase`, {
+        ref,
+        slug: data.slug,
+        company,
+        sourceUrl: window.location.href,
+        fbc,
+        fbp,
+      }).catch(() => {});
+    }
+  }, [data, ref, company]);
 
   if (loading) return (
     <div className="flex min-h-screen items-center justify-center bg-[#fafaf9]">
