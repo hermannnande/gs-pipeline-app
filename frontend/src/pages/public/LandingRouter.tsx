@@ -1,11 +1,11 @@
 import { Component, useEffect, useState } from 'react';
 import type { ReactNode, ErrorInfo } from 'react';
-import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import DynamicLanding from './DynamicLanding';
 import DynamicLandingV2 from './DynamicLandingV2';
+import { useLandingSlug } from '../../hooks/useLandingSlug';
 
-const API_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
   state = { error: null as string | null };
@@ -26,7 +26,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
 }
 
 export default function LandingRouter() {
-  const { slug } = useParams<{ slug: string }>();
+  const slug = useLandingSlug();
   const [version, setVersion] = useState<number | null>(null);
 
   useEffect(() => {

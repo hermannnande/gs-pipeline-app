@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import DynamicThankYou from './DynamicThankYou';
 import DynamicThankYouV2 from './DynamicThankYouV2';
+import { useLandingSlug } from '../../hooks/useLandingSlug';
 
-const API_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export default function ThankYouRouter() {
-  const { slug } = useParams<{ slug: string }>();
+  const slug = useLandingSlug();
   const [version, setVersion] = useState<number | null>(null);
 
   useEffect(() => {

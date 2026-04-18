@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { useLandingSlug } from '../../hooks/useLandingSlug';
 
-const API_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 declare global { interface Window { fbq: any; _fbq: any; } }
 
 function initMetaPixel(pixelId: string) {
@@ -28,7 +29,7 @@ interface TYData {
 }
 
 export default function DynamicThankYouV2() {
-  const { slug } = useParams<{ slug: string }>();
+  const slug = useLandingSlug();
   const q = new URLSearchParams(useLocation().search);
   const ref = q.get('ref') || '';
   const company = q.get('company') || 'ci';

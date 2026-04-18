@@ -82,6 +82,10 @@ web_modules/
 .env
 .env.*
 !.env.example
+!.env.vps.example
+
+# Deploy VPS artefacts
+frontend/dist-deploy.tar.gz
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache

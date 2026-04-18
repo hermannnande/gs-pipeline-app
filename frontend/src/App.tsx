@@ -80,6 +80,19 @@ function App() {
         <Route path="/anti-verrue/merci" element={<VerrueTkThankYou />} />
         <Route path="/landing/:slug" element={<LandingRouter />} />
         <Route path="/landing/:slug/merci" element={<ThankYouRouter />} />
+
+        {/* Routes courtes (URLs propres servies par le VPS via .htaccess) */}
+        <Route path="/creme-anti-verrue" element={<LandingRouter />} />
+        <Route path="/creme-anti-verrue/merci" element={<ThankYouRouter />} />
+        <Route path="/creme-verrue-tk" element={<LandingRouter />} />
+        <Route path="/creme-verrue-tk/merci" element={<ThankYouRouter />} />
+        <Route path="/spraydouleurtk" element={<LandingRouter />} />
+        <Route path="/spraydouleurtk/merci" element={<ThankYouRouter />} />
+        <Route path="/creme-ongle-incarne" element={<LandingRouter />} />
+        <Route path="/creme-ongle-incarne/merci" element={<ThankYouRouter />} />
+        <Route path="/chaussette-compression" element={<LandingRouter />} />
+        <Route path="/chaussette-compression/merci" element={<ThankYouRouter />} />
+
         <Route path="/login" element={<Login />} />
 
         {/* Pages protégées — nécessitent une authentification */}

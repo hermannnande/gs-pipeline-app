@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "deploy:vps": "node ../scripts/deploy-vps.mjs",
+    "deploy:vps:images": "node ../scripts/deploy-vps.mjs --with-images",
+    "deploy:vps:dry": "node ../scripts/deploy-vps.mjs --dry-run"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.14.2",

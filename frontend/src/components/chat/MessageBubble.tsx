@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useQueryClient } from '@tanstack/react-query';
 import { chatApi } from '@/lib/chatApi';
 
-const API_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 const BASE_URL = 'https://gs-pipeline-app-2.vercel.app';
 
 interface MessageBubbleProps {

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 const VISITOR_KEY = 'gs_visitor_id';
 const SESSION_KEY = 'gs_session_id';
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes

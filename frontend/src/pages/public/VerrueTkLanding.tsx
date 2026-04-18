@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { trackPageView } from '../../utils/pageTracking';
 
-const API_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 const TARGET_CODE = 'VERRUE_TK';
 const PAGE_SLUG = 'anti-verrue';
 const META_PIXEL_ID = '1607715340249349';

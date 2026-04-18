@@ -88,20 +88,20 @@ export default function WhatsAppInbox() {
   const { data: statsData } = useQuery({
     queryKey: ['wa-stats'],
     queryFn: whatsappApi.getStats,
-    refetchInterval: 15000,
+    refetchInterval: false,
   });
 
   const { data: listData, isLoading: listLoading } = useQuery({
     queryKey: ['wa-conversations', statusFilter, search],
     queryFn: () => whatsappApi.getConversations({ status: statusFilter || undefined, search: search || undefined }),
-    refetchInterval: 10000,
+    refetchInterval: false,
   });
 
   const { data: convData } = useQuery({
     queryKey: ['wa-conversation', selectedId],
     queryFn: () => whatsappApi.getConversation(selectedId!),
     enabled: !!selectedId,
-    refetchInterval: 5000,
+    refetchInterval: false,
   });
 
   const sendMutation = useMutation({

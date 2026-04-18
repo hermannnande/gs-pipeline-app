@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { trackPageView } from '../../utils/pageTracking';
+import { useLandingSlug } from '../../hooks/useLandingSlug';
 
-const API_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 const fmt = (v: number) => v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
 const pad = (n: number) => String(n).padStart(2, '0');
 const co = () => new URLSearchParams(window.location.search).get('company') || 'ci';
@@ -180,7 +181,7 @@ const Check = () => (
 );
 
 export default function DynamicLanding() {
-  const { slug } = useParams<{ slug: string }>();
+  const slug = useLandingSlug();
   const navigate = useNavigate();
   const company = useMemo(co, []);
 

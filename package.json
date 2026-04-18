@@ -12,7 +12,10 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "prisma:seed": "node prisma/seed.js"
+    "prisma:seed": "node prisma/seed.js",
+    "deploy:vps": "node scripts/deploy-vps.mjs",
+    "deploy:vps:images": "node scripts/deploy-vps.mjs --with-images",
+    "deploy:vps:dry": "node scripts/deploy-vps.mjs --dry-run"
   },
   "keywords": [
     "ecommerce",

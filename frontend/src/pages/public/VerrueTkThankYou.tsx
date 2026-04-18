@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 
-const API_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 const META_PIXEL_ID = '1639149310623476';
 const TEMPLATE_SLUG = 'creme-anti-verrue';
 const PRODUCT_CODE = 'VERRUE_TK';
