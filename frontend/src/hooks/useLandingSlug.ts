@@ -6,6 +6,8 @@ const VALID_LANDING_SLUGS = [
   'spraydouleurtk',
   'creme-ongle-incarne',
   'chaussette-compression',
+  'patchdouleurtk',
+  'crememinceurfb',
 ];
 
 export function useLandingSlug(): string | undefined {

@@ -12,6 +12,8 @@ import OrderModalAntiVerrue from './OrderModalAntiVerrue';
 import OrderModalSprayDouleur from './OrderModalSprayDouleur';
 import OrderModalOngleIncarne from './OrderModalOngleIncarne';
 import OrderModalChaussette from './OrderModalChaussette';
+import OrderModalMinceur from './OrderModalMinceur';
+import OrderModalPatchDouleur from './OrderModalPatchDouleur';
 import type { OrderSubmitConfig, OrderProduct } from '../../hooks/useOrderSubmit';
 
 const CUSTOM_SLUGS = [
@@ -20,6 +22,8 @@ const CUSTOM_SLUGS = [
   'spraydouleurtk',
   'creme-ongle-incarne',
   'chaussette-compression',
+  'crememinceurfb',
+  'patchdouleurtk',
 ] as const;
 
 export type CustomSlug = typeof CUSTOM_SLUGS[number];
@@ -66,6 +70,10 @@ export default function OrderModalDispatcher({ slug, ...rest }: Props) {
       return <OrderModalOngleIncarne {...rest} />;
     case 'chaussette-compression':
       return <OrderModalChaussette {...rest} />;
+    case 'crememinceurfb':
+      return <OrderModalMinceur {...rest} />;
+    case 'patchdouleurtk':
+      return <OrderModalPatchDouleur {...rest} />;
     default:
       return null;
   }

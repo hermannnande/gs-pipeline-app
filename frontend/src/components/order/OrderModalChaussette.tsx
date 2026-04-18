@@ -37,7 +37,7 @@ interface Props {
 }
 
 interface Size {
-  code: 'S' | 'M' | 'L' | 'XL';
+  code: 'S' | 'M' | 'L' | 'XL' | 'XXL';
   shoe: string;
   height: string;
   color: string;
@@ -46,10 +46,11 @@ interface Size {
 }
 
 const SIZES: Size[] = [
-  { code: 'S',  shoe: '35-37', height: '< 1m65', color: '#22d3ee', bgFill: 'from-cyan-400 to-teal-400', desc: 'Petite morphologie' },
-  { code: 'M',  shoe: '38-40', height: '1m65-1m75', color: '#14b8a6', bgFill: 'from-teal-500 to-emerald-500', desc: 'Taille standard' },
-  { code: 'L',  shoe: '41-43', height: '1m75-1m85', color: '#0d9488', bgFill: 'from-teal-600 to-emerald-600', desc: 'Grande morphologie' },
-  { code: 'XL', shoe: '44-46', height: '> 1m85', color: '#0f766e', bgFill: 'from-teal-700 to-emerald-700', desc: 'Tres grande morphologie' },
+  { code: 'S',   shoe: '35-37', height: '< 1m65',     color: '#22d3ee', bgFill: 'from-cyan-400 to-teal-400',  desc: 'Petite morphologie' },
+  { code: 'M',   shoe: '38-40', height: '1m65-1m75',  color: '#14b8a6', bgFill: 'from-teal-500 to-emerald-500', desc: 'Taille standard' },
+  { code: 'L',   shoe: '41-43', height: '1m75-1m85',  color: '#0d9488', bgFill: 'from-teal-600 to-emerald-600', desc: 'Grande morphologie' },
+  { code: 'XL',  shoe: '44-46', height: '1m85-1m95',  color: '#0f766e', bgFill: 'from-teal-700 to-emerald-700', desc: 'Tres grande morphologie' },
+  { code: 'XXL', shoe: '47-49', height: '> 1m95',     color: '#115e59', bgFill: 'from-teal-800 to-emerald-800', desc: 'Morphologie XXL' },
 ];
 
 function fmt(n: number): string {
@@ -179,7 +180,7 @@ export default function OrderModalChaussette({ open, onClose, cfg, product, setP
                   <h3 className="text-[12px] font-black uppercase tracking-wider text-neutral-700 sm:text-[14px]">Choisissez votre taille</h3>
                 </div>
 
-                <div className="mb-2.5 grid grid-cols-4 gap-1 sm:mb-3 sm:gap-1.5">
+                <div className="mb-2.5 grid grid-cols-5 gap-0.5 sm:mb-3 sm:gap-1">
                   {SIZES.map((s) => {
                     const isActive = s.code === size;
                     return (
@@ -187,16 +188,16 @@ export default function OrderModalChaussette({ open, onClose, cfg, product, setP
                         key={s.code}
                         type="button"
                         onClick={() => setSize(s.code)}
-                        className={`flex flex-col items-center rounded-lg border-2 px-1 py-1.5 transition-all sm:rounded-xl sm:py-2.5 ${
+                        className={`flex flex-col items-center rounded-lg border-2 px-0.5 py-1.5 transition-all sm:rounded-xl sm:py-2.5 ${
                           isActive
                             ? `border-teal-500 bg-gradient-to-br ${s.bgFill} text-white shadow-lg scale-[1.05]`
                             : 'border-neutral-200 bg-white hover:border-teal-300'
                         }`}
                       >
-                        <span className={`text-[14px] font-black sm:text-[18px] ${isActive ? 'text-white' : 'text-neutral-900'}`}>
+                        <span className={`font-black ${s.code === 'XXL' ? 'text-[11px] sm:text-[15px]' : 'text-[13px] sm:text-[18px]'} ${isActive ? 'text-white' : 'text-neutral-900'}`}>
                           {s.code}
                         </span>
-                        <span className={`text-[8px] font-bold sm:text-[9px] ${isActive ? 'text-white/90' : 'text-neutral-400'}`}>
+                        <span className={`text-[7px] font-bold sm:text-[9px] ${isActive ? 'text-white/90' : 'text-neutral-400'}`}>
                           {s.shoe}
                         </span>
                       </button>

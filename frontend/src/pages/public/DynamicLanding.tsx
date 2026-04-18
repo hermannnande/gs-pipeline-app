@@ -107,6 +107,14 @@ interface TemplateConfig {
   colors?: { theme?: string; primary?: string; accent?: string };
   metaPixelId?: string;
   thankYouUrl?: string;
+  persuasionBlocks?: {
+    title: string;
+    subtitle?: string;
+    img: string;
+    gradientFrom?: string;
+    gradientTo?: string;
+    ctaLabel?: string;
+  }[];
 }
 
 interface Product { id: number; code: string; nom: string; prixUnitaire: number }
@@ -293,14 +301,16 @@ export default function DynamicLanding() {
     setFormErr(''); setName(''); setCity(''); setPhone('');
     if (q) setQty(q); else setQty(1);
     setModal(true); setExitPopup(false);
-    if (cfg?.metaPixelId && window.fbq) {
+    // Pour les slugs avec modal custom, c'est la modal qui declenche AddToCart via
+    // useOrderSubmit.trackOpen — sinon on aurait un doublon de tracking.
+    if (cfg?.metaPixelId && window.fbq && !isCustomOrderSlug(slug)) {
       const selectedQty = q || 1;
       window.fbq('track', 'AddToCart', {
         content_name: cfg.title, content_ids: [cfg.productCode], content_type: 'product',
         value: cfg.prices?.[selectedQty] || cfg.prices?.[1] || 0, currency: 'XOF', num_items: selectedQty,
       });
     }
-  }, [cfg]);
+  }, [cfg, slug]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setFormErr('');
@@ -515,6 +525,91 @@ export default function DynamicLanding() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* PERSUASION BLOCKS — texte degradee + image avec arriere-plan premium */}
+      {cfg.persuasionBlocks && cfg.persuasionBlocks.length > 0 && (
+        <section className="relative overflow-hidden py-12 sm:py-16">
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-red-50 via-orange-50 to-amber-50"/>
+          <div className="pointer-events-none absolute -left-32 top-10 h-72 w-72 rounded-full bg-red-200/30 blur-3xl"/>
+          <div className="pointer-events-none absolute -right-32 bottom-10 h-72 w-72 rounded-full bg-orange-200/30 blur-3xl"/>
+
+          <div className="relative mx-auto max-w-5xl px-4">
+            <div className="mb-8 text-center sm:mb-12">
+              <span className="mb-2 inline-block rounded-full bg-gradient-to-r from-red-100 to-orange-100 px-4 py-1.5 text-[11px] font-black uppercase tracking-wider text-red-800 ring-1 ring-red-200/50">
+                Soulagement garanti
+              </span>
+              <h2 className="mt-3 text-xl font-extrabold sm:text-2xl md:text-3xl">
+                <span className="bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 bg-clip-text text-transparent">
+                  Reprenez votre vie en main
+                </span>
+              </h2>
+              <p className="mx-auto mt-2 max-w-2xl text-[13px] text-neutral-500 sm:text-[14px]">
+                Des milliers de personnes ont retrouve leur liberte de mouvement. Pourquoi pas vous ?
+              </p>
+            </div>
+
+            <div className="space-y-10 sm:space-y-14">
+              {cfg.persuasionBlocks.map((b, i) => {
+                const gradients = [
+                  { from: 'from-red-600',    to: 'to-orange-600' },
+                  { from: 'from-orange-600', to: 'to-amber-600'  },
+                  { from: 'from-rose-600',   to: 'to-red-600'    },
+                ];
+                const g = gradients[i % gradients.length];
+                const fromCls = b.gradientFrom || g.from;
+                const toCls = b.gradientTo || g.to;
+
+                return (
+                  <div key={i} className="group">
+                    {/* Texte au-dessus de l'image */}
+                    <div className="mb-4 text-center sm:mb-6">
+                      <h3 className={`text-2xl font-black leading-tight sm:text-3xl md:text-4xl bg-gradient-to-r ${fromCls} ${toCls} bg-clip-text text-transparent`}>
+                        {b.title}
+                      </h3>
+                      {b.subtitle && (
+                        <p className="mx-auto mt-2 max-w-2xl text-[13px] leading-relaxed text-neutral-600 sm:text-[15px]">
+                          {b.subtitle}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Image avec arriere-plan premium */}
+                    <div className="relative">
+                      <div className={`absolute -inset-2 rounded-3xl bg-gradient-to-br ${fromCls} ${toCls} opacity-20 blur-xl transition-opacity duration-500 group-hover:opacity-30`}/>
+                      <div className="relative overflow-hidden rounded-2xl bg-white p-1.5 shadow-2xl ring-1 ring-neutral-200/50 sm:rounded-3xl sm:p-2">
+                        <div className="overflow-hidden rounded-xl sm:rounded-2xl">
+                          <img
+                            src={b.img}
+                            alt={b.title}
+                            loading="lazy"
+                            className="h-auto w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* CTA inline (optionnel) */}
+                    {b.ctaLabel && (
+                      <div className="mt-5 text-center sm:mt-7">
+                        <button
+                          type="button"
+                          onClick={() => open()}
+                          className={`cta-attract relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r ${fromCls} ${toCls} px-7 py-3 text-[13px] font-extrabold text-white shadow-lg transition-shadow hover:shadow-2xl sm:px-9 sm:py-3.5 sm:text-[15px]`}
+                        >
+                          <span>{b.ctaLabel}</span>
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
       )}
 
       {/* BANNER */}

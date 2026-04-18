@@ -65,6 +65,7 @@ interface V2Config {
   reviews: { img?: string; n: string; v: string; q: string; s: number; verified?: boolean; date?: string }[];
   toasts: { n: string; v: string; t: string }[];
   bundles?: { v: number; label: string; unitPrice: number; totalPrice: number; save?: string; tag?: string; perDay?: string; img?: string }[];
+  persuasionBlocks?: { title: string; subtitle?: string; img: string; gradientFrom?: string; gradientTo?: string; ctaLabel?: string }[];
   sections: {
     marqueeTexts?: string[];
     problemTitle?: string;
@@ -273,7 +274,9 @@ export default function DynamicLandingV2() {
     setFormErr(''); setName(''); setCity(''); setPhone('');
     if (q) setQty(q); else setQty(1);
     setModal(true); setExitPopup(false);
-    if (cfg?.metaPixelId && window.fbq) {
+    // Pour les slugs avec modal custom (verrue-tk, anti-verrue, etc.), c'est la modal
+    // qui declenche AddToCart via useOrderSubmit.trackOpen — sinon on aurait un doublon.
+    if (cfg?.metaPixelId && window.fbq && !isCustomOrderSlug(slug)) {
       const selectedQty = q || 1;
       window.fbq('track', 'AddToCart', {
         content_name: cfg.title,
@@ -284,7 +287,7 @@ export default function DynamicLandingV2() {
         num_items: selectedQty,
       });
     }
-  }, [cfg]);
+  }, [cfg, slug]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setFormErr('');
@@ -555,6 +558,83 @@ export default function DynamicLandingV2() {
         </div>
       )}
 
+      {/* ═══════════ PERSUASION BLOCKS (titre degrade + image premium) ═══════════ */}
+      {cfg.persuasionBlocks && cfg.persuasionBlocks.length > 0 && (
+        <LazySection className="relative overflow-hidden py-12 sm:py-16">
+          {/* Fond degrade premium dore/rose */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-50 via-white to-rose-50"/>
+          <div className="pointer-events-none absolute -left-20 top-10 h-72 w-72 rounded-full bg-amber-200/30 blur-3xl"/>
+          <div className="pointer-events-none absolute -right-20 bottom-10 h-72 w-72 rounded-full bg-rose-200/30 blur-3xl"/>
+
+          <div className="relative mx-auto max-w-5xl px-4">
+            <div className="mb-8 text-center sm:mb-12">
+              <span className="mb-2 inline-block rounded-full bg-gradient-to-r from-amber-100 to-rose-100 px-4 py-1.5 text-[11px] font-black uppercase tracking-wider text-amber-800 ring-1 ring-amber-200/50">Resultats prouves</span>
+              <h2 className="mt-3 text-xl font-extrabold sm:text-2xl md:text-3xl">
+                <span className="bg-gradient-to-r from-amber-600 via-rose-600 to-pink-600 bg-clip-text text-transparent">Voyez le changement de vos propres yeux</span>
+              </h2>
+              <p className="mx-auto mt-2 max-w-2xl text-[13px] text-neutral-500 sm:text-[14px]">Des resultats reels, sur de vraies peaux. Plus aucune raison d'attendre.</p>
+            </div>
+
+            <div className="space-y-10 sm:space-y-14">
+              {cfg.persuasionBlocks.map((b, i) => {
+                const gradients = [
+                  { from: 'from-amber-600', to: 'to-rose-600', accent: '#d97706' },
+                  { from: 'from-rose-600', to: 'to-fuchsia-600', accent: '#e11d48' },
+                  { from: 'from-fuchsia-600', to: 'to-violet-600', accent: '#c026d3' },
+                ];
+                const g = gradients[i % gradients.length];
+                const fromCls = b.gradientFrom || g.from;
+                const toCls = b.gradientTo || g.to;
+                return (
+                  <div key={i} className="group">
+                    {/* Texte au-dessus de l'image */}
+                    <div className="mb-4 text-center sm:mb-6">
+                      <h3 className={`text-2xl font-black leading-tight sm:text-3xl md:text-4xl bg-gradient-to-r ${fromCls} ${toCls} bg-clip-text text-transparent`}>
+                        {b.title}
+                      </h3>
+                      {b.subtitle && (
+                        <p className="mx-auto mt-3 max-w-2xl text-[14px] leading-relaxed text-neutral-600 sm:text-[15px]">
+                          {b.subtitle}
+                        </p>
+                      )}
+                    </div>
+                    {/* Image avec arriere-plan premium */}
+                    <div className="relative">
+                      <div className={`absolute -inset-2 rounded-3xl bg-gradient-to-br ${fromCls} ${toCls} opacity-20 blur-xl transition-opacity duration-500 group-hover:opacity-30`}/>
+                      <div className="relative overflow-hidden rounded-2xl bg-white p-1.5 shadow-2xl ring-1 ring-neutral-200/50 sm:rounded-3xl sm:p-2">
+                        <div className="overflow-hidden rounded-xl sm:rounded-2xl">
+                          <OptimImg
+                            src={b.img}
+                            alt={b.title}
+                            w={1200}
+                            q={75}
+                            sizes="(max-width:640px) 92vw, (max-width:1024px) 85vw, 800px"
+                            className="h-auto w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    {/* CTA inline (optionnel) */}
+                    {b.ctaLabel && (
+                      <div className="mt-5 text-center sm:mt-6">
+                        <button
+                          onClick={() => open(qtyOpts[1]?.v || qtyOpts[0]?.v || 1)}
+                          className={`cta-attract inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${fromCls} ${toCls} px-6 py-3 text-[14px] font-black uppercase tracking-wide text-white shadow-lg transition-transform hover:-translate-y-0.5 hover:shadow-xl sm:px-8 sm:py-3.5 sm:text-[15px]`}
+                          style={{ boxShadow: `0 10px 25px -5px ${g.accent}55, 0 8px 10px -6px ${g.accent}44` }}
+                        >
+                          {b.ctaLabel}
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </LazySection>
+      )}
+
       {/* ═══════════ PROBLEM SECTION (image heavy) ═══════════ */}
       {cfg.sections?.problemPoints && (
         <LazySection className="py-12 sm:py-16">
@@ -705,31 +785,64 @@ export default function DynamicLandingV2() {
             <h2 className="mb-6 text-center text-xl font-extrabold sm:mb-8 sm:text-2xl md:text-3xl">Ce que disent nos clients</h2>
           </div>
           <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 scrollbar-hide sm:flex-wrap sm:justify-center sm:gap-4 sm:overflow-visible">
-            {reviews.map((r, i) => (
-              <div key={i} className="w-[78vw] max-w-[320px] shrink-0 snap-center overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-all hover:shadow-lg sm:w-[320px] sm:shrink">
-                {r.img && (
-                  <div className="h-40 overflow-hidden sm:h-48">
-                    <OptimImg src={r.img} alt={r.n} w={400} q={60} sizes="(max-width:640px) 85vw, 340px" className="h-full w-full object-cover"/>
-                  </div>
-                )}
-                <div className="p-5">
-                  <div className="mb-2 flex gap-0.5">{[...Array(r.s)].map((_, j) => <Star key={j}/>)}{[...Array(5 - r.s)].map((_, j) => <Star key={j} fill={false}/>)}</div>
-                  <p className="mb-3 text-[13px] leading-relaxed text-neutral-600">"{r.q}"</p>
-                  <div className="flex items-center justify-between border-t border-neutral-100 pt-3">
-                    <div>
-                      <p className="text-[13px] font-bold text-neutral-800">{r.n}</p>
-                      <p className="text-[11px] text-neutral-400">{r.v}</p>
+            {reviews.map((r, i) => {
+              const initials = (r.n || '?').split(' ').map(w => w[0] || '').join('').slice(0, 2).toUpperCase();
+              const avatarGradients = [
+                'from-rose-500 to-pink-500',
+                'from-amber-500 to-orange-500',
+                'from-emerald-500 to-teal-500',
+                'from-sky-500 to-cyan-500',
+                'from-violet-500 to-purple-500',
+                'from-yellow-500 to-amber-600',
+                'from-indigo-500 to-blue-600',
+                'from-fuchsia-500 to-pink-600',
+              ];
+              const avatarBg = avatarGradients[i % avatarGradients.length];
+              return (
+                <div key={i} className="w-[78vw] max-w-[320px] shrink-0 snap-center overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-all hover:shadow-lg sm:w-[320px] sm:shrink">
+                  {r.img ? (
+                    <div className="h-40 overflow-hidden sm:h-48">
+                      <OptimImg src={r.img} alt={r.n} w={400} q={60} sizes="(max-width:640px) 85vw, 340px" className="h-full w-full object-cover"/>
                     </div>
-                    {r.verified !== false && (
-                      <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-600 ring-1 ring-emerald-100">
-                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
-                        Verifie
-                      </span>
+                  ) : (
+                    <div className="flex items-center gap-3 border-b border-neutral-100 bg-gradient-to-br from-neutral-50 to-white px-5 py-4">
+                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${avatarBg} text-base font-black text-white shadow-sm ring-2 ring-white`}>
+                        {initials}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[14px] font-bold text-neutral-800">{r.n}</p>
+                        <p className="truncate text-[11px] text-neutral-500">{r.v}</p>
+                      </div>
+                      {r.verified !== false && (
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" title="Verifie">
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  <div className="p-5">
+                    <div className="mb-2 flex gap-0.5">{[...Array(r.s)].map((_, j) => <Star key={j}/>)}{[...Array(5 - r.s)].map((_, j) => <Star key={j} fill={false}/>)}</div>
+                    <p className="mb-3 text-[13px] leading-relaxed text-neutral-600">"{r.q}"</p>
+                    {r.img ? (
+                      <div className="flex items-center justify-between border-t border-neutral-100 pt-3">
+                        <div>
+                          <p className="text-[13px] font-bold text-neutral-800">{r.n}</p>
+                          <p className="text-[11px] text-neutral-400">{r.v}</p>
+                        </div>
+                        {r.verified !== false && (
+                          <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-600 ring-1 ring-emerald-100">
+                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                            Verifie
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      r.date && <p className="border-t border-neutral-100 pt-3 text-[11px] text-neutral-400">{r.date}</p>
                     )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </LazySection>
       )}

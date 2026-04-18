@@ -1,0 +1,2246 @@
+{
+  "snapshotAt": "2026-04-18T22:49:40.635Z",
+  "templates": {
+    "creme-anti-verrue": {
+      "id": 1,
+      "productCode": "VERRUE_TK",
+      "title": "Creme Anti-Verrue VERRUE TK",
+      "templateVersion": 1,
+      "metaPixelId": "1639149310623476",
+      "persuasionBlocksCount": 0,
+      "config": {
+        "productCode": "VERRUE_TK",
+        "title": "Creme Anti-Verrue VERRUE TK",
+        "subtitle": "Soin anti-verrue",
+        "description": "Formule ciblee pour les verrues visibles. Application simple et sans douleur. Resultats constates en quelques jours.",
+        "badge": "BEST-SELLER",
+        "prices": {
+          "1": 9900,
+          "2": 16900,
+          "3": 24900
+        },
+        "oldPrice": 15000,
+        "discount": "-34%",
+        "qtyOptions": [
+          {
+            "v": 1,
+            "label": "1 boite",
+            "sub": "9 900 FCFA",
+            "save": ""
+          },
+          {
+            "v": 2,
+            "label": "2 boites",
+            "sub": "16 900 FCFA",
+            "tag": "Populaire",
+            "save": "Economisez 2 900 F"
+          },
+          {
+            "v": 3,
+            "label": "3 boites",
+            "sub": "24 900 FCFA",
+            "tag": "Meilleure offre",
+            "save": "Economisez 4 800 F"
+          }
+        ],
+        "images": {
+          "hero": "/verrue-tk/hero.webp",
+          "gallery": [
+            "/verrue-tk/gallery-1.webp",
+            "/verrue-tk/gallery-2.webp",
+            "/verrue-tk/gallery-3.webp"
+          ],
+          "usage": "/verrue-tk/usage.webp",
+          "banner": "/verrue-tk/banner-clients.webp",
+          "avant": "/verrue-tk/avant.webp",
+          "apres": "/verrue-tk/apres.webp"
+        },
+        "videos": [
+          "/verrue-tk/video-1.mp4",
+          "/verrue-tk/video-2.mp4",
+          "/verrue-tk/video-3.mp4"
+        ],
+        "reviews": [
+          {
+            "init": "AK",
+            "bg": "bg-amber-500",
+            "n": "Awa K.",
+            "v": "Abidjan",
+            "q": "En 5 jours la verrue a seche completement.",
+            "s": 5
+          },
+          {
+            "init": "JM",
+            "bg": "bg-sky-500",
+            "n": "Jean-Marc B.",
+            "v": "Bouake",
+            "q": "Livraison le lendemain. Resultat visible.",
+            "s": 5
+          },
+          {
+            "init": "MD",
+            "bg": "bg-emerald-500",
+            "n": "Mariam D.",
+            "v": "Yopougon",
+            "q": "Apres 10 jours, presque fini.",
+            "s": 5
+          },
+          {
+            "init": "KF",
+            "bg": "bg-violet-500",
+            "n": "Kouassi F.",
+            "v": "Daloa",
+            "q": "Premiere creme qui marche.",
+            "s": 5
+          },
+          {
+            "init": "FS",
+            "bg": "bg-rose-500",
+            "n": "Fatou S.",
+            "v": "San Pedro",
+            "q": "Service client au top.",
+            "s": 4
+          },
+          {
+            "init": "IT",
+            "bg": "bg-teal-500",
+            "n": "Ibrahim T.",
+            "v": "Korhogo",
+            "q": "J'hesitais. Je recommande.",
+            "s": 5
+          }
+        ],
+        "toasts": [
+          {
+            "n": "Awa K.",
+            "v": "Abidjan",
+            "t": "2 min"
+          },
+          {
+            "n": "Jean M.",
+            "v": "Bouake",
+            "t": "5 min"
+          },
+          {
+            "n": "Mariam D.",
+            "v": "Yopougon",
+            "t": "8 min"
+          },
+          {
+            "n": "Kouassi F.",
+            "v": "Daloa",
+            "t": "12 min"
+          },
+          {
+            "n": "Fatou S.",
+            "v": "San Pedro",
+            "t": "15 min"
+          }
+        ],
+        "sections": {
+          "stats": [
+            {
+              "n": "1 200+",
+              "l": "Clients satisfaits"
+            },
+            {
+              "n": "24h",
+              "l": "Livraison Abidjan"
+            },
+            {
+              "n": "4.8/5",
+              "l": "Note moyenne"
+            },
+            {
+              "n": "98%",
+              "l": "Recommandent"
+            }
+          ],
+          "howToUse": [
+            {
+              "n": "01",
+              "t": "Nettoyez",
+              "d": "Lavez la zone a l'eau propre.",
+              "ico": "💧"
+            },
+            {
+              "n": "02",
+              "t": "Appliquez",
+              "d": "Deposez la creme.",
+              "ico": "🧴"
+            },
+            {
+              "n": "03",
+              "t": "Repetez",
+              "d": "Suivez la routine.",
+              "ico": "🔁"
+            },
+            {
+              "n": "04",
+              "t": "Observez",
+              "d": "Constatez l'amelioration.",
+              "ico": "✨"
+            }
+          ],
+          "faq": [
+            {
+              "q": "Est-ce douloureux ?",
+              "a": "Non. Application douce."
+            },
+            {
+              "q": "Dois-je payer avant ?",
+              "a": "Non. Paiement a la reception."
+            },
+            {
+              "q": "Quand je vois les resultats ?",
+              "a": "En quelques jours."
+            },
+            {
+              "q": "Comment suis-je contacte ?",
+              "a": "Appel dans les heures qui suivent."
+            },
+            {
+              "q": "Convient a tous types de peau ?",
+              "a": "Oui."
+            },
+            {
+              "q": "Plusieurs boites ?",
+              "a": "2 boites 14 900 F, 3 boites 24 900 F."
+            }
+          ],
+          "trustBadges": [
+            {
+              "ico": "🚚",
+              "t": "Livraison rapide",
+              "d": "24h Abidjan"
+            },
+            {
+              "ico": "💰",
+              "t": "Paiement livraison",
+              "d": "Aucun risque"
+            },
+            {
+              "ico": "📞",
+              "t": "Support client",
+              "d": "7j/7"
+            },
+            {
+              "ico": "🛡️",
+              "t": "Commande securisee",
+              "d": "Verifiez avant de payer"
+            }
+          ]
+        },
+        "thankYouUrl": "/anti-verrue/merci",
+        "metaPixelId": "1639149310623476"
+      }
+    },
+    "creme-verrue-tk": {
+      "id": 9,
+      "productCode": "CREME_ANTI_VERRUES",
+      "title": "Creme Eliminatrice de Verrues",
+      "templateVersion": 2,
+      "metaPixelId": "1607715340249349",
+      "persuasionBlocksCount": 3,
+      "config": {
+        "templateVersion": 2,
+        "productCode": "CREME_ANTI_VERRUES",
+        "title": "Creme Eliminatrice de Verrues",
+        "subtitle": "Traitement professionnel — resultats en 7 jours",
+        "description": "Eliminez definitivement les verrues, cors et callosites sans douleur. Notre formule concentree a base d'ingredients naturels penetre en profondeur pour detruire la racine de la verrue. Resultats visibles des les premiers jours — peau nette et lisse retrouvee.",
+        "badge": "N°1 EN CI",
+        "prices": {
+          "1": 9900,
+          "2": 16900,
+          "3": 24900
+        },
+        "oldPrice": 15000,
+        "discount": "-34%",
+        "qtyOptions": [
+          {
+            "v": 1,
+            "label": "1 tube",
+            "sub": "9 900 FCFA",
+            "save": ""
+          },
+          {
+            "v": 2,
+            "label": "2 tubes",
+            "sub": "16 900 FCFA",
+            "tag": "Populaire",
+            "save": "Economisez 2 900 F"
+          },
+          {
+            "v": 3,
+            "label": "3 tubes",
+            "sub": "24 900 FCFA",
+            "tag": "Meilleure offre",
+            "save": "Economisez 4 800 F"
+          }
+        ],
+        "images": {
+          "hero": "https://coachingexpertci.com/wp-content/uploads/2026/04/fait_une_affiche_202604182012.jpg",
+          "gallery": [
+            "https://coachingexpertci.com/wp-content/uploads/2026/04/fait_une_photo_202604182011.jpg",
+            "https://coachingexpertci.com/wp-content/uploads/2026/04/fait_un_avant_202604182008.jpg",
+            "https://coachingexpertci.com/wp-content/uploads/2026/04/Design-sans-titre-7.jpg",
+            "https://coachingexpertci.com/wp-content/uploads/2026/04/fait_une_photo_202604182007.jpg",
+            "https://obrille.com/wp-content/uploads/2026/04/Sans-titre-2026-04-14-19-03-03copy-2026-04-14-20-47-10copy.mp4"
+          ],
+          "lifestyle": [
+            "https://obrille.com/wp-content/uploads/2026/04/ChatGPT-Image-15-avr.-2026-10_05_28-1.png",
+            "https://obrille.com/wp-content/uploads/2026/04/ChatGPT-Image-15-avr.-2026-10_14_51.png",
+            "https://obrille.com/wp-content/uploads/2026/04/ChatGPT-Image-15-avr.-2026-10_20_15.png"
+          ],
+          "trustStrip": [
+            "https://coachingexpertci.com/wp-content/uploads/2026/04/fait_une_photo_202604182011.jpg",
+            "https://coachingexpertci.com/wp-content/uploads/2026/04/fait_un_avant_202604182008.jpg",
+            "https://coachingexpertci.com/wp-content/uploads/2026/04/Design-sans-titre-7.jpg",
+            "https://coachingexpertci.com/wp-content/uploads/2026/04/fait_une_photo_202604182007.jpg"
+          ]
+        },
+        "reviews": [
+          {
+            "n": "Adjoua M.",
+            "v": "Abidjan — Cocody",
+            "q": "J'avais des verrues sur le visage depuis 3 ans. J'ai tout essaye sans succes. Avec cette creme, en 10 jours tout etait parti. Ma peau est redevenue nette. Je recommande a 100%.",
+            "s": 5,
+            "verified": true,
+            "date": "Il y a 2 jours"
+          },
+          {
+            "n": "Fatou K.",
+            "v": "Yopougon",
+            "q": "Les verrues dans mon cou me genaient beaucoup. Ma soeur m'a recommande cette creme. En une semaine, les verrues ont seche et sont tombees. Peau propre comme avant !",
+            "s": 5,
+            "verified": true,
+            "date": "Il y a 5 jours"
+          },
+          {
+            "n": "Ibrahim T.",
+            "v": "Marcory",
+            "q": "Mes mains etaient couvertes de verrues, j'avais honte de serrer la main des gens. Cette creme a tout enleve proprement, sans douleur. Resultat incroyable en 2 semaines.",
+            "s": 5,
+            "verified": true,
+            "date": "Il y a 1 semaine"
+          },
+          {
+            "n": "Mariam D.",
+            "v": "Abobo",
+            "q": "Ma fille de 14 ans avait des verrues au visage. On a essaye le dermatologue, rien. Avec cette creme en seulement 8 jours, les verrues ont disparu completement. Merci infiniment.",
+            "s": 5,
+            "verified": true,
+            "date": "Il y a 3 jours"
+          },
+          {
+            "n": "Kouame A.",
+            "v": "Bouake",
+            "q": "J'ai commande 2 tubes pour moi et ma femme. On avait des verrues sur le corps depuis des annees. Apres le traitement, peau nette ! Le produit est tres efficace.",
+            "s": 5,
+            "verified": true,
+            "date": "Il y a 4 jours"
+          },
+          {
+            "n": "Awa S.",
+            "v": "Treichville",
+            "q": "Je suis estheticienne et je recommande cette creme a mes clientes. Les resultats sont impressionnants. Les verrues sechent et tombent sans laisser de cicatrice.",
+            "s": 5,
+            "verified": true,
+            "date": "Il y a 6 jours"
+          }
+        ],
+        "toasts": [
+          {
+            "n": "Adjoua M.",
+            "v": "Cocody",
+            "t": "3 min"
+          },
+          {
+            "n": "Fatou K.",
+            "v": "Yopougon",
+            "t": "7 min"
+          },
+          {
+            "n": "Ibrahim T.",
+            "v": "Marcory",
+            "t": "12 min"
+          },
+          {
+            "n": "Mariam D.",
+            "v": "Abobo",
+            "t": "18 min"
+          },
+          {
+            "n": "Kouame A.",
+            "v": "Bouake",
+            "t": "22 min"
+          },
+          {
+            "n": "Awa S.",
+            "v": "Treichville",
+            "t": "25 min"
+          },
+          {
+            "n": "Celine B.",
+            "v": "Plateau",
+            "t": "30 min"
+          },
+          {
+            "n": "Drissa O.",
+            "v": "Adjame",
+            "t": "35 min"
+          }
+        ],
+        "bundles": [
+          {
+            "v": 1,
+            "label": "1 Tube — Essai",
+            "unitPrice": 9900,
+            "totalPrice": 9900,
+            "perDay": "Soit 330 F / jour pendant 30 jours",
+            "img": "https://coachingexpertci.com/wp-content/uploads/2026/04/fait_une_affiche_202604182012.jpg"
+          },
+          {
+            "v": 2,
+            "label": "2 Tubes — Traitement complet",
+            "unitPrice": 8450,
+            "totalPrice": 16900,
+            "save": "Economisez 2 900 FCFA",
+            "tag": "POPULAIRE",
+            "perDay": "Soit 267 F / jour",
+            "img": "https://coachingexpertci.com/wp-content/uploads/2026/04/fait_une_affiche_202604182012.jpg"
+          },
+          {
+            "v": 3,
+            "label": "3 Tubes — Pack famille",
+            "unitPrice": 8300,
+            "totalPrice": 24900,
+            "save": "Economisez 4 800 FCFA",
+            "tag": "MEILLEURE OFFRE",
+            "perDay": "Soit 277 F / jour",
+            "img": "https://coachingexpertci.com/wp-content/uploads/2026/04/fait_une_affiche_202604182012.jpg"
+          }
+        ],
+        "sections": {
+          "marqueeTexts": [
+            "Elimine les verrues en 7 jours",
+            "Formule a base d'ingredients naturels",
+            "Livraison GRATUITE 24h Abidjan",
+            "Paiement a la livraison",
+            "+12 000 clients satisfaits",
+            "Approuve par les dermatologues"
+          ],
+          "problemTitle": "Les verrues vous genent au quotidien ?",
+          "problemPoints": [
+            {
+              "ico": "😰",
+              "title": "Apparence genante",
+              "desc": "Les verrues sur le visage, le cou ou les mains affectent votre confiance et votre estime de soi. Vous evitez les regards et les contacts."
+            },
+            {
+              "ico": "🔄",
+              "title": "Multiplication rapide",
+              "desc": "Sans traitement, les verrues se multiplient et se propagent sur d'autres parties du corps. Plus vous attendez, plus c'est difficile."
+            },
+            {
+              "ico": "💊",
+              "title": "Traitements inefficaces",
+              "desc": "Dermatologues couteux, remedes maison sans effet, produits chimiques agressifs... Vous avez tout essaye sans resultats durables."
+            }
+          ],
+          "solutionTitle": "La creme qui elimine les verrues definitivement",
+          "solutionPoints": [
+            {
+              "ico": "🎯",
+              "title": "Action ciblee sur la racine",
+              "desc": "Notre formule penetre en profondeur pour detruire la racine de la verrue, pas seulement la surface. Elimination definitive sans recidive.",
+              "img": "https://coachingexpertci.com/wp-content/uploads/2026/04/fait_une_affiche_202604182012.jpg"
+            },
+            {
+              "ico": "🌿",
+              "title": "Ingredients 100% naturels",
+              "desc": "Formule douce a base d'extraits naturels. Pas de brulure chimique, pas d'irritation. Convient a toutes les peaux, meme sensibles.",
+              "img": "https://coachingexpertci.com/wp-content/uploads/2026/04/fait_une_photo_202604182011.jpg"
+            },
+            {
+              "ico": "⚡",
+              "title": "Resultats visibles en 7 jours",
+              "desc": "Des la premiere application, la verrue commence a secher. En 7 a 14 jours, elle tombe naturellement sans laisser de cicatrice.",
+              "img": "https://coachingexpertci.com/wp-content/uploads/2026/04/fait_un_avant_202604182008.jpg"
+            },
+            {
+              "ico": "🛡️",
+              "title": "Sans douleur et sans cicatrice",
+              "desc": "Contrairement a la chirurgie ou la cryotherapie, notre creme agit en douceur. Application simple et indolore, peau nette garantie.",
+              "img": "https://coachingexpertci.com/wp-content/uploads/2026/04/Design-sans-titre-7.jpg"
+            }
+          ],
+          "howItWorks": [
+            {
+              "n": "1",
+              "title": "Nettoyez la zone",
+              "desc": "Lavez et sechez soigneusement la zone affectee par les verrues.",
+              "ico": "🧼"
+            },
+            {
+              "n": "2",
+              "title": "Appliquez la creme",
+              "desc": "Deposez une fine couche de creme directement sur chaque verrue, 2 fois par jour.",
+              "ico": "💧"
+            },
+            {
+              "n": "3",
+              "title": "Laissez agir",
+              "desc": "La creme penetre et detruit la racine. La verrue commence a secher des les premiers jours.",
+              "ico": "⏳"
+            },
+            {
+              "n": "4",
+              "title": "Verrue eliminee",
+              "desc": "En 7 a 14 jours, la verrue seche et tombe naturellement. Votre peau retrouve sa nettete.",
+              "ico": "✨"
+            }
+          ],
+          "comparisonTable": [
+            {
+              "feature": "Elimine la racine",
+              "us": true,
+              "them": false
+            },
+            {
+              "feature": "Sans douleur",
+              "us": true,
+              "them": false
+            },
+            {
+              "feature": "Ingredients naturels",
+              "us": true,
+              "them": false
+            },
+            {
+              "feature": "Resultats en 7 jours",
+              "us": true,
+              "them": false
+            },
+            {
+              "feature": "Sans cicatrice",
+              "us": true,
+              "them": false
+            },
+            {
+              "feature": "Prix abordable",
+              "us": true,
+              "them": false
+            },
+            {
+              "feature": "Applicable a la maison",
+              "us": true,
+              "them": true
+            }
+          ],
+          "stats": [
+            {
+              "n": "12 847",
+              "l": "Clients satisfaits"
+            },
+            {
+              "n": "98%",
+              "l": "Taux de reussite"
+            },
+            {
+              "n": "7-14j",
+              "l": "Resultats visibles"
+            },
+            {
+              "n": "4.9/5",
+              "l": "Note moyenne"
+            }
+          ],
+          "faq": [
+            {
+              "q": "La creme fonctionne-t-elle vraiment sur tous les types de verrues ?",
+              "a": "Oui, notre creme est efficace sur les verrues vulgaires, planes, filiformes et plantaires. Elle agit sur la racine de la verrue, quel que soit son type ou son emplacement sur le corps."
+            },
+            {
+              "q": "Combien de temps faut-il pour voir les resultats ?",
+              "a": "Les premiers resultats sont visibles des 3 a 5 jours d'application. La verrue commence a secher et tombe generalement entre 7 et 14 jours. Les cas plus anciens peuvent necessiter 2 a 3 semaines."
+            },
+            {
+              "q": "Est-ce que la creme est douloureuse ?",
+              "a": "Non, l'application est totalement indolore. La creme a une formule douce qui n'irrite pas la peau. Vous pouvez ressentir un leger picotement les premieres secondes, signe que le produit agit."
+            },
+            {
+              "q": "Est-ce que les verrues peuvent revenir apres le traitement ?",
+              "a": "Notre creme detruit la verrue depuis sa racine, ce qui reduit considerablement le risque de recidive. Nous recommandons d'utiliser le tube en entier pour un traitement complet."
+            },
+            {
+              "q": "Puis-je utiliser la creme sur le visage ?",
+              "a": "Oui, notre formule douce est compatible avec toutes les zones du corps, y compris le visage et le cou. Evitez simplement le contour des yeux et les muqueuses."
+            },
+            {
+              "q": "Comment se passe la livraison et le paiement ?",
+              "a": "Livraison gratuite en 24h a Abidjan et environs. Vous payez uniquement a la reception de votre colis. Aucun paiement a l'avance n'est requis."
+            },
+            {
+              "q": "Un tube suffit-il pour traiter plusieurs verrues ?",
+              "a": "Un tube suffit pour traiter 5 a 10 verrues de taille moyenne. Pour les cas plus etendus ou un traitement familial, nous recommandons le pack de 2 ou 3 tubes."
+            }
+          ],
+          "trustBadges": [
+            {
+              "ico": "🌿",
+              "t": "Ingredients naturels",
+              "d": "Formule douce et sure"
+            },
+            {
+              "ico": "🚚",
+              "t": "Livraison 24h",
+              "d": "Gratuite a Abidjan"
+            },
+            {
+              "ico": "💰",
+              "t": "Paiement livraison",
+              "d": "Zero risque"
+            },
+            {
+              "ico": "✅",
+              "t": "98% d'efficacite",
+              "d": "Prouve cliniquement"
+            },
+            {
+              "ico": "📞",
+              "t": "Support 7j/7",
+              "d": "Equipe disponible"
+            }
+          ],
+          "stickers": [
+            {
+              "text": "🔥 BEST-SELLER 2026",
+              "color": "bg-red-100 text-red-700"
+            },
+            {
+              "text": "🌿 NATUREL",
+              "color": "bg-emerald-100 text-emerald-700"
+            },
+            {
+              "text": "⚡ RESULTATS 7 JOURS",
+              "color": "bg-blue-100 text-blue-700"
+            },
+            {
+              "text": "✅ APPROUVE DERMATO",
+              "color": "bg-purple-100 text-purple-700"
+            }
+          ],
+          "finalCtaTitle": "Retrouvez une peau nette et sans verrues",
+          "finalCtaSub": "Rejoignez les +12 000 clients qui ont dit adieu aux verrues definitivement"
+        },
+        "colors": {
+          "primary": "#1e6bb8",
+          "accent": "#0891b2",
+          "bg": "#fafaf9"
+        },
+        "metaPixelId": "1607715340249349",
+        "thankYouUrl": "/landing/creme-verrue-tk/merci",
+        "persuasionBlocks": [
+          {
+            "title": "Une peau enfin nette en 7 jours",
+            "subtitle": "Verrues, acrochordons, callosites... Disparus pour de bon. Cette transformation, des centaines de clients ivoiriens la vivent chaque mois. Aujourd'hui, c'est votre tour.",
+            "img": "https://coachingexpertci.com/wp-content/uploads/2026/04/fait_une_photo_202604182005-1.jpg",
+            "gradientFrom": "from-amber-600",
+            "gradientTo": "to-rose-600",
+            "ctaLabel": "Je veux ce resultat"
+          },
+          {
+            "title": "La douceur que vous meritez",
+            "subtitle": "Notre formule premium agit en profondeur, sans douleur, sans cicatrice. Retrouvez la confiance et le sourire des les premiers jours d'utilisation.",
+            "img": "https://coachingexpertci.com/wp-content/uploads/2026/04/je_veux_en_202604182010.jpg",
+            "gradientFrom": "from-rose-600",
+            "gradientTo": "to-fuchsia-600",
+            "ctaLabel": "Commander mon kit"
+          },
+          {
+            "title": "Fini les verrues et acrochordons",
+            "subtitle": "Keratoses, papillomes, grains de beaute genants... Notre creme dermo-active elimine toutes les imperfections cutanees en 7 a 14 jours. Action ciblee, peau nette, resultat garanti.",
+            "img": "https://coachingexpertci.com/wp-content/uploads/2026/04/je_veux_en_202604182011-1.jpg",
+            "gradientFrom": "from-fuchsia-600",
+            "gradientTo": "to-violet-600",
+            "ctaLabel": "Je commande maintenant"
+          }
+        ]
+      }
+    },
+    "spraydouleurtk": {
+      "id": 5,
+      "productCode": "SPRAY_DOULEUR",
+      "title": "Spray Anti-Douleur Stop Douleur",
+      "templateVersion": 1,
+      "persuasionBlocksCount": 0,
+      "config": {
+        "productCode": "SPRAY_DOULEUR",
+        "title": "Spray Anti-Douleur Stop Douleur",
+        "subtitle": "Soulagement instantane",
+        "description": "Spray anti-douleur a l'huile de magnesium et au venin d'abeille. 2-3 pulverisations et tu sens un vrai soulagement. Pratique, rapide, efficace.",
+        "badge": "NOUVEAU",
+        "prices": {
+          "1": 9900,
+          "2": 16900,
+          "3": 24900
+        },
+        "oldPrice": 15000,
+        "discount": "-34%",
+        "qtyOptions": [
+          {
+            "v": 1,
+            "label": "1 spray",
+            "sub": "9 900 FCFA",
+            "save": ""
+          },
+          {
+            "v": 2,
+            "label": "2 sprays",
+            "sub": "16 900 FCFA",
+            "tag": "Populaire",
+            "save": "Economisez 2 900 F"
+          },
+          {
+            "v": 3,
+            "label": "3 sprays",
+            "sub": "24 900 FCFA",
+            "tag": "Meilleure offre",
+            "save": "Economisez 4 800 F"
+          }
+        ],
+        "images": {
+          "hero": "/spray-douleur/hero.webp",
+          "gallery": [
+            "/spray-douleur/gallery-1.webp",
+            "/spray-douleur/gallery-2.webp",
+            "/spray-douleur/gallery-3.webp"
+          ],
+          "usage": "/spray-douleur/usage.webp",
+          "banner": "/spray-douleur/hero.webp",
+          "avant": "/spray-douleur/avant.webp",
+          "apres": "/spray-douleur/apres.webp"
+        },
+        "videos": [
+          "/spray-douleur/video-1.mp4"
+        ],
+        "colors": {
+          "theme": "emerald"
+        },
+        "reviews": [
+          {
+            "init": "AK",
+            "bg": "bg-emerald-500",
+            "n": "Aicha K.",
+            "v": "Abidjan",
+            "q": "En 2 jours la douleur au genou a beaucoup diminue. Je marche mieux.",
+            "s": 5
+          },
+          {
+            "init": "MS",
+            "bg": "bg-teal-500",
+            "n": "Mamadou S.",
+            "v": "Bouake",
+            "q": "Mon dos me faisait souffrir. Apres 3 applications, soulagement net. Tres efficace.",
+            "s": 5
+          },
+          {
+            "init": "FD",
+            "bg": "bg-green-500",
+            "n": "Fatou D.",
+            "v": "Yopougon",
+            "q": "Ma mere a l'arthrose. Depuis le spray, elle dort mieux et se plaint moins.",
+            "s": 5
+          },
+          {
+            "init": "KY",
+            "bg": "bg-lime-600",
+            "n": "Konan Y.",
+            "v": "Daloa",
+            "q": "C'est puissant. La douleur au poignet a baisse rapidement. Je recommande a 100%.",
+            "s": 5
+          },
+          {
+            "init": "BT",
+            "bg": "bg-cyan-500",
+            "n": "Bamba T.",
+            "v": "San Pedro",
+            "q": "Spray pratique, effet rapide. Mon epaule me genait, c'est fini.",
+            "s": 4
+          },
+          {
+            "init": "SA",
+            "bg": "bg-indigo-500",
+            "n": "Sylvie A.",
+            "v": "Korhogo",
+            "q": "Mes rhumatismes me faisaient souffrir la nuit. Le spray m'a soulagee.",
+            "s": 5
+          }
+        ],
+        "toasts": [
+          {
+            "n": "Aicha K.",
+            "v": "Abidjan",
+            "t": "2 min"
+          },
+          {
+            "n": "Mamadou S.",
+            "v": "Bouake",
+            "t": "6 min"
+          },
+          {
+            "n": "Fatou D.",
+            "v": "Yopougon",
+            "t": "9 min"
+          },
+          {
+            "n": "Konan Y.",
+            "v": "Daloa",
+            "t": "13 min"
+          },
+          {
+            "n": "Bamba T.",
+            "v": "San Pedro",
+            "t": "17 min"
+          }
+        ],
+        "sections": {
+          "marqueeTexts": [
+            "Dites adieu aux douleurs",
+            "Spray anti-douleur efficace",
+            "Livraison 24h Abidjan",
+            "Paiement a la livraison"
+          ],
+          "catchphrase": {
+            "text": "Dites adieu aux douleurs articulaires",
+            "sub": "2-3 pulverisations sur la zone douloureuse et ressentez un soulagement immediat. Arthrose, arthrite, rhumatisme, sciatique."
+          },
+          "stats": [
+            {
+              "n": "600+",
+              "l": "Clients soulages"
+            },
+            {
+              "n": "24h",
+              "l": "Livraison Abidjan"
+            },
+            {
+              "n": "4.7/5",
+              "l": "Note moyenne"
+            },
+            {
+              "n": "96%",
+              "l": "Recommandent"
+            }
+          ],
+          "howToUse": [
+            {
+              "n": "01",
+              "t": "Agitez",
+              "d": "Agitez le flacon avant utilisation.",
+              "ico": "🔄"
+            },
+            {
+              "n": "02",
+              "t": "Pulverisez",
+              "d": "2-3 pulverisations sur la zone douloureuse.",
+              "ico": "🧴"
+            },
+            {
+              "n": "03",
+              "t": "Massez",
+              "d": "Massez legerement pour faire penetrer.",
+              "ico": "✋"
+            },
+            {
+              "n": "04",
+              "t": "Soulagez",
+              "d": "Ressentez le soulagement en quelques secondes.",
+              "ico": "✨"
+            }
+          ],
+          "faq": [
+            {
+              "q": "Combien de temps dure l'effet ?",
+              "a": "Le soulagement dure plusieurs heures apres application."
+            },
+            {
+              "q": "Pour quelles douleurs ?",
+              "a": "Arthrose, arthrite, rhumatisme, sciatique, douleurs musculaires et articulaires."
+            },
+            {
+              "q": "Dois-je payer avant ?",
+              "a": "Non. Paiement a la livraison uniquement."
+            },
+            {
+              "q": "Combien de pulverisations par flacon ?",
+              "a": "Chaque flacon contient assez pour plusieurs semaines d'utilisation."
+            },
+            {
+              "q": "Y a-t-il des effets secondaires ?",
+              "a": "Non. Formule naturelle a base d'huile de magnesium et venin d'abeille."
+            },
+            {
+              "q": "Peut-on l'utiliser plusieurs fois par jour ?",
+              "a": "Oui. 2-3 applications par jour recommandees."
+            }
+          ],
+          "trustBadges": [
+            {
+              "ico": "🚚",
+              "t": "Livraison rapide",
+              "d": "24h Abidjan"
+            },
+            {
+              "ico": "💰",
+              "t": "Paiement livraison",
+              "d": "Aucun risque"
+            },
+            {
+              "ico": "🌿",
+              "t": "Formule naturelle",
+              "d": "Magnesium + venin d'abeille"
+            },
+            {
+              "ico": "📞",
+              "t": "Support client",
+              "d": "7j/7"
+            }
+          ]
+        },
+        "thankYouUrl": "/landing/spraydouleurtk/merci"
+      }
+    },
+    "creme-ongle-incarne": {
+      "id": 8,
+      "productCode": "CREME_ONGLE_INCARNE",
+      "title": "Creme Anti-Ongle Incarne",
+      "templateVersion": 2,
+      "metaPixelId": "1639149310623476",
+      "persuasionBlocksCount": 0,
+      "config": {
+        "templateVersion": 2,
+        "productCode": "CREME_ONGLE_INCARNE",
+        "title": "Creme Anti-Ongle Incarne",
+        "subtitle": "Traitement professionnel en 7 jours",
+        "description": "Fini les douleurs d'ongles incarnes, les inflammations et les orteils douloureux. Notre creme penetrante soulage des la 1ere application et corrige l'ongle en 7 jours. Formule naturelle approuvee par les podologues.",
+        "badge": "N°1 EN CI",
+        "prices": {
+          "1": 9900,
+          "2": 16900,
+          "3": 24900
+        },
+        "oldPrice": 15000,
+        "discount": "-34%",
+        "qtyOptions": [
+          {
+            "v": 1,
+            "label": "1 boite",
+            "sub": "9 900 FCFA",
+            "save": ""
+          },
+          {
+            "v": 2,
+            "label": "2 boites",
+            "sub": "16 900 FCFA",
+            "tag": "Populaire",
+            "save": "Economisez 2 900 F"
+          },
+          {
+            "v": 3,
+            "label": "3 boites",
+            "sub": "24 900 FCFA",
+            "tag": "Meilleure offre",
+            "save": "Economisez 4 800 F"
+          }
+        ],
+        "images": {
+          "hero": "https://obrille.com/wp-content/uploads/2026/04/Traitement-efficace-des-ongles-incarnes.png",
+          "gallery": [
+            "https://obrille.com/wp-content/uploads/2026/04/Sans-titre-2026-04-14-19-03-03copy.mp4",
+            "https://obrille.com/wp-content/uploads/2026/04/gi-vd-15-20230718115319-3q2eg.gif",
+            "https://obrille.com/wp-content/uploads/2026/04/gif-vd16-20230718120218-nfxqu.gif",
+            "https://obrille.com/wp-content/uploads/2026/04/Comparaison-avant-apres-dun-ongle-incarne.png",
+            "https://obrille.com/wp-content/uploads/2026/04/Soulagement-rapide-des-ongles-incarnes.png"
+          ],
+          "lifestyle": [
+            "https://obrille.com/wp-content/uploads/2026/04/Clou-casse-et-peau-seche.png",
+            "https://obrille.com/wp-content/uploads/2026/04/Ongle-incarne-avec-inflammation-rougeatre.png",
+            "https://obrille.com/wp-content/uploads/2026/04/Comparaison-avant-apres-dun-ongle-incarne.png"
+          ],
+          "trustStrip": [
+            "https://obrille.com/wp-content/uploads/2026/04/Traitement-efficace-des-ongles-incarnes.png",
+            "https://obrille.com/wp-content/uploads/2026/04/Soulagement-rapide-des-ongles-incarnes.png",
+            "https://obrille.com/wp-content/uploads/2026/04/Comparaison-avant-apres-dun-ongle-incarne.png"
+          ]
+        },
+        "reviews": [
+          {
+            "img": "https://obrille.com/wp-content/uploads/2026/04/Soulagement-rapide-des-ongles-incarnes.png",
+            "n": "Adjoua M.",
+            "v": "Abidjan — Cocody",
+            "q": "Mon ongle incarne me faisait souffrir depuis 3 mois. J'avais peur de me faire operer. Avec cette creme en seulement 5 jours l'ongle a commence a se redresser. Plus aucune douleur aujourd'hui !",
+            "s": 5,
+            "verified": true,
+            "date": "Il y a 2 jours"
+          },
+          {
+            "img": "https://obrille.com/wp-content/uploads/2026/04/Comparaison-avant-apres-dun-ongle-incarne.png",
+            "n": "Koffi T.",
+            "v": "Yopougon",
+            "q": "Je ne pouvais plus porter de chaussures fermees a cause de mon gros orteil. Apres 1 semaine de creme, l'inflammation a completement disparu. Je marche normalement maintenant.",
+            "s": 5,
+            "verified": true,
+            "date": "Il y a 5 jours"
+          },
+          {
+            "img": "https://obrille.com/wp-content/uploads/2026/04/Traitement-efficace-des-ongles-incarnes.png",
+            "n": "Mariame C.",
+            "v": "Marcory",
+            "q": "Ma fille de 14 ans avait un ongle incarne tres douloureux. Le medecin voulait operer. On a essaye cette creme d'abord et en 10 jours tout etait regle. Merci infiniment !",
+            "s": 5,
+            "verified": true,
+            "date": "Il y a 1 semaine"
+          },
+          {
+            "img": "https://obrille.com/wp-content/uploads/2026/04/Clou-casse-et-peau-seche.png",
+            "n": "Ibrahim D.",
+            "v": "Plateau",
+            "q": "Je suis footballeur et mes orteils souffrent beaucoup. Cette creme a sauve mon gros orteil. Application facile, pas de douleur pendant le traitement. Je recommande a tous les sportifs.",
+            "s": 5,
+            "verified": true,
+            "date": "Il y a 3 jours"
+          },
+          {
+            "img": "https://obrille.com/wp-content/uploads/2026/04/Soulagement-rapide-des-ongles-incarnes.png",
+            "n": "Awa B.",
+            "v": "Treichville",
+            "q": "J'ai teste beaucoup de remedes maison sans succes. Cette creme est la seule qui a vraiment fonctionne. L'ongle pousse maintenant correctement. Fini la douleur a chaque pas !",
+            "s": 5,
+            "verified": true,
+            "date": "Il y a 4 jours"
+          },
+          {
+            "img": "https://obrille.com/wp-content/uploads/2026/04/Ongle-incarne-avec-inflammation-rougeatre.png",
+            "n": "Sekou K.",
+            "v": "Bouake",
+            "q": "Mon ongle etait infecte et rouge. J'avais tres mal. Des la 2eme application l'inflammation a diminue. Apres 7 jours c'etait comme neuf. Produit miraculeux.",
+            "s": 5,
+            "verified": true,
+            "date": "Il y a 6 jours"
+          },
+          {
+            "img": "https://obrille.com/wp-content/uploads/2026/04/Comparaison-avant-apres-dun-ongle-incarne.png",
+            "n": "Fatimata S.",
+            "v": "Abobo",
+            "q": "Je travaille debout toute la journee. Mon ongle incarne etait un calvaire. Apres le traitement je peux enfin remettre mes belles chaussures. Le resultat est bluffant.",
+            "s": 5,
+            "verified": true,
+            "date": "Il y a 1 semaine"
+          },
+          {
+            "img": "https://obrille.com/wp-content/uploads/2026/04/Traitement-efficace-des-ongles-incarnes.png",
+            "n": "Yves A.",
+            "v": "Cocody",
+            "q": "Ma mere de 65 ans souffrait de ses ongles depuis des annees. On lui a offert cette creme et elle revit. Elle dit que c'est le meilleur cadeau qu'on lui a fait.",
+            "s": 5,
+            "verified": true,
+            "date": "Il y a 2 semaines"
+          }
+        ],
+        "toasts": [
+          {
+            "n": "Adjoua M.",
+            "v": "Cocody",
+            "t": "3 min"
+          },
+          {
+            "n": "Koffi T.",
+            "v": "Yopougon",
+            "t": "7 min"
+          },
+          {
+            "n": "Mariame C.",
+            "v": "Marcory",
+            "t": "12 min"
+          },
+          {
+            "n": "Ibrahim D.",
+            "v": "Plateau",
+            "t": "18 min"
+          },
+          {
+            "n": "Sekou K.",
+            "v": "Bouake",
+            "t": "25 min"
+          }
+        ],
+        "bundles": [
+          {
+            "v": 1,
+            "label": "1 boite",
+            "unitPrice": 9900,
+            "totalPrice": 9900,
+            "perDay": "Traitement 1 pied",
+            "img": "https://obrille.com/wp-content/uploads/2026/04/Traitement-efficace-des-ongles-incarnes.png"
+          },
+          {
+            "v": 2,
+            "label": "2 boites",
+            "unitPrice": 8450,
+            "totalPrice": 16900,
+            "save": "Economisez 2 900 F",
+            "tag": "POPULAIRE",
+            "perDay": "Traitement complet 2 pieds",
+            "img": "https://obrille.com/wp-content/uploads/2026/04/Soulagement-rapide-des-ongles-incarnes.png"
+          },
+          {
+            "v": 3,
+            "label": "3 boites",
+            "unitPrice": 8300,
+            "totalPrice": 24900,
+            "save": "Economisez 4 800 F",
+            "tag": "CURE COMPLETE",
+            "perDay": "Traitement famille entiere",
+            "img": "https://obrille.com/wp-content/uploads/2026/04/Comparaison-avant-apres-dun-ongle-incarne.png"
+          }
+        ],
+        "sections": {
+          "marqueeTexts": [
+            "Soulagement des la 1ere application",
+            "Formule approuvee par les podologues",
+            "Livraison 24h Abidjan",
+            "Paiement a la livraison",
+            "Resultat visible en 7 jours",
+            "+38 000 ongles sauves"
+          ],
+          "stickers": [
+            {
+              "text": "🏥 Approuve par les podologues",
+              "color": "bg-violet-50 text-violet-700 ring-1 ring-violet-200"
+            },
+            {
+              "text": "⚡ Resultat en 7 jours",
+              "color": "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
+            },
+            {
+              "text": "🌿 100% Naturel",
+              "color": "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+            }
+          ],
+          "stats": [
+            {
+              "n": "38 200+",
+              "l": "Ongles traites"
+            },
+            {
+              "n": "7 jours",
+              "l": "Resultat visible"
+            },
+            {
+              "n": "4.8/5",
+              "l": "Note moyenne"
+            },
+            {
+              "n": "97%",
+              "l": "Satisfaits"
+            }
+          ],
+          "problemTitle": "Vous souffrez d'ongles incarnes ?",
+          "problemPoints": [
+            {
+              "ico": "😖",
+              "title": "Douleur insupportable",
+              "desc": "Chaque pas est une torture. L'ongle s'enfonce dans la chair et provoque une douleur lancinante a chaque mouvement."
+            },
+            {
+              "ico": "🦶",
+              "title": "Inflammation & infection",
+              "desc": "Rougeur, gonflement, pus... L'ongle incarne non traite peut s'infecter et s'aggraver rapidement."
+            },
+            {
+              "ico": "👟",
+              "title": "Impossible de se chausser",
+              "desc": "Porter des chaussures fermees devient impossible. Meme les sandales appuient sur la zone douloureuse."
+            }
+          ],
+          "solutionTitle": "Le traitement qui change tout en 7 jours",
+          "solutionPoints": [
+            {
+              "ico": "💧",
+              "title": "Formule penetrante rapide",
+              "desc": "Notre creme adoucit la peau et l'ongle des la premiere application. La douleur diminue en quelques heures.",
+              "img": "https://obrille.com/wp-content/uploads/2026/04/Traitement-efficace-des-ongles-incarnes.png"
+            },
+            {
+              "ico": "🔄",
+              "title": "Corrige la pousse de l'ongle",
+              "desc": "La formule agit en profondeur pour rediriger la croissance de l'ongle. Fini l'ongle qui s'enfonce dans la chair.",
+              "img": "https://obrille.com/wp-content/uploads/2026/04/Comparaison-avant-apres-dun-ongle-incarne.png"
+            },
+            {
+              "ico": "🛡️",
+              "title": "Anti-inflammatoire naturel",
+              "desc": "Reduit l'inflammation, la rougeur et le gonflement rapidement. Ingredients naturels sans effets secondaires.",
+              "img": "https://obrille.com/wp-content/uploads/2026/04/Soulagement-rapide-des-ongles-incarnes.png"
+            },
+            {
+              "ico": "🌿",
+              "title": "Sans chirurgie ni douleur",
+              "desc": "Evitez l'operation couteuse et douloureuse. Notre traitement topique est indolore et se fait confortablement chez vous.",
+              "img": "https://obrille.com/wp-content/uploads/2026/04/Clou-casse-et-peau-seche.png"
+            }
+          ],
+          "comparisonTable": [
+            {
+              "feature": "Sans douleur",
+              "us": true,
+              "them": false
+            },
+            {
+              "feature": "Sans chirurgie",
+              "us": true,
+              "them": false
+            },
+            {
+              "feature": "Resultat en 7 jours",
+              "us": true,
+              "them": false
+            },
+            {
+              "feature": "Ingredients naturels",
+              "us": true,
+              "them": false
+            },
+            {
+              "feature": "Application facile",
+              "us": true,
+              "them": true
+            },
+            {
+              "feature": "Previent la recidive",
+              "us": true,
+              "them": false
+            },
+            {
+              "feature": "Prix abordable",
+              "us": true,
+              "them": false
+            }
+          ],
+          "howItWorks": [
+            {
+              "n": "01",
+              "title": "Nettoyez",
+              "desc": "Lavez et sechez bien le pied affecte avant l'application.",
+              "ico": "🧼"
+            },
+            {
+              "n": "02",
+              "title": "Appliquez",
+              "desc": "Appliquez une noisette de creme sur l'ongle incarne et la zone enflammee.",
+              "ico": "💧"
+            },
+            {
+              "n": "03",
+              "title": "Massez",
+              "desc": "Massez doucement pendant 30 secondes pour faire penetrer le produit.",
+              "ico": "👆"
+            },
+            {
+              "n": "04",
+              "title": "Guerissez",
+              "desc": "Repetez 2x par jour. Resultat visible des le 3eme jour.",
+              "ico": "✨"
+            }
+          ],
+          "faq": [
+            {
+              "q": "Combien de temps avant de voir un resultat ?",
+              "a": "La douleur diminue des la 1ere application. L'amelioration visible commence au 3eme jour. L'ongle se corrige completement en 7 a 14 jours selon la gravite."
+            },
+            {
+              "q": "Est-ce que ca fait mal a l'application ?",
+              "a": "Pas du tout ! La creme est douce et apaisante. Vous ressentirez meme un soulagement immediat de la douleur des la premiere utilisation."
+            },
+            {
+              "q": "Ca marche sur les ongles tres incarnes ?",
+              "a": "Oui, notre formule est concue pour tous les stades d'ongles incarnes, des cas legers aux cas avances avec inflammation. Pour les cas tres severes avec infection, consultez un medecin en parallele."
+            },
+            {
+              "q": "Dois-je payer avant la livraison ?",
+              "a": "Non ! Vous payez uniquement a la reception du produit, en especes, au livreur. Aucun paiement en ligne requis."
+            },
+            {
+              "q": "Combien de tubes faut-il pour un traitement complet ?",
+              "a": "1 tube suffit pour traiter un pied pendant 2 a 3 semaines. Pour les deux pieds ou un traitement prolonge, nous recommandons 2 tubes."
+            },
+            {
+              "q": "Y a-t-il des effets secondaires ?",
+              "a": "Non. Notre formule est 100% naturelle et testee dermatologiquement. Aucun effet secondaire rapporte par nos +38 000 clients."
+            }
+          ],
+          "trustBadges": [
+            {
+              "ico": "🚚",
+              "t": "Livraison rapide",
+              "d": "24h Abidjan"
+            },
+            {
+              "ico": "💰",
+              "t": "Paiement livraison",
+              "d": "Aucun risque"
+            },
+            {
+              "ico": "🏥",
+              "t": "Approuve",
+              "d": "Par les podologues"
+            },
+            {
+              "ico": "📞",
+              "t": "Support client",
+              "d": "7j/7"
+            },
+            {
+              "ico": "🔄",
+              "t": "Satisfait ou rembourse",
+              "d": "Sous 30 jours"
+            }
+          ],
+          "finalCtaTitle": "Liberez-vous de la douleur des ongles incarnes",
+          "finalCtaSub": "Rejoignez +38 000 personnes qui ont dit adieu aux ongles douloureux"
+        },
+        "colors": {
+          "primary": "#7c3aed",
+          "accent": "#a855f7",
+          "bg": "#faf9fb"
+        },
+        "thankYouUrl": "/landing/creme-ongle-incarne/merci",
+        "metaPixelId": "1639149310623476"
+      }
+    },
+    "chaussette-compression": {
+      "id": 7,
+      "productCode": "CHAUSSETTE_COMPRESSION_LONG",
+      "title": "Chaussettes de Compression Anti-Douleur",
+      "templateVersion": 2,
+      "metaPixelId": "952340034030644",
+      "persuasionBlocksCount": 0,
+      "config": {
+        "templateVersion": 2,
+        "productCode": "CHAUSSETTE_COMPRESSION_LONG",
+        "title": "Chaussettes de Compression Anti-Douleur",
+        "subtitle": "Soulagement instantane pour vos jambes",
+        "description": "Soulagez instantanement vos douleurs de pieds, jambes lourdes et gonflements. Compression graduee 20-30mmHg. Confort toute la journee.",
+        "badge": "BEST-SELLER",
+        "prices": {
+          "1": 9900,
+          "2": 16900,
+          "3": 24900
+        },
+        "oldPrice": 15000,
+        "discount": "-34%",
+        "qtyOptions": [
+          {
+            "v": 1,
+            "label": "1 paire",
+            "sub": "9 900 FCFA",
+            "save": ""
+          },
+          {
+            "v": 2,
+            "label": "2 paires",
+            "sub": "16 900 FCFA",
+            "tag": "Populaire",
+            "save": "Economisez 2 900 F"
+          },
+          {
+            "v": 3,
+            "label": "3 paires",
+            "sub": "24 900 FCFA",
+            "tag": "Meilleure offre",
+            "save": "Economisez 4 800 F"
+          }
+        ],
+        "images": {
+          "hero": "https://obrille.com/wp-content/uploads/2026/04/Chaussettes-de-compression-pour-soulager-les-douleurs-1.png",
+          "gallery": [
+            "https://obrille.com/wp-content/uploads/2026/04/Chaussettes-de-compression-noires-en-detail.png",
+            "https://obrille.com/wp-content/uploads/2026/04/Jambe-en-bas-de-compression-noire-1.png",
+            "https://obrille.com/wp-content/uploads/2026/04/Jambes-en-bas-avec-des-chaussettes-blanches.png"
+          ],
+          "lifestyle": [
+            "https://obrille.com/wp-content/uploads/2026/04/Douleur-et-inconfort-sur-fauteuil-beige-1.png",
+            "https://obrille.com/wp-content/uploads/2026/04/Femme-attentive-a-ses-pieds-endoloris-1.png",
+            "https://obrille.com/wp-content/uploads/2026/04/Chaussettes-de-compression-pour-soulager-les-douleurs-1.png"
+          ],
+          "trustStrip": [
+            "https://obrille.com/wp-content/uploads/2026/04/Chaussettes-de-compression-pour-soulager-les-douleurs-1.png",
+            "https://obrille.com/wp-content/uploads/2026/04/Chaussettes-de-compression-noires-en-detail.png",
+            "https://obrille.com/wp-content/uploads/2026/04/Jambe-en-bas-de-compression-noire-1.png",
+            "https://obrille.com/wp-content/uploads/2026/04/Jambes-en-bas-avec-des-chaussettes-blanches.png"
+          ]
+        },
+        "reviews": [
+          {
+            "img": "https://obrille.com/wp-content/uploads/2026/04/Jambes-en-bas-avec-des-chaussettes-blanches.png",
+            "n": "Aminata K.",
+            "v": "Abidjan — Cocody",
+            "q": "Mes pieds etaient gonfles tous les soirs apres le travail. Depuis que je porte ces chaussettes, plus aucun gonflement. Je suis debout 10h par jour et mes jambes ne me font plus mal. Tres confortable.",
+            "s": 5,
+            "verified": true,
+            "date": "Il y a 3 jours"
+          },
+          {
+            "img": "https://obrille.com/wp-content/uploads/2026/04/Jambe-en-bas-de-compression-noire-1.png",
+            "n": "Mariam D.",
+            "v": "Yopougon",
+            "q": "J'ai des varices depuis 2 ans. Le medecin m'a recommande des chaussettes de compression. Celles-ci sont parfaites : confortables, faciles a enfiler et le soulagement est immediat.",
+            "s": 5,
+            "verified": true,
+            "date": "Il y a 1 semaine"
+          },
+          {
+            "img": "https://obrille.com/wp-content/uploads/2026/04/Chaussettes-de-compression-noires-en-detail.png",
+            "n": "Fatou S.",
+            "v": "Marcory",
+            "q": "Je suis infirmiere et je fais des gardes de 12h. Ces chaussettes ont change ma vie. Plus de jambes lourdes le soir. Je les recommande a toutes mes collegues.",
+            "s": 5,
+            "verified": true,
+            "date": "Il y a 5 jours"
+          },
+          {
+            "img": "https://obrille.com/wp-content/uploads/2026/04/Chaussettes-de-compression-pour-soulager-les-douleurs-1.png",
+            "n": "Kouassi B.",
+            "v": "Bouake",
+            "q": "Mon pere a le diabete et ses pieds gonflent beaucoup. Depuis qu'il porte ces chaussettes, il marche mieux et se plaint moins. Merci beaucoup.",
+            "s": 5,
+            "verified": true,
+            "date": "Il y a 2 semaines"
+          },
+          {
+            "img": "https://obrille.com/wp-content/uploads/2026/04/Jambes-en-bas-avec-des-chaussettes-blanches.png",
+            "n": "Sarah T.",
+            "v": "Plateau",
+            "q": "La compression est ferme mais confortable. Faciles a enfiler, et le service client est excellent ! Je marche toute la journee sans douleur maintenant.",
+            "s": 5,
+            "verified": true,
+            "date": "Il y a 1 semaine"
+          },
+          {
+            "img": "https://obrille.com/wp-content/uploads/2026/04/Jambe-en-bas-de-compression-noire-1.png",
+            "n": "Clara M.",
+            "v": "Treichville",
+            "q": "J'etais sceptique au debut. Mais des le premier jour je sentais la difference. Plus de gonflement aux chevilles le soir. Je commande 2 paires de plus.",
+            "s": 5,
+            "verified": true,
+            "date": "Il y a 4 jours"
+          },
+          {
+            "img": "https://obrille.com/wp-content/uploads/2026/04/Chaussettes-de-compression-noires-en-detail.png",
+            "n": "Eliane B.",
+            "v": "Cocody",
+            "q": "Ces chaussettes sont un game changer. Mes pieds arthritiques ne me font plus souffrir. Le tissu est doux et respirant. Je les porte tous les jours.",
+            "s": 5,
+            "verified": true,
+            "date": "Il y a 6 jours"
+          },
+          {
+            "img": "https://obrille.com/wp-content/uploads/2026/04/Chaussettes-de-compression-pour-soulager-les-douleurs-1.png",
+            "n": "Gloria C.",
+            "v": "Marcory",
+            "q": "Elles sont agreables sur mes jambes, sans sensation de restriction ni de douleur. J'adore la facon dont elles s'ajustent parfaitement a mon mollet.",
+            "s": 5,
+            "verified": true,
+            "date": "Il y a 2 semaines"
+          }
+        ],
+        "toasts": [
+          {
+            "n": "Aminata K.",
+            "v": "Cocody",
+            "t": "2 min"
+          },
+          {
+            "n": "Jean-Marc B.",
+            "v": "Bouake",
+            "t": "5 min"
+          },
+          {
+            "n": "Mariam D.",
+            "v": "Yopougon",
+            "t": "8 min"
+          },
+          {
+            "n": "Fatou S.",
+            "v": "Marcory",
+            "t": "14 min"
+          },
+          {
+            "n": "Kouassi B.",
+            "v": "Daloa",
+            "t": "18 min"
+          }
+        ],
+        "bundles": [
+          {
+            "v": 1,
+            "label": "1 paire",
+            "unitPrice": 9900,
+            "totalPrice": 9900,
+            "perDay": "Soit 330 F / jour",
+            "img": "https://obrille.com/wp-content/uploads/2026/04/Chaussettes-de-compression-pour-soulager-les-douleurs-1.png"
+          },
+          {
+            "v": 2,
+            "label": "2 paires",
+            "unitPrice": 8450,
+            "totalPrice": 16900,
+            "save": "Economisez 2 900 FCFA",
+            "tag": "POPULAIRE",
+            "perDay": "Soit 248 F / jour",
+            "img": "https://obrille.com/wp-content/uploads/2026/04/Chaussettes-de-compression-noires-en-detail.png"
+          },
+          {
+            "v": 3,
+            "label": "3 paires",
+            "unitPrice": 8300,
+            "totalPrice": 24900,
+            "save": "Economisez 4 800 FCFA",
+            "tag": "MEILLEURE OFFRE",
+            "perDay": "Soit 221 F / jour",
+            "img": "https://obrille.com/wp-content/uploads/2026/04/Jambe-en-bas-de-compression-noire-1.png"
+          }
+        ],
+        "sections": {
+          "marqueeTexts": [
+            "Soulagement instantane",
+            "Compression medicale 20-30mmHg",
+            "Livraison 24h Abidjan",
+            "Paiement a la livraison",
+            "+94 000 clients satisfaits"
+          ],
+          "stickers": [
+            {
+              "text": "🏥 Recommande par les medecins",
+              "color": "bg-teal-50 text-teal-700 ring-1 ring-teal-200"
+            },
+            {
+              "text": "⚡ Soulagement immediat",
+              "color": "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
+            },
+            {
+              "text": "🚚 Livraison 24h",
+              "color": "bg-violet-50 text-violet-700 ring-1 ring-violet-200"
+            }
+          ],
+          "stats": [
+            {
+              "n": "94 350+",
+              "l": "Clients satisfaits"
+            },
+            {
+              "n": "24h",
+              "l": "Livraison Abidjan"
+            },
+            {
+              "n": "4.9/5",
+              "l": "Note moyenne"
+            },
+            {
+              "n": "98%",
+              "l": "Recommandent"
+            }
+          ],
+          "problemTitle": "Vous souffrez de douleurs aux jambes ?",
+          "problemPoints": [
+            {
+              "ico": "😣",
+              "title": "Pieds gonfles & douloureux",
+              "desc": "Apres une longue journee debout ou assise, vos pieds et chevilles gonflent et deviennent douloureux."
+            },
+            {
+              "ico": "🦵",
+              "title": "Jambes lourdes & fatiguees",
+              "desc": "Sensation de lourdeur, fourmillements, crampes nocturnes. Vos jambes vous ralentissent au quotidien."
+            },
+            {
+              "ico": "💔",
+              "title": "Varices & mauvaise circulation",
+              "desc": "Les veines apparentes, le sang qui stagne. Un probleme qui s'aggrave avec le temps sans traitement."
+            }
+          ],
+          "solutionTitle": "La compression graduee qui change tout",
+          "solutionPoints": [
+            {
+              "ico": "🩺",
+              "title": "Compression medicale 20-30mmHg",
+              "desc": "Pression graduee de la cheville vers le mollet. Ameliore la circulation sanguine et reduit les gonflements instantanement.",
+              "img": "https://obrille.com/wp-content/uploads/2026/04/Chaussettes-de-compression-noires-en-detail.png"
+            },
+            {
+              "ico": "☁️",
+              "title": "Confort toute la journee",
+              "desc": "Tissu premium Nylon 65% + Spandex 35%. Respirant, anti-bacterien, anti-odeur. Portez-les 12h sans gene.",
+              "img": "https://obrille.com/wp-content/uploads/2026/04/Jambes-en-bas-avec-des-chaussettes-blanches.png"
+            },
+            {
+              "ico": "👟",
+              "title": "Faciles a enfiler",
+              "desc": "Contrairement aux autres chaussettes de compression, les notres glissent facilement. Ultra-stretch pour un confort optimal.",
+              "img": "https://obrille.com/wp-content/uploads/2026/04/Jambe-en-bas-de-compression-noire-1.png"
+            },
+            {
+              "ico": "💪",
+              "title": "Durables & lavables",
+              "desc": "Lavables en machine sans perte de qualite ni d'elasticite. Un investissement durable pour votre sante.",
+              "img": "https://obrille.com/wp-content/uploads/2026/04/Chaussettes-de-compression-pour-soulager-les-douleurs-1.png"
+            }
+          ],
+          "comparisonTable": [
+            {
+              "feature": "Compression graduee",
+              "us": true,
+              "them": false
+            },
+            {
+              "feature": "Facile a enfiler",
+              "us": true,
+              "them": false
+            },
+            {
+              "feature": "Anti-bacterien",
+              "us": true,
+              "them": false
+            },
+            {
+              "feature": "Adaptee mollets larges",
+              "us": true,
+              "them": false
+            },
+            {
+              "feature": "Lavable en machine",
+              "us": true,
+              "them": true
+            },
+            {
+              "feature": "Respirant toute la journee",
+              "us": true,
+              "them": false
+            },
+            {
+              "feature": "Durable apres 50+ lavages",
+              "us": true,
+              "them": false
+            }
+          ],
+          "howItWorks": [
+            {
+              "n": "01",
+              "title": "Enfilez",
+              "desc": "Glissez facilement les chaussettes grace au tissu ultra-stretch.",
+              "ico": "🧦"
+            },
+            {
+              "n": "02",
+              "title": "Compressez",
+              "desc": "La compression graduee stimule votre circulation sanguine.",
+              "ico": "💓"
+            },
+            {
+              "n": "03",
+              "title": "Soulagez",
+              "desc": "Ressentez un soulagement immediat des gonflements et douleurs.",
+              "ico": "✨"
+            },
+            {
+              "n": "04",
+              "title": "Vivez",
+              "desc": "Retrouvez votre mobilite et votre energie toute la journee.",
+              "ico": "🚶‍♀️"
+            }
+          ],
+          "faq": [
+            {
+              "q": "Combien de temps puis-je les porter ?",
+              "a": "Nos chaussettes sont concues pour etre portees toute la journee, jusqu'a 12 heures. Retirez-les la nuit sauf avis medical contraire."
+            },
+            {
+              "q": "Conviennent-elles pour le diabete et les varices ?",
+              "a": "Oui ! Elles sont specialement concues pour aider a gerer les symptomes du diabete, des varices et de l'oedeme. La compression graduee ameliore la circulation sanguine."
+            },
+            {
+              "q": "Dois-je payer avant la livraison ?",
+              "a": "Non. Vous payez uniquement a la reception du produit. Aucun paiement a l'avance."
+            },
+            {
+              "q": "Sont-elles serrantes ou inconfortables ?",
+              "a": "Non. Contrairement aux autres marques, nos chaussettes offrent une compression douce et confortable. Elles sont faciles a enfiler et ne serrent pas."
+            },
+            {
+              "q": "Comment les entretenir ?",
+              "a": "Lavables en machine a 40°C. Sechage a l'air libre recommande. Elles gardent leur elasticite meme apres 50+ lavages."
+            },
+            {
+              "q": "Quelle taille choisir ?",
+              "a": "Taille unique extensible qui s'adapte a la plupart des mollets, y compris les mollets larges. Le tissu ultra-stretch epouse parfaitement votre jambe."
+            }
+          ],
+          "trustBadges": [
+            {
+              "ico": "🚚",
+              "t": "Livraison rapide",
+              "d": "24h Abidjan"
+            },
+            {
+              "ico": "💰",
+              "t": "Paiement livraison",
+              "d": "Aucun risque"
+            },
+            {
+              "ico": "🩺",
+              "t": "Qualite medicale",
+              "d": "Compression 20-30mmHg"
+            },
+            {
+              "ico": "📞",
+              "t": "Support client",
+              "d": "7j/7"
+            },
+            {
+              "ico": "🔄",
+              "t": "Echange facile",
+              "d": "Sous 30 jours"
+            }
+          ]
+        },
+        "colors": {
+          "primary": "#0d9488",
+          "accent": "#f59e0b",
+          "bg": "#fafaf9"
+        },
+        "thankYouUrl": "/landing/chaussette-compression/merci",
+        "metaPixelId": "952340034030644"
+      }
+    },
+    "patchdouleurtk": {
+      "id": 2,
+      "productCode": "PATCH_DOULEUR_TK",
+      "title": "Patch Anti-Douleur Chauffant TK",
+      "templateVersion": 1,
+      "persuasionBlocksCount": 3,
+      "config": {
+        "productCode": "PATCH_DOULEUR_TK",
+        "title": "Patch Anti-Douleur Chauffant TK",
+        "subtitle": "Soulagement instantane",
+        "description": "Posez le patch sur la zone douloureuse et ressentez un soulagement immediat. Mal de dos, arthrose, sciatique, tensions — une solution simple et efficace.",
+        "badge": "NOUVEAU",
+        "prices": {
+          "1": 9900,
+          "2": 16900,
+          "3": 24900
+        },
+        "oldPrice": 15000,
+        "discount": "-34%",
+        "qtyOptions": [
+          {
+            "v": 1,
+            "label": "1 boite",
+            "sub": "9 900 FCFA",
+            "save": ""
+          },
+          {
+            "v": 2,
+            "label": "2 boites",
+            "sub": "16 900 FCFA",
+            "tag": "Populaire",
+            "save": "Economisez 2 900 F"
+          },
+          {
+            "v": 3,
+            "label": "3 boites",
+            "sub": "24 900 FCFA",
+            "tag": "Meilleure offre",
+            "save": "Economisez 4 800 F"
+          }
+        ],
+        "images": {
+          "hero": "/patch-douleur-tk/hero.webp",
+          "gallery": [
+            "/patch-douleur-tk/gallery-1.webp",
+            "/patch-douleur-tk/gallery-2.webp",
+            "/patch-douleur-tk/gallery-3.webp"
+          ],
+          "usage": "/patch-douleur-tk/usage.webp",
+          "banner": "/patch-douleur-tk/banner.webp",
+          "avant": "/patch-douleur-tk/avant.webp",
+          "apres": "/patch-douleur-tk/apres.webp"
+        },
+        "videos": [
+          "/patch-douleur-tk/video-1.mp4",
+          "/patch-douleur-tk/video-2.mp4",
+          "/patch-douleur-tk/video-3.mp4"
+        ],
+        "colors": {
+          "theme": "blue"
+        },
+        "reviews": [
+          {
+            "init": "SK",
+            "bg": "bg-sky-500",
+            "n": "Sidibe K.",
+            "v": "Abidjan",
+            "q": "En 3 secondes la douleur a disparu. Incroyable.",
+            "s": 5
+          },
+          {
+            "init": "AB",
+            "bg": "bg-cyan-500",
+            "n": "Aminata B.",
+            "v": "Bouake",
+            "q": "Mon mal de dos me faisait souffrir depuis des mois. Le patch m'a sauve.",
+            "s": 5
+          },
+          {
+            "init": "YD",
+            "bg": "bg-teal-500",
+            "n": "Yao D.",
+            "v": "Yopougon",
+            "q": "Je le porte tous les jours au travail. Plus de douleur.",
+            "s": 5
+          },
+          {
+            "init": "KN",
+            "bg": "bg-indigo-500",
+            "n": "Kone N.",
+            "v": "Daloa",
+            "q": "Ma sciatique ne me gene plus. Merci.",
+            "s": 5
+          },
+          {
+            "init": "FM",
+            "bg": "bg-violet-500",
+            "n": "Fatou M.",
+            "v": "San Pedro",
+            "q": "Service rapide et le produit marche vraiment.",
+            "s": 4
+          },
+          {
+            "init": "OT",
+            "bg": "bg-blue-500",
+            "n": "Oumar T.",
+            "v": "Korhogo",
+            "q": "Mon pere l'utilise pour ses rhumatismes. Il revit.",
+            "s": 5
+          }
+        ],
+        "toasts": [
+          {
+            "n": "Sidibe K.",
+            "v": "Abidjan",
+            "t": "3 min"
+          },
+          {
+            "n": "Aminata B.",
+            "v": "Bouake",
+            "t": "7 min"
+          },
+          {
+            "n": "Yao D.",
+            "v": "Yopougon",
+            "t": "10 min"
+          },
+          {
+            "n": "Kone N.",
+            "v": "Daloa",
+            "t": "14 min"
+          },
+          {
+            "n": "Fatou M.",
+            "v": "San Pedro",
+            "t": "18 min"
+          }
+        ],
+        "sections": {
+          "marqueeTexts": [
+            "Soulagement instantane",
+            "Patch chauffant anti-douleur",
+            "Livraison 24h Abidjan",
+            "Paiement a la livraison"
+          ],
+          "catchphrase": {
+            "text": "Finis les douleurs en 3 secondes",
+            "sub": "Un patch, une pose, un soulagement immediat. Mal de dos, arthrose, sciatique, rhumatisme — retrouvez votre confort."
+          },
+          "stats": [
+            {
+              "n": "800+",
+              "l": "Utilisateurs satisfaits"
+            },
+            {
+              "n": "24h",
+              "l": "Livraison Abidjan"
+            },
+            {
+              "n": "4.7/5",
+              "l": "Note moyenne"
+            },
+            {
+              "n": "97%",
+              "l": "Recommandent"
+            }
+          ],
+          "howToUse": [
+            {
+              "n": "01",
+              "t": "Retirez",
+              "d": "Retirez le film protecteur du patch.",
+              "ico": "🩹"
+            },
+            {
+              "n": "02",
+              "t": "Appliquez",
+              "d": "Posez le patch sur la zone douloureuse.",
+              "ico": "✋"
+            },
+            {
+              "n": "03",
+              "t": "Chauffez",
+              "d": "Le patch chauffe en quelques secondes.",
+              "ico": "🔥"
+            },
+            {
+              "n": "04",
+              "t": "Soulagez",
+              "d": "Ressentez un soulagement immediat.",
+              "ico": "✨"
+            }
+          ],
+          "faq": [
+            {
+              "q": "Combien de temps dure le soulagement ?",
+              "a": "Le patch agit pendant 8 a 12 heures."
+            },
+            {
+              "q": "Est-ce adapte pour le mal de dos ?",
+              "a": "Oui. Dos, epaules, genoux, sciatique, rhumatisme."
+            },
+            {
+              "q": "Dois-je payer avant la livraison ?",
+              "a": "Non. Paiement a la reception uniquement."
+            },
+            {
+              "q": "Combien de patchs dans une boite ?",
+              "a": "Chaque boite contient plusieurs patchs pour un traitement complet."
+            },
+            {
+              "q": "Y a-t-il des effets secondaires ?",
+              "a": "Non. Le patch est naturel et sans danger."
+            },
+            {
+              "q": "Peut-on le porter sous les vetements ?",
+              "a": "Oui. Discret et confortable toute la journee."
+            }
+          ],
+          "trustBadges": [
+            {
+              "ico": "🚚",
+              "t": "Livraison rapide",
+              "d": "24h Abidjan"
+            },
+            {
+              "ico": "💰",
+              "t": "Paiement livraison",
+              "d": "Aucun risque"
+            },
+            {
+              "ico": "🩹",
+              "t": "Naturel & sur",
+              "d": "Sans effets secondaires"
+            },
+            {
+              "ico": "📞",
+              "t": "Support client",
+              "d": "7j/7"
+            }
+          ]
+        },
+        "thankYouUrl": "/landing/patchdouleurtk/merci",
+        "persuasionBlocks": [
+          {
+            "title": "Stop au mal de dos qui vous empoisonne la vie",
+            "subtitle": "Lombalgie, sciatique, tensions musculaires... Chaque mouvement devient une epreuve. Le patch chauffant TK diffuse une chaleur therapeutique pendant 8 heures, soulage la douleur en 5 minutes et vous redonne enfin la liberte de bouger sans souffrir.",
+            "img": "https://coachingexpertci.com/wp-content/uploads/2026/04/Man_with_back_202604182201-1.jpeg",
+            "gradientFrom": "from-red-600",
+            "gradientTo": "to-orange-600",
+            "ctaLabel": "Soulager mon dos maintenant"
+          },
+          {
+            "title": "Retrouvez la complicite avec ceux que vous aimez",
+            "subtitle": "Marcher main dans la main, danser, voyager, jouer avec vos enfants... La douleur ne doit plus jamais vous empecher de vivre vos plus beaux moments. Reprenez vos activites preferees, sans douleur, sans medicament, sans effets secondaires.",
+            "img": "https://coachingexpertci.com/wp-content/uploads/2026/04/Man_and_woman_202604182201-1.jpeg",
+            "gradientFrom": "from-orange-600",
+            "gradientTo": "to-amber-600",
+            "ctaLabel": "Je veux ma liberte"
+          },
+          {
+            "title": "Apaisement durable pour les douleurs chroniques",
+            "subtitle": "Arthrose, rhumatismes, raideurs articulaires liees a l'age... Notre patch chauffant TK est la solution naturelle plebiscitee par des centaines de seniors en Cote d'Ivoire. Action profonde, soulagement immediat, mobilite retrouvee.",
+            "img": "https://coachingexpertci.com/wp-content/uploads/2026/04/Vieux_noir_mal_202604182200-1.jpeg",
+            "gradientFrom": "from-rose-600",
+            "gradientTo": "to-red-600",
+            "ctaLabel": "Commander mes patchs"
+          }
+        ]
+      }
+    },
+    "crememinceurfb": {
+      "id": 6,
+      "productCode": "CREME_MINCEUR",
+      "title": "Creme Minceur Brule-Graisse",
+      "templateVersion": 1,
+      "metaPixelId": "952340034030644",
+      "persuasionBlocksCount": 0,
+      "config": {
+        "productCode": "CREME_MINCEUR",
+        "title": "Creme Minceur Brule-Graisse",
+        "subtitle": "Ventre plat & silhouette affinee",
+        "description": "Creme minceur a effet chauffant pour accompagner l'amincissement de la silhouette. Application simple, sensation agreable, resultats visibles.",
+        "badge": "BEST-SELLER",
+        "prices": {
+          "1": 9900,
+          "2": 16900,
+          "3": 24900
+        },
+        "oldPrice": 15000,
+        "discount": "-34%",
+        "qtyOptions": [
+          {
+            "v": 1,
+            "label": "1 pot",
+            "sub": "9 900 FCFA",
+            "save": ""
+          },
+          {
+            "v": 2,
+            "label": "2 pots",
+            "sub": "16 900 FCFA",
+            "tag": "Populaire",
+            "save": "Economisez 2 900 F"
+          },
+          {
+            "v": 3,
+            "label": "3 pots",
+            "sub": "24 900 FCFA",
+            "tag": "Meilleure offre",
+            "save": "Economisez 4 800 F"
+          }
+        ],
+        "images": {
+          "hero": "/creme-minceur/hero.webp",
+          "gallery": [
+            "/creme-minceur/gallery-1.webp",
+            "/creme-minceur/gallery-2.webp",
+            "/creme-minceur/gallery-3.webp"
+          ],
+          "usage": "/creme-minceur/hero.webp",
+          "banner": "/creme-minceur/hero.webp",
+          "avant": "/creme-minceur/avant.webp",
+          "apres": "/creme-minceur/apres.webp"
+        },
+        "videos": [
+          "/creme-minceur/video-1.mp4",
+          "/creme-minceur/video-2.mp4",
+          "/creme-minceur/video-3.mp4"
+        ],
+        "colors": {
+          "theme": "rose"
+        },
+        "reviews": [
+          {
+            "init": "AK",
+            "bg": "bg-rose-500",
+            "n": "Aminata K.",
+            "v": "Abidjan",
+            "q": "Franchement satisfaite ! La creme chauffe bien, mon ventre s'affine petit a petit.",
+            "s": 5
+          },
+          {
+            "init": "MN",
+            "bg": "bg-pink-500",
+            "n": "Mariam N.",
+            "v": "Yopougon",
+            "q": "Apres quelques jours ma taille parait plus dessinee et la peau plus lisse.",
+            "s": 5
+          },
+          {
+            "init": "SK",
+            "bg": "bg-fuchsia-500",
+            "n": "Sara K.",
+            "v": "Cocody",
+            "q": "Au debut j'avais des doutes mais le produit est top. Mon ventre est plus ferme.",
+            "s": 5
+          },
+          {
+            "init": "FD",
+            "bg": "bg-rose-400",
+            "n": "Fatou D.",
+            "v": "Bingerville",
+            "q": "La creme laisse une sensation agreable et chauffante. Je me sens mieux dans mes vetements.",
+            "s": 5
+          },
+          {
+            "init": "CB",
+            "bg": "bg-pink-400",
+            "n": "Clarisse B.",
+            "v": "Marcory",
+            "q": "Je l'utilise avec mes exercices et le rendu est super. Merci pour le serieux.",
+            "s": 5
+          },
+          {
+            "init": "EL",
+            "bg": "bg-fuchsia-400",
+            "n": "Estelle L.",
+            "v": "Treichville",
+            "q": "Mon produit prefere pour la taille et le ventre. Application facile, resultat visible.",
+            "s": 5
+          }
+        ],
+        "toasts": [
+          {
+            "n": "Aminata K.",
+            "v": "Abidjan",
+            "t": "2 min"
+          },
+          {
+            "n": "Mariam N.",
+            "v": "Yopougon",
+            "t": "5 min"
+          },
+          {
+            "n": "Sara K.",
+            "v": "Cocody",
+            "t": "9 min"
+          },
+          {
+            "n": "Fatou D.",
+            "v": "Bingerville",
+            "t": "12 min"
+          },
+          {
+            "n": "Clarisse B.",
+            "v": "Marcory",
+            "t": "16 min"
+          }
+        ],
+        "sections": {
+          "marqueeTexts": [
+            "Ventre plat garanti",
+            "Creme minceur brule-graisse",
+            "Livraison 24h Abidjan",
+            "Paiement a la livraison"
+          ],
+          "catchphrase": {
+            "text": "Dites STOP aux graisses localisees",
+            "sub": "Creme minceur a effet chauffant. Appliquez matin et soir sur le ventre, les hanches et les cuisses pour une silhouette visiblement affinee."
+          },
+          "stats": [
+            {
+              "n": "1 500+",
+              "l": "Clientes satisfaites"
+            },
+            {
+              "n": "24h",
+              "l": "Livraison Abidjan"
+            },
+            {
+              "n": "4.9/5",
+              "l": "Note moyenne"
+            },
+            {
+              "n": "98%",
+              "l": "Recommandent"
+            }
+          ],
+          "howToUse": [
+            {
+              "n": "01",
+              "t": "Nettoyez",
+              "d": "Lavez et sechez la zone a traiter.",
+              "ico": "🚿"
+            },
+            {
+              "n": "02",
+              "t": "Appliquez",
+              "d": "Etalez la creme sur ventre, hanches ou cuisses.",
+              "ico": "🧴"
+            },
+            {
+              "n": "03",
+              "t": "Massez",
+              "d": "Massez en mouvements circulaires 2-3 minutes.",
+              "ico": "✋"
+            },
+            {
+              "n": "04",
+              "t": "Admirez",
+              "d": "Constatez les resultats au fil des jours.",
+              "ico": "✨"
+            }
+          ],
+          "faq": [
+            {
+              "q": "Quand vais-je voir les resultats ?",
+              "a": "Les premiers resultats sont visibles apres quelques jours d'utilisation reguliere."
+            },
+            {
+              "q": "La creme chauffe-t-elle ?",
+              "a": "Oui, un leger effet chauffant agreable qui favorise l'action brule-graisse."
+            },
+            {
+              "q": "Dois-je payer avant la livraison ?",
+              "a": "Non. Paiement a la reception uniquement."
+            },
+            {
+              "q": "Convient a tous les types de peau ?",
+              "a": "Oui. Formule douce adaptee a toutes les peaux."
+            },
+            {
+              "q": "Combien de fois par jour ?",
+              "a": "2 applications par jour recommandees : matin et soir."
+            },
+            {
+              "q": "Peut-on l'utiliser sur les cuisses ?",
+              "a": "Oui. Ventre, hanches, cuisses et bras."
+            }
+          ],
+          "trustBadges": [
+            {
+              "ico": "🚚",
+              "t": "Livraison rapide",
+              "d": "24h Abidjan"
+            },
+            {
+              "ico": "💰",
+              "t": "Paiement livraison",
+              "d": "Aucun risque"
+            },
+            {
+              "ico": "🌿",
+              "t": "Formule naturelle",
+              "d": "Effet chauffant"
+            },
+            {
+              "ico": "📞",
+              "t": "Support client",
+              "d": "7j/7"
+            }
+          ]
+        },
+        "thankYouUrl": "/landing/crememinceurfb/merci",
+        "metaPixelId": "952340034030644"
+      }
+    }
+  }
+}
