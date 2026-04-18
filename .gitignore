@@ -189,3 +189,8 @@ GUIDE_MIGRATION_RAILWAY_VERS_SUPABASE.md
 # Pack géolocalisation (documentation source)
 PACK_GEOLOCALISATION/
 .vercel
+
+# Backups (archives binaires lourdes - garder uniquement les RESTORE-*.md en git)
+backups/*.tar.gz
+backups/*.zip
+backups/*.sql
