@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { trackPageView } from '../../utils/pageTracking';
 import { useLandingSlug } from '../../hooks/useLandingSlug';
+import OrderModalDispatcher, { isCustomOrderSlug } from '../../components/order/OrderModalDispatcher';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const fmt = (v: number) => v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
@@ -776,7 +777,7 @@ export default function DynamicLandingV2() {
         <div className="relative mx-auto max-w-lg px-4 text-center">
           <h2 className="mb-2 text-xl font-extrabold text-white sm:text-2xl md:text-3xl">{cfg.sections?.finalCtaTitle || 'Commandez maintenant'}</h2>
           <p className="mb-6 text-[14px] text-neutral-400">{cfg.sections?.finalCtaSub || 'Rejoignez nos clients satisfaits'}</p>
-          <button onClick={() => open(1)} className="cta-glow group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl px-8 py-5 text-[16px] font-black text-white shadow-2xl transition-all active:scale-[.98]" style={{ background: `linear-gradient(to right, ${c.p}, ${c.a})`, boxShadow: `0 0 30px ${c.p}40` }}>
+          <button onClick={() => open(1)} className="cta-bounce cta-glow group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl px-8 py-5 text-[16px] font-black text-white shadow-2xl transition-all active:scale-[.98]" style={{ background: `linear-gradient(to right, ${c.p}, ${c.a})`, boxShadow: `0 0 30px ${c.p}40` }}>
             <span className="cta-sheen absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent"/>
             <span className="relative z-10">Commander — {fmt(prices[1])}</span>
           </button>
@@ -838,8 +839,30 @@ export default function DynamicLandingV2() {
         </div>
       )}
 
-      {/* ═══════════ ORDER MODAL ═══════════ */}
-      {modal && (
+      {/* MODAL CUSTOM par produit (design unique via dispatcher) */}
+      {modal && cfg && slug && isCustomOrderSlug(slug) && (
+        <OrderModalDispatcher
+          slug={slug}
+          open={modal}
+          onClose={() => setModal(false)}
+          cfg={{
+            slug,
+            productCode: cfg.productCode,
+            title: cfg.title,
+            prices,
+            metaPixelId: cfg.metaPixelId,
+            thankYouUrl: cfg.thankYouUrl,
+            images: cfg.images,
+          }}
+          product={product}
+          setProduct={(p) => setProduct(p as Product | null)}
+          qtyOptions={qtyOpts}
+          initialQty={qty}
+        />
+      )}
+
+      {/* ═══════════ ORDER MODAL (design generique - fallback) ═══════════ */}
+      {modal && !isCustomOrderSlug(slug) && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4" onClick={e => { if (e.target === e.currentTarget) setModal(false); }}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"/>
           <div className="scale-in relative flex max-h-[100dvh] w-full flex-col rounded-t-3xl bg-white shadow-2xl sm:max-h-[92vh] sm:max-w-[480px] sm:rounded-3xl">

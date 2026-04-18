@@ -143,14 +143,11 @@ export function createApp() {
     res.status(404).json({ error: 'Route non trouvée' });
   });
 
-  // Erreurs globales
+  // Erreurs globales (message generique en production, stack en logs serveur)
   // eslint-disable-next-line no-unused-vars
   app.use((err, req, res, next) => {
-    console.error(err?.stack || err);
-    res.status(500).json({
-      error: 'Erreur serveur',
-      message: process.env.NODE_ENV === 'development' ? String(err?.message || err) : undefined,
-    });
+    console.error('[GLOBAL ERR]', req.method, req.path, '->', err?.stack || err);
+    res.status(500).json({ error: 'Erreur serveur' });
   });
 
   return app;

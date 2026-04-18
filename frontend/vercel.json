@@ -42,6 +42,98 @@
       ]
     }
   ],
+  "redirects": [
+    {
+      "source": "/landing/:slug",
+      "destination": "https://obrille.com/:slug",
+      "permanent": true
+    },
+    {
+      "source": "/landing/:slug/:rest*",
+      "destination": "https://obrille.com/:slug/:rest*",
+      "permanent": true
+    },
+    {
+      "source": "/anti-verrue",
+      "destination": "https://obrille.com/creme-verrue-tk",
+      "permanent": true
+    },
+    {
+      "source": "/anti-verrue/:rest*",
+      "destination": "https://obrille.com/creme-verrue-tk/:rest*",
+      "permanent": true
+    },
+    {
+      "source": "/creme-anti-verrue",
+      "destination": "https://obrille.com/creme-anti-verrue",
+      "permanent": true
+    },
+    {
+      "source": "/creme-anti-verrue/:rest*",
+      "destination": "https://obrille.com/creme-anti-verrue/:rest*",
+      "permanent": true
+    },
+    {
+      "source": "/creme-verrue-tk",
+      "destination": "https://obrille.com/creme-verrue-tk",
+      "permanent": true
+    },
+    {
+      "source": "/creme-verrue-tk/:rest*",
+      "destination": "https://obrille.com/creme-verrue-tk/:rest*",
+      "permanent": true
+    },
+    {
+      "source": "/spraydouleurtk",
+      "destination": "https://obrille.com/spraydouleurtk",
+      "permanent": true
+    },
+    {
+      "source": "/spraydouleurtk/:rest*",
+      "destination": "https://obrille.com/spraydouleurtk/:rest*",
+      "permanent": true
+    },
+    {
+      "source": "/creme-ongle-incarne",
+      "destination": "https://obrille.com/creme-ongle-incarne",
+      "permanent": true
+    },
+    {
+      "source": "/creme-ongle-incarne/:rest*",
+      "destination": "https://obrille.com/creme-ongle-incarne/:rest*",
+      "permanent": true
+    },
+    {
+      "source": "/chaussette-compression",
+      "destination": "https://obrille.com/chaussette-compression",
+      "permanent": true
+    },
+    {
+      "source": "/chaussette-compression/:rest*",
+      "destination": "https://obrille.com/chaussette-compression/:rest*",
+      "permanent": true
+    },
+    {
+      "source": "/patchdouleurtk",
+      "destination": "https://obrille.com/patchdouleurtk",
+      "permanent": true
+    },
+    {
+      "source": "/patchdouleurtk/:rest*",
+      "destination": "https://obrille.com/patchdouleurtk/:rest*",
+      "permanent": true
+    },
+    {
+      "source": "/crememinceurfb",
+      "destination": "https://obrille.com/crememinceurfb",
+      "permanent": true
+    },
+    {
+      "source": "/crememinceurfb/:rest*",
+      "destination": "https://obrille.com/crememinceurfb/:rest*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",

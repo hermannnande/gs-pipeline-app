@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { trackPageView } from '../../utils/pageTracking';
 import { useLandingSlug } from '../../hooks/useLandingSlug';
+import OrderModalDispatcher, { isCustomOrderSlug } from '../../components/order/OrderModalDispatcher';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const fmt = (v: number) => v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
@@ -161,7 +162,7 @@ function LazySection({ children, className }: { children: React.ReactNode; class
 function GlowBtn({ onClick, children, theme }: { onClick: () => void; children: React.ReactNode; theme?: string }) {
   const t = THEMES[theme || 'amber'] || THEMES.amber;
   return (
-    <button onClick={onClick} className={`glow-btn group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl ${t.btnGrad} px-6 py-4 text-[15px] font-extrabold text-white ${t.btnShadow} transition-all ${t.btnHoverShadow} active:scale-[.97] sm:text-base`}>
+    <button onClick={onClick} className={`cta-bounce glow-btn group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl ${t.btnGrad} px-6 py-4 text-[15px] font-extrabold text-white ${t.btnShadow} transition-shadow ${t.btnHoverShadow} sm:text-base`}>
       <span className="glow-sheen absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent"/>
       {children}
     </button>
@@ -734,8 +735,30 @@ export default function DynamicLanding() {
         </div>
       )}
 
-      {/* MODAL FORM */}
-      {modal && (
+      {/* MODAL CUSTOM par produit (design unique via dispatcher) */}
+      {modal && cfg && slug && isCustomOrderSlug(slug) && (
+        <OrderModalDispatcher
+          slug={slug}
+          open={modal}
+          onClose={() => setModal(false)}
+          cfg={{
+            slug,
+            productCode: cfg.productCode,
+            title: cfg.title,
+            prices,
+            metaPixelId: cfg.metaPixelId,
+            thankYouUrl: cfg.thankYouUrl,
+            images: cfg.images,
+          }}
+          product={product}
+          setProduct={(p) => setProduct(p as Product | null)}
+          qtyOptions={qtyOpts}
+          initialQty={qty}
+        />
+      )}
+
+      {/* MODAL FORM (design generique - fallback pour tout autre slug eventuel) */}
+      {modal && !isCustomOrderSlug(slug) && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4" onClick={e => { if (e.target === e.currentTarget) setModal(false); }}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"/>
           <div className="relative flex max-h-[100dvh] w-full flex-col rounded-t-2xl bg-white shadow-2xl sm:max-h-[92vh] sm:max-w-[400px] sm:rounded-2xl">

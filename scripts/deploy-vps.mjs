@@ -301,7 +301,7 @@ async function testUrls(env) {
   step(5, 'Test des URLs publiques');
 
   const slugs = (env.LANDING_SLUGS ||
-    'creme-anti-verrue,creme-verrue-tk,spraydouleurtk,creme-ongle-incarne,chaussette-compression'
+    'creme-anti-verrue,creme-verrue-tk,spraydouleurtk,creme-ongle-incarne,chaussette-compression,patchdouleurtk,crememinceurfb'
   ).split(',').map(s => s.trim()).filter(Boolean);
   const domain = env.PUBLIC_DOMAIN || 'obrille.com';
   const basePath = env.VITE_BASE_PATH || '/landings-app/';

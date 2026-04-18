@@ -270,3 +270,128 @@
   }
 }
 
+/* ==========================================================================
+   CTA Conversion Animations
+   Trois utilitaires combinables sur les boutons CTA des landings :
+     - .cta-bounce      : leger rebond vertical toutes les 2.6s (attire l'oeil)
+     - .cta-pulse-ring  : halo qui s'agrandit puis disparait (sentiment d'urgence)
+     - .cta-shine       : reflet brillant qui balaye le bouton (effet premium)
+   Concu pour rester lisible (animations courtes + longue pause).
+   Respecte prefers-reduced-motion (desactive automatiquement).
+   ========================================================================== */
+
+@keyframes ctaBounce {
+  0%, 70%, 100% { transform: translateY(0); }
+  78%           { transform: translateY(-6px); }
+  84%           { transform: translateY(0); }
+  90%           { transform: translateY(-3px); }
+  96%           { transform: translateY(0); }
+}
+
+@keyframes ctaPulseRing {
+  0%   { box-shadow: 0 0 0 0 currentColor; opacity: .55; }
+  80%  { box-shadow: 0 0 0 14px currentColor; opacity: 0; }
+  100% { box-shadow: 0 0 0 14px currentColor; opacity: 0; }
+}
+
+@keyframes ctaShine {
+  0%   { transform: translateX(-120%) skewX(-20deg); }
+  60%  { transform: translateX(220%)  skewX(-20deg); }
+  100% { transform: translateX(220%)  skewX(-20deg); }
+}
+
+.cta-bounce:not(:disabled) {
+  animation: ctaBounce 2.6s ease-in-out infinite;
+  will-change: transform;
+}
+
+.cta-pulse-ring {
+  position: relative;
+  isolation: isolate;
+}
+.cta-pulse-ring::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  animation: ctaPulseRing 2.2s ease-out infinite;
+  z-index: -1;
+}
+
+.cta-shine {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.cta-shine::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 100%
+  );
+  transform: translateX(-120%) skewX(-20deg);
+  animation: ctaShine 3.2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+.cta-shine > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Combo prete a l'emploi : bounce + reflet brillant (utilise sur le CTA principal).
+   Le bounce s'arrete quand le bouton est :disabled (envoi en cours) pour
+   eviter une UI confuse pendant le submit. */
+.cta-attract {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.cta-attract:not(:disabled) {
+  animation: ctaBounce 2.6s ease-in-out infinite;
+  will-change: transform;
+}
+.cta-attract::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 100%
+  );
+  transform: translateX(-120%) skewX(-20deg);
+  animation: ctaShine 3.2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+.cta-attract:disabled::before {
+  animation: none;
+}
+.cta-attract > * {
+  position: relative;
+  z-index: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-bounce,
+  .cta-pulse-ring::after,
+  .cta-shine::before,
+  .cta-attract,
+  .cta-attract::before {
+    animation: none !important;
+  }
+}
+

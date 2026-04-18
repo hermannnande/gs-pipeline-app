@@ -1,0 +1,24 @@
+# /web/api/.htaccess
+# Toute requete vers /api/* est proxifiee par index.php vers
+# https://gs-pipeline-app-2.vercel.app/api/*
+#
+# Pourquoi : le navigateur in-app de Facebook/Instagram bloque les
+# requetes cross-origin vers *.vercel.app. En passant par /api sur le
+# meme domaine que le frontend (obrille.com), on devient same-origin.
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+# Si un fichier statique n'existe pas (ex: pas /api/foo.txt physique),
+# on route tout vers index.php qui fera le proxy.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^.*$ index.php [L,QSA]
+</IfModule>
+
+# Pas d'index automatique (securite)
+Options -Indexes
+
+# Headers de securite
+<IfModule mod_headers.c>
+Header set X-Content-Type-Options "nosniff"
+Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

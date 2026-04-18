@@ -191,10 +191,15 @@ export default function LandingTemplates() {
                   <label className="mb-1.5 block text-[13px] font-semibold text-neutral-700">Slug (URL) <span className="text-red-400">*</span></label>
                   <div className="flex items-center overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50/50 transition-all focus-within:border-indigo-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-indigo-50">
                     <span className="flex items-center gap-1 border-r border-neutral-200 bg-neutral-100/60 px-3 py-2.5 text-xs font-medium text-neutral-400">
-                      <Link2 className="h-3 w-3"/>/landing/
+                      <Link2 className="h-3 w-3"/>obrille.com/
                     </span>
                     <input value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))} className="w-full bg-transparent px-3 py-2.5 text-sm outline-none" placeholder="creme-anti-verrue"/>
                   </div>
+                  {form.slug && (
+                    <p className="mt-1.5 text-[11px] text-neutral-400">
+                      Alias : coachingexpertci.com/{form.slug}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="mb-1.5 block text-[13px] font-semibold text-neutral-700">Description</label>
@@ -242,9 +247,14 @@ export default function LandingTemplates() {
                   </label>
                 </div>
                 {editing && form.actif && (
-                  <a href={`/landing/${form.slug}`} target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 py-2.5 text-[12px] font-semibold text-indigo-600 transition-colors hover:bg-indigo-100">
-                    <ExternalLink className="h-3.5 w-3.5"/> Voir la page en ligne
-                  </a>
+                  <div className="mt-3 space-y-1.5">
+                    <a href={`https://obrille.com/${form.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 py-2.5 text-[12px] font-semibold text-indigo-600 transition-colors hover:bg-indigo-100">
+                      <ExternalLink className="h-3.5 w-3.5"/> obrille.com/{form.slug}
+                    </a>
+                    <a href={`https://coachingexpertci.com/${form.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 py-2 text-[11px] font-semibold text-emerald-600 transition-colors hover:bg-emerald-100">
+                      <ExternalLink className="h-3 w-3"/> coachingexpertci.com/{form.slug}
+                    </a>
+                  </div>
                 )}
               </div>
             </div>
@@ -401,7 +411,7 @@ export default function LandingTemplates() {
                   <div className="absolute bottom-0 left-0 right-0 p-4">
                     <h3 className="text-[15px] font-bold text-white drop-shadow-lg">{t.nom}</h3>
                     <p className="mt-0.5 flex items-center gap-1 text-[11px] text-white/60">
-                      <Link2 className="h-3 w-3"/>/landing/{t.slug}
+                      <Link2 className="h-3 w-3"/>obrille.com/{t.slug}
                     </p>
                   </div>
                 </div>
@@ -437,7 +447,7 @@ export default function LandingTemplates() {
                       {t.actif ? <EyeOff className="h-3.5 w-3.5"/> : <Eye className="h-3.5 w-3.5"/>}
                     </button>
                     {t.actif && (
-                      <a href={`/landing/${t.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 p-2 text-indigo-600 transition-all hover:bg-indigo-100" title="Voir en ligne">
+                      <a href={`https://obrille.com/${t.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 p-2 text-indigo-600 transition-all hover:bg-indigo-100" title={`Voir en ligne : obrille.com/${t.slug}`}>
                         <ArrowUpRight className="h-3.5 w-3.5"/>
                       </a>
                     )}

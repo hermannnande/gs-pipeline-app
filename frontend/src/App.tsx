@@ -92,6 +92,10 @@ function App() {
         <Route path="/creme-ongle-incarne/merci" element={<ThankYouRouter />} />
         <Route path="/chaussette-compression" element={<LandingRouter />} />
         <Route path="/chaussette-compression/merci" element={<ThankYouRouter />} />
+        <Route path="/patchdouleurtk" element={<LandingRouter />} />
+        <Route path="/patchdouleurtk/merci" element={<ThankYouRouter />} />
+        <Route path="/crememinceurfb" element={<LandingRouter />} />
+        <Route path="/crememinceurfb/merci" element={<ThankYouRouter />} />
 
         <Route path="/login" element={<Login />} />
 

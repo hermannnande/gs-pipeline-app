@@ -161,8 +161,11 @@ router.post('/order', async (req, res) => {
       orderReference: order.orderReference,
     });
   } catch (error) {
-    console.error('Erreur création commande publique:', error);
-    res.status(500).json({ success: false, error: 'Erreur lors de la création de la commande.' });
+    console.error('[POST /public/order] ERREUR:', error?.stack || error);
+    res.status(500).json({
+      success: false,
+      error: 'Erreur lors de la création de la commande.',
+    });
   }
 });
 

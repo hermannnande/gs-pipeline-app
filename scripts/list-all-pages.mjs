@@ -16,14 +16,18 @@ const res = await fetch(`${API_URL}/templates`, {
 const data = await res.json();
 const templates = data.templates || data;
 
-console.log(`=== ${templates.length} pages produit ===\n`);
+console.log(`=== ${templates.length} pages produit (servies par le VPS) ===\n`);
 for (const t of templates) {
   const cfg = JSON.parse(t.config || '{}');
   const pixel = cfg.metaPixelId || '-';
   const version = cfg.templateVersion || 1;
-  console.log(`  ${t.slug}`);
-  console.log(`    Landing : https://www.obgestion.com/landing/${t.slug}`);
-  console.log(`    Merci   : https://www.obgestion.com/landing/${t.slug}/merci`);
+  console.log(`  ${t.slug}${t.actif ? '' : '  [INACTIVE]'}`);
+  console.log(`    Landing : https://obrille.com/${t.slug}`);
+  console.log(`    Alias   : https://coachingexpertci.com/${t.slug}`);
+  console.log(`    Merci   : https://obrille.com/${t.slug}/merci`);
   console.log(`    Produit : ${cfg.productCode || '-'} | V${version} | Pixel: ${pixel}`);
   console.log('');
 }
+console.log('Note : obgestion.com est reserve au back-office interne.');
+console.log('       Toute URL /landing/<slug> ou /<slug> sur obgestion.com');
+console.log('       est redirigee 301 vers obrille.com pour eviter les frais Vercel.');
