@@ -39,6 +39,18 @@ export default function LandingRouter() {
         } catch { setVersion(1); }
       })
       .catch(() => setVersion(1));
+
+    // Warmup non bloquant : on prefetch /public/products des l'arrivee sur
+    // la landing pour que la connexion + le cache navigateur soient deja
+    // chauds au moment ou l'utilisateur clique "Commander". Le proxy VPS
+    // est configure pour renvoyer Cache-Control: public, max-age=300.
+    const company = new URLSearchParams(window.location.search).get('company') || 'ci';
+    setTimeout(() => {
+      axios.get(`${API_URL}/public/products`, {
+        params: { company },
+        timeout: 20000,
+      }).catch(() => { /* warmup silent */ });
+    }, 800);
   }, [slug]);
 
   if (version === null) return (

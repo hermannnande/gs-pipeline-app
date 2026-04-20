@@ -24,6 +24,7 @@ const CUSTOM_SLUGS = [
   'chaussette-compression',
   'crememinceurfb',
   'patchdouleurtk',
+  'patchdouleurfb',
 ] as const;
 
 export type CustomSlug = typeof CUSTOM_SLUGS[number];
@@ -73,6 +74,7 @@ export default function OrderModalDispatcher({ slug, ...rest }: Props) {
     case 'crememinceurfb':
       return <OrderModalMinceur {...rest} />;
     case 'patchdouleurtk':
+    case 'patchdouleurfb':
       return <OrderModalPatchDouleur {...rest} />;
     default:
       return null;

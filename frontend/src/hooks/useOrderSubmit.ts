@@ -42,11 +42,14 @@ function formatNetworkError(err: any, fallback: string): string {
   return fallback;
 }
 
-// POST avec retry automatique : si echec network/5xx, on retente une fois
-// apres 800ms (suffisant pour un cold start Vercel ou une perte momentanee).
-async function postOrderWithRetry(payload: any, retries = 1): Promise<any> {
+// POST avec retry automatique : si echec network/5xx, on retente jusqu'a 2 fois.
+// Timeout 30s pour absorber : cold start Vercel (5s) + handshake TLS proxy (1s)
+// + traitement Prisma (1-3s) + petite latence reseau Afrique (1s) = ~10s max
+// en condition normale, mais on garde 30s pour les pics. Les retries sont
+// staggered (800ms, 1500ms) pour eviter de retomber sur le meme cold start.
+async function postOrderWithRetry(payload: any, retries = 2): Promise<any> {
   try {
-    return await axios.post(`${API_URL}/public/order`, payload, { timeout: 15000 });
+    return await axios.post(`${API_URL}/public/order`, payload, { timeout: 30000 });
   } catch (err: any) {
     const isRetriable =
       retries > 0 &&
@@ -55,8 +58,9 @@ async function postOrderWithRetry(payload: any, retries = 1): Promise<any> {
         !err?.response ||
         (err?.response?.status >= 500 && err?.response?.status < 600));
     if (!isRetriable) throw err;
-    console.warn('[order] POST retry apres erreur:', err?.message);
-    await new Promise((r) => setTimeout(r, 800));
+    const delay = retries === 2 ? 800 : 1500;
+    console.warn(`[order] POST retry dans ${delay}ms apres erreur:`, err?.message);
+    await new Promise((r) => setTimeout(r, delay));
     return postOrderWithRetry(payload, retries - 1);
   }
 }
@@ -144,7 +148,7 @@ export function useOrderSubmit({ cfg, product, setProduct, company: companyParam
       try {
         const r = await axios.get(`${API_URL}/public/products`, {
           params: { company },
-          timeout: 12000,
+          timeout: 25000,
         });
         prod = (r.data?.products || []).find((p: OrderProduct) =>
           p.code?.toUpperCase() === cfg.productCode.toUpperCase()

@@ -1,0 +1,46 @@
+# =============================================================================
+# .htaccess pour landings-app (React SPA)
+# =============================================================================
+#
+# Compression : on laisse mod_deflate compresser dynamiquement (gzip).
+# (On a teste la pre-compression Brotli/.br + .gz mais Apache double-compressait
+#  ces fichiers : Content-Encoding: br + mod_deflate qui re-compresse par-dessus.
+#  Resultat : ERR_CONTENT_DECODING_FAILED dans le navigateur. La compression
+#  dynamique est legerement moins efficace mais 100% fiable.)
+# =============================================================================
+
+RewriteEngine On
+RewriteBase /landings-app/
+
+# ─── Compression dynamique (gzip a la volee) ────────────────────────────────
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css
+  AddOutputFilterByType DEFLATE application/json application/javascript application/x-javascript text/javascript
+  AddOutputFilterByType DEFLATE image/svg+xml application/xml application/rss+xml
+  AddOutputFilterByType DEFLATE font/ttf font/otf font/woff
+  # .woff2 est deja compresse, ne pas le re-compresser.
+</IfModule>
+
+# ─── SPA React : tout chemin non existant retombe sur index.html ────────────
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+RewriteRule . /landings-app/index.html [L]
+
+# ─── Cache long pour les assets statiques (hash dans le nom) ────────────────
+<IfModule mod_headers.c>
+  # Assets immutables (hash dans le nom -> changent automatiquement entre deploys)
+  <FilesMatch "\.(js|css|png|jpg|jpeg|gif|webp|avif|svg|woff2?|ttf|eot|mp4|wasm)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  # Pas de cache pour index.html (sinon nouveaux deploys non vus)
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </FilesMatch>
+
+  # Headers de securite legers (pas de cout perfs)
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

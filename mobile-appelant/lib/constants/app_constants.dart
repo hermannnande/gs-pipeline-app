@@ -1,0 +1,35 @@
+// Reprend frontend/src/constants/cities.ts (VILLES_AGENCES_EXPRESS).
+const List<String> kAgencesExpress = [
+  'Beoumi',
+  'Bocanda',
+  'Bonon',
+  'Bouafle',
+  'Bouake',
+  'Daloa',
+  'Dimbokro',
+  'Divo',
+  'Duekoue',
+  'Gabiadji',
+  'Gagnoa',
+  'Gonate',
+  'Guiberoua',
+  'Hire',
+  'Issia',
+  'Man',
+  'Meagui',
+  'San Pedro',
+  'Sinfra',
+  'Soubre',
+  'Tiebissou',
+  'Toumodi',
+  'Yabayo',
+  'Yamoussoukro',
+];
+
+const List<String> kModesPaiement = [
+  'Orange Money',
+  'MTN Money',
+  'Moov Money',
+  'Wave',
+  'Autre',
+];

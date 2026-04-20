@@ -4,8 +4,8 @@ import { Package, Truck, RefreshCw, ChevronDown, ChevronUp, User, Calendar, Cloc
 import { api } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/store/authStore';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+// jsPDF + autotable charges dynamiquement uniquement au clic "Imprimer PDF"
+// (~150 KB) -> n'impacte plus le bundle initial.
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; border: string; icon: any }> = {
   ASSIGNEE: { label: 'En livraison', bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200', icon: Clock },
@@ -120,8 +120,12 @@ export default function LiveraisonEnCours() {
     return counts;
   };
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
     if (parLivreur.length === 0) { toast.error('Aucune donnée à exporter'); return; }
+    const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable'),
+    ]);
     const doc = new jsPDF('landscape', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
     const filterLabel = dateFilter === 'today' ? "Aujourd'hui" : dateFilter === 'week' ? 'Cette semaine' : dateFilter === 'month' ? 'Ce mois' : 'Tout';

@@ -15,8 +15,8 @@ import {
   FileDown
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+// jsPDF + autotable charges dynamiquement uniquement au clic "Imprimer PDF"
+// (~150 KB) -> n'impacte plus le bundle initial.
 import { expressApi } from '@/lib/api';
 import { formatCurrency, formatDateTime } from '@/utils/statusHelpers';
 
@@ -140,7 +140,7 @@ export default function ExpressAgence() {
     }
   };
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
     if (sortedOrders.length === 0) {
       toast.error('Aucune donnée à exporter');
       return;
@@ -148,6 +148,10 @@ export default function ExpressAgence() {
 
     const fmtNum = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
+    const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable'),
+    ]);
     const doc = new jsPDF('landscape', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
 
