@@ -11,8 +11,15 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useLandingSlug } from '../../hooks/useLandingSlug';
 import PatchDouleurFbThankYou from './PatchDouleurFbThankYou';
+import SerumCernePayeThankYou from './SerumCernePayeThankYou';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
+
+// Slugs avec une page de remerciement dediee (skip le fetch generique).
+const DEDICATED_THANKYOU_SLUGS = new Set<string>([
+  'patchdouleurfb',
+  'serum-cerne-paye',
+]);
 
 export default function ThankYouRouter() {
   const slug = useLandingSlug();
@@ -22,7 +29,7 @@ export default function ThankYouRouter() {
   // donc on les place AVANT toute branche de routage. Le useEffect skip lui-meme
   // si slug correspond a une thankyou page dediee.
   useEffect(() => {
-    if (!slug || slug === 'patchdouleurfb') return;
+    if (!slug || DEDICATED_THANKYOU_SLUGS.has(slug)) return;
     axios.get(`${API_URL}/templates/public/${slug}`)
       .then((r) => {
         try {
@@ -37,6 +44,12 @@ export default function ThankYouRouter() {
   // (Purchase event au mount + deduplication via eventID = orderReference).
   if (slug === 'patchdouleurfb') {
     return <PatchDouleurFbThankYou />;
+  }
+
+  // Page de remerciement dediee serum-cerne-paye (paiement Mobile Money via Chariow).
+  // Affiche succes paiement + WhatsApp service client + livraison express 2h.
+  if (slug === 'serum-cerne-paye') {
+    return <SerumCernePayeThankYou />;
   }
 
   return (

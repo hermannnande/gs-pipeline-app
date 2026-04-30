@@ -101,6 +101,17 @@ export function OrderCard({
                   ⏳ Attente paiement
                 </span>
               )}
+              {/* Badge "DEJA PAYE" : commande deja reglee en ligne (Chariow Mobile Money).
+                  Visible immediatement par l'appelant pour prioriser ces commandes
+                  (pas besoin de confirmer le paiement, juste valider l'adresse). */}
+              {(order.modePaiement === 'CHARIOW_MOBILE_MONEY' || (order.montantPaye && order.montantPaye > 0 && order.referencePayment)) && (
+                <span className="badge inline-flex items-center gap-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm ring-1 ring-emerald-300 animate-pulse">
+                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                  </svg>
+                  DEJA PAYE
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <Clock size={14} />
