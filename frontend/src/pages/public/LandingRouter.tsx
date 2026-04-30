@@ -3,6 +3,19 @@ import type { ReactNode, ErrorInfo } from 'react';
 import axios from 'axios';
 import DynamicLanding from './DynamicLanding';
 import DynamicLandingV2 from './DynamicLandingV2';
+import CoffretBoxerLanding from './CoffretBoxerLanding';
+import CremeAntiVerrueLanding from './CremeAntiVerrueLanding';
+import PatchDouleurTkLanding from './PatchDouleurTkLanding';
+import PatchDouleurFbLanding from './PatchDouleurFbLanding';
+import CremeVerrueTkLanding from './CremeVerrueTkLanding';
+import SprayDouleurTkLanding from './SprayDouleurTkLanding';
+import SprayLipomeLanding from './SprayLipomeLanding';
+import SprayLipomeTkLanding from './SprayLipomeTkLanding';
+import SerumCerneLanding from './SerumCerneLanding';
+import SerumCerneTkLanding from './SerumCerneTkLanding';
+import SerumCernePayeLanding from './SerumCernePayeLanding';
+import PoudrePousseCheveuxLanding from './PoudrePousseCheveuxLanding';
+import BoutiqueLanding from './BoutiqueLanding';
 import { useLandingSlug } from '../../hooks/useLandingSlug';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -30,7 +43,8 @@ export default function LandingRouter() {
   const [version, setVersion] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!slug) return;
+    // Landings autonomes : zero call API template
+    if (!slug || slug === 'coffret-boxer-homme' || slug === 'creme-anti-verrue' || slug === 'patchdouleurtk' || slug === 'patchdouleurfb' || slug === 'creme-verrue-tk' || slug === 'spraydouleurtk' || slug === 'spraylipome' || slug === 'spraylipometk' || slug === 'serum-cerne' || slug === 'serum-cerne-tk' || slug === 'serum-cerne-paye' || slug === 'poudre-pousse-cheveux' || slug === 'boutique') return;
     axios.get(`${API_URL}/templates/public/${slug}`)
       .then(r => {
         try {
@@ -52,6 +66,127 @@ export default function LandingRouter() {
       }).catch(() => { /* warmup silent */ });
     }, 800);
   }, [slug]);
+
+  if (slug === 'coffret-boxer-homme') {
+    return (
+      <ErrorBoundary>
+        <CoffretBoxerLanding />
+      </ErrorBoundary>
+    );
+  }
+
+  // Landing ultra-premium dediee, routee avant l'appel /templates/public pour
+  // un time-to-first-paint instantane (pas de spinner pendant le fetch API).
+  if (slug === 'creme-anti-verrue') {
+    return (
+      <ErrorBoundary>
+        <CremeAntiVerrueLanding />
+      </ErrorBoundary>
+    );
+  }
+
+  // Landing patch anti-douleur TK — palette obsidian/cyan/corail (medical premium)
+  if (slug === 'patchdouleurtk') {
+    return (
+      <ErrorBoundary>
+        <PatchDouleurTkLanding />
+      </ErrorBoundary>
+    );
+  }
+
+  // Landing patch anti-douleur FB — meme design, productCode PATCH_DOULEUR_FB pour
+  // separer le tracking commandes Facebook ads vs autres canaux.
+  if (slug === 'patchdouleurfb') {
+    return (
+      <ErrorBoundary>
+        <PatchDouleurFbLanding />
+      </ErrorBoundary>
+    );
+  }
+
+  // Landing creme verrue TK — palette teal/emerald/cyan (dermatologique naturel)
+  if (slug === 'creme-verrue-tk') {
+    return (
+      <ErrorBoundary>
+        <CremeVerrueTkLanding />
+      </ErrorBoundary>
+    );
+  }
+
+  // Landing spray anti-douleur TK — palette lime/noir + jaune urgence (sport moderne)
+  if (slug === 'spraydouleurtk') {
+    return (
+      <ErrorBoundary>
+        <SprayDouleurTkLanding />
+      </ErrorBoundary>
+    );
+  }
+
+  // Landing spray anti-lipome — palette pourpre/magenta/or rose (cosmetique luxe)
+  if (slug === 'spraylipome') {
+    return (
+      <ErrorBoundary>
+        <SprayLipomeLanding />
+      </ErrorBoundary>
+    );
+  }
+
+  // Landing duplicate spray anti-lipome TK (meme design, mapping LIPOME_SPRAY_TK)
+  if (slug === 'spraylipometk') {
+    return (
+      <ErrorBoundary>
+        <SprayLipomeTkLanding />
+      </ErrorBoundary>
+    );
+  }
+
+  // Landing serum anti-cernes — palette navy/or/corail (editorial beauty premium)
+  if (slug === 'serum-cerne') {
+    return (
+      <ErrorBoundary>
+        <SerumCerneLanding />
+      </ErrorBoundary>
+    );
+  }
+
+  // Landing duplicate serum anti-cernes TK (meme design, mapping SERUM_CERNE_TK)
+  if (slug === 'serum-cerne-tk') {
+    return (
+      <ErrorBoundary>
+        <SerumCerneTkLanding />
+      </ErrorBoundary>
+    );
+  }
+
+  // Landing duplicate serum anti-cernes PAYE (meme design + paiement Mobile Money
+  // via Chariow en option, avec -10% / livraison gratuite / express 2h)
+  if (slug === 'serum-cerne-paye') {
+    return (
+      <ErrorBoundary>
+        <SerumCernePayeLanding />
+      </ErrorBoundary>
+    );
+  }
+
+  // Landing poudre ultra pousse cheveux — palette emeraude/or rose/ivoire/bronze (luxe nature)
+  if (slug === 'poudre-pousse-cheveux') {
+    return (
+      <ErrorBoundary>
+        <PoudrePousseCheveuxLanding />
+      </ErrorBoundary>
+    );
+  }
+
+  // Page Boutique — catalogue central qui regroupe toutes les landings produits.
+  // Au clic sur une carte, redirection full-reload vers /<slug> du produit (pour
+  // declencher le tracking PageView et beneficier du first-paint optimise).
+  if (slug === 'boutique') {
+    return (
+      <ErrorBoundary>
+        <BoutiqueLanding />
+      </ErrorBoundary>
+    );
+  }
 
   if (version === null) return (
     <div className="flex min-h-screen items-center justify-center bg-[#fafaf9]">

@@ -12,6 +12,14 @@ export const LANDING_SLUGS = [
   'patchdouleurtk',
   'patchdouleurfb',
   'crememinceurfb',
+  'spraylipome',
+  'spraylipometk',
+  'serum-cerne',
+  'serum-cerne-tk',
+  'serum-cerne-paye',
+  'coffret-boxer-homme',
+  'poudre-pousse-cheveux',
+  'boutique',
 ] as const;
 
 const VALID_LANDING_SLUGS: readonly string[] = LANDING_SLUGS;

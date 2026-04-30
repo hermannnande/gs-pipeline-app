@@ -23,6 +23,7 @@ import publicRoutes from './routes/public.routes.js';
 import auditRoutes from './routes/audit.routes.js';
 import whatsappRoutes from './routes/whatsapp.routes.js';
 import templateRoutes from './routes/template.routes.js';
+import chariowRoutes from './routes/chariow.routes.js';
 import { scheduleCleanupJob } from './jobs/cleanupPhotos.js';
 import { initializeChatSocket } from './utils/chatSocket.js';
 import { setSocketServers } from './utils/socket.js';
@@ -98,6 +99,7 @@ app.use('/api/public', publicRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/templates', templateRoutes);
+app.use('/api/chariow', chariowRoutes);
 
 // Servir les fichiers uploadés
 app.use('/uploads', express.static('uploads'));

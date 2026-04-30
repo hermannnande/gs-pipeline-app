@@ -14,6 +14,11 @@ import OrderModalOngleIncarne from './OrderModalOngleIncarne';
 import OrderModalChaussette from './OrderModalChaussette';
 import OrderModalMinceur from './OrderModalMinceur';
 import OrderModalPatchDouleur from './OrderModalPatchDouleur';
+import OrderModalSprayLipome from './OrderModalSprayLipome';
+import OrderModalSerumCerne from './OrderModalSerumCerne';
+import OrderModalSerumCerneTk from './OrderModalSerumCerneTk';
+import OrderModalSerumCernePaye from './OrderModalSerumCernePaye';
+import OrderModalPoudreCheveux from './OrderModalPoudreCheveux';
 import type { OrderSubmitConfig, OrderProduct } from '../../hooks/useOrderSubmit';
 
 const CUSTOM_SLUGS = [
@@ -25,6 +30,12 @@ const CUSTOM_SLUGS = [
   'crememinceurfb',
   'patchdouleurtk',
   'patchdouleurfb',
+  'spraylipome',
+  'spraylipometk',
+  'serum-cerne',
+  'serum-cerne-tk',
+  'serum-cerne-paye',
+  'poudre-pousse-cheveux',
 ] as const;
 
 export type CustomSlug = typeof CUSTOM_SLUGS[number];
@@ -76,6 +87,17 @@ export default function OrderModalDispatcher({ slug, ...rest }: Props) {
     case 'patchdouleurtk':
     case 'patchdouleurfb':
       return <OrderModalPatchDouleur {...rest} />;
+    case 'spraylipome':
+    case 'spraylipometk':
+      return <OrderModalSprayLipome {...rest} />;
+    case 'serum-cerne':
+      return <OrderModalSerumCerne {...rest} />;
+    case 'serum-cerne-tk':
+      return <OrderModalSerumCerneTk {...rest} />;
+    case 'serum-cerne-paye':
+      return <OrderModalSerumCernePaye {...rest} />;
+    case 'poudre-pousse-cheveux':
+      return <OrderModalPoudreCheveux {...rest} />;
     default:
       return null;
   }
