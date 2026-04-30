@@ -54,6 +54,16 @@ const QTY_OPTS = [
   { v: 3, label: '3 flacons', sub: '24 900 FCFA', tag: 'Meilleure offre', save: 'Economisez 4 800 F' },
 ];
 
+// URLs publiques Chariow (le -10% est deja applique cote Chariow).
+// Quand le client choisit "Mobile Money", on le redirige DIRECTEMENT ici :
+// il rentre nom/email/tel/adresse sur Chariow puis paye via Wave/Orange/MTN/Moov.
+// Apres paiement, le webhook successful.sale cree la commande dans obgestion.
+const CHARIOW_PRODUCT_URLS: Record<number, string> = {
+  1: 'https://coachingexpert.mychariow.shop/prd_021e9v',
+  2: 'https://coachingexpert.mychariow.shop/prd_tdcxom',
+  3: 'https://coachingexpert.mychariow.shop/prd_otfnec',
+};
+
 // 12 medias UNIQUES (dossier /serum-yeux/ pour eviter le conflit avec le slug /serum-cerne)
 const MEDIA = {
   hero:       '/serum-yeux/hero.webp',
@@ -372,17 +382,43 @@ export default function SerumCernePayeLanding() {
     setExitPopup(false);
   }, []);
 
-  // Appele apres le choix dans la popup -> ouvre le modal de commande
-  // avec le mode de paiement pre-selectionne.
+  // Appele apres le choix dans la popup.
+  // - 'chariow' : REDIRECTION DIRECTE vers la page produit Chariow (pas de
+  //   formulaire intermediaire dans notre site - le client renseigne ses infos
+  //   directement chez Chariow puis paye via Mobile Money).
+  // - 'cash'    : ouvre le modal de commande classique (formulaire complet).
   const handlePaymentChoice = useCallback((mode: PaymentMode) => {
     setPaymentMode(mode);
     setChoiceOpen(false);
-    // Petit delai pour laisser l'animation de fermeture de la popup s'executer
-    // avant l'ouverture du modal (sinon ca clignote visuellement).
-    setTimeout(() => setModal(true), 80);
-  }, []);
 
-  // Permet au client de revenir sur le choix depuis le modal de commande.
+    if (mode === 'chariow') {
+      // Track InitiateCheckout AVANT la redirection (sinon perdu)
+      const chariowAmount = Math.round((PRICES[qty] || PRICES[1]) * 0.9 / 10) * 10;
+      try {
+        if (META_PIXEL_ID && window.fbq) {
+          window.fbq('track', 'InitiateCheckout', {
+            content_name: 'Serum Anti-Cernes Premium',
+            content_ids: [PRODUCT_CODE],
+            content_type: 'product',
+            value: chariowAmount,
+            currency: 'XOF',
+            num_items: qty,
+          });
+        }
+      } catch {}
+
+      // Redirection navigateur vers la page produit Chariow correspondante.
+      const url = CHARIOW_PRODUCT_URLS[qty] || CHARIOW_PRODUCT_URLS[1];
+      window.location.href = url;
+      return;
+    }
+
+    // Mode 'cash' -> modal de commande classique
+    setTimeout(() => setModal(true), 80);
+  }, [qty]);
+
+  // Permet au client de revenir sur le choix depuis le modal de commande
+  // (uniquement utilise en mode cash maintenant).
   const reopenChoice = useCallback(() => {
     setModal(false);
     setTimeout(() => setChoiceOpen(true), 80);
@@ -1396,13 +1432,14 @@ export default function SerumCernePayeLanding() {
         </div>
       )}
 
-      {/* ===== POPUP CHOIX PAIEMENT (s'ouvre AVANT le modal) ===== */}
+      {/* ===== POPUP CHOIX PAIEMENT (s'ouvre AVANT le modal/redirection) ===== */}
       <PaymentChoicePopup
         open={choiceOpen}
         onClose={() => setChoiceOpen(false)}
         onChoose={handlePaymentChoice}
         qty={qty}
-        priceLabel={fmt(PRICES[qty] || PRICES[1])}
+        cashPrice={fmt(PRICES[qty] || PRICES[1])}
+        chariowPrice={fmt(Math.round((PRICES[qty] || PRICES[1]) * 0.9 / 10) * 10)}
       />
 
       {/* ===== MODAL DE COMMANDE (s'ouvre APRES le choix de paiement) ===== */}

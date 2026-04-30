@@ -71,6 +71,28 @@ function getChariowProductId(slug, qty) {
   return process.env[key] || null;
 }
 
+/**
+ * Mapping INVERSE : a partir d'un product.id Chariow (ex: prd_021e9v),
+ * retrouve le slug obgestion et la quantite via les env vars.
+ *
+ * Utilise quand le webhook arrive SANS custom_metadata (cas redirection
+ * directe vers l'URL publique du produit Chariow, sans API checkout).
+ */
+function getSlugAndQtyFromChariowProductId(chariowProductId) {
+  if (!chariowProductId) return null;
+  for (const [key, value] of Object.entries(process.env)) {
+    if (!key.startsWith('CHARIOW_PRODUCT_')) continue;
+    if (value !== chariowProductId) continue;
+    // key = CHARIOW_PRODUCT_SERUM_CERNE_PAYE_2  ->  slug=serum-cerne-paye, qty=2
+    const match = key.match(/^CHARIOW_PRODUCT_(.+)_(\d+)$/);
+    if (match) {
+      const slug = match[1].toLowerCase().replace(/_/g, '-');
+      return { slug, qty: parseInt(match[2], 10) };
+    }
+  }
+  return null;
+}
+
 async function resolveCompanyId(req) {
   const slug = String(
     req.body?.company || req.query.company || req.headers['x-company-slug'] || ''
@@ -276,9 +298,22 @@ router.post('/webhook', async (req, res) => {
       });
     }
 
-    const slug = String(meta.slug || '').trim();
-    const qty = Math.max(parseInt(meta.qty, 10) || 1, 1);
+    let slug = String(meta.slug || '').trim();
+    let qty = Math.max(parseInt(meta.qty, 10) || 1, 1);
     const companySlug = String(meta.company || 'ci').trim().toLowerCase();
+
+    // Si pas de custom_metadata (cas redirection directe vers l'URL publique
+    // Chariow sans passer par notre API), on infere slug+qty via product.id.
+    if (!slug && product?.id) {
+      const inferred = getSlugAndQtyFromChariowProductId(product.id);
+      if (inferred) {
+        slug = inferred.slug;
+        qty = inferred.qty;
+        console.log(`[chariow] Slug/qty inferes via product.id=${product.id} : slug=${slug}, qty=${qty}`);
+      } else {
+        console.warn(`[chariow] Impossible d'inferer slug/qty pour product.id=${product.id}. Verifiez les env CHARIOW_PRODUCT_*`);
+      }
+    }
 
     const companyRecord = await prisma.company.findUnique({ where: { slug: companySlug } });
     const companyId = companyRecord ? companyRecord.id : 1;
