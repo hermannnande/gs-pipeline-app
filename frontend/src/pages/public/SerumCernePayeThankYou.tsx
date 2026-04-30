@@ -79,6 +79,11 @@ export default function SerumCernePayeThankYou() {
     }
 
     try {
+      // event_id IMPORTANT : doit correspondre exactement a celui envoye par
+      // le CAPI server-side dans utils/metaCapi.js (`purchase_<orderRef>`).
+      // Cote chariow.routes.js webhook, on a passe sale.id comme orderRef,
+      // donc l'event_id final cote CAPI = `purchase_<sale_id>`. Match !
+      const eventId = saleId ? `purchase_${saleId}` : undefined;
       window.fbq('track', 'Purchase', {
         value: amountPaid,
         currency: 'XOF',
@@ -86,7 +91,7 @@ export default function SerumCernePayeThankYou() {
         content_ids: [PRODUCT_CODE],
         content_type: 'product',
         num_items: qty,
-      }, saleId ? { eventID: saleId } : undefined);
+      }, eventId ? { eventID: eventId } : undefined);
     } catch (e) {
       console.warn('[ThankYou] Meta Pixel Purchase non bloquant:', e);
     }

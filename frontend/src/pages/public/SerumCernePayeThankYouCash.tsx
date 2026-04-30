@@ -14,8 +14,13 @@
  *
  * Le client est dirige ici via le useOrderSubmit hook (cfg.thankYouUrl).
  */
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+
+const META_PIXEL_ID = '26809431761984777';
+const PRODUCT_CODE = 'SERUM_CERNE_PAYE';
+
+declare global { interface Window { fbq?: any; _fbq?: any; } }
 
 function fmt(v: number): string {
   return Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
@@ -25,9 +30,51 @@ export default function SerumCernePayeThankYouCash() {
   const [searchParams] = useSearchParams();
   const orderRef = searchParams.get('ref') || '';
   const qty = parseInt(searchParams.get('qty') || '1', 10) || 1;
+  const pixelFiredRef = useRef(false);
 
   const PRICES_BASE: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
   const totalAmount = useMemo(() => PRICES_BASE[qty] || PRICES_BASE[1], [qty]);
+
+  // Tracking Meta Pixel : Purchase event (deduplique avec CAPI server-side
+  // via event_id = orderRef). Le CAPI est deja envoye par /api/public/order
+  // au moment de la creation de la commande, donc Meta dedoublonnera.
+  useEffect(() => {
+    if (pixelFiredRef.current) return;
+    pixelFiredRef.current = true;
+
+    if (!META_PIXEL_ID) return;
+
+    if (!window.fbq) {
+      const f: any = window.fbq = function (...args: any[]) {
+        f.callMethod ? f.callMethod(...args) : f.queue.push(args);
+      };
+      if (!window._fbq) window._fbq = f;
+      f.push = f; f.loaded = true; f.version = '2.0'; f.queue = [];
+      const s = document.createElement('script');
+      s.async = true; s.src = 'https://connect.facebook.net/en_US/fbevents.js';
+      document.head.appendChild(s);
+      window.fbq('init', META_PIXEL_ID);
+      window.fbq('track', 'PageView');
+    }
+
+    try {
+      // event_id IMPORTANT : doit correspondre exactement a celui envoye par
+      // le CAPI server-side (`purchase_<orderRef>` dans utils/metaCapi.js).
+      // Le CAPI cash est envoye depuis routes/public.routes.js juste apres la
+      // creation de l'Order (avec orderRef = order.orderReference UUID).
+      const eventId = orderRef ? `purchase_${orderRef}` : undefined;
+      window.fbq('track', 'Purchase', {
+        value: totalAmount,
+        currency: 'XOF',
+        content_name: 'Serum Anti-Cernes Premium',
+        content_ids: [PRODUCT_CODE],
+        content_type: 'product',
+        num_items: qty,
+      }, eventId ? { eventID: eventId } : undefined);
+    } catch (e) {
+      console.warn('[ThankYouCash] Meta Pixel Purchase non bloquant:', e);
+    }
+  }, [orderRef, qty, totalAmount]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-amber-100 px-4 py-8 sm:py-12">

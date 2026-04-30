@@ -60,6 +60,15 @@ import { sendPurchaseEvent } from '../utils/metaCapi.js';
 const router = express.Router();
 const CHARIOW_API_BASE = 'https://api.chariow.com/v1';
 
+// Mapping slug -> pixel Meta. Utilise comme FALLBACK quand le webhook arrive
+// sans custom_metadata (cas redirection directe vers /prd_xxx/checkout).
+// Permet au CAPI server-side d'envoyer correctement le Purchase event.
+//
+// Pour ajouter un nouveau slug payant Chariow : ajouter ici son pixel ID.
+const PIXEL_BY_SLUG = {
+  'serum-cerne-paye': '26809431761984777',
+};
+
 /**
  * Resout l'ID produit Chariow a partir du slug et de la quantite.
  * Format env : CHARIOW_PRODUCT_<SLUG_UPPERCASE_UNDERSCORE>_<QTY>
@@ -406,9 +415,19 @@ router.post('/webhook', async (req, res) => {
     try {
       const userAgent = req.headers['user-agent'] || '';
       const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip;
+      // Resolution du pixelId :
+      //   1. metadata si fournie (cas API checkout)
+      //   2. mapping PIXEL_BY_SLUG (cas redirection directe sans metadata)
+      const resolvedPixelId = meta.meta_pixel_id || PIXEL_BY_SLUG[slug] || null;
+
+      // Pour le browser pixel, l'event_id doit etre identique pour la
+      // deduplication. Le pixel browser sur la page de remerciement utilise
+      // sale.id (sal_xxx) comme eventID, donc on fait pareil cote serveur.
+      // sendPurchaseEvent utilise par defaut order.orderReference (UUID) mais
+      // pour Chariow on prefere le sale.id pour matcher le pixel browser.
       await sendPurchaseEvent({
         orderId: order.id,
-        orderRef: order.orderReference,
+        orderRef: String(sale.id), // sale.id Chariow -> match avec pixel browser
         amount: totalAmount,
         currency: 'XOF',
         productName: order.produitNom,
@@ -421,7 +440,7 @@ router.post('/webhook', async (req, res) => {
         fbc: meta.fbc || null,
         fbp: meta.fbp || null,
         sourceUrl: meta.source_url || null,
-        pixelId: meta.meta_pixel_id || null,
+        pixelId: resolvedPixelId,
       });
     } catch (metaErr) {
       console.error('[chariow] Erreur Meta CAPI (non bloquante):', metaErr);
