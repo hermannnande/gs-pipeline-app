@@ -332,7 +332,11 @@ export default function DynamicLandingV2() {
     finally { setSending(false); }
   };
 
-  const gallery = useMemo(() => cfg ? [cfg.images.hero, ...cfg.images.gallery].filter(Boolean) : [], [cfg]);
+  const gallery = useMemo(() => {
+    if (!cfg) return [] as string[];
+    const list = Array.isArray((cfg.images as any)?.gallery) ? (cfg.images as any).gallery : [];
+    return [cfg.images?.hero, ...list].filter(Boolean) as string[];
+  }, [cfg]);
 
   const startAutoSlide = useCallback(() => {
     if (autoRef.current) clearInterval(autoRef.current);

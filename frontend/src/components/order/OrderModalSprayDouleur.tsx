@@ -1,15 +1,17 @@
 /**
- * Modal de commande SPECIFIQUE au produit "Spray douleur TK".
+ * Modal de commande pour "Spray Anti-Douleur TK" — v2.
  *
- * Design : silhouette humaine SVG vue de face avec 6 zones de douleur
- * cliquables (cou, epaules, dos, coudes, genoux, chevilles). Au clic, la zone
- * pulse en rouge et un texte explicatif apparait, montrant que le spray cible
- * cette douleur. Couleurs feu/orange (chaleur, urgence, soulagement).
+ * Style totalement nouveau : "Receipt/Ticket premium light"
+ *   - Fond blanc epure, cadres arrondis + trait vertical lime sur le cote
+ *   - Pills HORIZONTALES pour la quantite (au lieu de 3 cards)
+ *   - Inputs "floating icons" avec underline lime au focus
+ *   - Recap style ticket de caisse (lignes pointillees, sous-total, economies,
+ *     total en gros)
+ *   - Countdown discret avec icone horloge (plus de grosse barre noire)
+ *   - CTA principal degrade lime -> emerald (au lieu du jaune)
+ *   - Mini-pschit visuel decoratif au scroll
  *
- * COMPACT MOBILE : tout doit tenir sur iPhone SE SANS scroll dans le formulaire.
- * Layout split desktop : silhouette a gauche, formulaire a droite.
- *
- * Utilise le hook useOrderSubmit pour la logique metier.
+ * Logique metier 100 % inchangee (useOrderSubmit -> obgestion).
  */
 import { useEffect, useRef, useState } from 'react';
 import { useOrderSubmit, type OrderSubmitConfig, type OrderProduct } from '../../hooks/useOrderSubmit';
@@ -32,26 +34,40 @@ interface Props {
   initialQty?: number;
 }
 
-interface PainZone {
-  id: string;
-  label: string;
-  cx: number;
-  cy: number;
-  description: string;
-}
-
-const PAIN_ZONES: PainZone[] = [
-  { id: 'neck', label: 'Cou', cx: 100, cy: 38, description: 'Tensions cervicales et torticolis' },
-  { id: 'shoulder', label: 'Epaule', cx: 138, cy: 60, description: 'Douleurs et raideurs articulaires' },
-  { id: 'back', label: 'Bas du dos', cx: 100, cy: 105, description: 'Lombalgie et sciatique' },
-  { id: 'elbow', label: 'Coude', cx: 60, cy: 110, description: 'Tendinite et epicondylite' },
-  { id: 'knee', label: 'Genou', cx: 82, cy: 175, description: 'Arthrose et entorse' },
-  { id: 'ankle', label: 'Cheville', cx: 75, cy: 230, description: 'Foulure et torsion' },
-];
-
 function fmt(n: number): string {
-  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' F';
 }
+
+function pad(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
+// Mini icones SVG pour les champs
+const IconUser = () => (
+  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+  </svg>
+);
+const IconPhone = () => (
+  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11 11 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+  </svg>
+);
+const IconPin = () => (
+  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+  </svg>
+);
+const IconClock = () => (
+  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+  </svg>
+);
+const IconSpray = () => (
+  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+    <path d="M9 2h4v2H9V2zm-2 4h8v3H7V6zm1 4h6v11a1 1 0 01-1 1H9a1 1 0 01-1-1V10zm5-7v1h-4V3h4z"/>
+  </svg>
+);
 
 export default function OrderModalSprayDouleur({ open, onClose, cfg, product, setProduct, qtyOptions, initialQty = 1 }: Props) {
   const { submit, sending, formErr, trackOpen } = useOrderSubmit({ cfg, product, setProduct });
@@ -60,7 +76,8 @@ export default function OrderModalSprayDouleur({ open, onClose, cfg, product, se
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
   const [phone, setPhone] = useState('');
-  const [activeZone, setActiveZone] = useState<string>('back');
+  const [stock, setStock] = useState(14);
+  const [countdown, setCountdown] = useState({ m: 14, s: 59 });
 
   const wasOpenRef = useRef(false);
   const trackRef = useRef(trackOpen);
@@ -71,13 +88,23 @@ export default function OrderModalSprayDouleur({ open, onClose, cfg, product, se
       wasOpenRef.current = true;
       setName(''); setCity(''); setPhone('');
       setQty(initialQty);
-      setActiveZone('back');
+      setCountdown({ m: 14, s: 59 });
+      setStock(9 + Math.floor(Math.random() * 7));
       trackRef.current(initialQty);
     }
-    if (!open && wasOpenRef.current) {
-      wasOpenRef.current = false;
-    }
+    if (!open && wasOpenRef.current) wasOpenRef.current = false;
   }, [open, initialQty]);
+
+  useEffect(() => {
+    if (!open) return;
+    const id = setInterval(() => {
+      setCountdown(c => {
+        const total = Math.max(0, c.m * 60 + c.s - 1);
+        return { m: Math.floor(total / 60), s: total % 60 };
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [open]);
 
   useEffect(() => {
     if (open) {
@@ -87,262 +114,275 @@ export default function OrderModalSprayDouleur({ open, onClose, cfg, product, se
     }
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !sending) onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, sending, onClose]);
+
   if (!open) return null;
 
-  const total = cfg.prices?.[qty] || cfg.prices?.[1] || 0;
-  const oldTotal = total + (qty * 5000);
-  const zone = PAIN_ZONES.find((z) => z.id === activeZone) || PAIN_ZONES[0];
+  const unitPrice = cfg.prices?.[1] || 0;
+  const total = cfg.prices?.[qty] || unitPrice;
+  const fullPrice = unitPrice * qty;
+  const saving = fullPrice - total;
+  const oldFullPrice = fullPrice + (qty * 5000);
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-white animate-[fadeIn_.25s] sm:flex-row">
-      <button
-        onClick={onClose}
-        aria-label="Fermer"
-        className="absolute right-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-neutral-800 shadow-lg backdrop-blur transition hover:bg-white hover:scale-110 sm:right-4 sm:top-4 sm:h-11 sm:w-11"
-      >
-        <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+    <div
+      className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="spm-title"
+    >
+      <div
+        onClick={() => !sending && onClose()}
+        className="absolute inset-0 bg-neutral-900/70 backdrop-blur-md animate-[spmfade_.2s_ease-out]"
+      />
 
-      {/* HERO : Silhouette humaine + zones douleur cliquables */}
-      <div className="relative flex flex-shrink-0 flex-col bg-gradient-to-br from-orange-50 via-red-50 to-amber-50 sm:flex-1 sm:flex-shrink">
-        <div className="absolute inset-0 opacity-40" style={{ backgroundImage: 'radial-gradient(circle at 30% 20%, rgba(239,68,68,.08) 0%, transparent 50%), radial-gradient(circle at 70% 80%, rgba(249,115,22,.08) 0%, transparent 50%)' }} />
+      {/* Container principal blanc */}
+      <div className="relative z-10 w-full max-w-[420px] max-h-[100dvh] overflow-hidden rounded-t-[28px] bg-white shadow-[0_-20px_60px_-12px_rgba(0,0,0,.4)] animate-[spmslide_.25s_cubic-bezier(.22,.8,.4,1)] sm:rounded-[28px]">
 
-        <div className="relative flex flex-1 items-center justify-center px-4 py-4 sm:px-8 sm:py-8">
-          <div className="flex w-full max-w-md items-center gap-3 sm:gap-6">
-            {/* Silhouette SVG */}
-            <div className="relative flex-shrink-0">
-              <svg viewBox="0 0 200 280" className="h-[180px] w-auto sm:h-[340px]" xmlns="http://www.w3.org/2000/svg">
-                {/* Tete */}
-                <circle cx="100" cy="22" r="16" fill="#fed7aa" stroke="#fb923c" strokeWidth="1.5" />
-                {/* Cou */}
-                <rect x="93" y="36" width="14" height="8" fill="#fed7aa" stroke="#fb923c" strokeWidth="1" />
-                {/* Torse */}
-                <path d="M 70 50 Q 70 45 75 44 L 125 44 Q 130 45 130 50 L 135 110 Q 132 125 100 130 Q 68 125 65 110 Z" fill="#fed7aa" stroke="#fb923c" strokeWidth="1.5" />
-                {/* Bras gauche */}
-                <path d="M 70 52 Q 50 70 48 110 Q 47 145 50 165" fill="none" stroke="#fb923c" strokeWidth="14" strokeLinecap="round" />
-                {/* Bras droit */}
-                <path d="M 130 52 Q 150 70 152 110 Q 153 145 150 165" fill="none" stroke="#fb923c" strokeWidth="14" strokeLinecap="round" />
-                {/* Mains */}
-                <circle cx="49" cy="170" r="8" fill="#fed7aa" stroke="#fb923c" strokeWidth="1.2" />
-                <circle cx="151" cy="170" r="8" fill="#fed7aa" stroke="#fb923c" strokeWidth="1.2" />
-                {/* Hanches/cuisses */}
-                <path d="M 70 130 L 65 175 Q 65 180 72 180 L 95 180 Z" fill="#fb923c" stroke="#ea580c" strokeWidth="1" />
-                <path d="M 130 130 L 135 175 Q 135 180 128 180 L 105 180 Z" fill="#fb923c" stroke="#ea580c" strokeWidth="1" />
-                {/* Jambes */}
-                <path d="M 80 180 Q 78 220 76 250" fill="none" stroke="#fb923c" strokeWidth="16" strokeLinecap="round" />
-                <path d="M 120 180 Q 122 220 124 250" fill="none" stroke="#fb923c" strokeWidth="16" strokeLinecap="round" />
-                {/* Pieds */}
-                <ellipse cx="74" cy="258" rx="10" ry="5" fill="#92400e" />
-                <ellipse cx="126" cy="258" rx="10" ry="5" fill="#92400e" />
+        {/* Liseret lime vertical sur le cote gauche - signature visuelle */}
+        <div className="pointer-events-none absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-lime-400 via-green-400 to-emerald-500"/>
 
-                {/* Zones douleur cliquables */}
-                {PAIN_ZONES.map((z) => {
-                  const isActive = z.id === activeZone;
-                  return (
-                    <g key={z.id} onClick={() => setActiveZone(z.id)} style={{ cursor: 'pointer' }}>
-                      {isActive && (
-                        <>
-                          <circle cx={z.cx} cy={z.cy} r="14" fill="#ef4444" opacity="0.3">
-                            <animate attributeName="r" values="10;18;10" dur="1.5s" repeatCount="indefinite" />
-                            <animate attributeName="opacity" values="0.4;0.1;0.4" dur="1.5s" repeatCount="indefinite" />
-                          </circle>
-                          <circle cx={z.cx} cy={z.cy} r="9" fill="#ef4444" opacity="0.5" />
-                        </>
-                      )}
-                      <circle
-                        cx={z.cx}
-                        cy={z.cy}
-                        r="6"
-                        fill={isActive ? '#dc2626' : '#fb923c'}
-                        stroke="white"
-                        strokeWidth="2"
-                        className="transition-all"
-                      />
-                      <text
-                        x={z.cx}
-                        y={z.cy + 1.5}
-                        textAnchor="middle"
-                        fontSize="7"
-                        fontWeight="900"
-                        fill="white"
-                        style={{ pointerEvents: 'none', userSelect: 'none' }}
-                      >
-                        !
-                      </text>
-                    </g>
-                  );
-                })}
-              </svg>
+        {/* ========== HEADER ULTRA COMPACT (light) ========== */}
+        <div className="relative flex items-start justify-between gap-3 px-5 pt-4 pb-3">
+          {/* Icone produit + nom */}
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-lime-400 via-green-400 to-emerald-400 text-neutral-900 shadow-[0_4px_14px_rgba(132,204,22,.5)]">
+              <IconSpray/>
             </div>
+            <div>
+              <h3 id="spm-title" className="text-[14px] font-black leading-tight text-neutral-900">
+                Spray Anti-Douleur TK
+              </h3>
+              <p className="mt-0.5 flex items-center gap-1 text-[10px] font-bold text-emerald-600">
+                <IconClock/>
+                <span className="font-mono tabular-nums">
+                  {pad(countdown.m)}:<span className="spm-pulse-digit">{pad(countdown.s)}</span>
+                </span>
+                <span className="text-neutral-400">· offre</span>
+              </p>
+            </div>
+          </div>
 
-            {/* Carte info zone active */}
-            <div className="flex-1 min-w-0">
-              <div className="rounded-xl bg-white p-3 shadow-xl ring-1 ring-orange-100 sm:p-5" key={activeZone}>
-                <div className="mb-2 flex items-center gap-1.5 sm:mb-3">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-[10px] font-black text-white sm:h-8 sm:w-8 sm:text-[12px]">
-                    !
-                  </div>
-                  <span className="rounded-full bg-red-100 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-red-700 sm:text-[10px]">
-                    Zone douloureuse
-                  </span>
-                </div>
-                <h3 className="mb-1 text-[16px] font-black text-neutral-900 sm:text-[22px]">{zone.label}</h3>
-                <p className="text-[11px] text-neutral-600 sm:text-[13px]">{zone.description}</p>
-                <div className="mt-3 rounded-lg bg-gradient-to-r from-orange-500 to-red-500 px-3 py-1.5 text-center sm:mt-4 sm:py-2.5">
-                  <p className="text-[9px] font-extrabold uppercase tracking-wide text-white sm:text-[11px]">
-                    Soulagement en 90 secondes
-                  </p>
-                </div>
+          <button
+            type="button"
+            onClick={() => !sending && onClose()}
+            aria-label="Fermer"
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 transition hover:bg-neutral-200 hover:scale-105 disabled:opacity-50"
+            disabled={sending}
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
-                <div className="mt-2 grid grid-cols-3 gap-1 text-center sm:mt-3 sm:gap-1.5">
-                  {PAIN_ZONES.slice(0, 6).map((z) => (
+        {/* Stock discret (ligne fine) */}
+        <div className="relative flex items-center gap-2 px-5">
+          <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Stock</span>
+          <div className="h-0.5 flex-1 overflow-hidden rounded-full bg-neutral-100">
+            <div className="h-full bg-gradient-to-r from-lime-400 to-emerald-500 transition-all" style={{ width: `${Math.max(20, Math.min(100, Math.round((stock / 30) * 100)))}%` }}/>
+          </div>
+          <span className="text-[10px] font-black tabular-nums text-emerald-600">{stock} restants</span>
+        </div>
+
+        {/* Separateur pointille */}
+        <div className="relative px-5 pt-3">
+          <div className="border-t border-dashed border-neutral-200"/>
+        </div>
+
+        {/* ========== BODY FORM ========== */}
+        <div className="px-5 pt-3 pb-4">
+          <form
+            onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
+            className="flex flex-col gap-3"
+          >
+            {/* ======== BLOC QUANTITE (pills horizontales) ======== */}
+            <div>
+              <p className="mb-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-neutral-500">Quantite</p>
+              <div className="flex gap-1.5">
+                {qtyOptions.map((o) => {
+                  const active = qty === o.v;
+                  return (
                     <button
-                      key={z.id}
+                      key={o.v}
                       type="button"
-                      onClick={() => setActiveZone(z.id)}
-                      className={`rounded-md px-1 py-1 text-[8px] font-bold transition sm:rounded-lg sm:py-1.5 sm:text-[10px] ${
-                        z.id === activeZone
-                          ? 'bg-red-500 text-white shadow'
-                          : 'bg-neutral-100 text-neutral-600 hover:bg-orange-100'
+                      onClick={() => setQty(o.v)}
+                      className={`group relative flex-1 overflow-hidden rounded-2xl px-2 py-2.5 transition-all ${
+                        active
+                          ? 'bg-gradient-to-br from-lime-50 via-green-50 to-emerald-50 ring-2 ring-lime-500 shadow-[0_4px_14px_rgba(132,204,22,.25)]'
+                          : 'bg-neutral-50 ring-1 ring-neutral-200 hover:ring-lime-300 hover:bg-lime-50/40'
                       }`}
                     >
-                      {z.label}
+                      {o.tag && (
+                        <span className={`absolute -right-1 -top-1 rounded-full bg-gradient-to-r from-lime-500 to-emerald-500 px-1.5 py-px text-[7px] font-black uppercase tracking-wider text-white shadow-md ${active ? 'scale-110' : ''}`}>
+                          {o.v === 2 ? 'TOP' : 'DEAL'}
+                        </span>
+                      )}
+
+                      <div className="flex items-baseline justify-center gap-0.5">
+                        <span className={`text-[22px] font-black leading-none ${active ? 'bg-gradient-to-r from-lime-600 to-emerald-600 bg-clip-text text-transparent' : 'text-neutral-800'}`}>
+                          {o.v}
+                        </span>
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-500">x</span>
+                      </div>
+                      <p className={`mt-1 text-center text-[10px] font-black ${active ? 'text-emerald-600' : 'text-neutral-600'}`}>
+                        {o.sub.replace(' FCFA', ' F')}
+                      </p>
+
+                      {/* indicateur actif */}
+                      {active && (
+                        <span className="absolute bottom-1 left-1/2 h-0.5 w-6 -translate-x-1/2 rounded-full bg-gradient-to-r from-lime-500 to-emerald-500"/>
+                      )}
                     </button>
-                  ))}
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ======== INPUTS FORMAT UNDERLINE + ICONES ======== */}
+            <div className="space-y-2">
+
+              <label className="group relative block">
+                <div className="flex items-center gap-2 rounded-xl bg-neutral-50 px-3 py-2 ring-1 ring-neutral-200 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-lime-400">
+                  <span className="text-neutral-400 group-focus-within:text-emerald-600 transition-colors"><IconUser/></span>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Nom complet"
+                    autoComplete="name"
+                    required
+                    className="w-full bg-transparent text-[13px] font-medium text-neutral-900 outline-none placeholder:text-neutral-400"
+                  />
+                  {name.length > 1 && <svg className="h-4 w-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
+                </div>
+              </label>
+
+              <label className="group relative block">
+                <div className="flex items-center gap-2 rounded-xl bg-neutral-50 px-3 py-2 ring-1 ring-neutral-200 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-lime-400">
+                  <span className="text-neutral-400 group-focus-within:text-emerald-600 transition-colors"><IconPhone/></span>
+                  <span className="text-[12px] font-black text-neutral-600">🇨🇮 +225</span>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    placeholder="07 00 00 00 00"
+                    autoComplete="tel-national"
+                    required
+                    className="w-full bg-transparent text-[13px] font-medium text-neutral-900 outline-none placeholder:text-neutral-400"
+                  />
+                  {phone.length >= 8 && <svg className="h-4 w-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
+                </div>
+              </label>
+
+              <label className="group relative block">
+                <div className="flex items-center gap-2 rounded-xl bg-neutral-50 px-3 py-2 ring-1 ring-neutral-200 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-lime-400">
+                  <span className="text-neutral-400 group-focus-within:text-emerald-600 transition-colors"><IconPin/></span>
+                  <input
+                    type="text"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="Ville (Abidjan, Bouake...)"
+                    autoComplete="address-level2"
+                    required
+                    className="w-full bg-transparent text-[13px] font-medium text-neutral-900 outline-none placeholder:text-neutral-400"
+                  />
+                  {city.length > 1 && <svg className="h-4 w-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
+                </div>
+              </label>
+            </div>
+
+            {/* Separateur pointille */}
+            <div className="border-t border-dashed border-neutral-200"/>
+
+            {/* ======== RECAP STYLE TICKET ======== */}
+            <div className="space-y-1 text-[12px]">
+              <div className="flex items-baseline justify-between">
+                <span className="text-neutral-500">Sous-total ({qty} spray{qty > 1 ? 's' : ''})</span>
+                <span className="font-bold tabular-nums text-neutral-700">{fmt(fullPrice)}</span>
+              </div>
+              {saving > 0 && (
+                <div className="flex items-baseline justify-between">
+                  <span className="text-neutral-500">Remise quantite</span>
+                  <span className="font-bold tabular-nums text-emerald-600">-{fmt(saving)}</span>
+                </div>
+              )}
+              <div className="flex items-baseline justify-between">
+                <span className="text-neutral-500">Livraison</span>
+                <span className="inline-flex items-center gap-1 font-black tabular-nums text-emerald-600">
+                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"/></svg>
+                  GRATUIT
+                </span>
+              </div>
+              <div className="mt-2 flex items-baseline justify-between rounded-xl bg-gradient-to-r from-lime-50 via-green-50 to-emerald-50 px-3 py-2 ring-1 ring-lime-200">
+                <span className="text-[11px] font-black uppercase tracking-wider text-neutral-700">Total a payer</span>
+                <div className="flex items-baseline gap-2">
+                  {qty > 1 && <span className="text-[10px] text-neutral-400 line-through">{fmt(oldFullPrice)}</span>}
+                  <span className="bg-gradient-to-r from-lime-600 via-green-600 to-emerald-600 bg-clip-text text-[18px] font-black tabular-nums text-transparent">
+                    {fmt(total)}
+                  </span>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <div className="bg-gradient-to-r from-red-500 to-orange-500 px-3 py-1.5 text-center sm:py-2.5">
-          <p className="text-[10px] font-extrabold uppercase tracking-wide text-white sm:text-[12px]">
-            Action rapide <span className="text-orange-200">·</span> Sans effets indesirables
-          </p>
+            {formErr && (
+              <p className="rounded-lg bg-red-50 px-2 py-1.5 text-[11px] font-semibold text-red-600 ring-1 ring-red-100">{formErr}</p>
+            )}
+
+            {/* ======== CTA principal lime/emerald gradient ======== */}
+            <button
+              type="submit"
+              disabled={sending}
+              className="spm-cta group relative flex h-[50px] w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-lime-500 via-green-500 to-emerald-500 text-[14px] font-black text-white shadow-[0_10px_24px_-4px_rgba(16,185,129,.55)] transition hover:shadow-[0_14px_30px_-4px_rgba(16,185,129,.75)] active:translate-y-px disabled:cursor-wait disabled:opacity-60"
+            >
+              <span className="spm-cta-sheen pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent"/>
+              {sending ? (
+                <><span className="relative h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /><span className="relative">Envoi...</span></>
+              ) : (
+                <>
+                  <svg className="relative h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                  <span className="relative">Confirmer et payer a la livraison</span>
+                </>
+              )}
+            </button>
+
+            {/* Rassurance compacte sous CTA */}
+            <div className="flex items-center justify-center gap-3 text-[10px] font-semibold text-neutral-500">
+              <span className="inline-flex items-center gap-1">
+                <svg className="h-3 w-3 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd"/></svg>
+                Cash a la livraison
+              </span>
+              <span className="h-3 w-px bg-neutral-200"/>
+              <span className="inline-flex items-center gap-1">
+                <svg className="h-3 w-3 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/></svg>
+                Sans risque
+              </span>
+              <span className="h-3 w-px bg-neutral-200"/>
+              <span className="inline-flex items-center gap-1">
+                <svg className="h-3 w-3 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/><path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z"/></svg>
+                Livraison 24h
+              </span>
+            </div>
+          </form>
         </div>
       </div>
 
-      <form
-        onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
-        className="flex flex-1 flex-col gap-2.5 overflow-y-auto px-4 py-3 sm:w-[460px] sm:flex-none sm:justify-center sm:gap-4 sm:overflow-y-auto sm:px-8 sm:py-8"
-      >
-        <div className="grid grid-cols-3 gap-1 sm:gap-2">
-          {qtyOptions.map((o) => (
-            <button
-              key={o.v}
-              type="button"
-              onClick={() => setQty(o.v)}
-              className={`relative flex flex-col items-center rounded-lg border-2 px-1 py-1 transition-all sm:rounded-xl sm:px-2 sm:py-2.5 ${
-                qty === o.v
-                  ? 'border-red-500 bg-red-50 shadow-sm scale-[1.02]'
-                  : 'border-neutral-200 bg-white hover:border-red-300'
-              }`}
-            >
-              {o.tag && (
-                <span className="absolute -right-0.5 -top-1.5 rounded-full bg-orange-500 px-1 py-0 text-[7px] font-black uppercase tracking-wider text-white shadow sm:-right-1 sm:-top-2 sm:px-1.5 sm:py-0.5 sm:text-[8px]">
-                  {o.tag}
-                </span>
-              )}
-              <span className="text-base font-black text-neutral-900 sm:text-2xl">{o.v}</span>
-              <span className="text-[7px] font-bold uppercase tracking-wider text-neutral-500 sm:text-[9px]">
-                {o.label}
-              </span>
-              <span className="text-[10px] font-black text-red-600 sm:text-[12px]">{o.sub}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-2 gap-1.5 sm:gap-2.5">
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Nom complet *"
-            className="h-9 w-full rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 text-[12px] font-medium outline-none transition placeholder:text-neutral-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 sm:h-11 sm:rounded-xl sm:px-3 sm:text-[13px]"
-          />
-          <input
-            type="text"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            placeholder="Ville / Commune *"
-            className="h-9 w-full rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 text-[12px] font-medium outline-none transition placeholder:text-neutral-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20 sm:h-11 sm:rounded-xl sm:px-3 sm:text-[13px]"
-          />
-        </div>
-
-        <div className="flex h-9 overflow-hidden rounded-lg border border-neutral-200 transition focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-500/20 sm:h-11 sm:rounded-xl">
-          <span className="flex items-center gap-1 border-r border-neutral-200 bg-neutral-50 px-2.5 text-[11px] font-bold text-neutral-600 sm:px-3 sm:text-[13px]">
-            +225
-          </span>
-          <input
-            type="tel"
-            inputMode="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="Telephone *"
-            className="h-full w-full bg-neutral-50 px-2.5 text-[12px] font-medium outline-none placeholder:text-neutral-400 focus:bg-white sm:px-3 sm:text-[13px]"
-          />
-        </div>
-
-        <div className="flex items-center justify-between rounded-lg bg-gradient-to-r from-neutral-900 to-red-900 px-3 py-2 text-white sm:rounded-xl sm:py-2.5">
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-[10px] font-semibold sm:text-[12px]">Total</span>
-            <span className="text-[9px] text-orange-300 sm:text-[10px]">livraison gratuite</span>
-          </div>
-          <div className="flex items-baseline gap-1.5">
-            {qty > 1 && (
-              <span className="text-[9px] text-neutral-400 line-through sm:text-[11px]">{fmt(oldTotal)}</span>
-            )}
-            <span className="text-[14px] font-black sm:text-[17px]">{fmt(total)}</span>
-          </div>
-        </div>
-
-        {formErr && (
-          <p className="rounded-md bg-red-50 px-2.5 py-1.5 text-[10px] font-semibold text-red-600 ring-1 ring-red-100 sm:rounded-lg sm:py-2 sm:text-[12px]">
-            {formErr}
-          </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={sending}
-          className="cta-attract group relative flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 bg-[length:200%_100%] text-[13px] font-extrabold text-white shadow-lg shadow-red-500/30 transition-shadow hover:bg-[position:100%_0] hover:shadow-2xl hover:shadow-red-500/40 disabled:cursor-wait disabled:opacity-60 sm:h-[52px] sm:rounded-2xl sm:text-[15px]"
-        >
-          <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-          {sending ? (
-            <>
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              Envoi...
-            </>
-          ) : (
-            <>
-              <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              Soulager ma douleur
-            </>
-          )}
-        </button>
-
-        <div className="flex items-center justify-center gap-2 text-[9px] font-semibold text-neutral-400 sm:gap-4 sm:text-[11px]">
-          <span className="flex items-center gap-1">
-            <svg className="h-2.5 w-2.5 text-red-500 sm:h-3.5 sm:w-3.5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Paiement a la livraison
-          </span>
-          <span className="flex items-center gap-1">
-            <svg className="h-2.5 w-2.5 text-red-500 sm:h-3.5 sm:w-3.5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Garantie satisfaction
-          </span>
-        </div>
-      </form>
-
       <style>{`
-        @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes spmfade { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes spmslide { from { transform: translateY(32px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+        @keyframes spmPulseDigit { 0%,100% { opacity: 1 } 50% { opacity: 0.5 } }
+        @keyframes spmSheen { 0% { transform: translateX(-100%) } 100% { transform: translateX(100%) } }
+        @keyframes spmFloat { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-1.5px) } }
+        .spm-pulse-digit { animation: spmPulseDigit 1s ease-in-out infinite }
+        .spm-cta { animation: spmFloat 2.8s ease-in-out infinite }
+        .spm-cta:hover { animation: none; transform: translateY(-2px) }
+        .spm-cta-sheen { animation: spmSheen 3.4s ease-in-out infinite }
       `}</style>
     </div>
   );

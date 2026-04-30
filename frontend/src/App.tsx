@@ -89,7 +89,7 @@ function App() {
       <Toaster position="top-right" />
       <Suspense fallback={<PageSpinner />}>
         <Routes>
-          {/* Pages publiques — accessibles à TOUS sans authentification */}
+          {/* Pages publiques - accessibles a TOUS sans authentification */}
           <Route path="/commander" element={<OrderForm />} />
           <Route path="/anti-verrue" element={<VerrueTkLanding />} />
           <Route path="/anti-verrue/merci" element={<VerrueTkThankYou />} />
@@ -107,7 +107,7 @@ function App() {
 
           <Route path="/login" element={<Login />} />
 
-          {/* Pages protégées — nécessitent une authentification */}
+          {/* Pages protegees - necessitent une authentification */}
           <Route path="/*" element={<AuthenticatedApp />} />
         </Routes>
       </Suspense>
@@ -116,4 +116,3 @@ function App() {
 }
 
 export default App;
-

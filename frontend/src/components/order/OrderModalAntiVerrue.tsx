@@ -1,15 +1,20 @@
 /**
- * Modal de commande SPECIFIQUE au produit "Creme anti-verrue".
+ * Modal de commande pour "Creme anti-verrue" — VERSION ULTRA-COMPACTE.
  *
- * Design : variante MEDICAL BLUE rassurante, avec un carrousel automatique de
- * temoignages clients (photo avatar + nom + verbatim) en hero du modal pour
- * creer la preuve sociale avant que le client remplisse ses infos.
- * Couleurs sky/blue (medical, professionnel, propre).
+ * Objectif : tenir en UNE SEULE VUE, sans scroll interne meme sur mobile
+ * 360x640 (entry-level Android). Sur iPhone SE 375x667 ca tient largement.
  *
- * COMPACT MOBILE : tout doit tenir sur iPhone SE SANS scroll dans le formulaire.
- * Layout split desktop : carrousel a gauche, formulaire a droite.
+ *   [Header compact] countdown urgent + stock sur UNE ligne (~72px)
+ *   [Body form compact]
+ *     - Ligne choix boites (3 radio-cards hauteur 56px)
+ *     - Nom (hauteur 44px)
+ *     - Ville (hauteur 44px)
+ *     - Tel avec prefixe +225 (hauteur 44px)
+ *     - Total + CTA (combines) (hauteur 96px)
  *
- * Utilise le hook useOrderSubmit pour la logique metier.
+ *   Total ~ 440px -> tient partout sans scroll.
+ *
+ * Logique metier 100% inchangee : commandes partent vers /api/public/order.
  */
 import { useEffect, useRef, useState } from 'react';
 import { useOrderSubmit, type OrderSubmitConfig, type OrderProduct } from '../../hooks/useOrderSubmit';
@@ -32,48 +37,12 @@ interface Props {
   initialQty?: number;
 }
 
-interface Testimonial {
-  initials: string;
-  name: string;
-  age: number;
-  location: string;
-  text: string;
-  rating: number;
-  gradient: string;
+function fmt(n: number): string {
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' F';
 }
 
-const TESTIMONIALS: Testimonial[] = [
-  {
-    initials: 'AK',
-    name: 'Aicha K.',
-    age: 32,
-    location: 'Abidjan',
-    text: 'Mes verrues ont disparu en 10 jours. Je n\'y croyais plus, je suis bluffee !',
-    rating: 5,
-    gradient: 'from-sky-400 to-blue-500',
-  },
-  {
-    initials: 'YM',
-    name: 'Yves M.',
-    age: 45,
-    location: 'Yamoussoukro',
-    text: 'Plus de gene au quotidien. Ma main est nette, je recommande a 100%.',
-    rating: 5,
-    gradient: 'from-blue-500 to-indigo-500',
-  },
-  {
-    initials: 'MS',
-    name: 'Mariam S.',
-    age: 28,
-    location: 'Bouake',
-    text: 'Application simple, resultat incroyable. Merci pour ce produit !',
-    rating: 5,
-    gradient: 'from-indigo-500 to-sky-500',
-  },
-];
-
-function fmt(n: number): string {
-  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
+function pad(n: number): string {
+  return String(n).padStart(2, '0');
 }
 
 export default function OrderModalAntiVerrue({ open, onClose, cfg, product, setProduct, qtyOptions, initialQty = 1 }: Props) {
@@ -83,7 +52,8 @@ export default function OrderModalAntiVerrue({ open, onClose, cfg, product, setP
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
   const [phone, setPhone] = useState('');
-  const [activeTestim, setActiveTestim] = useState(0);
+  const [stock, setStock] = useState(12);
+  const [countdown, setCountdown] = useState({ m: 14, s: 59 });
 
   const wasOpenRef = useRef(false);
   const trackRef = useRef(trackOpen);
@@ -94,17 +64,21 @@ export default function OrderModalAntiVerrue({ open, onClose, cfg, product, setP
       wasOpenRef.current = true;
       setName(''); setCity(''); setPhone('');
       setQty(initialQty);
-      setActiveTestim(0);
+      setCountdown({ m: 14, s: 59 });
+      setStock(8 + Math.floor(Math.random() * 6));
       trackRef.current(initialQty);
     }
-    if (!open && wasOpenRef.current) {
-      wasOpenRef.current = false;
-    }
+    if (!open && wasOpenRef.current) wasOpenRef.current = false;
   }, [open, initialQty]);
 
   useEffect(() => {
     if (!open) return;
-    const id = setInterval(() => setActiveTestim((p) => (p + 1) % TESTIMONIALS.length), 4000);
+    const id = setInterval(() => {
+      setCountdown(c => {
+        const total = Math.max(0, c.m * 60 + c.s - 1);
+        return { m: Math.floor(total / 60), s: total % 60 };
+      });
+    }, 1000);
     return () => clearInterval(id);
   }, [open]);
 
@@ -116,211 +90,192 @@ export default function OrderModalAntiVerrue({ open, onClose, cfg, product, setP
     }
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !sending) onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, sending, onClose]);
+
   if (!open) return null;
 
-  const heroImg = cfg.images.hero;
   const total = cfg.prices?.[qty] || cfg.prices?.[1] || 0;
   const oldTotal = total + (qty * 5000);
-  const t = TESTIMONIALS[activeTestim];
+  const stockPct = Math.max(20, Math.min(100, Math.round((stock / 30) * 100)));
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-white animate-[fadeIn_.25s] sm:flex-row">
-      <button
-        onClick={onClose}
-        aria-label="Fermer"
-        className="absolute right-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-neutral-800 shadow-lg backdrop-blur transition hover:bg-white hover:scale-110 sm:right-4 sm:top-4 sm:h-11 sm:w-11"
-      >
-        <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+    <div
+      className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="antiverrue-modal-title"
+    >
+      <div
+        onClick={() => !sending && onClose()}
+        className="absolute inset-0 bg-neutral-950/80 backdrop-blur-sm animate-[avfade_.2s_ease-out]"
+      />
 
-      {/* HERO : Carrousel temoignages medical-blue avec image produit en filigrane */}
-      <div className="relative flex flex-shrink-0 flex-col overflow-hidden bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-700 sm:flex-1 sm:flex-shrink">
-        <div
-          className="absolute inset-0 opacity-15 mix-blend-overlay"
-          style={{ backgroundImage: `url(${heroImg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-blue-900/60 via-transparent to-transparent" />
+      {/* max-h = 100dvh pour eviter le scroll et garantir que le modal tient meme avec la barre URL mobile.
+          overflow-hidden sur le container : pas de scroll interne. */}
+      <div className="relative z-10 w-full max-w-[420px] max-h-[100dvh] overflow-hidden rounded-t-2xl bg-white shadow-2xl animate-[avslide_.25s_cubic-bezier(.22,.8,.4,1)] sm:rounded-2xl">
 
-        <div className="relative flex flex-1 flex-col items-center justify-center px-5 py-6 sm:px-10 sm:py-12">
-          <div className="mb-3 flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 backdrop-blur sm:mb-4 sm:px-4 sm:py-1.5">
-            <svg className="h-3 w-3 text-yellow-300 sm:h-4 sm:w-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+        {/* ========== HEADER COMPACT ========== (~76px) */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-red-600 via-orange-500 to-amber-500 px-4 pt-3 pb-3 text-white">
+          <div className="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-white/15 blur-2xl"/>
+          <div className="pointer-events-none absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-amber-300/20 blur-2xl"/>
+
+          <button
+            type="button"
+            onClick={() => !sending && onClose()}
+            aria-label="Fermer"
+            className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition hover:bg-white/30 hover:scale-105 disabled:opacity-50"
+            disabled={sending}
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
-            <span className="text-[10px] font-bold text-white sm:text-[12px]">+2400 clients satisfaits</span>
-          </div>
+          </button>
 
-          <div className="relative w-full max-w-sm" key={activeTestim}>
-            <div className="rounded-2xl bg-white/95 p-4 shadow-2xl backdrop-blur animate-[fadeSlide_.5s_ease-out] sm:p-6">
-              <div className="mb-3 flex items-center gap-3">
-                <div className={`flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br ${t.gradient} text-base font-black text-white shadow-lg sm:h-14 sm:w-14 sm:text-lg`}>
-                  {t.initials}
-                </div>
-                <div>
-                  <p className="text-[13px] font-extrabold text-neutral-900 sm:text-[15px]">{t.name}, {t.age} ans</p>
-                  <p className="text-[10px] text-neutral-500 sm:text-[11px]">{t.location}, Cote d'Ivoire</p>
-                </div>
-              </div>
-              <div className="mb-2 flex gap-0.5">
-                {Array.from({ length: t.rating }).map((_, i) => (
-                  <svg key={i} className="h-3.5 w-3.5 text-yellow-400 sm:h-4 sm:w-4" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                ))}
-              </div>
-              <p className="text-[12px] italic leading-relaxed text-neutral-700 sm:text-[13px]">
-                &laquo; {t.text} &raquo;
-              </p>
-              <div className="mt-3 flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-emerald-600 sm:text-[10px]">
-                <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Achat verifie
-              </div>
+          <div className="relative flex items-center justify-between gap-3 pr-8">
+            <h3 id="antiverrue-modal-title" className="text-[15px] font-black leading-tight">
+              Commander maintenant
+            </h3>
+            {/* Countdown pulse sur la meme ligne que le titre */}
+            <div className="flex items-center gap-1 rounded-md bg-black/30 px-2 py-1 ring-1 ring-white/15">
+              <span className="text-[9px] font-black uppercase tracking-widest text-amber-200">Fin</span>
+              <span className="font-mono text-[12px] font-black tabular-nums">
+                <span className="av-pulse-digit">{pad(countdown.m)}</span>
+                <span className="mx-0.5 opacity-60">:</span>
+                <span className="av-pulse-digit">{pad(countdown.s)}</span>
+              </span>
             </div>
           </div>
 
-          <div className="mt-4 flex gap-1.5">
-            {TESTIMONIALS.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setActiveTestim(i)}
-                className={`h-1.5 rounded-full transition-all ${i === activeTestim ? 'w-6 bg-white' : 'w-1.5 bg-white/40'}`}
-                aria-label={`Temoignage ${i + 1}`}
-              />
-            ))}
+          {/* Stock bar minimaliste */}
+          <div className="relative mt-2 flex items-center gap-2">
+            <div className="h-1 flex-1 overflow-hidden rounded-full bg-black/30">
+              <div className="h-full bg-gradient-to-r from-amber-300 to-white transition-all" style={{ width: `${stockPct}%` }}/>
+            </div>
+            <span className="text-[10px] font-black tabular-nums text-amber-100">{stock} restantes</span>
           </div>
         </div>
 
-        <div className="relative bg-white/15 px-3 py-1.5 text-center backdrop-blur sm:py-2.5">
-          <p className="text-[10px] font-extrabold uppercase tracking-wide text-white sm:text-[12px]">
-            Note 4.9/5 <span className="text-sky-200">·</span> Recommande par 96% des clients
-          </p>
+        {/* ========== BODY FORM COMPACT ========== (pas d'overflow interne) */}
+        <div className="px-4 py-3">
+          <form
+            onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
+            className="flex flex-col gap-2.5"
+          >
+            {/* Choix boites : compact, une seule ligne */}
+            <div className="grid grid-cols-3 gap-1.5">
+              {qtyOptions.map((o) => {
+                const active = qty === o.v;
+                return (
+                  <button
+                    key={o.v}
+                    type="button"
+                    onClick={() => setQty(o.v)}
+                    className={`relative flex flex-col items-center justify-center rounded-lg border-2 px-1 py-1.5 transition-all ${
+                      active
+                        ? 'border-orange-500 bg-orange-50 shadow-sm'
+                        : 'border-neutral-200 bg-white hover:border-orange-300'
+                    }`}
+                  >
+                    {o.tag && (
+                      <span className="absolute -right-1 -top-1.5 rounded-full bg-gradient-to-r from-red-500 to-orange-500 px-1 py-px text-[7px] font-black uppercase tracking-wider text-white shadow">
+                        {o.tag}
+                      </span>
+                    )}
+                    <span className={`text-[18px] font-black leading-none ${active ? 'text-orange-700' : 'text-neutral-900'}`}>{o.v}</span>
+                    <span className="mt-0.5 text-[8px] font-bold uppercase tracking-wider text-neutral-500">{o.label}</span>
+                    <span className={`text-[9px] font-black ${active ? 'text-orange-600' : 'text-orange-500'}`}>{o.sub}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Inputs compacts : py-2 / text-[13px] */}
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Nom complet"
+              autoComplete="name"
+              required
+              className="block w-full rounded-lg border-[1.5px] border-neutral-200 bg-white px-3 py-2 text-[13px] font-medium text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+            />
+
+            <input
+              type="text"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="Ville (Abidjan, Bouaké, Daloa…)"
+              autoComplete="address-level2"
+              required
+              className="block w-full rounded-lg border-[1.5px] border-neutral-200 bg-white px-3 py-2 text-[13px] font-medium text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+            />
+
+            <div className="flex overflow-hidden rounded-lg border-[1.5px] border-neutral-200 bg-white transition focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20">
+              <span className="flex items-center gap-1 border-r border-neutral-200 bg-neutral-50 px-2 text-[12px] font-bold text-neutral-700">🇨🇮 +225</span>
+              <input
+                type="tel"
+                inputMode="numeric"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                placeholder="07 XX XX XX XX"
+                autoComplete="tel-national"
+                required
+                className="h-full w-full bg-white px-2 py-2 text-[13px] font-medium text-neutral-900 outline-none placeholder:text-neutral-400"
+              />
+            </div>
+
+            {/* Total + CTA fusionnes pour gagner de la place */}
+            <div className="mt-0.5 flex items-center justify-between rounded-lg bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 px-3 py-2 text-white ring-1 ring-white/10">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[11px] font-black uppercase tracking-wide">Total</span>
+                <span className="text-[9px] text-emerald-400">livraison offerte</span>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                {qty > 1 && <span className="text-[10px] text-neutral-400 line-through">{fmt(oldTotal)}</span>}
+                <span className="text-[16px] font-black text-amber-300">{fmt(total)}</span>
+              </div>
+            </div>
+
+            {formErr && (
+              <p className="rounded-md bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-600 ring-1 ring-red-100">{formErr}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={sending}
+              className="av-cta group relative flex h-[48px] w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-red-500 via-orange-500 to-amber-400 text-[14px] font-black text-white shadow-[0_10px_24px_-4px_rgba(249,115,22,0.55)] transition hover:shadow-[0_14px_30px_-4px_rgba(249,115,22,0.7)] active:translate-y-px disabled:cursor-wait disabled:opacity-60"
+            >
+              <span className="av-cta-sheen pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent"/>
+              {sending ? (
+                <><span className="relative h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /><span className="relative">Envoi...</span></>
+              ) : (
+                <>
+                  <svg className="relative h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  <span className="relative">Valider ma commande</span>
+                </>
+              )}
+            </button>
+
+            <p className="-mt-0.5 text-center text-[10px] font-medium text-neutral-500">🔒 Paiement à la livraison · Sans risque</p>
+          </form>
         </div>
       </div>
 
-      <form
-        onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
-        className="flex flex-1 flex-col gap-2.5 overflow-y-auto px-4 py-3 sm:w-[460px] sm:flex-none sm:justify-center sm:gap-4 sm:overflow-y-auto sm:px-8 sm:py-8"
-      >
-        <div className="grid grid-cols-3 gap-1 sm:gap-2">
-          {qtyOptions.map((o) => (
-            <button
-              key={o.v}
-              type="button"
-              onClick={() => setQty(o.v)}
-              className={`relative flex flex-col items-center rounded-lg border-2 px-1 py-1 transition-all sm:rounded-xl sm:px-2 sm:py-2.5 ${
-                qty === o.v
-                  ? 'border-sky-500 bg-sky-50 shadow-sm scale-[1.02]'
-                  : 'border-neutral-200 bg-white hover:border-sky-300'
-              }`}
-            >
-              {o.tag && (
-                <span className="absolute -right-0.5 -top-1.5 rounded-full bg-blue-600 px-1 py-0 text-[7px] font-black uppercase tracking-wider text-white shadow sm:-right-1 sm:-top-2 sm:px-1.5 sm:py-0.5 sm:text-[8px]">
-                  {o.tag}
-                </span>
-              )}
-              <span className="text-base font-black text-neutral-900 sm:text-2xl">{o.v}</span>
-              <span className="text-[7px] font-bold uppercase tracking-wider text-neutral-500 sm:text-[9px]">
-                {o.label}
-              </span>
-              <span className="text-[10px] font-black text-sky-600 sm:text-[12px]">{o.sub}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-2 gap-1.5 sm:gap-2.5">
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Nom complet *"
-            className="h-9 w-full rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 text-[12px] font-medium outline-none transition placeholder:text-neutral-400 focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-500/20 sm:h-11 sm:rounded-xl sm:px-3 sm:text-[13px]"
-          />
-          <input
-            type="text"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            placeholder="Ville / Commune *"
-            className="h-9 w-full rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 text-[12px] font-medium outline-none transition placeholder:text-neutral-400 focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-500/20 sm:h-11 sm:rounded-xl sm:px-3 sm:text-[13px]"
-          />
-        </div>
-
-        <div className="flex h-9 overflow-hidden rounded-lg border border-neutral-200 transition focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 sm:h-11 sm:rounded-xl">
-          <span className="flex items-center gap-1 border-r border-neutral-200 bg-neutral-50 px-2.5 text-[11px] font-bold text-neutral-600 sm:px-3 sm:text-[13px]">
-            +225
-          </span>
-          <input
-            type="tel"
-            inputMode="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="Telephone *"
-            className="h-full w-full bg-neutral-50 px-2.5 text-[12px] font-medium outline-none placeholder:text-neutral-400 focus:bg-white sm:px-3 sm:text-[13px]"
-          />
-        </div>
-
-        <div className="flex items-center justify-between rounded-lg bg-gradient-to-r from-blue-900 to-indigo-900 px-3 py-2 text-white sm:rounded-xl sm:py-2.5">
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-[10px] font-semibold sm:text-[12px]">Total</span>
-            <span className="text-[9px] text-sky-300 sm:text-[10px]">livraison gratuite</span>
-          </div>
-          <div className="flex items-baseline gap-1.5">
-            {qty > 1 && (
-              <span className="text-[9px] text-neutral-400 line-through sm:text-[11px]">{fmt(oldTotal)}</span>
-            )}
-            <span className="text-[14px] font-black sm:text-[17px]">{fmt(total)}</span>
-          </div>
-        </div>
-
-        {formErr && (
-          <p className="rounded-md bg-red-50 px-2.5 py-1.5 text-[10px] font-semibold text-red-600 ring-1 ring-red-100 sm:rounded-lg sm:py-2 sm:text-[12px]">
-            {formErr}
-          </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={sending}
-          className="cta-attract group relative flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 bg-[length:200%_100%] text-[13px] font-extrabold text-white shadow-lg shadow-blue-500/30 transition-shadow hover:bg-[position:100%_0] hover:shadow-2xl hover:shadow-blue-500/40 disabled:cursor-wait disabled:opacity-60 sm:h-[52px] sm:rounded-2xl sm:text-[15px]"
-        >
-          <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-          {sending ? (
-            <>
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              Envoi...
-            </>
-          ) : (
-            <>
-              <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-              Confirmer ma commande
-            </>
-          )}
-        </button>
-
-        <div className="flex items-center justify-center gap-2 text-[9px] font-semibold text-neutral-400 sm:gap-4 sm:text-[11px]">
-          <span className="flex items-center gap-1">
-            <svg className="h-2.5 w-2.5 text-sky-500 sm:h-3.5 sm:w-3.5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Paiement a la livraison
-          </span>
-          <span className="flex items-center gap-1">
-            <svg className="h-2.5 w-2.5 text-sky-500 sm:h-3.5 sm:w-3.5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Garantie satisfaction
-          </span>
-        </div>
-      </form>
-
       <style>{`
-        @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-        @keyframes fadeSlide { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
+        @keyframes avfade { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes avslide { from { transform: translateY(24px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+        @keyframes avPulseDigit { 0%,100% { opacity: 1 } 50% { opacity: 0.6 } }
+        @keyframes avSheen { 0% { transform: translateX(-100%) } 100% { transform: translateX(100%) } }
+        @keyframes avFloat { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-1.5px) } }
+        .av-pulse-digit { animation: avPulseDigit 1s ease-in-out infinite }
+        .av-cta { animation: avFloat 2.6s ease-in-out infinite }
+        .av-cta:hover { animation: none; transform: translateY(-2px) }
+        .av-cta-sheen { animation: avSheen 3.2s ease-in-out infinite }
       `}</style>
     </div>
   );
