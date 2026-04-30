@@ -54,14 +54,20 @@ const QTY_OPTS = [
   { v: 3, label: '3 flacons', sub: '24 900 FCFA', tag: 'Meilleure offre', save: 'Economisez 4 800 F' },
 ];
 
-// URLs publiques Chariow (le -10% est deja applique cote Chariow).
-// Quand le client choisit "Mobile Money", on le redirige DIRECTEMENT ici :
-// il rentre nom/email/tel/adresse sur Chariow puis paye via Wave/Orange/MTN/Moov.
-// Apres paiement, le webhook successful.sale cree la commande dans obgestion.
+// URLs DIRECTES de checkout Chariow (le -10% est deja applique cote Chariow).
+// Important : on utilise le suffixe "/checkout" pour aller directement au
+// formulaire de saisie + bouton "Pay now", SANS passer par la page produit
+// intermediaire (qui demanderait au client de cliquer encore une fois sur
+// "Get license" - ca tue la conversion).
+//
+// Format : https://<store>.mychariow.shop/<prd_id>/checkout
+//
+// Le client renseigne nom/email/tel directement, paye via Wave/Orange/MTN/Moov,
+// puis le webhook successful.sale cree la commande dans obgestion.
 const CHARIOW_PRODUCT_URLS: Record<number, string> = {
-  1: 'https://coachingexpert.mychariow.shop/prd_021e9v',
-  2: 'https://coachingexpert.mychariow.shop/prd_tdcxom',
-  3: 'https://coachingexpert.mychariow.shop/prd_otfnec',
+  1: 'https://coachingexpert.mychariow.shop/prd_021e9v/checkout',
+  2: 'https://coachingexpert.mychariow.shop/prd_tdcxom/checkout',
+  3: 'https://coachingexpert.mychariow.shop/prd_otfnec/checkout',
 };
 
 // 12 medias UNIQUES (dossier /serum-yeux/ pour eviter le conflit avec le slug /serum-cerne)
