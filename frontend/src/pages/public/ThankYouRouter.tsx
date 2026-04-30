@@ -7,11 +7,12 @@
  * titre du produit depuis /api/templates/public/<slug>.
  */
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useLandingSlug } from '../../hooks/useLandingSlug';
 import PatchDouleurFbThankYou from './PatchDouleurFbThankYou';
 import SerumCernePayeThankYou from './SerumCernePayeThankYou';
+import SerumCernePayeThankYouCash from './SerumCernePayeThankYouCash';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -21,8 +22,18 @@ const DEDICATED_THANKYOU_SLUGS = new Set<string>([
   'serum-cerne-paye',
 ]);
 
+/**
+ * Detecte si une reference de paiement vient de Chariow.
+ * Les sale_id Chariow commencent toujours par "sal_" (ex: sal_xyz789abc).
+ * Les orderReference obgestion (cash) sont des UUID v4 (ex: "a1b2-...").
+ */
+function isChariowReference(ref: string): boolean {
+  return /^sal_[a-z0-9]+$/i.test(ref);
+}
+
 export default function ThankYouRouter() {
   const slug = useLandingSlug();
+  const [searchParams] = useSearchParams();
   const [productName, setProductName] = useState<string>('Votre commande');
 
   // ATTENTION : les hooks doivent toujours etre appeles dans le meme ordre,
@@ -46,10 +57,16 @@ export default function ThankYouRouter() {
     return <PatchDouleurFbThankYou />;
   }
 
-  // Page de remerciement dediee serum-cerne-paye (paiement Mobile Money via Chariow).
-  // Affiche succes paiement + WhatsApp service client + livraison express 2h.
+  // Page de remerciement dediee serum-cerne-paye :
+  // - Si la commande vient de Chariow (paiement Mobile Money) -> page WhatsApp + livraison express 2h.
+  // - Sinon (paiement cash a la livraison via formulaire site) -> page sobre sans WhatsApp.
+  // Detection : le sale_id Chariow commence par "sal_", l'orderReference obgestion est un UUID.
   if (slug === 'serum-cerne-paye') {
-    return <SerumCernePayeThankYou />;
+    const ref = searchParams.get('sale_id') || searchParams.get('ref') || '';
+    if (isChariowReference(ref)) {
+      return <SerumCernePayeThankYou />;
+    }
+    return <SerumCernePayeThankYouCash />;
   }
 
   return (
