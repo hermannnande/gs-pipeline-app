@@ -1,13 +1,11 @@
 /**
- * Modal de commande "Serum Anti-Cernes PAYE" — DUAL PAYMENT (v2).
+ * Modal de commande "Serum Anti-Cernes PAYE" - DUAL PAYMENT (v3 - Paystack).
  * ============================================================
  *
- * V2 : Le mode de paiement est CHOISI EN AMONT via PaymentChoicePopup.
- * Ce modal recoit `initialPaymentMode` via `cfg` et adapte son contenu.
+ * v3 : MIGRATION CHARIOW -> PAYSTACK
  *
- * Au lieu d'afficher le gros selecteur cash/mobile-money en haut, on affiche
- * un BADGE RECAPITULATIF compact avec un bouton "Changer" qui reouvre la
- * popup choix (via `cfg.onChangePaymentMode`).
+ * Le mode de paiement est CHOISI EN AMONT via PaymentChoicePopup. Ce modal
+ * recoit `initialPaymentMode` via `cfg` et adapte son contenu.
  *
  * Modes de paiement supportes :
  *
@@ -16,19 +14,23 @@
  *       - Statut NOUVELLE, modePaiement=null, montantPaye=null
  *       - Redirige sur /<slug>/merci?ref=<orderRef>&qty=<qty>
  *
- *   (B) chariow : Mobile Money en ligne (Chariow)
- *       - Champ email obligatoire (requis par Chariow)
- *       - Affiche le prix -10%, badge livraison express 2h
- *       - Submit -> useChariowCheckout -> POST /api/chariow/checkout
- *       - Redirige le navigateur vers payment.chariow.com
- *       - Apres paiement, pulse webhook cree la commande obgestion
- *         (statut NOUVELLE, modePaiement=CHARIOW_MOBILE_MONEY, montantPaye=total).
+ *   (B) paystack : Mobile Money DIRECT (Wave / Orange / MTN)
+ *       - NOUVEAUTE : le client ne quitte JAMAIS la landing (Charge API native).
+ *       - Champ email obligatoire (requis par Paystack pour la facture).
+ *       - Selecteur d'operateur (Wave, Orange, MTN).
+ *       - Affiche le prix -10%, badge livraison express 2h.
+ *       - Submit -> usePaystackCheckout.chargeMobileMoney -> POST /api/paystack/charge
+ *       - Apres POST, on affiche un ECRAN D'ATTENTE "Validez sur votre telephone"
+ *         avec polling auto vers /api/paystack/charge/:reference toutes les 4s.
+ *       - Quand Paystack confirme (webhook -> charge.success), on redirige sur
+ *         /<slug>/merci?ref=pst_xxx -> page merci avec WhatsApp + livraison 2h.
+ *       - DB : modePaiement=PAYSTACK_MOBILE_MONEY, referencePayment=pst_xxx.
  *
  * Palette : NAVY + OR + IVOIRE editorial luxe.
  */
 import { useEffect, useRef, useState } from 'react';
 import { useOrderSubmit, type OrderSubmitConfig, type OrderProduct } from '../../hooks/useOrderSubmit';
-import { useChariowCheckout } from '../../hooks/useChariowCheckout';
+import { usePaystackCheckout, type MobileMoneyProvider } from '../../hooks/usePaystackCheckout';
 
 interface QtyOption {
   v: number;
@@ -38,14 +40,14 @@ interface QtyOption {
   save?: string;
 }
 
-type PaymentMode = 'cash' | 'chariow';
+type PaymentMode = 'cash' | 'paystack';
 
 interface Props {
   open: boolean;
   onClose: () => void;
   cfg: OrderSubmitConfig & {
     images: { hero: string; avant?: string; apres?: string; comparison?: { before: string; after: string } };
-    /** Mode de paiement choisi dans la popup AMONT (defaut: 'chariow') */
+    /** Mode de paiement choisi dans la popup AMONT (defaut: 'paystack') */
     initialPaymentMode?: PaymentMode;
     /** Callback pour reouvrir la popup choix (bouton "Changer") */
     onChangePaymentMode?: () => void;
@@ -68,8 +70,16 @@ export default function OrderModalSerumCernePaye({ open, onClose, cfg, product, 
   // Hook 1 : flux cash a la livraison (existant, inchange).
   const { submit, sending: sendingCash, formErr: errCash, trackOpen } = useOrderSubmit({ cfg, product, setProduct });
 
-  // Hook 2 : flux Chariow Mobile Money (redirection vers payment.chariow.com).
-  const { checkout, sending: sendingChariow, formErr: errChariow } = useChariowCheckout({
+  // Hook 2 : flux Paystack Mobile Money DIRECT (le client ne quitte pas la page).
+  const {
+    chargeMobileMoney,
+    submitOtp,
+    reset: resetPaystack,
+    status: paystackStatus,
+    displayText: paystackDisplay,
+    formErr: errPaystack,
+    sending: sendingPaystack,
+  } = usePaystackCheckout({
     cfg: {
       slug: cfg.slug,
       productCode: cfg.productCode,
@@ -79,17 +89,19 @@ export default function OrderModalSerumCernePaye({ open, onClose, cfg, product, 
     },
   });
 
-  const sending = sendingCash || sendingChariow;
-  const formErr = errCash || errChariow;
+  const sending = sendingCash || sendingPaystack;
+  const formErr = errCash || errPaystack;
 
-  // Mode de paiement vient de la popup AMONT (defaut: chariow = recommande)
-  const initialMode: PaymentMode = cfg.initialPaymentMode || 'chariow';
+  // Mode de paiement vient de la popup AMONT (defaut: paystack = recommande)
+  const initialMode: PaymentMode = cfg.initialPaymentMode || 'paystack';
   const [paymentMode, setPaymentMode] = useState<PaymentMode>(initialMode);
   const [qty, setQty] = useState(initialQty);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [city, setCity] = useState('');
   const [phone, setPhone] = useState('');
+  const [provider, setProvider] = useState<MobileMoneyProvider>('orange');
+  const [otp, setOtp] = useState('');
   const [stock, setStock] = useState(11);
   const [countdown, setCountdown] = useState({ m: 14, s: 59 });
 
@@ -101,14 +113,17 @@ export default function OrderModalSerumCernePaye({ open, onClose, cfg, product, 
     if (open && !wasOpenRef.current) {
       wasOpenRef.current = true;
       setName(''); setEmail(''); setCity(''); setPhone('');
+      setProvider('orange');
+      setOtp('');
       setQty(initialQty);
       setPaymentMode(initialMode);
       setCountdown({ m: 14, s: 59 });
       setStock(8 + Math.floor(Math.random() * 6));
+      resetPaystack();
       trackRef.current(initialQty);
     }
     if (!open && wasOpenRef.current) wasOpenRef.current = false;
-  }, [open, initialQty, initialMode]);
+  }, [open, initialQty, initialMode, resetPaystack]);
 
   useEffect(() => {
     if (!open) return;
@@ -139,28 +154,40 @@ export default function OrderModalSerumCernePaye({ open, onClose, cfg, product, 
   if (!open) return null;
 
   // Affichage des prix : pour Mobile Money on affiche -10% (calcul cosmetique
-  // uniquement, le prix reel est defini cote Chariow dans le dashboard).
+  // ET reel cette fois - on envoie ce montant a Paystack via displayedAmount).
   const totalCash = cfg.prices?.[qty] || cfg.prices?.[1] || 0;
-  const totalChariowDisplay = Math.round(totalCash * 0.9 / 10) * 10; // arrondi a la dizaine
-  const total = paymentMode === 'chariow' ? totalChariowDisplay : totalCash;
-  const oldTotal = paymentMode === 'chariow' ? totalCash : totalCash + (qty * 5000);
+  const totalPaystackDisplay = Math.round(totalCash * 0.9 / 10) * 10; // arrondi a la dizaine
+  const total = paymentMode === 'paystack' ? totalPaystackDisplay : totalCash;
+  const oldTotal = paymentMode === 'paystack' ? totalCash : totalCash + (qty * 5000);
   const stockPct = Math.max(20, Math.min(100, Math.round((stock / 25) * 100)));
+
+  // Etats UI du flux Paystack (overlay "validez sur votre telephone")
+  const isPaystackAwaiting = paymentMode === 'paystack' && (paystackStatus === 'awaiting' || paystackStatus === 'pending' || paystackStatus === 'creating');
+  const isPaystackOtp = paymentMode === 'paystack' && paystackStatus === 'send_otp';
+  const isPaystackFailed = paymentMode === 'paystack' && (paystackStatus === 'failed' || paystackStatus === 'timeout');
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (paymentMode === 'cash') {
       await submit({ name, city, phone, qty });
     } else {
-      await checkout({
+      await chargeMobileMoney({
         slug: cfg.slug,
         qty,
         customerName: name,
         customerEmail: email,
         customerPhone: phone,
         customerCity: city,
-        displayedAmount: totalChariowDisplay,
+        provider,
+        displayedAmount: totalPaystackDisplay,
       });
     }
+  };
+
+  const onSubmitOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otp.trim().length < 4) return;
+    await submitOtp(otp);
   };
 
   return (
@@ -236,11 +263,11 @@ export default function OrderModalSerumCernePaye({ open, onClose, cfg, product, 
         </div>
 
         {/* ===== BODY FORM ===== */}
-        <div className="px-5 py-4">
+        <div className="relative px-5 py-4">
           <form onSubmit={onSubmit} className="flex flex-col gap-3">
 
             {/* ===== BADGE MODE DE PAIEMENT (compact + bouton Changer) ===== */}
-            {paymentMode === 'chariow' ? (
+            {paymentMode === 'paystack' ? (
               <div className="flex items-center justify-between gap-2 overflow-hidden rounded-[0.75rem] border-2 border-emerald-400 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 px-3 py-2 ring-1 ring-emerald-300/30">
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-[16px] shadow-sm ring-1 ring-emerald-200">
@@ -251,7 +278,7 @@ export default function OrderModalSerumCernePaye({ open, onClose, cfg, product, 
                       Mobile Money
                       <span className="rounded-sm bg-gradient-to-r from-emerald-500 to-teal-500 px-1.5 py-0.5 text-[8px] font-black tracking-widest text-white">-10%</span>
                     </p>
-                    <p className="truncate text-[9px] text-emerald-700">Wave · Orange · MTN · Moov · livraison 2h</p>
+                    <p className="truncate text-[9px] text-emerald-700">Wave · Orange · MTN · livraison 2h</p>
                   </div>
                 </div>
                 {cfg.onChangePaymentMode && (
@@ -336,8 +363,8 @@ export default function OrderModalSerumCernePaye({ open, onClose, cfg, product, 
                 />
               </div>
 
-              {/* Email visible UNIQUEMENT pour Mobile Money (Chariow le requiert) */}
-              {paymentMode === 'chariow' && (
+              {/* Email visible UNIQUEMENT pour Mobile Money (Paystack le requiert) */}
+              {paymentMode === 'paystack' && (
                 <div>
                   <label htmlFor="scm-email" className="mb-1 flex items-center justify-between text-[9px] font-black uppercase tracking-[0.25em] text-emerald-700">
                     <span>Email</span>
@@ -353,6 +380,39 @@ export default function OrderModalSerumCernePaye({ open, onClose, cfg, product, 
                     required
                     className="block w-full rounded-[0.6rem] border border-emerald-200 bg-white px-3 py-2 text-[13px] font-medium text-slate-900 outline-none transition placeholder:text-stone-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                   />
+                </div>
+              )}
+
+              {/* Selecteur d'operateur Mobile Money (Paystack uniquement) */}
+              {paymentMode === 'paystack' && (
+                <div>
+                  <label className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.25em] text-emerald-700">
+                    Choisissez votre operateur
+                  </label>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {([
+                      { v: 'wave',   label: 'Wave',    color: 'sky',     emoji: '🌊' },
+                      { v: 'orange', label: 'Orange',  color: 'orange',  emoji: '🟠' },
+                      { v: 'mtn',    label: 'MTN',     color: 'amber',   emoji: '💛' },
+                    ] as const).map((p) => {
+                      const active = provider === p.v;
+                      return (
+                        <button
+                          key={p.v}
+                          type="button"
+                          onClick={() => setProvider(p.v as MobileMoneyProvider)}
+                          className={`flex flex-col items-center justify-center gap-0.5 rounded-[0.6rem] border-2 px-1 py-2 transition-all ${
+                            active
+                              ? 'border-emerald-500 bg-emerald-50 shadow-sm ring-1 ring-emerald-400/30'
+                              : 'border-stone-200 bg-white hover:border-emerald-300'
+                          }`}
+                        >
+                          <span className="text-[18px] leading-none">{p.emoji}</span>
+                          <span className={`text-[10px] font-black uppercase tracking-wider ${active ? 'text-emerald-800' : 'text-slate-700'}`}>{p.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
@@ -391,23 +451,23 @@ export default function OrderModalSerumCernePaye({ open, onClose, cfg, product, 
 
             {/* ===== Total ===== */}
             <div className={`relative overflow-hidden rounded-[0.8rem] px-4 py-3 text-white shadow-inner ${
-              paymentMode === 'chariow'
+              paymentMode === 'paystack'
                 ? 'bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-700'
                 : 'bg-slate-950'
             }`}>
               <div className="pointer-events-none absolute -top-4 -right-4 h-16 w-16 rounded-full bg-amber-400/25 blur-2xl"/>
               <div className="relative flex items-baseline justify-between">
                 <div>
-                  <p className={`text-[9px] font-black uppercase tracking-[0.3em] ${paymentMode === 'chariow' ? 'text-emerald-100' : 'text-amber-300/80'}`}>
+                  <p className={`text-[9px] font-black uppercase tracking-[0.3em] ${paymentMode === 'paystack' ? 'text-emerald-100' : 'text-amber-300/80'}`}>
                     Total a payer
                   </p>
-                  <p className={`text-[9px] font-bold ${paymentMode === 'chariow' ? 'text-amber-200' : 'text-emerald-300'}`}>
-                    {paymentMode === 'chariow' ? 'Livraison express 2h offerte' : 'Livraison offerte'}
+                  <p className={`text-[9px] font-bold ${paymentMode === 'paystack' ? 'text-amber-200' : 'text-emerald-300'}`}>
+                    {paymentMode === 'paystack' ? 'Livraison express 2h offerte' : 'Livraison offerte'}
                   </p>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  {(qty > 1 || paymentMode === 'chariow') && (
-                    <span className={`text-[10px] line-through ${paymentMode === 'chariow' ? 'text-emerald-200/60' : 'text-stone-400'}`}>{fmt(oldTotal)}</span>
+                  {(qty > 1 || paymentMode === 'paystack') && (
+                    <span className={`text-[10px] line-through ${paymentMode === 'paystack' ? 'text-emerald-200/60' : 'text-stone-400'}`}>{fmt(oldTotal)}</span>
                   )}
                   <span className="scm-shimmer-gold text-[22px] font-black tabular-nums">{fmt(total)}</span>
                 </div>
@@ -423,7 +483,7 @@ export default function OrderModalSerumCernePaye({ open, onClose, cfg, product, 
               type="submit"
               disabled={sending}
               className={`scm-cta group relative flex h-[52px] w-full items-center justify-center gap-2 overflow-hidden rounded-[0.8rem] text-[12px] font-black uppercase tracking-[0.2em] shadow-lg transition active:translate-y-px disabled:cursor-wait disabled:opacity-60 ${
-                paymentMode === 'chariow'
+                paymentMode === 'paystack'
                   ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white shadow-[0_10px_24px_-4px_rgba(16,185,129,.5)] hover:shadow-[0_14px_30px_-4px_rgba(16,185,129,.7)]'
                   : 'bg-gradient-to-r from-amber-300 via-yellow-300 to-amber-400 text-slate-900 shadow-[0_10px_24px_-4px_rgba(212,175,55,.5)] hover:shadow-[0_14px_30px_-4px_rgba(212,175,55,.7)]'
               }`}
@@ -432,9 +492,9 @@ export default function OrderModalSerumCernePaye({ open, onClose, cfg, product, 
               {sending ? (
                 <>
                   <span className="relative h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  <span className="relative">{paymentMode === 'chariow' ? 'Redirection vers Chariow...' : 'Envoi...'}</span>
+                  <span className="relative">{paymentMode === 'paystack' ? 'Initialisation paiement...' : 'Envoi...'}</span>
                 </>
-              ) : paymentMode === 'chariow' ? (
+              ) : paymentMode === 'paystack' ? (
                 <>
                   <svg className="relative h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -452,11 +512,124 @@ export default function OrderModalSerumCernePaye({ open, onClose, cfg, product, 
             </button>
 
             <p className="text-center text-[9px] font-bold uppercase tracking-[0.25em] text-stone-500">
-              {paymentMode === 'chariow'
-                ? '🔒 Paiement securise · Wave · Orange · MTN · Moov'
+              {paymentMode === 'paystack'
+                ? '🔒 Paiement securise via Paystack · Wave · Orange · MTN'
                 : '🔒 Paiement a la livraison · Sans risque'}
             </p>
           </form>
+
+          {/* ===== OVERLAY "Validez sur votre telephone" ===== */}
+          {(isPaystackAwaiting || isPaystackOtp || isPaystackFailed) && (
+            <div className="absolute inset-0 z-[20] flex items-center justify-center bg-white/95 backdrop-blur-sm rounded-[20px] p-6">
+              <div className="w-full max-w-sm">
+
+                {/* AWAITING : spinner + message + countdown */}
+                {isPaystackAwaiting && (
+                  <div className="text-center">
+                    <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 ring-4 ring-emerald-50 scm-pulse-mm">
+                      <span className="text-[40px]">📱</span>
+                    </div>
+                    <h4 className="scm-serif mb-2 text-[20px] font-bold leading-tight text-slate-900">
+                      Validez sur votre telephone
+                    </h4>
+                    <p className="mb-3 text-[13px] leading-snug text-slate-600">
+                      {paystackDisplay || (
+                        <>
+                          Ouvre l'app <strong className="text-emerald-700">{provider === 'wave' ? 'Wave' : provider === 'orange' ? 'Orange Money' : 'MTN MoMo'}</strong> et confirme le paiement de <strong className="text-slate-900">{fmt(total)}</strong>.
+                        </>
+                      )}
+                    </p>
+                    <div className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 ring-1 ring-emerald-200">
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"/>
+                        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"/>
+                      </span>
+                      <span className="text-[11px] font-black uppercase tracking-widest text-emerald-700">En attente de validation...</span>
+                    </div>
+                    <p className="mt-3 text-[10px] text-slate-500">
+                      Le delai est de 3 minutes. Aucun montant n'est preleve si vous ne validez pas.
+                    </p>
+                  </div>
+                )}
+
+                {/* OTP : input pour saisir le code */}
+                {isPaystackOtp && (
+                  <form onSubmit={onSubmitOtp} className="text-center">
+                    <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-amber-100 to-yellow-100 ring-4 ring-amber-50">
+                      <span className="text-[40px]">🔐</span>
+                    </div>
+                    <h4 className="scm-serif mb-2 text-[20px] font-bold leading-tight text-slate-900">
+                      Code de verification
+                    </h4>
+                    <p className="mb-4 text-[13px] leading-snug text-slate-600">
+                      {paystackDisplay || 'Entrez le code recu par SMS pour valider le paiement.'}
+                    </p>
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                      placeholder="123456"
+                      autoFocus
+                      className="block w-full rounded-[0.6rem] border-2 border-emerald-300 bg-white px-3 py-3 text-center text-[20px] font-black tracking-[0.5em] text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                    />
+                    {formErr && (
+                      <p className="mt-2 rounded-md bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-600 ring-1 ring-rose-100">{formErr}</p>
+                    )}
+                    <button
+                      type="submit"
+                      disabled={otp.trim().length < 4 || sending}
+                      className="mt-4 flex h-[48px] w-full items-center justify-center gap-2 rounded-[0.8rem] bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-[12px] font-black uppercase tracking-[0.2em] text-white shadow-lg disabled:opacity-50"
+                    >
+                      {sending ? (
+                        <>
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          Verification...
+                        </>
+                      ) : 'Valider le code'}
+                    </button>
+                  </form>
+                )}
+
+                {/* FAILED / TIMEOUT : message d'erreur + retry */}
+                {isPaystackFailed && (
+                  <div className="text-center">
+                    <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-rose-100 ring-4 ring-rose-50">
+                      <svg className="h-10 w-10 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </div>
+                    <h4 className="scm-serif mb-2 text-[20px] font-bold leading-tight text-slate-900">
+                      {paystackStatus === 'timeout' ? 'Delai depasse' : 'Paiement refuse'}
+                    </h4>
+                    <p className="mb-4 text-[13px] leading-snug text-slate-600">
+                      {formErr || 'Aucun montant n\'a ete preleve. Vous pouvez reessayer ou choisir le paiement a la livraison.'}
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      <button
+                        type="button"
+                        onClick={() => resetPaystack()}
+                        className="flex h-[48px] w-full items-center justify-center gap-2 rounded-[0.8rem] bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-[12px] font-black uppercase tracking-[0.2em] text-white shadow-lg"
+                      >
+                        Reessayer
+                      </button>
+                      {cfg.onChangePaymentMode && (
+                        <button
+                          type="button"
+                          onClick={() => { resetPaystack(); cfg.onChangePaymentMode?.(); }}
+                          className="rounded-md bg-stone-100 py-2 text-[11px] font-bold uppercase tracking-wider text-stone-700 ring-1 ring-stone-200 transition hover:bg-stone-200"
+                        >
+                          Choisir un autre moyen de paiement
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
 
@@ -467,7 +640,9 @@ export default function OrderModalSerumCernePaye({ open, onClose, cfg, product, 
         @keyframes scmSheen { 0% { transform: translateX(-100%) } 100% { transform: translateX(100%) } }
         @keyframes scmFloat { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-1.5px) } }
         @keyframes scmShimmer { 0% { background-position: -200% 50% } 100% { background-position: 200% 50% } }
+        @keyframes scmPulseMm { 0%,100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16,185,129,0.4) } 50% { transform: scale(1.05); box-shadow: 0 0 0 12px rgba(16,185,129,0) } }
 
+        .scm-pulse-mm { animation: scmPulseMm 1.6s ease-out infinite }
         .scm-pulse-digit { animation: scmPulseDigit 1s ease-in-out infinite }
         .scm-cta { animation: scmFloat 2.8s ease-in-out infinite }
         .scm-cta:hover { animation: none; transform: translateY(-2px) }

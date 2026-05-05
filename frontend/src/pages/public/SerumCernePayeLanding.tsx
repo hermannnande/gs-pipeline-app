@@ -5,8 +5,9 @@
  * Specificite vs serum-cerne / serum-cerne-tk :
  *   - Le modal de commande propose 2 modes de paiement :
  *       (A) Cash a la livraison    -> flux EXISTANT (POST /api/public/order)
- *       (B) Mobile Money (Chariow) -> redirection vers Chariow checkout (-10% deja
- *           applique cote Chariow + livraison gratuite + livraison express 2h)
+ *       (B) Mobile Money (Paystack) -> Charge API native, le client renseigne ses
+ *           infos directement dans NOTRE modal puis valide sur son telephone.
+ *           Le client ne quitte JAMAIS la landing (-10% + livraison express 2h).
  *   - Meme palette navy/or/corail/ivoire, meme medias (/serum-yeux/...), meme
  *     contenu marketing. Seuls le SLUG, PRODUCT_CODE et le modal changent.
  *
@@ -53,22 +54,6 @@ const QTY_OPTS = [
   { v: 2, label: '2 flacons', sub: '16 900 FCFA', tag: 'Populaire', save: 'Economisez 2 900 F' },
   { v: 3, label: '3 flacons', sub: '24 900 FCFA', tag: 'Meilleure offre', save: 'Economisez 4 800 F' },
 ];
-
-// URLs DIRECTES de checkout Chariow (le -10% est deja applique cote Chariow).
-// Important : on utilise le suffixe "/checkout" pour aller directement au
-// formulaire de saisie + bouton "Pay now", SANS passer par la page produit
-// intermediaire (qui demanderait au client de cliquer encore une fois sur
-// "Get license" - ca tue la conversion).
-//
-// Format : https://<store>.mychariow.shop/<prd_id>/checkout
-//
-// Le client renseigne nom/email/tel directement, paye via Wave/Orange/MTN/Moov,
-// puis le webhook successful.sale cree la commande dans obgestion.
-const CHARIOW_PRODUCT_URLS: Record<number, string> = {
-  1: 'https://coachingexpert.mychariow.shop/prd_021e9v/checkout',
-  2: 'https://coachingexpert.mychariow.shop/prd_tdcxom/checkout',
-  3: 'https://coachingexpert.mychariow.shop/prd_otfnec/checkout',
-};
 
 // 12 medias UNIQUES (dossier /serum-yeux/ pour eviter le conflit avec le slug /serum-cerne)
 const MEDIA = {
@@ -277,10 +262,10 @@ export default function SerumCernePayeLanding() {
   const [product, setProduct] = useState<Product | null>(null);
   const [modal, setModal] = useState(false);
   // Popup choix paiement : s'ouvre AVANT le modal de commande pour cette page.
-  // Le client choisit "Mobile Money" (Chariow) ou "Cash a la livraison", puis
+  // Le client choisit "Mobile Money" (Paystack) ou "Cash a la livraison", puis
   // le modal de commande s'ouvre avec le bon mode pre-selectionne.
   const [choiceOpen, setChoiceOpen] = useState(false);
-  const [paymentMode, setPaymentMode] = useState<PaymentMode>('chariow');
+  const [paymentMode, setPaymentMode] = useState<PaymentMode>('paystack');
   const [qty, setQty] = useState(1);
   const [stock, setStock] = useState(18);
   const [countdown, setCountdown] = useState({ h: 0, m: 0, s: 0 });
@@ -389,39 +374,16 @@ export default function SerumCernePayeLanding() {
   }, []);
 
   // Appele apres le choix dans la popup.
-  // - 'chariow' : REDIRECTION DIRECTE vers la page produit Chariow (pas de
-  //   formulaire intermediaire dans notre site - le client renseigne ses infos
-  //   directement chez Chariow puis paye via Mobile Money).
-  // - 'cash'    : ouvre le modal de commande classique (formulaire complet).
+  // - 'paystack' : ouvre le modal de commande avec mode Paystack pre-selectionne.
+  //   Le client saisit ses infos + choisit son operateur (Wave/Orange/MTN), puis
+  //   valide sur son telephone. Aucune redirection navigateur, le tracking
+  //   InitiateCheckout est gere par usePaystackCheckout.
+  // - 'cash'     : ouvre le modal de commande avec mode cash (formulaire complet).
   const handlePaymentChoice = useCallback((mode: PaymentMode) => {
     setPaymentMode(mode);
     setChoiceOpen(false);
-
-    if (mode === 'chariow') {
-      // Track InitiateCheckout AVANT la redirection (sinon perdu)
-      const chariowAmount = Math.round((PRICES[qty] || PRICES[1]) * 0.9 / 10) * 10;
-      try {
-        if (META_PIXEL_ID && window.fbq) {
-          window.fbq('track', 'InitiateCheckout', {
-            content_name: 'Serum Anti-Cernes Premium',
-            content_ids: [PRODUCT_CODE],
-            content_type: 'product',
-            value: chariowAmount,
-            currency: 'XOF',
-            num_items: qty,
-          });
-        }
-      } catch {}
-
-      // Redirection navigateur vers la page produit Chariow correspondante.
-      const url = CHARIOW_PRODUCT_URLS[qty] || CHARIOW_PRODUCT_URLS[1];
-      window.location.href = url;
-      return;
-    }
-
-    // Mode 'cash' -> modal de commande classique
     setTimeout(() => setModal(true), 80);
-  }, [qty]);
+  }, []);
 
   // Permet au client de revenir sur le choix depuis le modal de commande
   // (uniquement utilise en mode cash maintenant).
@@ -1445,7 +1407,7 @@ export default function SerumCernePayeLanding() {
         onChoose={handlePaymentChoice}
         qty={qty}
         cashPrice={fmt(PRICES[qty] || PRICES[1])}
-        chariowPrice={fmt(Math.round((PRICES[qty] || PRICES[1]) * 0.9 / 10) * 10)}
+        paystackPrice={fmt(Math.round((PRICES[qty] || PRICES[1]) * 0.9 / 10) * 10)}
       />
 
       {/* ===== MODAL DE COMMANDE (s'ouvre APRES le choix de paiement) ===== */}

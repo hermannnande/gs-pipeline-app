@@ -23,6 +23,7 @@ import auditRoutes from './routes/audit.routes.js';
 import whatsappRoutes from './routes/whatsapp.routes.js';
 import templateRoutes from './routes/template.routes.js';
 import chariowRoutes from './routes/chariow.routes.js';
+import paystackRoutes from './routes/paystack.routes.js';
 import { prisma, prismaInitError } from './utils/prisma.js';
 
 if (process.env.NODE_ENV !== 'production') {
@@ -94,6 +95,7 @@ export function createApp() {
   app.use('/api/whatsapp', whatsappRoutes);
   app.use('/api/templates', templateRoutes);
   app.use('/api/chariow', chariowRoutes);
+  app.use('/api/paystack', paystackRoutes);
 
   // Routes de test
   app.get('/', (req, res) => {

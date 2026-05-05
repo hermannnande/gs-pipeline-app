@@ -1,20 +1,20 @@
 /**
- * Page de remerciement DEDIEE au paiement Mobile Money via Chariow.
+ * Page de remerciement DEDIEE aux paiements Mobile Money en ligne.
  * ============================================================================
  *
- * Affichee SI le client a paye via Chariow (et a donc ete redirige depuis
- * payment.chariow.com vers /serum-cerne-paye/merci?sale_id=xxx).
+ * Affichee SI le client a paye via Paystack (`pst_xxx`) ou Chariow legacy
+ * (`sal_xxx`). Le ThankYouRouter route vers cette page pour les 2 cas.
  *
- * Difference vs la page de remerciement standard cash :
+ * Differences vs la page de remerciement standard cash :
  *   - Met l'accent sur "Paiement bien recu" (rassurant)
  *   - Affiche un numero WhatsApp ULTRA visible avec bouton click-to-chat
  *   - Explique clairement qu'on peut nous contacter pour modifier l'adresse
  *     ou toute autre demande
  *   - Insiste sur la livraison express 2h
- *   - Affiche la reference de transaction Chariow (sale_id) pour le suivi
+ *   - Affiche la reference de transaction (Paystack pst_xxx ou legacy sal_xxx)
  *
  * Pixel Meta : declenche `Purchase` event (deduplique avec CAPI server-side
- * via event_id = sale_id).
+ * via event_id = `purchase_<reference>`).
  */
 import { useEffect, useMemo, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -37,11 +37,13 @@ function fmt(v: number): string {
 
 export default function SerumCernePayeThankYou() {
   const [searchParams] = useSearchParams();
-  const saleId = searchParams.get('sale_id') || searchParams.get('ref') || '';
+  // Reference de transaction : Paystack envoie sur ?ref=, Chariow legacy
+  // utilisait ?sale_id=. On accepte les 2.
+  const reference = searchParams.get('ref') || searchParams.get('reference') || searchParams.get('sale_id') || '';
   const qty = parseInt(searchParams.get('qty') || '1', 10) || 1;
   const pixelFiredRef = useRef(false);
 
-  // Calcul du montant approximatif paye (avec -10% applique cote Chariow)
+  // Calcul du montant approximatif paye (avec -10% applique cote Paystack)
   const PRICES_BASE: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
   const amountPaid = useMemo(() => {
     const basePrice = PRICES_BASE[qty] || PRICES_BASE[1];
@@ -50,9 +52,9 @@ export default function SerumCernePayeThankYou() {
 
   // Pre-message WhatsApp pour faciliter le contact
   const whatsappMessage = useMemo(() => {
-    const text = `Bonjour, je viens de payer ma commande de Serum Anti-Cernes${saleId ? ` (ref: ${saleId})` : ''}. Je voudrais...`;
+    const text = `Bonjour, je viens de payer ma commande de Serum Anti-Cernes${reference ? ` (ref: ${reference})` : ''}. Je voudrais...`;
     return encodeURIComponent(text);
-  }, [saleId]);
+  }, [reference]);
 
   const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER_RAW}?text=${whatsappMessage}`;
 
@@ -81,9 +83,10 @@ export default function SerumCernePayeThankYou() {
     try {
       // event_id IMPORTANT : doit correspondre exactement a celui envoye par
       // le CAPI server-side dans utils/metaCapi.js (`purchase_<orderRef>`).
-      // Cote chariow.routes.js webhook, on a passe sale.id comme orderRef,
-      // donc l'event_id final cote CAPI = `purchase_<sale_id>`. Match !
-      const eventId = saleId ? `purchase_${saleId}` : undefined;
+      // Cote paystack.routes.js (ou chariow.routes.js legacy), on passe la
+      // reference de transaction comme orderRef, donc l'event_id final cote
+      // CAPI = `purchase_<reference>`. Match !
+      const eventId = reference ? `purchase_${reference}` : undefined;
       window.fbq('track', 'Purchase', {
         value: amountPaid,
         currency: 'XOF',
@@ -95,7 +98,7 @@ export default function SerumCernePayeThankYou() {
     } catch (e) {
       console.warn('[ThankYou] Meta Pixel Purchase non bloquant:', e);
     }
-  }, [amountPaid, qty, saleId]);
+  }, [amountPaid, qty, reference]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-amber-50 px-4 py-8 sm:py-12">
@@ -172,9 +175,9 @@ export default function SerumCernePayeThankYou() {
               </div>
             </div>
 
-            {saleId && (
+            {reference && (
               <p className="mt-3 text-[10px] text-white/70">
-                Reference : <span className="font-mono font-bold text-amber-200">{saleId}</span>
+                Reference : <span className="font-mono font-bold text-amber-200">{reference}</span>
               </p>
             )}
           </div>

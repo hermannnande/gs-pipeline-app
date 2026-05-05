@@ -4,7 +4,7 @@
  *
  * Specifique a la page `serum-cerne-paye`.
  *
- * Design v2 (focus conversion) :
+ * Design v3 (Paystack, focus conversion) :
  *   - Tres peu de texte (decision rapide)
  *   - 2 gros boutons visibles d'un coup sans scroll (sticky en mobile)
  *   - Bouton Mobile Money MASSIF avec animation bounce + glow vert
@@ -12,16 +12,18 @@
  *   - 1 ligne d'explication en bas
  *
  * Au clic :
- *   - Mobile Money -> onChoose('chariow') -> redirection directe vers
- *     l'URL publique du produit Chariow (pas de modal intermediaire)
- *   - Cash         -> onChoose('cash')    -> ouvre le modal de commande
+ *   - Mobile Money -> onChoose('paystack') -> ouvre le modal de commande
+ *     avec mode initial Paystack (l'utilisateur saisit ses infos + provider
+ *     Wave/Orange/MTN, puis valide sur son telephone, le tout sans quitter
+ *     la landing - Charge API native Paystack).
+ *   - Cash         -> onChoose('cash')     -> ouvre le modal de commande cash
  *
  * Aucun jugement sur le client qui choisit cash. On met juste les avantages
  * du Mobile Money en evidence (-10% + livraison 2h) pour orienter le choix.
  */
 import { useEffect } from 'react';
 
-export type PaymentMode = 'cash' | 'chariow';
+export type PaymentMode = 'cash' | 'paystack';
 
 interface Props {
   open: boolean;
@@ -30,11 +32,11 @@ interface Props {
   qty?: number;
   /** Prix cash format (ex: "9 900 F") */
   cashPrice?: string;
-  /** Prix Chariow -10% format (ex: "8 910 F") */
-  chariowPrice?: string;
+  /** Prix Paystack Mobile Money -10% format (ex: "8 910 F") */
+  paystackPrice?: string;
 }
 
-export default function PaymentChoicePopup({ open, onClose, onChoose, qty = 1, cashPrice = '', chariowPrice = '' }: Props) {
+export default function PaymentChoicePopup({ open, onClose, onChoose, qty = 1, cashPrice = '', paystackPrice = '' }: Props) {
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -97,7 +99,7 @@ export default function PaymentChoicePopup({ open, onClose, onChoose, qty = 1, c
           {/* OPTION 1 : Mobile Money - GROS BOUTON BOUNCE GLOW */}
           <button
             type="button"
-            onClick={() => onChoose('chariow')}
+            onClick={() => onChoose('paystack')}
             className="pcp-bounce group relative flex w-full items-center justify-between gap-3 overflow-hidden rounded-[1rem] bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 px-4 py-4 text-left text-white shadow-[0_10px_30px_-6px_rgba(16,185,129,.5),_0_4px_12px_-2px_rgba(16,185,129,.3)] ring-2 ring-white transition-transform hover:scale-[1.02] active:scale-[0.99]"
           >
             <span className="pcp-cta-sheen pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent"/>
@@ -113,9 +115,9 @@ export default function PaymentChoicePopup({ open, onClose, onChoose, qty = 1, c
               </span>
               <div className="min-w-0">
                 <p className="text-[15px] font-black uppercase tracking-wide leading-tight">Payer Mobile Money</p>
-                {chariowPrice && (
+                {paystackPrice && (
                   <p className="mt-0.5 flex items-baseline gap-1.5 text-[11px] font-bold">
-                    <span className="text-[18px] font-black text-amber-300">{chariowPrice}</span>
+                    <span className="text-[18px] font-black text-amber-300">{paystackPrice}</span>
                     {cashPrice && <span className="text-[12px] text-white/60 line-through">{cashPrice}</span>}
                   </p>
                 )}

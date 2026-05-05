@@ -5,10 +5,10 @@
  * Affichee SI le client a choisi "Payer a la livraison" (donc commande
  * arrivee dans obgestion via /api/public/order, status=NOUVELLE).
  *
- * Difference vs SerumCernePayeThankYou (Chariow Mobile Money) :
+ * Difference vs SerumCernePayeThankYou (Paystack Mobile Money / Chariow legacy) :
  *   - Pas de WhatsApp / pas de numero de contact
  *   - Pas de mention "livraison express 2h"
- *   - Palette amber/or (vs emerald pour Chariow)
+ *   - Palette amber/or (vs emerald pour les paiements en ligne)
  *   - Message standard : "Notre equipe vous contacte pour confirmer"
  *   - Insiste sur "vous payez a la reception" pour rassurer
  *

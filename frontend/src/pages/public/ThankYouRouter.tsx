@@ -23,12 +23,28 @@ const DEDICATED_THANKYOU_SLUGS = new Set<string>([
 ]);
 
 /**
- * Detecte si une reference de paiement vient de Chariow.
+ * Detecte si une reference de paiement vient de Paystack.
+ * Les references Paystack que nous generons commencent par "pst_"
+ * (ex: pst_lzxy3a_4b5c6d7e). Voir routes/paystack.routes.js -> generatePaystackReference.
+ */
+function isPaystackReference(ref: string): boolean {
+  return /^pst_[a-z0-9_]+$/i.test(ref);
+}
+
+/**
+ * Detecte si une reference de paiement vient de Chariow (legacy).
  * Les sale_id Chariow commencent toujours par "sal_" (ex: sal_xyz789abc).
- * Les orderReference obgestion (cash) sont des UUID v4 (ex: "a1b2-...").
+ * Conserve pour la retrocompatibilite avec les anciennes commandes.
  */
 function isChariowReference(ref: string): boolean {
   return /^sal_[a-z0-9]+$/i.test(ref);
+}
+
+/**
+ * Une reference vient-elle d'un paiement en ligne (Paystack ou Chariow legacy) ?
+ */
+function isOnlinePaymentReference(ref: string): boolean {
+  return isPaystackReference(ref) || isChariowReference(ref);
 }
 
 export default function ThankYouRouter() {
@@ -58,12 +74,16 @@ export default function ThankYouRouter() {
   }
 
   // Page de remerciement dediee serum-cerne-paye :
-  // - Si la commande vient de Chariow (paiement Mobile Money) -> page WhatsApp + livraison express 2h.
+  // - Si la commande vient d'un paiement en ligne (Paystack pst_xxx OU Chariow
+  //   legacy sal_xxx) -> page WhatsApp + livraison express 2h + "DEJA PAYE".
   // - Sinon (paiement cash a la livraison via formulaire site) -> page sobre sans WhatsApp.
-  // Detection : le sale_id Chariow commence par "sal_", l'orderReference obgestion est un UUID.
+  // Detection :
+  //   - Paystack : reference commence par "pst_" (genere par notre backend)
+  //   - Chariow legacy : sale_id commence par "sal_"
+  //   - Cash : orderReference obgestion est un UUID v4
   if (slug === 'serum-cerne-paye') {
-    const ref = searchParams.get('sale_id') || searchParams.get('ref') || '';
-    if (isChariowReference(ref)) {
+    const ref = searchParams.get('ref') || searchParams.get('reference') || searchParams.get('sale_id') || '';
+    if (isOnlinePaymentReference(ref)) {
       return <SerumCernePayeThankYou />;
     }
     return <SerumCernePayeThankYouCash />;
