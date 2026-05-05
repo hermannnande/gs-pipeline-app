@@ -70,9 +70,13 @@ export default function OrderModalSerumCernePaye({ open, onClose, cfg, product, 
   // Hook 1 : flux cash a la livraison (existant, inchange).
   const { submit, sending: sendingCash, formErr: errCash, trackOpen } = useOrderSubmit({ cfg, product, setProduct });
 
-  // Hook 2 : flux Paystack Mobile Money DIRECT (le client ne quitte pas la page).
+  // Hook 2 : flux Paystack (Mobile Money DIRECT + Carte Redirect)
+  // - chargeMobileMoney : Mobile Money sans quitter la landing
+  // - redirectToCard : redirection vers checkout.paystack.com pour Visa/Mastercard
+  // Les 2 utilisent le meme prix (-10% deja applique sur totalPaystackDisplay).
   const {
     chargeMobileMoney,
+    redirectToCard,
     submitOtp,
     reset: resetPaystack,
     status: paystackStatus,
@@ -95,6 +99,11 @@ export default function OrderModalSerumCernePaye({ open, onClose, cfg, product, 
   // Mode de paiement vient de la popup AMONT (defaut: paystack = recommande)
   const initialMode: PaymentMode = cfg.initialPaymentMode || 'paystack';
   const [paymentMode, setPaymentMode] = useState<PaymentMode>(initialMode);
+  // Sous-mode actif quand paymentMode === 'paystack' :
+  //   'mobile-money' (defaut) : Wave/Orange/MTN, validation telephone, in-page
+  //   'card'                  : redirection Paystack pour Visa/Mastercard
+  // Les 2 partagent le meme prix (-10% applique).
+  const [subMode, setSubMode] = useState<'mobile-money' | 'card'>('mobile-money');
   const [qty, setQty] = useState(initialQty);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -114,6 +123,7 @@ export default function OrderModalSerumCernePaye({ open, onClose, cfg, product, 
       wasOpenRef.current = true;
       setName(''); setEmail(''); setCity(''); setPhone('');
       setProvider('orange');
+      setSubMode('mobile-money');
       setOtp('');
       setQty(initialQty);
       setPaymentMode(initialMode);
@@ -162,25 +172,34 @@ export default function OrderModalSerumCernePaye({ open, onClose, cfg, product, 
   const stockPct = Math.max(20, Math.min(100, Math.round((stock / 25) * 100)));
 
   // Etats UI du flux Paystack (overlay "validez sur votre telephone")
-  const isPaystackAwaiting = paymentMode === 'paystack' && (paystackStatus === 'awaiting' || paystackStatus === 'pending' || paystackStatus === 'creating');
-  const isPaystackOtp = paymentMode === 'paystack' && paystackStatus === 'send_otp';
-  const isPaystackFailed = paymentMode === 'paystack' && (paystackStatus === 'failed' || paystackStatus === 'timeout');
+  // L'overlay ne s'affiche que pour Mobile Money (le flux carte redirige
+  // immediatement vers checkout.paystack.com, pas d'overlay pendant le redirect).
+  const isPaystackAwaiting = paymentMode === 'paystack' && subMode === 'mobile-money' && (paystackStatus === 'awaiting' || paystackStatus === 'pending' || paystackStatus === 'creating');
+  const isPaystackOtp = paymentMode === 'paystack' && subMode === 'mobile-money' && paystackStatus === 'send_otp';
+  const isPaystackFailed = paymentMode === 'paystack' && subMode === 'mobile-money' && (paystackStatus === 'failed' || paystackStatus === 'timeout');
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (paymentMode === 'cash') {
       await submit({ name, city, phone, qty });
+      return;
+    }
+    // Paystack : 2 sous-flux selon subMode
+    const commonData = {
+      slug: cfg.slug,
+      qty,
+      customerName: name,
+      customerEmail: email,
+      customerPhone: phone,
+      customerCity: city,
+      displayedAmount: totalPaystackDisplay,
+    };
+    if (subMode === 'card') {
+      // Flux Carte : redirige vers checkout.paystack.com (puis revient via callback_url)
+      await redirectToCard(commonData);
     } else {
-      await chargeMobileMoney({
-        slug: cfg.slug,
-        qty,
-        customerName: name,
-        customerEmail: email,
-        customerPhone: phone,
-        customerCity: city,
-        provider,
-        displayedAmount: totalPaystackDisplay,
-      });
+      // Flux Mobile Money : reste sur la landing + valide via push telephone
+      await chargeMobileMoney({ ...commonData, provider });
     }
   };
 
@@ -383,8 +402,8 @@ export default function OrderModalSerumCernePaye({ open, onClose, cfg, product, 
                 </div>
               )}
 
-              {/* Selecteur d'operateur Mobile Money (Paystack uniquement) */}
-              {paymentMode === 'paystack' && (
+              {/* Selecteur d'operateur Mobile Money (uniquement si Paystack + sous-mode MM) */}
+              {paymentMode === 'paystack' && subMode === 'mobile-money' && (
                 <div>
                   <label className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.25em] text-emerald-700">
                     Choisissez votre operateur
@@ -412,6 +431,17 @@ export default function OrderModalSerumCernePaye({ open, onClose, cfg, product, 
                         </button>
                       );
                     })}
+                  </div>
+                </div>
+              )}
+
+              {/* Indicateur visuel mode Carte (uniquement si Paystack + sous-mode card) */}
+              {paymentMode === 'paystack' && subMode === 'card' && (
+                <div className="flex items-center gap-2 overflow-hidden rounded-[0.6rem] border-2 border-indigo-300 bg-gradient-to-r from-indigo-50 via-blue-50 to-indigo-50 px-3 py-2 ring-1 ring-indigo-300/30">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-[18px] shadow-sm ring-1 ring-indigo-200">💳</span>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-black uppercase tracking-[0.1em] text-indigo-800">Carte bancaire</p>
+                    <p className="text-[9px] text-indigo-700">Visa · Mastercard · Paiement securise via Paystack</p>
                   </div>
                 </div>
               )}
@@ -492,7 +522,18 @@ export default function OrderModalSerumCernePaye({ open, onClose, cfg, product, 
               {sending ? (
                 <>
                   <span className="relative h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  <span className="relative">{paymentMode === 'paystack' ? 'Initialisation paiement...' : 'Envoi...'}</span>
+                  <span className="relative">
+                    {paymentMode === 'paystack'
+                      ? subMode === 'card' ? 'Redirection Paystack...' : 'Initialisation paiement...'
+                      : 'Envoi...'}
+                  </span>
+                </>
+              ) : paymentMode === 'paystack' && subMode === 'card' ? (
+                <>
+                  <svg className="relative h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h2m3 0h4M3 7a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+                  </svg>
+                  <span className="relative">Payer par carte</span>
                 </>
               ) : paymentMode === 'paystack' ? (
                 <>
@@ -511,9 +552,33 @@ export default function OrderModalSerumCernePaye({ open, onClose, cfg, product, 
               )}
             </button>
 
+            {/* Toggle "Payer par carte" / "Revenir Mobile Money" (uniquement en mode Paystack) */}
+            {paymentMode === 'paystack' && (
+              <button
+                type="button"
+                onClick={() => setSubMode(subMode === 'mobile-money' ? 'card' : 'mobile-money')}
+                disabled={sending}
+                className="flex items-center justify-center gap-1.5 text-center text-[10px] font-bold text-emerald-700 underline-offset-2 transition hover:text-emerald-900 hover:underline disabled:opacity-50"
+              >
+                {subMode === 'mobile-money' ? (
+                  <>
+                    <span className="text-[12px]">💳</span>
+                    <span>Pas de Mobile Money ? <span className="font-black">Payer par carte plutot</span></span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-[12px]">📱</span>
+                    <span>Revenir au <span className="font-black">paiement Mobile Money</span></span>
+                  </>
+                )}
+              </button>
+            )}
+
             <p className="text-center text-[9px] font-bold uppercase tracking-[0.25em] text-stone-500">
               {paymentMode === 'paystack'
-                ? '🔒 Paiement securise via Paystack · Wave · Orange · MTN'
+                ? subMode === 'card'
+                  ? '🔒 Paiement securise via Paystack · Visa · Mastercard'
+                  : '🔒 Paiement securise via Paystack · Wave · Orange · MTN'
                 : '🔒 Paiement a la livraison · Sans risque'}
             </p>
           </form>
