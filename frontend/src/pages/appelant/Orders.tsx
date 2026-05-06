@@ -252,6 +252,70 @@ export default function Orders() {
     bulkDeleteMutation.mutate(selectedOrderIds);
   };
 
+  // Seuil "OUBLIEE" : commande > 24h ET jamais appelee = passee inapercue par
+  // les appelants (cachee en bas de liste apres l'arrivee de nouvelles plus recentes).
+  const STALE_HOURS_THRESHOLD = 24;
+
+  // Fenetre glissante : on NE remonte PAS les commandes plus vieilles que X jours.
+  // (raison : la DB contient un stock historique enorme de commandes >30j non
+  // traitees qui pollueraient la tete de liste. On les ignore = elles restent
+  // dans leur ordre naturel par recence, sans promotion.)
+  const MAX_AGE_FOR_PROMOTION_DAYS = 7;
+
+  /**
+   * Score de tri "intelligent" pour la liste "A appeler" :
+   *   - Commandes OUBLIEES RECENTES (1-7 jours, 0 appel) : score NEGATIF
+   *     => remontent en TETE, plus vieux d'abord
+   *   - Commandes RECENTES (< 24h) : score positif = age en heures
+   *     => triees par age croissant (les plus recentes d'abord)
+   *   - Commandes ANCIENNES (> 7j) : score positif = age en heures
+   *     => ordre normal (PAS de promotion en tete - on les ignore)
+   *
+   * Resultat visuel :
+   *   [TETE] Cmd 6j sans appel        (score = -144)  🔥 OUBLIEE
+   *          Cmd 3j sans appel        (score = -72)   🔥 OUBLIEE
+   *          Cmd 25h sans appel       (score = -25)   🔥 OUBLIEE
+   *          ----- limite des 24h -----
+   *          Cmd recente 1h           (score = 1)
+   *          Cmd recente 23h          (score = 23)
+   *          Cmd 5j (deja appelee)    (score = 120)
+   *          Cmd 30j vieille          (score = 720)   = on l'ignore, en bas
+   *   [PIED] Cmd 152j historique      (score = 3648)  = en bas
+   */
+  function getPriorityScore(order: Order): number {
+    const ageHours = (Date.now() - new Date(order.createdAt).getTime()) / 3600000;
+    const ageDays = ageHours / 24;
+    const nombreAppels = (order as any).nombreAppels ?? 0;
+
+    // Commande TROP VIEILLE (> 7j) : pas de promotion, ordre habituel
+    // (= elle reste a sa place normale dans la liste, pas en tete)
+    if (ageDays > MAX_AGE_FOR_PROMOTION_DAYS) {
+      return ageHours;
+    }
+
+    // Commande OUBLIEE = ancienne (>24h) ET jamais appelee, dans la fenetre 7j
+    if (ageHours > STALE_HOURS_THRESHOLD && nombreAppels === 0) {
+      return -ageHours; // negatif -> remonte en tete
+    }
+
+    return ageHours; // positif -> ordre habituel (recent en haut)
+  }
+
+  /**
+   * Helper : detecte si une commande est dans le statut "OUBLIEE" (pour badge UI).
+   * Synchronise avec getPriorityScore.
+   */
+  function isStaleOrder(order: Order): boolean {
+    const ageHours = (Date.now() - new Date(order.createdAt).getTime()) / 3600000;
+    const ageDays = ageHours / 24;
+    const nombreAppels = (order as any).nombreAppels ?? 0;
+    return (
+      ageDays <= MAX_AGE_FOR_PROMOTION_DAYS &&
+      ageHours > STALE_HOURS_THRESHOLD &&
+      nombreAppels === 0
+    );
+  }
+
   const filteredOrders = ordersData?.orders
     ?.filter((order: Order) => {
       // IMPORTANT : Afficher UNIQUEMENT les commandes NOUVELLE et A_APPELER
@@ -261,17 +325,21 @@ export default function Orders() {
         'NOUVELLE',      // Nouvelle commande reçue
         'A_APPELER'      // Marquée pour appel
       ].includes(order.status);
-      
+
       // Exclure les commandes avec RDV programmé
       const hasRdv = (order as any).rdvProgramme;
-      
+
       if (!isToCall || hasRdv) return false; // Masquer toutes les autres commandes et les RDV
-      
+
       const matchesSearch = order.clientNom.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.clientTelephone.includes(searchTerm);
       const matchesStatus = !statusFilter || order.status === statusFilter;
       return matchesSearch && matchesStatus;
-    });
+    })
+    ?.sort((a: Order, b: Order) => getPriorityScore(a) - getPriorityScore(b));
+
+  // Compte des commandes "oubliees recentes" (dans la fenetre 7j) pour le badge
+  const staleCount = (filteredOrders || []).filter(isStaleOrder).length;
 
   const totalFilteredCount = filteredOrders?.length || 0;
   const totalPages = ordersData?.pagination?.totalPages || 1;
@@ -292,7 +360,11 @@ export default function Orders() {
     <div className="space-y-8">
       <PageHeader
         title="Commandes à appeler"
-        subtitle={`${filteredOrders?.length || 0} commande(s) en attente de traitement`}
+        subtitle={
+          staleCount > 0
+            ? `${filteredOrders?.length || 0} commande(s) · 🔥 ${staleCount} récente(s) oubliée(s) (>24h sans appel, dans les 7 derniers jours) — remontées en tête`
+            : `${filteredOrders?.length || 0} commande(s) en attente de traitement`
+        }
         icon={PhoneCall}
         actions={
           <div className="flex items-center gap-3">
@@ -402,6 +474,7 @@ export default function Orders() {
                 showActions="toCall"
                 onTogglePriorite={isAdmin ? handleTogglePriorite : undefined}
                 canTogglePriorite={isAdmin}
+                isStale={isStaleOrder(order)}
               />
             ))}
           </div>

@@ -20,6 +20,8 @@ interface OrderCardProps {
   showActions?: 'toCall' | 'manage';
   onTogglePriorite?: (orderId: number) => void;
   canTogglePriorite?: boolean;
+  /** Si true, affiche un badge "OUBLIEE" (commande recente >24h sans appel). */
+  isStale?: boolean;
 }
 
 export function OrderCard({
@@ -39,6 +41,7 @@ export function OrderCard({
   showActions = 'toCall',
   onTogglePriorite,
   canTogglePriorite,
+  isStale = false,
 }: OrderCardProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -67,14 +70,19 @@ export function OrderCard({
   };
 
   return (
-    <div className={`card-compact relative group hover:shadow-card-hover transition-all duration-300 ${isSelected ? 'ring-2 ring-primary-500 shadow-lg shadow-primary-500/20' : ''} ${order.priorite ? 'ring-2 ring-orange-400 bg-orange-50/30' : ''}`}>
-      {/* Badge priorité en haut */}
-      {order.priorite && (
+    <div className={`card-compact relative group hover:shadow-card-hover transition-all duration-300 ${isSelected ? 'ring-2 ring-primary-500 shadow-lg shadow-primary-500/20' : ''} ${order.priorite ? 'ring-2 ring-orange-400 bg-orange-50/30' : isStale ? 'ring-2 ring-amber-400 bg-amber-50/30' : ''}`}>
+      {/* Badge priorité en haut (la priorite manuelle prime sur le stale) */}
+      {order.priorite ? (
         <div className="absolute -top-2 -right-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1 z-20 animate-pulse">
           <ArrowUp size={12} />
           PRIORITÉ
         </div>
-      )}
+      ) : isStale ? (
+        <div className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1 z-20">
+          <Clock size={12} />
+          OUBLIÉE
+        </div>
+      ) : null}
       
       {/* Header avec sélection */}
       <div className="flex items-start justify-between mb-4">
