@@ -1,19 +1,18 @@
 /**
- * Modal de commande pour "Creme anti-verrue" — VERSION ULTRA-COMPACTE.
+ * Modal de commande pour "Creme anti-verrue" - FULLSCREEN MOBILE + STICKY CTA.
  *
- * Objectif : tenir en UNE SEULE VUE, sans scroll interne meme sur mobile
- * 360x640 (entry-level Android). Sur iPhone SE 375x667 ca tient largement.
+ * Design v2 (fix bug bouton invisible sur mobile) :
+ *   - Mobile : modal en plein ecran (h-[100svh] qui suit le clavier mobile)
+ *   - Desktop : modal centre avec max-w-[440px] et coins arrondis
+ *   - Layout flexbox 3 zones :
+ *       1) HEADER  (flex-none, sticky top) : titre + bouton fermer + countdown
+ *       2) BODY    (flex-1, overflow-y-auto) : qty + inputs (le client scroll)
+ *       3) FOOTER  (flex-none, sticky bottom) : total + CTA TOUJOURS VISIBLE
+ *   - Footer respecte safe-area iPhone (env(safe-area-inset-bottom))
+ *   - Inputs ~44px de haut + font-size 16px en focus pour eviter zoom iOS
+ *   - Le CTA reste visible MEME quand le clavier mobile s'ouvre
  *
- *   [Header compact] countdown urgent + stock sur UNE ligne (~72px)
- *   [Body form compact]
- *     - Ligne choix boites (3 radio-cards hauteur 56px)
- *     - Nom (hauteur 44px)
- *     - Ville (hauteur 44px)
- *     - Tel avec prefixe +225 (hauteur 44px)
- *     - Total + CTA (combines) (hauteur 96px)
- *
- *   Total ~ 440px -> tient partout sans scroll.
- *
+ * Palette : ROUGE / ORANGE / AMBER (urgence + chaleur).
  * Logique metier 100% inchangee : commandes partent vers /api/public/order.
  */
 import { useEffect, useRef, useState } from 'react';
@@ -105,7 +104,7 @@ export default function OrderModalAntiVerrue({ open, onClose, cfg, product, setP
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center"
+      className="fixed inset-0 z-[60] flex items-stretch justify-center sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="antiverrue-modal-title"
@@ -115,12 +114,18 @@ export default function OrderModalAntiVerrue({ open, onClose, cfg, product, setP
         className="absolute inset-0 bg-neutral-950/80 backdrop-blur-sm animate-[avfade_.2s_ease-out]"
       />
 
-      {/* max-h = 100dvh pour eviter le scroll et garantir que le modal tient meme avec la barre URL mobile.
-          overflow-hidden sur le container : pas de scroll interne. */}
-      <div className="relative z-10 w-full max-w-[420px] max-h-[100dvh] overflow-hidden rounded-t-2xl bg-white shadow-2xl animate-[avslide_.25s_cubic-bezier(.22,.8,.4,1)] sm:rounded-2xl">
+      {/*
+        Conteneur modal - LAYOUT FLEXBOX VERTICAL :
+        - Mobile  : h-[100svh] (suit le clavier mobile via small viewport units)
+        - Desktop : max-h-[92vh] + max-w-[440px] + rounded-2xl
 
-        {/* ========== HEADER COMPACT ========== (~76px) */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-red-600 via-orange-500 to-amber-500 px-4 pt-3 pb-3 text-white">
+        flex flex-col -> 3 zones empilees (header / body / footer)
+        Le footer reste TOUJOURS visible grace au flex-1 du body qui scroll.
+      */}
+      <div className="av-shell relative z-10 flex h-[100svh] w-full flex-col overflow-hidden bg-white shadow-2xl animate-[avslide_.25s_cubic-bezier(.22,.8,.4,1)] sm:h-auto sm:max-h-[92vh] sm:max-w-[440px] sm:rounded-2xl">
+
+        {/* ========== HEADER (flex-none) ========== */}
+        <div className="relative flex-none overflow-hidden bg-gradient-to-br from-red-600 via-orange-500 to-amber-500 px-4 pt-3 pb-3 text-white">
           <div className="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-white/15 blur-2xl"/>
           <div className="pointer-events-none absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-amber-300/20 blur-2xl"/>
 
@@ -128,19 +133,18 @@ export default function OrderModalAntiVerrue({ open, onClose, cfg, product, setP
             type="button"
             onClick={() => !sending && onClose()}
             aria-label="Fermer"
-            className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition hover:bg-white/30 hover:scale-105 disabled:opacity-50"
+            className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition hover:bg-white/30 hover:scale-105 disabled:opacity-50"
             disabled={sending}
           >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
 
-          <div className="relative flex items-center justify-between gap-3 pr-8">
-            <h3 id="antiverrue-modal-title" className="text-[15px] font-black leading-tight">
+          <div className="relative flex items-center justify-between gap-3 pr-9">
+            <h3 id="antiverrue-modal-title" className="text-[15px] font-black leading-tight sm:text-[16px]">
               Commander maintenant
             </h3>
-            {/* Countdown pulse sur la meme ligne que le titre */}
             <div className="flex items-center gap-1 rounded-md bg-black/30 px-2 py-1 ring-1 ring-white/15">
               <span className="text-[9px] font-black uppercase tracking-widest text-amber-200">Fin</span>
               <span className="font-mono text-[12px] font-black tabular-nums">
@@ -151,7 +155,6 @@ export default function OrderModalAntiVerrue({ open, onClose, cfg, product, setP
             </div>
           </div>
 
-          {/* Stock bar minimaliste */}
           <div className="relative mt-2 flex items-center gap-2">
             <div className="h-1 flex-1 overflow-hidden rounded-full bg-black/30">
               <div className="h-full bg-gradient-to-r from-amber-300 to-white transition-all" style={{ width: `${stockPct}%` }}/>
@@ -160,109 +163,161 @@ export default function OrderModalAntiVerrue({ open, onClose, cfg, product, setP
           </div>
         </div>
 
-        {/* ========== BODY FORM COMPACT ========== (pas d'overflow interne) */}
-        <div className="px-4 py-3">
-          <form
-            onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
-            className="flex flex-col gap-2.5"
-          >
-            {/* Choix boites : compact, une seule ligne */}
-            <div className="grid grid-cols-3 gap-1.5">
-              {qtyOptions.map((o) => {
-                const active = qty === o.v;
-                return (
-                  <button
-                    key={o.v}
-                    type="button"
-                    onClick={() => setQty(o.v)}
-                    className={`relative flex flex-col items-center justify-center rounded-lg border-2 px-1 py-1.5 transition-all ${
-                      active
-                        ? 'border-orange-500 bg-orange-50 shadow-sm'
-                        : 'border-neutral-200 bg-white hover:border-orange-300'
-                    }`}
-                  >
-                    {o.tag && (
-                      <span className="absolute -right-1 -top-1.5 rounded-full bg-gradient-to-r from-red-500 to-orange-500 px-1 py-px text-[7px] font-black uppercase tracking-wider text-white shadow">
-                        {o.tag}
-                      </span>
-                    )}
-                    <span className={`text-[18px] font-black leading-none ${active ? 'text-orange-700' : 'text-neutral-900'}`}>{o.v}</span>
-                    <span className="mt-0.5 text-[8px] font-bold uppercase tracking-wider text-neutral-500">{o.label}</span>
-                    <span className={`text-[9px] font-black ${active ? 'text-orange-600' : 'text-orange-500'}`}>{o.sub}</span>
-                  </button>
-                );
-              })}
-            </div>
+        {/*
+          ========== BODY (flex-1, scrollable) ==========
+          C'est ici que le client peut scroller si tout ne tient pas a l'ecran.
+          overscroll-contain empeche le scroll de "sortir" du modal.
+        */}
+        <form
+          id="av-form"
+          onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
+          className="flex flex-1 min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain px-4 py-4"
+        >
+          <div className="grid grid-cols-3 gap-2">
+            {qtyOptions.map((o) => {
+              const active = qty === o.v;
+              return (
+                <button
+                  key={o.v}
+                  type="button"
+                  onClick={() => setQty(o.v)}
+                  className={`relative flex flex-col items-center justify-center rounded-xl border-2 px-1 py-2 transition-all ${
+                    active
+                      ? 'border-orange-500 bg-orange-50 shadow-md'
+                      : 'border-neutral-200 bg-white hover:border-orange-300'
+                  }`}
+                >
+                  {o.tag && (
+                    <span className="absolute -right-1 -top-1.5 rounded-full bg-gradient-to-r from-red-500 to-orange-500 px-1.5 py-px text-[8px] font-black uppercase tracking-wider text-white shadow">
+                      {o.tag}
+                    </span>
+                  )}
+                  <span className={`text-[20px] font-black leading-none ${active ? 'text-orange-700' : 'text-neutral-900'}`}>{o.v}</span>
+                  <span className="mt-1 text-[9px] font-bold uppercase tracking-wider text-neutral-500">{o.label}</span>
+                  <span className={`mt-0.5 text-[10px] font-black ${active ? 'text-orange-600' : 'text-orange-500'}`}>{o.sub}</span>
+                </button>
+              );
+            })}
+          </div>
 
-            {/* Inputs compacts : py-2 / text-[13px] */}
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Nom complet"
-              autoComplete="name"
-              required
-              className="block w-full rounded-lg border-[1.5px] border-neutral-200 bg-white px-3 py-2 text-[13px] font-medium text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
-            />
-
-            <input
-              type="text"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              placeholder="Ville (Abidjan, Bouaké, Daloa…)"
-              autoComplete="address-level2"
-              required
-              className="block w-full rounded-lg border-[1.5px] border-neutral-200 bg-white px-3 py-2 text-[13px] font-medium text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
-            />
-
-            <div className="flex overflow-hidden rounded-lg border-[1.5px] border-neutral-200 bg-white transition focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20">
-              <span className="flex items-center gap-1 border-r border-neutral-200 bg-neutral-50 px-2 text-[12px] font-bold text-neutral-700">🇨🇮 +225</span>
+          {/*
+            INPUTS - taille 44px min pour tappabilite mobile (recommande Apple/Google)
+            font-size 16px sur mobile en focus pour eviter le zoom auto iOS
+          */}
+          <div className="space-y-2.5">
+            <div>
+              <label htmlFor="av-name" className="mb-1 block text-[10px] font-black uppercase tracking-wider text-neutral-600">
+                Nom complet <span className="text-red-500">*</span>
+              </label>
               <input
-                type="tel"
-                inputMode="numeric"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                placeholder="07 XX XX XX XX"
-                autoComplete="tel-national"
+                id="av-name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Prenom et nom"
+                autoComplete="name"
                 required
-                className="h-full w-full bg-white px-2 py-2 text-[13px] font-medium text-neutral-900 outline-none placeholder:text-neutral-400"
+                className="block h-11 w-full rounded-lg border-[1.5px] border-neutral-200 bg-white px-3 text-[15px] sm:text-[14px] font-medium text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
               />
             </div>
 
-            {/* Total + CTA fusionnes pour gagner de la place */}
-            <div className="mt-0.5 flex items-center justify-between rounded-lg bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 px-3 py-2 text-white ring-1 ring-white/10">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-[11px] font-black uppercase tracking-wide">Total</span>
-                <span className="text-[9px] text-emerald-400">livraison offerte</span>
-              </div>
-              <div className="flex items-baseline gap-1.5">
-                {qty > 1 && <span className="text-[10px] text-neutral-400 line-through">{fmt(oldTotal)}</span>}
-                <span className="text-[16px] font-black text-amber-300">{fmt(total)}</span>
-              </div>
+            <div>
+              <label htmlFor="av-city" className="mb-1 block text-[10px] font-black uppercase tracking-wider text-neutral-600">
+                Ville <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="av-city"
+                type="text"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="Abidjan, Bouake, Daloa..."
+                autoComplete="address-level2"
+                required
+                className="block h-11 w-full rounded-lg border-[1.5px] border-neutral-200 bg-white px-3 text-[15px] sm:text-[14px] font-medium text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+              />
             </div>
 
-            {formErr && (
-              <p className="rounded-md bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-600 ring-1 ring-red-100">{formErr}</p>
+            <div>
+              <label htmlFor="av-phone" className="mb-1 block text-[10px] font-black uppercase tracking-wider text-neutral-600">
+                Telephone <span className="text-red-500">*</span>
+              </label>
+              <div className="flex h-11 overflow-hidden rounded-lg border-[1.5px] border-neutral-200 bg-white transition focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20">
+                <span className="flex items-center gap-1 border-r border-neutral-200 bg-neutral-50 px-3 text-[13px] font-bold text-neutral-700">🇨🇮 +225</span>
+                <input
+                  id="av-phone"
+                  type="tel"
+                  inputMode="numeric"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  placeholder="07 XX XX XX XX"
+                  autoComplete="tel-national"
+                  required
+                  className="h-full w-full bg-white px-3 text-[15px] sm:text-[14px] font-medium text-neutral-900 outline-none placeholder:text-neutral-400"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Trust ribbons (rapides, rassurants) */}
+          <div className="grid grid-cols-3 gap-1.5 pt-1">
+            <div className="flex flex-col items-center justify-center rounded-md bg-amber-50 px-1 py-1.5 ring-1 ring-amber-100">
+              <span className="text-[14px]">💵</span>
+              <span className="text-[8px] font-bold uppercase tracking-wider text-amber-800">A la livraison</span>
+            </div>
+            <div className="flex flex-col items-center justify-center rounded-md bg-emerald-50 px-1 py-1.5 ring-1 ring-emerald-100">
+              <span className="text-[14px]">🚚</span>
+              <span className="text-[8px] font-bold uppercase tracking-wider text-emerald-800">Livraison rapide</span>
+            </div>
+            <div className="flex flex-col items-center justify-center rounded-md bg-orange-50 px-1 py-1.5 ring-1 ring-orange-100">
+              <span className="text-[14px]">📞</span>
+              <span className="text-[8px] font-bold uppercase tracking-wider text-orange-800">Conseil 30 min</span>
+            </div>
+          </div>
+
+          {formErr && (
+            <p className="rounded-md bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-600 ring-1 ring-red-100">{formErr}</p>
+          )}
+        </form>
+
+        {/*
+          ========== FOOTER (flex-none, TOUJOURS VISIBLE) ==========
+          Reste colle au bas du modal MEME quand le clavier mobile s'ouvre,
+          car le body au-dessus a flex-1 et scrolle son contenu.
+          padding-bottom : safe-area-inset-bottom pour iPhones avec notch.
+        */}
+        <div
+          className="flex-none border-t border-neutral-200 bg-white px-4 pt-3 shadow-[0_-4px_16px_-4px_rgba(0,0,0,0.06)]"
+          style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
+        >
+          <div className="mb-2.5 flex items-center justify-between rounded-lg bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 px-3 py-2.5 text-white ring-1 ring-white/10">
+            <div className="flex flex-col leading-tight">
+              <span className="text-[11px] font-black uppercase tracking-wide">Total a payer</span>
+              <span className="text-[10px] font-medium text-emerald-400">livraison offerte</span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              {qty > 1 && <span className="text-[11px] text-neutral-400 line-through">{fmt(oldTotal)}</span>}
+              <span className="text-[20px] font-black text-amber-300">{fmt(total)}</span>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            form="av-form"
+            disabled={sending}
+            className="av-cta group relative flex h-[52px] w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-red-500 via-orange-500 to-amber-400 text-[15px] font-black text-white shadow-[0_10px_24px_-4px_rgba(249,115,22,0.55)] transition hover:shadow-[0_14px_30px_-4px_rgba(249,115,22,0.7)] active:translate-y-px disabled:cursor-wait disabled:opacity-60"
+          >
+            <span className="av-cta-sheen pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent"/>
+            {sending ? (
+              <><span className="relative h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /><span className="relative">Envoi en cours...</span></>
+            ) : (
+              <>
+                <svg className="relative h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                <span className="relative">Valider ma commande</span>
+              </>
             )}
+          </button>
 
-            <button
-              type="submit"
-              disabled={sending}
-              className="av-cta group relative flex h-[48px] w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-red-500 via-orange-500 to-amber-400 text-[14px] font-black text-white shadow-[0_10px_24px_-4px_rgba(249,115,22,0.55)] transition hover:shadow-[0_14px_30px_-4px_rgba(249,115,22,0.7)] active:translate-y-px disabled:cursor-wait disabled:opacity-60"
-            >
-              <span className="av-cta-sheen pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent"/>
-              {sending ? (
-                <><span className="relative h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /><span className="relative">Envoi...</span></>
-              ) : (
-                <>
-                  <svg className="relative h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span className="relative">Valider ma commande</span>
-                </>
-              )}
-            </button>
-
-            <p className="-mt-0.5 text-center text-[10px] font-medium text-neutral-500">🔒 Paiement à la livraison · Sans risque</p>
-          </form>
+          <p className="mt-1.5 text-center text-[10px] font-medium text-neutral-500">🔒 Paiement à la livraison · Sans risque</p>
         </div>
       </div>
 
@@ -276,6 +331,27 @@ export default function OrderModalAntiVerrue({ open, onClose, cfg, product, setP
         .av-cta { animation: avFloat 2.6s ease-in-out infinite }
         .av-cta:hover { animation: none; transform: translateY(-2px) }
         .av-cta-sheen { animation: avSheen 3.2s ease-in-out infinite }
+
+        /*
+          Layout fullscreen mobile : on tente d'utiliser 100svh (small viewport
+          height) qui SUIT la barre d'adresse mobile et le clavier virtuel.
+          Fallback : 100dvh, puis 100vh pour les vieux navigateurs.
+        */
+        @supports (height: 100svh) {
+          .av-shell { height: 100svh; }
+        }
+        @media (min-width: 640px) {
+          .av-shell { height: auto !important; }
+        }
+
+        /*
+          Pour eviter le bug iOS qui zoom automatiquement quand on focus un
+          input avec font-size < 16px. On force 16px sur mobile via :focus.
+        */
+        @media (max-width: 639px) {
+          .av-shell input:focus,
+          .av-shell textarea:focus { font-size: 16px !important; }
+        }
       `}</style>
     </div>
   );
