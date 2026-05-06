@@ -12,6 +12,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useOrderSubmit, type OrderSubmitConfig, type OrderProduct } from '../../hooks/useOrderSubmit';
+import { cleanPhoneCI } from '../../utils/phone';
 
 interface QtyOption {
   v: number;
@@ -175,7 +176,7 @@ export default function OrderModalMinceur({ open, onClose, cfg, product, setProd
             <div className="flex h-11 overflow-hidden rounded-xl border-[1.5px] border-rose-100 bg-white transition focus-within:border-rose-400 focus-within:ring-2 focus-within:ring-rose-400/20">
               <span className="flex items-center gap-1 border-r border-rose-100 bg-rose-50 px-3 text-[13px] font-bold text-rose-700">🇨🇮 +225</span>
               <input id="mn-phone" type="tel" inputMode="numeric" value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                onChange={(e) => setPhone(cleanPhoneCI(e.target.value))}
                 placeholder="07 XX XX XX XX" autoComplete="tel-national" required
                 className="h-full w-full bg-white px-3 text-[15px] sm:text-[14px] font-medium text-rose-900 outline-none placeholder:text-rose-300" />
             </div>

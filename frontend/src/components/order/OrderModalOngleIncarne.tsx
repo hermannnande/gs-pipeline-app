@@ -17,6 +17,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useOrderSubmit, type OrderSubmitConfig, type OrderProduct } from '../../hooks/useOrderSubmit';
+import { cleanPhoneCI } from '../../utils/phone';
 
 interface QtyOption {
   v: number;
@@ -193,7 +194,7 @@ export default function OrderModalOngleIncarne({ open, onClose, cfg, product, se
             <div className="flex h-11 overflow-hidden rounded-xl border-[1.5px] border-white/10 bg-white/5 transition focus-within:border-fuchsia-400 focus-within:bg-white/10 focus-within:ring-2 focus-within:ring-fuchsia-400/25">
               <span className="flex items-center gap-1 border-r border-white/10 bg-white/5 px-3 text-[13px] font-bold text-white">🇨🇮 +225</span>
               <input id="oi-phone" type="tel" inputMode="numeric" value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                onChange={(e) => setPhone(cleanPhoneCI(e.target.value))}
                 placeholder="07 XX XX XX XX" autoComplete="tel-national" required
                 className="h-full w-full bg-transparent px-3 text-[15px] sm:text-[14px] font-medium text-white outline-none placeholder:text-white/30" />
             </div>

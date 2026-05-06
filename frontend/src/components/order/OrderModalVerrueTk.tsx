@@ -18,6 +18,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useOrderSubmit, type OrderSubmitConfig, type OrderProduct } from '../../hooks/useOrderSubmit';
+import { cleanPhoneCI } from '../../utils/phone';
 
 interface QtyOption {
   v: number;
@@ -249,7 +250,7 @@ export default function OrderModalVerrueTk({ open, onClose, cfg, product, setPro
                   type="tel"
                   inputMode="numeric"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  onChange={(e) => setPhone(cleanPhoneCI(e.target.value))}
                   placeholder="07 XX XX XX XX"
                   autoComplete="tel-national"
                   required

@@ -21,6 +21,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useOrderSubmit, type OrderSubmitConfig, type OrderProduct } from '../../hooks/useOrderSubmit';
+import { cleanPhoneCI } from '../../utils/phone';
 
 interface QtyOption {
   v: number;
@@ -238,7 +239,7 @@ export default function OrderModalChaussette({ open, onClose, cfg, product, setP
             <div className="flex h-11 overflow-hidden rounded-xl border-[1.5px] border-slate-200 bg-white transition focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/20">
               <span className="flex items-center gap-1 border-r border-slate-200 bg-slate-50 px-3 text-[13px] font-bold text-slate-700">🇨🇮 +225</span>
               <input id="ch-phone" type="tel" inputMode="numeric" value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                onChange={(e) => setPhone(cleanPhoneCI(e.target.value))}
                 placeholder="07 XX XX XX XX" autoComplete="tel-national" required
                 className="h-full w-full bg-white px-3 text-[15px] sm:text-[14px] font-medium text-slate-900 outline-none placeholder:text-slate-400" />
             </div>
