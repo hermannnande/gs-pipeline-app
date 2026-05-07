@@ -13,6 +13,7 @@ import { useLandingSlug } from '../../hooks/useLandingSlug';
 import PatchDouleurFbThankYou from './PatchDouleurFbThankYou';
 import SerumCernePayeThankYou from './SerumCernePayeThankYou';
 import SerumCernePayeThankYouCash from './SerumCernePayeThankYouCash';
+import CremeAntiVerrueThankYou from './CremeAntiVerrueThankYou';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -20,6 +21,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 const DEDICATED_THANKYOU_SLUGS = new Set<string>([
   'patchdouleurfb',
   'serum-cerne-paye',
+  'creme-anti-verrue',
 ]);
 
 /**
@@ -66,6 +68,11 @@ export default function ThankYouRouter() {
       })
       .catch(() => { /* noop */ });
   }, [slug]);
+
+  // Page de remerciement creme-anti-verrue — pixel Meta dedie coachingexpertci.com / campagnes.
+  if (slug === 'creme-anti-verrue') {
+    return <CremeAntiVerrueThankYou />;
+  }
 
   // Page de remerciement dediee patchdouleurfb avec pixel Meta 952340034030644
   // (Purchase event au mount + deduplication via eventID = orderReference).

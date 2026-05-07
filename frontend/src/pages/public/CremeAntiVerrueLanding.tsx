@@ -33,7 +33,7 @@ import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'creme-anti-verrue';
 const PRODUCT_CODE = 'VERRUE_TK';
-const META_PIXEL_ID = '1607715340249349';
+const META_PIXEL_ID = '974673311723451';
 const THANK_YOU_URL = '/creme-anti-verrue/merci';
 
 const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
@@ -64,13 +64,15 @@ const MEDIA = {
 declare global { interface Window { fbq: any; _fbq: any; } }
 
 function initMetaPixel(pixelId: string) {
-  if (!pixelId || window.fbq) return;
-  const f: any = window.fbq = function (...args: any[]) { f.callMethod ? f.callMethod(...args) : f.queue.push(args); };
-  if (!window._fbq) window._fbq = f;
-  f.push = f; f.loaded = true; f.version = '2.0'; f.queue = [];
-  const s = document.createElement('script');
-  s.async = true; s.src = 'https://connect.facebook.net/en_US/fbevents.js';
-  document.head.appendChild(s);
+  if (!pixelId) return;
+  if (!window.fbq) {
+    const f: any = window.fbq = function (...args: any[]) { f.callMethod ? f.callMethod(...args) : f.queue.push(args); };
+    if (!window._fbq) window._fbq = f;
+    f.push = f; f.loaded = true; f.version = '2.0'; f.queue = [];
+    const s = document.createElement('script');
+    s.async = true; s.src = 'https://connect.facebook.net/en_US/fbevents.js';
+    document.head.appendChild(s);
+  }
   window.fbq('init', pixelId);
   window.fbq('track', 'PageView');
 }
