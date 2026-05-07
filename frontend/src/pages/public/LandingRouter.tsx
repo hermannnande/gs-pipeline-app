@@ -8,6 +8,7 @@ import CremeAntiVerrueLanding from './CremeAntiVerrueLanding';
 import PatchDouleurTkLanding from './PatchDouleurTkLanding';
 import PatchDouleurFbLanding from './PatchDouleurFbLanding';
 import CremeVerrueTkLanding from './CremeVerrueTkLanding';
+import CremeVerrueTk2Landing from './CremeVerrueTk2Landing';
 import SprayDouleurTkLanding from './SprayDouleurTkLanding';
 import SprayLipomeLanding from './SprayLipomeLanding';
 import SprayLipomeTkLanding from './SprayLipomeTkLanding';
@@ -44,7 +45,7 @@ export default function LandingRouter() {
 
   useEffect(() => {
     // Landings autonomes : zero call API template
-    if (!slug || slug === 'coffret-boxer-homme' || slug === 'creme-anti-verrue' || slug === 'patchdouleurtk' || slug === 'patchdouleurfb' || slug === 'creme-verrue-tk' || slug === 'spraydouleurtk' || slug === 'spraylipome' || slug === 'spraylipometk' || slug === 'serum-cerne' || slug === 'serum-cerne-tk' || slug === 'serum-cerne-paye' || slug === 'poudre-pousse-cheveux' || slug === 'boutique') return;
+    if (!slug || slug === 'coffret-boxer-homme' || slug === 'creme-anti-verrue' || slug === 'patchdouleurtk' || slug === 'patchdouleurfb' || slug === 'creme-verrue-tk' || slug === 'creme-verrue-tk2' || slug === 'spraydouleurtk' || slug === 'spraylipome' || slug === 'spraylipometk' || slug === 'serum-cerne' || slug === 'serum-cerne-tk' || slug === 'serum-cerne-paye' || slug === 'poudre-pousse-cheveux' || slug === 'boutique') return;
     axios.get(`${API_URL}/templates/public/${slug}`)
       .then(r => {
         try {
@@ -109,6 +110,16 @@ export default function LandingRouter() {
     return (
       <ErrorBoundary>
         <CremeVerrueTkLanding />
+      </ErrorBoundary>
+    );
+  }
+
+  // Landing duplicate creme verrue TK V2 — meme design, mapping CREME_ANTI_VERRUES2
+  // pour campagnes pub TIKTOK ADS avec tracking de conversion separe par URL.
+  if (slug === 'creme-verrue-tk2') {
+    return (
+      <ErrorBoundary>
+        <CremeVerrueTk2Landing />
       </ErrorBoundary>
     );
   }

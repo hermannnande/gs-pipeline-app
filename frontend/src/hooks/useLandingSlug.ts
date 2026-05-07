@@ -6,6 +6,7 @@ import { useParams, useLocation } from 'react-router-dom';
 export const LANDING_SLUGS = [
   'creme-anti-verrue',
   'creme-verrue-tk',
+  'creme-verrue-tk2',
   'spraydouleurtk',
   'creme-ongle-incarne',
   'chaussette-compression',

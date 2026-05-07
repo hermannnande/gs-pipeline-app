@@ -23,6 +23,7 @@ import type { OrderSubmitConfig, OrderProduct } from '../../hooks/useOrderSubmit
 
 const CUSTOM_SLUGS = [
   'creme-verrue-tk',
+  'creme-verrue-tk2',
   'creme-anti-verrue',
   'spraydouleurtk',
   'creme-ongle-incarne',
@@ -73,6 +74,7 @@ interface Props {
 export default function OrderModalDispatcher({ slug, ...rest }: Props) {
   switch (slug) {
     case 'creme-verrue-tk':
+    case 'creme-verrue-tk2':
       return <OrderModalVerrueTk {...rest} />;
     case 'creme-anti-verrue':
       return <OrderModalAntiVerrue {...rest} />;
