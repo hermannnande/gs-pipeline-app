@@ -34,13 +34,43 @@ async function repairOrdersIdSequenceIfNeeded(error) {
 // Toutes les routes nécessitent authentification
 router.use(authenticate);
 
+/** Fusionne des contraintes AND avec le where Prisma existant. */
+function mergeOrderWhereExtras(baseWhere, extras) {
+  if (!extras.length) return baseWhere;
+  const companyId = baseWhere.companyId;
+  const rest = { ...baseWhere };
+  delete rest.companyId;
+  const parts = [];
+  if (Object.keys(rest).length > 0) parts.push(rest);
+  parts.push(...extras);
+  return { companyId, AND: parts };
+}
+
 // GET /api/orders - Liste des commandes (avec filtres selon rôle)
 router.get('/', async (req, res) => {
   try {
-    const { status, ville, produit, startDate, endDate, callerId, delivererId, deliveryType, page = 1, limit = 1000 } = req.query;
+    const {
+      status,
+      ville,
+      produit,
+      startDate,
+      endDate,
+      callerId,
+      delivererId,
+      deliveryType,
+      page = 1,
+      limit = 1000,
+      search,
+      clientDatabase,
+    } = req.query;
     const user = req.user;
 
-    const where = { companyId: req.user.companyId };
+    const isClientDb =
+      clientDatabase === '1' ||
+      clientDatabase === 'true' ||
+      String(clientDatabase || '').toLowerCase() === 'yes';
+
+    let where = { companyId: req.user.companyId };
 
     // Filtres selon le rôle
     if (user.role === 'APPELANT') {
@@ -76,9 +106,36 @@ router.get('/', async (req, res) => {
       if (endDate) where.createdAt.lte = new Date(endDate);
     }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const extras = [];
+    // Même périmètre que l'écran Base clients / export CSV (sans statut précis)
+    if (isClientDb && !status) {
+      extras.push({ status: { notIn: ['NOUVELLE', 'A_APPELER'] } });
+      if (user.role === 'GESTIONNAIRE_STOCK') {
+        extras.push({ status: { not: 'VALIDEE' } });
+      }
+    }
+    if (search && String(search).trim()) {
+      const q = String(search).trim();
+      extras.push({
+        OR: [
+          { clientNom: { contains: q, mode: 'insensitive' } },
+          { clientTelephone: { contains: q, mode: 'insensitive' } },
+        ],
+      });
+    }
+    if (extras.length) {
+      where = mergeOrderWhereExtras(where, extras);
+    }
 
-    const [orders, total] = await Promise.all([
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const rawLimit = parseInt(limit, 10);
+    const limitNum = isClientDb
+      ? Math.min(200, Math.max(1, Number.isFinite(rawLimit) ? rawLimit : 100))
+      : Math.min(10000, Math.max(1, Number.isFinite(rawLimit) ? rawLimit : 1000));
+
+    const skip = (pageNum - 1) * limitNum;
+
+    const listQueries = [
       prisma.order.findMany({
         where,
         include: {
@@ -104,10 +161,55 @@ router.get('/', async (req, res) => {
           { createdAt: 'desc' } // Puis les plus récentes
         ],
         skip,
-        take: parseInt(limit)
+        take: limitNum
       }),
-      prisma.order.count({ where })
-    ]);
+      prisma.order.count({ where }),
+    ];
+
+    if (isClientDb) {
+      listQueries.push(
+        prisma.order.groupBy({
+          by: ['status'],
+          where,
+          _count: { _all: true },
+        }),
+        prisma.order.aggregate({
+          where: mergeOrderWhereExtras(where, [
+            { status: { in: ['VALIDEE', 'ASSIGNEE', 'LIVREE'] } },
+          ]),
+          _sum: { montant: true },
+        }),
+        prisma.order.findMany({
+          where,
+          select: { clientVille: true },
+          distinct: ['clientVille'],
+          orderBy: { clientVille: 'asc' },
+        }),
+      );
+    }
+
+    const results = await Promise.all(listQueries);
+    const orders = results[0];
+    const total = results[1];
+
+    let clientDatabaseStats = undefined;
+    let distinctVilles = undefined;
+    if (isClientDb) {
+      const statusGroups = results[2];
+      const montantAgg = results[3];
+      const villeRows = results[4];
+      const byStatus = {};
+      for (const row of statusGroups) {
+        byStatus[row.status] = row._count._all;
+      }
+      distinctVilles = villeRows
+        .map((r) => r.clientVille)
+        .filter((v) => v != null && String(v).trim() !== '');
+      clientDatabaseStats = {
+        byStatus,
+        montantTotal: montantAgg._sum.montant ?? 0,
+      };
+    }
 
     const ordersLight = orders.map(({ photoRecuExpedition, photoRecuExpress, ...rest }) => rest);
 
@@ -115,14 +217,204 @@ router.get('/', async (req, res) => {
       orders: ordersLight,
       pagination: {
         total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages: Math.ceil(total / parseInt(limit))
-      }
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum) || 1
+      },
+      ...(isClientDb && clientDatabaseStats
+        ? { clientDatabaseStats, distinctVilles }
+        : {}),
     });
   } catch (error) {
     console.error('Erreur récupération commandes:', error);
     res.status(500).json({ error: 'Erreur lors de la récupération des commandes.' });
+  }
+});
+
+/** Normalise un numero CI pour deduplication (!= affichage). */
+function normalizePhoneDedupe(raw) {
+  if (raw == null || raw === '') return '';
+  let d = String(raw).replace(/\D/g, '');
+  if (d.startsWith('00225')) d = d.slice(5);
+  else if (d.startsWith('225') && d.length > 10) d = d.slice(3);
+  return d.slice(0, 10);
+}
+
+function csvEscape(v) {
+  const t = String(v ?? '');
+  if (/[",\n\r]/.test(t)) return `"${t.replace(/"/g, '""')}"`;
+  return t;
+}
+
+/**
+ * GET /api/orders/contacts-export
+ * Export CSV des contacts (commandes hors pipeline « à appeler »), avec telephones dedup.
+ * Filtres : productId, productCode, niche (contient sourcePage | produitPage | sourceCampagne),
+ * status, ville, dates, callerId, search (nom/tel), delivererId, deliveryType
+ */
+router.get('/contacts-export', async (req, res) => {
+  try {
+    const user = req.user;
+    const {
+      productId,
+      productCode,
+      niche,
+      status,
+      ville,
+      startDate,
+      endDate,
+      callerId,
+      delivererId,
+      deliveryType,
+      search,
+    } = req.query;
+
+    const where = { companyId: req.user.companyId };
+
+    if (user.role === 'APPELANT') {
+      where.AND = where.AND || [];
+      where.AND.push({
+        OR: [
+          { status: { in: ['NOUVELLE', 'A_APPELER'] } },
+          { deliveryType: 'EXPEDITION' },
+          { deliveryType: 'EXPRESS' },
+        ],
+      });
+    } else if (user.role === 'LIVREUR') {
+      where.delivererId = user.id;
+    }
+
+    if (status) where.status = status;
+    if (ville) where.clientVille = { contains: String(ville), mode: 'insensitive' };
+    if (callerId) where.callerId = parseInt(callerId, 10);
+    if (delivererId) where.delivererId = parseInt(delivererId, 10);
+    if (deliveryType) where.deliveryType = deliveryType;
+
+    if (productId) {
+      const pid = parseInt(String(productId), 10);
+      if (!Number.isNaN(pid)) where.productId = pid;
+    }
+    if (productCode && String(productCode).trim()) {
+      where.AND = where.AND || [];
+      where.AND.push({
+        product: {
+          code: { equals: String(productCode).trim(), mode: 'insensitive' },
+        },
+      });
+    }
+
+    if (niche && String(niche).trim()) {
+      const q = String(niche).trim();
+      const nicheClause = {
+        OR: [
+          { produitPage: { contains: q, mode: 'insensitive' } },
+          { sourcePage: { contains: q, mode: 'insensitive' } },
+          { sourceCampagne: { contains: q, mode: 'insensitive' } },
+        ],
+      };
+      where.AND = where.AND || [];
+      where.AND.push(nicheClause);
+    }
+
+    if (search && String(search).trim()) {
+      const q = String(search).trim();
+      const searchClause = {
+        OR: [
+          { clientNom: { contains: q, mode: 'insensitive' } },
+          { clientTelephone: { contains: q, mode: 'insensitive' } },
+        ],
+      };
+      where.AND = where.AND || [];
+      where.AND.push(searchClause);
+    }
+
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(String(startDate));
+      if (endDate) where.createdAt.lte = new Date(String(endDate));
+    }
+
+    /* Meme logique ecran Base Clients : exclure « non traitees » */
+    const pipelineExcl = { status: { notIn: ['NOUVELLE', 'A_APPELER'] } };
+    where.AND = where.AND || [];
+    where.AND.push(pipelineExcl);
+
+    if (user.role === 'GESTIONNAIRE_STOCK') {
+      where.AND.push({ status: { not: 'VALIDEE' } });
+    }
+
+    const orders = await prisma.order.findMany({
+      where,
+      select: {
+        id: true,
+        clientNom: true,
+        clientTelephone: true,
+        clientVille: true,
+        clientCommune: true,
+        produitNom: true,
+        produitPage: true,
+        sourcePage: true,
+        sourceCampagne: true,
+        status: true,
+        createdAt: true,
+        product: { select: { code: true, nom: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100000,
+    });
+
+    const seen = new Map();
+    for (const o of orders) {
+      const key = normalizePhoneDedupe(o.clientTelephone);
+      if (!key) continue;
+      if (!seen.has(key)) seen.set(key, o);
+    }
+
+    const rows = Array.from(seen.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+
+    const header = [
+      'telephone',
+      'nom',
+      'ville',
+      'commune',
+      'produit',
+      'code_produit',
+      'page_source',
+      'campagne',
+      'statut_derniere_commande',
+      'date_derniere_commande',
+    ];
+    const lines = [
+      header.join(';'),
+      ...rows.map((o) =>
+        [
+          csvEscape(o.clientTelephone),
+          csvEscape(o.clientNom),
+          csvEscape(o.clientVille),
+          csvEscape(o.clientCommune || ''),
+          csvEscape(o.produitNom),
+          csvEscape(o.product?.code || ''),
+          csvEscape(o.produitPage || o.sourcePage || ''),
+          csvEscape(o.sourceCampagne || ''),
+          csvEscape(o.status),
+          csvEscape(new Date(o.createdAt).toISOString()),
+        ].join(';'),
+      ),
+    ];
+
+    const bom = '\ufeff';
+    const body = bom + lines.join('\n');
+    const stamp = new Date().toISOString().slice(0, 10);
+    const fname = `contacts-clients-${stamp}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${fname}"`);
+    res.send(body);
+  } catch (error) {
+    console.error('Erreur export contacts:', error);
+    res.status(500).json({ error: "Erreur lors de l'export des contacts." });
   }
 });
 

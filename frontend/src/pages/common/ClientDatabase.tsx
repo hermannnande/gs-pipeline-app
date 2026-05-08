@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Filter, Calendar, Phone, MapPin, Package, User, Download } from 'lucide-react';
+import { Search, Filter, Phone, MapPin, Package, User, Download } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency, formatDateTime, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
 import { useAuthStore } from '@/store/authStore';
+
+const CLIENT_DB_PAGE_SIZE = 100;
 
 export default function ClientDatabase() {
   const { user } = useAuthStore();
@@ -15,28 +17,43 @@ export default function ClientDatabase() {
   const [filterCaller, setFilterCaller] = useState('');
   const [filterProductId, setFilterProductId] = useState('');
   const [filterNiche, setFilterNiche] = useState('');
+  const [page, setPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [exporting, setExporting] = useState(false);
 
-  // Requête pour récupérer toutes les commandes TRAITÉES (pas NOUVELLE ni A_APPELER)
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, filterStatus, filterVille, startDate, endDate, filterCaller]);
+
+  // Filtre « commandes traitées », pagination et recherche gérés par l’API
   const { data: ordersData, isLoading } = useQuery({
-    queryKey: ['client-database', searchTerm, filterStatus, filterVille, startDate, endDate, filterCaller],
+    queryKey: [
+      'client-database',
+      searchTerm,
+      filterStatus,
+      filterVille,
+      startDate,
+      endDate,
+      filterCaller,
+      page,
+    ],
     queryFn: async () => {
       const { data } = await api.get('/orders', {
         params: {
-          page: 1,
-          limit: 50,
+          clientDatabase: 'true',
+          page,
+          limit: CLIENT_DB_PAGE_SIZE,
           search: searchTerm || undefined,
           status: filterStatus !== 'ALL' ? filterStatus : undefined,
           ville: filterVille || undefined,
           startDate: startDate || undefined,
           endDate: endDate || undefined,
-          callerId: filterCaller || undefined
-        }
+          callerId: filterCaller || undefined,
+        },
       });
       return data;
     },
-    refetchOnWindowFocus: true
+    refetchOnWindowFocus: true,
   });
 
   // Liste produits (filtrer l'export par produit)
@@ -93,40 +110,37 @@ export default function ClientDatabase() {
     }
   };
 
-  // Filtrer uniquement les commandes TRAITÉES (exclure NOUVELLE et A_APPELER)
-  // IMPORTANT : Pour le Gestionnaire de Stock, exclure aussi VALIDEE (commandes non assignées)
-  const commandesTraitees = ordersData?.orders?.filter((order: any) => {
-    // Exclure toujours les commandes nouvelles et à appeler
-    if (['NOUVELLE', 'A_APPELER'].includes(order.status)) {
-      return false;
-    }
-    
-    // Pour Gestionnaire de Stock : exclure aussi les commandes VALIDÉE non assignées
-    if (user?.role === 'GESTIONNAIRE_STOCK' && order.status === 'VALIDEE') {
-      return false;
-    }
-    
-    return true;
-  }) || [];
+  const commandesTraitees = ordersData?.orders ?? [];
+  const pagination = ordersData?.pagination;
+  const byStatus = ordersData?.clientDatabaseStats?.byStatus;
 
-  // Statistiques en temps réel
-  const stats = {
-    total: commandesTraitees.length,
-    validees: commandesTraitees.filter((o: any) => o.status === 'VALIDEE').length,
-    annulees: commandesTraitees.filter((o: any) => o.status === 'ANNULEE').length,
-    injoignables: commandesTraitees.filter((o: any) => o.status === 'INJOIGNABLE').length,
-    assignees: commandesTraitees.filter((o: any) => o.status === 'ASSIGNEE').length,
-    livrees: commandesTraitees.filter((o: any) => o.status === 'LIVREE').length,
-    montantTotal: commandesTraitees.reduce((sum: number, o: any) => {
-      if (['VALIDEE', 'ASSIGNEE', 'LIVREE'].includes(o.status)) {
-        return sum + o.montant;
+  const stats = byStatus
+    ? {
+        total: pagination?.total ?? 0,
+        validees: byStatus.VALIDEE ?? 0,
+        annulees: byStatus.ANNULEE ?? 0,
+        injoignables: byStatus.INJOIGNABLE ?? 0,
+        assignees: byStatus.ASSIGNEE ?? 0,
+        livrees: byStatus.LIVREE ?? 0,
+        montantTotal: ordersData?.clientDatabaseStats?.montantTotal ?? 0,
       }
-      return sum;
-    }, 0)
-  };
+    : {
+        total: commandesTraitees.length,
+        validees: commandesTraitees.filter((o: any) => o.status === 'VALIDEE').length,
+        annulees: commandesTraitees.filter((o: any) => o.status === 'ANNULEE').length,
+        injoignables: commandesTraitees.filter((o: any) => o.status === 'INJOIGNABLE').length,
+        assignees: commandesTraitees.filter((o: any) => o.status === 'ASSIGNEE').length,
+        livrees: commandesTraitees.filter((o: any) => o.status === 'LIVREE').length,
+        montantTotal: commandesTraitees.reduce((sum: number, o: any) => {
+          if (['VALIDEE', 'ASSIGNEE', 'LIVREE'].includes(o.status)) return sum + o.montant;
+          return sum;
+        }, 0),
+      };
 
-  // Extraction des villes uniques
-  const villes = [...new Set(commandesTraitees.map((o: any) => o.clientVille))].filter(Boolean);
+  const villes =
+    ordersData?.distinctVilles?.length
+      ? ordersData.distinctVilles
+      : [...new Set(commandesTraitees.map((o: any) => o.clientVille))].filter(Boolean);
 
   return (
     <div className="space-y-6">
@@ -324,6 +338,7 @@ export default function ClientDatabase() {
                 setFilterCaller('');
                 setFilterProductId('');
                 setFilterNiche('');
+                setPage(1);
               }}
               className="btn btn-secondary w-full"
             >
@@ -336,9 +351,19 @@ export default function ClientDatabase() {
       {/* Liste des commandes */}
       <div className="card">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <h3 className="font-semibold text-gray-900">
-            {commandesTraitees.length} commande(s) traitée(s)
-          </h3>
+          <div>
+            <h3 className="font-semibold text-gray-900">Liste des commandes</h3>
+            {pagination && (
+              <p className="text-sm text-gray-500 mt-1">
+                {pagination.total === 0
+                  ? 'Aucune commande'
+                  : `Lignes ${(page - 1) * CLIENT_DB_PAGE_SIZE + 1}–${Math.min(
+                      page * CLIENT_DB_PAGE_SIZE,
+                      pagination.total
+                    )} sur ${pagination.total} (filtres appliqués)`}
+              </p>
+            )}
+          </div>
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -350,7 +375,7 @@ export default function ClientDatabase() {
               {exporting ? 'Export…' : 'Exporter contacts CSV (tél. uniques)'}
             </button>
             <div className="text-sm text-gray-500">
-              Liste : 50 max · fichier : toutes les lignes correspondant aux filtres
+              {CLIENT_DB_PAGE_SIZE} lignes par page · export CSV = tout le périmètre filtré
             </div>
           </div>
         </div>
@@ -435,6 +460,35 @@ export default function ClientDatabase() {
                 ))}
               </tbody>
             </table>
+            {pagination && pagination.totalPages > 1 && (
+              <div className="flex flex-wrap items-center justify-between gap-3 mt-4 pt-4 border-t border-gray-100">
+                <p className="text-sm text-gray-600">
+                  Page {pagination.page} / {pagination.totalPages}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    disabled={page <= 1 || isLoading}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    Précédent
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    disabled={page >= (pagination.totalPages || 1) || isLoading}
+                    onClick={() =>
+                      setPage((p) =>
+                        pagination.totalPages ? Math.min(pagination.totalPages, p + 1) : p + 1
+                      )
+                    }
+                  >
+                    Suivant
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
