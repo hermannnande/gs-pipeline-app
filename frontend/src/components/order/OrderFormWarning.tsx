@@ -45,7 +45,7 @@ export default function OrderFormWarning({ title = 'Avant de commander', childre
           0% { transform: translateX(0); }
           100% { transform: translateX(-50%); }
         }
-        .ofw-track { animation: ofwScroll 26s linear infinite; }
+        .ofw-track { animation: ofwScroll 60s linear infinite; }
         @media (prefers-reduced-motion: reduce) {
           .ofw-track { animation: none; }
         }
