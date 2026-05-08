@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Filter, Calendar, Phone, MapPin, Package, User } from 'lucide-react';
+import { Search, Filter, Calendar, Phone, MapPin, Package, User, Download } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency, formatDateTime, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
 import { useAuthStore } from '@/store/authStore';
@@ -13,7 +13,10 @@ export default function ClientDatabase() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [filterCaller, setFilterCaller] = useState('');
+  const [filterProductId, setFilterProductId] = useState('');
+  const [filterNiche, setFilterNiche] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [exporting, setExporting] = useState(false);
 
   // Requête pour récupérer toutes les commandes TRAITÉES (pas NOUVELLE ni A_APPELER)
   const { data: ordersData, isLoading } = useQuery({
@@ -36,6 +39,15 @@ export default function ClientDatabase() {
     refetchOnWindowFocus: true
   });
 
+  // Liste produits (filtrer l'export par produit)
+  const { data: productsData } = useQuery({
+    queryKey: ['products-export-list'],
+    queryFn: async () => {
+      const { data } = await api.get('/products', { params: { actif: 'true' } });
+      return data;
+    },
+  });
+
   // Requête pour récupérer les appelants
   const { data: appelants } = useQuery({
     queryKey: ['appelants-list'],
@@ -44,6 +56,42 @@ export default function ClientDatabase() {
       return data;
     },
   });
+
+  const handleExportCsv = async () => {
+    try {
+      setExporting(true);
+      const params: Record<string, string> = {};
+      if (searchTerm.trim()) params.search = searchTerm.trim();
+      if (filterStatus !== 'ALL') params.status = filterStatus;
+      if (filterVille) params.ville = filterVille;
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      if (filterCaller) params.callerId = filterCaller;
+      if (filterProductId) params.productId = filterProductId;
+      if (filterNiche.trim()) params.niche = filterNiche.trim();
+
+      const res = await api.get('/orders/contacts-export', {
+        params,
+        responseType: 'blob',
+      });
+      const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const cd = res.headers['content-disposition'];
+      const m = cd && /filename="([^"]+)"/.exec(cd);
+      a.download = m ? m[1] : `contacts-clients-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      alert('Export impossible. Verifiez votre connexion ou reessayez.');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   // Filtrer uniquement les commandes TRAITÉES (exclure NOUVELLE et A_APPELER)
   // IMPORTANT : Pour le Gestionnaire de Stock, exclure aussi VALIDEE (commandes non assignées)
@@ -84,7 +132,10 @@ export default function ClientDatabase() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Base de Données Clients</h1>
-        <p className="text-gray-600 mt-1">Historique complet de toutes les commandes traitées</p>
+        <p className="text-gray-600 mt-1">
+          Historique des commandes traitées. Export CSV : une ligne par numéro (dernière commande retenue),
+          filtrable par produit ou par niche (page / campagne).
+        </p>
       </div>
 
       {/* Statistiques en temps réel - En haut */}
@@ -227,6 +278,40 @@ export default function ClientDatabase() {
             </div>
           )}
 
+          {/* Produit (export filtré) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Produit (export)</label>
+            <select
+              value={filterProductId}
+              onChange={(e) => setFilterProductId(e.target.value)}
+              className="input"
+            >
+              <option value="">Tous les produits</option>
+              {productsData?.products?.map((p: any) => (
+                <option key={p.id} value={String(p.id)}>
+                  {p.nom} ({p.code})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Niche : page landing, UTM, slug */}
+          <div className="lg:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Niche / page / campagne (contient…)
+            </label>
+            <input
+              type="text"
+              placeholder="ex. creme-verrue-tk, fb, serum-cerne…"
+              value={filterNiche}
+              onChange={(e) => setFilterNiche(e.target.value)}
+              className="input"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Cherche dans la page produit, la page source ou la campagne enregistrée sur la commande.
+            </p>
+          </div>
+
           {/* Bouton réinitialiser */}
           <div className="flex items-end">
             <button
@@ -237,6 +322,8 @@ export default function ClientDatabase() {
                 setStartDate('');
                 setEndDate('');
                 setFilterCaller('');
+                setFilterProductId('');
+                setFilterNiche('');
               }}
               className="btn btn-secondary w-full"
             >
@@ -248,12 +335,23 @@ export default function ClientDatabase() {
 
       {/* Liste des commandes */}
       <div className="card">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <h3 className="font-semibold text-gray-900">
             {commandesTraitees.length} commande(s) traitée(s)
           </h3>
-          <div className="text-sm text-gray-500">
-            Actualisation automatique toutes les 5 secondes
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              disabled={exporting}
+              className="btn btn-primary inline-flex items-center gap-2 disabled:opacity-50"
+            >
+              <Download size={18} />
+              {exporting ? 'Export…' : 'Exporter contacts CSV (tél. uniques)'}
+            </button>
+            <div className="text-sm text-gray-500">
+              Liste : 50 max · fichier : toutes les lignes correspondant aux filtres
+            </div>
           </div>
         </div>
 
