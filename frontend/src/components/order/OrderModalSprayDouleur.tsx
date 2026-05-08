@@ -199,7 +199,7 @@ export default function OrderModalSprayDouleur({ open, onClose, cfg, product, se
         <form
           id="spm-form"
           onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
-          className="flex flex-1 min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain px-5 pt-3 pb-4"
+          className="flex flex-1 min-h-0 flex-col gap-2.5 overflow-y-auto overscroll-contain px-5 pb-3 pt-2"
         >
           <OrderFormWarning>
             Soyez <strong>présent</strong> à l’adresse de livraison : <strong>express 24-48 h</strong> partout en CI. Paiement uniquement en <strong>cash</strong> à la livraison.

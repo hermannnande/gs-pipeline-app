@@ -178,7 +178,7 @@ export default function OrderModalSerumCerne({ open, onClose, cfg, product, setP
         <form
           id="scm-form"
           onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
-          className="flex flex-1 min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain px-5 py-4"
+          className="flex flex-1 min-h-0 flex-col gap-2.5 overflow-y-auto overscroll-contain px-5 pb-3 pt-2"
         >
           <OrderFormWarning title="Confirmation par téléphone">
             Notre conseillère <strong>vous appelle dans les 30 min</strong> pour confirmer. Restez <strong>joignable</strong> au numéro indiqué.

@@ -196,7 +196,7 @@ export default function OrderModalSprayLipome({ open, onClose, cfg, product, set
         <form
           id="slm-form"
           onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
-          className="flex flex-1 min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain px-5 py-3"
+          className="flex flex-1 min-h-0 flex-col gap-2.5 overflow-y-auto overscroll-contain px-5 pb-3 pt-2"
         >
           <OrderFormWarning>
             Usage <strong>externe uniquement</strong>. Tenez-vous <strong>prêt(e)</strong> à recevoir le colis sous <strong>24-48 h</strong> à l’adresse choisie.

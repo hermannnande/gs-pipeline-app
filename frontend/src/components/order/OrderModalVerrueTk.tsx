@@ -174,7 +174,7 @@ export default function OrderModalVerrueTk({ open, onClose, cfg, product, setPro
         <form
           id="vtm-form"
           onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
-          className="flex flex-1 min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain px-4 py-4"
+          className="flex flex-1 min-h-0 flex-col gap-2.5 overflow-y-auto overscroll-contain px-4 pb-3 pt-2"
         >
           <OrderFormWarning>
             Restez <strong>joignable</strong> au numéro indiqué : confirmation par téléphone, puis livraison sous <strong>24-48 h</strong>. Aucun paiement avant réception.

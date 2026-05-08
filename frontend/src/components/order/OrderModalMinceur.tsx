@@ -128,7 +128,7 @@ export default function OrderModalMinceur({ open, onClose, cfg, product, setProd
         <form
           id="mn-form"
           onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
-          className="flex flex-1 min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain px-5 py-4"
+          className="flex flex-1 min-h-0 flex-col gap-2.5 overflow-y-auto overscroll-contain px-5 pb-3 pt-2"
         >
           <OrderFormWarning title="Engagement résultat">
             Pour un effet <strong>visible</strong>, prévoyez <strong>au moins 2 mois</strong> d’usage : application matin et soir. Soyez disponible pour la livraison sous <strong>24-48 h</strong>.

@@ -193,7 +193,7 @@ export default function OrderModalSerumCerneTk({ open, onClose, cfg, product, se
         <form
           id="scm-tk-form"
           onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
-          className="flex flex-1 min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain px-5 py-4"
+          className="flex flex-1 min-h-0 flex-col gap-2.5 overflow-y-auto overscroll-contain px-5 pb-3 pt-2"
         >
           <OrderFormWarning title="Confirmation 30 min">
             Un conseiller <strong>vous appelle</strong> sous 30 min pour valider l’adresse. Livraison sous <strong>24-48 h</strong> en CI, paiement à la réception.

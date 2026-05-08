@@ -161,7 +161,7 @@ export default function OrderModalChaussette({ open, onClose, cfg, product, setP
             e.preventDefault();
             await submit({ name, city: `${city} | TAILLE ${size}`, phone, qty });
           }}
-          className="flex flex-1 min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain px-5 py-3"
+          className="flex flex-1 min-h-0 flex-col gap-2.5 overflow-y-auto overscroll-contain px-5 pb-3 pt-2"
         >
           <OrderFormWarning title="Avant de commander">
             <strong>Vérifiez votre taille</strong> ci-dessous : la paire est <strong>non échangeable</strong> une fois ouverte. Soyez disponible sous <strong>24-48 h</strong>.

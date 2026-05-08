@@ -144,7 +144,7 @@ export default function OrderModalOngleIncarne({ open, onClose, cfg, product, se
         <form
           id="oi-form"
           onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
-          className="flex flex-1 min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain px-5 py-3"
+          className="flex flex-1 min-h-0 flex-col gap-2.5 overflow-y-auto overscroll-contain px-5 pb-3 pt-2"
         >
           <OrderFormWarning title="Avant la livraison">
             Préparez le montant <strong>en cash</strong> à la réception. Vérifiez le produit avant de payer. Livraison sous <strong>24-48 h</strong>, soyez <strong>disponible</strong>.
