@@ -110,19 +110,19 @@ export default function OrderModalCremeAntiLipome({ open, onClose, cfg, product,
 
         {/* HEADER */}
         <div className="relative flex-none bg-gradient-to-b from-emerald-50/80 to-white">
-          <div className="relative flex items-start justify-between gap-3 px-5 pb-3 pt-4">
-            <div className="flex items-center gap-3">
-              <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 via-lime-500 to-green-600 text-white shadow-[0_8px_24px_-6px_rgba(16,185,129,.6)]">
-                <span className="absolute inset-0 rounded-2xl bg-white/10 cal-pulse-ring" />
-                <svg className="relative h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <div className="relative flex items-start justify-between gap-3 px-5 pb-2 pt-3">
+            <div className="flex items-center gap-2.5">
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 via-lime-500 to-green-600 text-white shadow-[0_8px_24px_-6px_rgba(16,185,129,.6)]">
+                <span className="absolute inset-0 rounded-xl bg-white/10 cal-pulse-ring" />
+                <svg className="relative h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18zm0 0v-6m0-6v.01" />
                 </svg>
               </div>
               <div>
-                <h3 id="cal-title" className="text-[16px] font-black leading-tight text-emerald-950">
+                <h3 id="cal-title" className="text-[15px] font-black leading-tight text-emerald-950">
                   Crème <span className="bg-gradient-to-r from-emerald-600 to-lime-600 bg-clip-text text-transparent">anti-lipome</span>
                 </h3>
-                <div className="mt-1 flex items-center gap-2 text-[11px]">
+                <div className="mt-0.5 flex items-center gap-2 text-[11px]">
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 font-black text-emerald-800">
                     <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -150,9 +150,9 @@ export default function OrderModalCremeAntiLipome({ open, onClose, cfg, product,
             </button>
           </div>
 
-          {/* Stock bar */}
-          <div className="flex items-center gap-2 px-5 pb-3">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-emerald-100">
+          {/* Stock bar - compact */}
+          <div className="flex items-center gap-2 px-5 pb-1.5">
+            <div className="h-1 flex-1 overflow-hidden rounded-full bg-emerald-100">
               <div
                 className="h-full bg-gradient-to-r from-emerald-500 via-lime-400 to-green-500 transition-all"
                 style={{ width: `${Math.max(20, Math.min(100, Math.round((stock / 25) * 100)))}%` }}
@@ -167,7 +167,7 @@ export default function OrderModalCremeAntiLipome({ open, onClose, cfg, product,
         <form
           id="cal-form"
           onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
-          className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-5 py-4"
+          className="cal-body relative flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto overscroll-contain px-5 pb-3 pt-2"
         >
           <OrderFormWarning>
             Assurez-vous d’être <strong>disponible</strong> à l’adresse indiquée pour recevoir le colis sous <strong>24-48 h</strong>. Le livreur appellera à votre arrivée.
@@ -175,17 +175,17 @@ export default function OrderModalCremeAntiLipome({ open, onClose, cfg, product,
 
           {/* QUANTITE - segmented control */}
           <div>
-            <label className="mb-1.5 flex items-baseline justify-between">
-              <span className="text-[11px] font-black uppercase tracking-wider text-emerald-800">Choisis ton pack</span>
+            <label className="mb-1 flex items-baseline justify-between">
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800">Choisis ton pack</span>
               {qty > 1 && (
                 <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black text-emerald-800">
                   -{fmt(saving)}
                 </span>
               )}
             </label>
-            <div className="relative rounded-2xl bg-emerald-50 p-1 ring-1 ring-emerald-100">
+            <div className="relative rounded-xl bg-emerald-50 p-1 ring-1 ring-emerald-100">
               <div
-                className="absolute inset-y-1 left-1 rounded-xl bg-gradient-to-br from-emerald-500 via-green-600 to-emerald-700 shadow-[0_4px_18px_rgba(16,185,129,.5)] transition-all duration-300 ease-out"
+                className="absolute inset-y-1 left-1 rounded-lg bg-gradient-to-br from-emerald-500 via-green-600 to-emerald-700 shadow-[0_4px_18px_rgba(16,185,129,.5)] transition-all duration-300 ease-out"
                 style={{
                   width: `calc((100% - 8px) / ${qtyOptions.length})`,
                   transform: `translateX(${qtyIndex * 100}%)`,
@@ -199,10 +199,10 @@ export default function OrderModalCremeAntiLipome({ open, onClose, cfg, product,
                       key={o.v}
                       type="button"
                       onClick={() => setQty(o.v)}
-                      className={`relative z-10 flex flex-col items-center justify-center rounded-xl px-2 py-3 transition-colors ${active ? 'text-white' : 'text-emerald-700 hover:text-emerald-900'}`}
+                      className={`relative z-10 flex flex-col items-center justify-center rounded-lg px-2 py-1.5 transition-colors ${active ? 'text-white' : 'text-emerald-700 hover:text-emerald-900'}`}
                     >
-                      <span className="text-[22px] font-black leading-none">{o.v}</span>
-                      <span className={`mt-1 text-[9px] font-black uppercase tracking-wider ${active ? 'text-white/85' : 'text-emerald-600/80'}`}>
+                      <span className="text-[18px] font-black leading-none">{o.v}</span>
+                      <span className={`mt-0.5 text-[9px] font-black uppercase tracking-wider ${active ? 'text-white/85' : 'text-emerald-600/80'}`}>
                         {o.label}
                       </span>
                     </button>
@@ -213,8 +213,8 @@ export default function OrderModalCremeAntiLipome({ open, onClose, cfg, product,
           </div>
 
           {/* COORDONNEES */}
-          <div className="flex flex-col gap-2">
-            <p className="text-[11px] font-black uppercase tracking-wider text-emerald-800">Coordonnées</p>
+          <div className="flex flex-col gap-1.5">
+            <p className="text-[10px] font-black uppercase tracking-wider text-emerald-800">Coordonnées</p>
 
             <div>
               <label htmlFor="cal-name" className="mb-0.5 block text-[10px] font-bold text-emerald-600">Nom complet</label>
@@ -226,13 +226,13 @@ export default function OrderModalCremeAntiLipome({ open, onClose, cfg, product,
                 placeholder="Ex. Aminata K."
                 autoComplete="name"
                 required
-                className="block h-12 w-full rounded-xl border border-emerald-200 bg-white px-3 text-[15px] font-medium text-emerald-950 outline-none transition placeholder:text-emerald-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 sm:text-[14px]"
+                className="block h-10 w-full rounded-lg border border-emerald-200 bg-white px-3 text-[15px] font-medium text-emerald-950 outline-none transition placeholder:text-emerald-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 sm:text-[14px]"
               />
             </div>
 
             <div>
               <label htmlFor="cal-phone" className="mb-0.5 block text-[10px] font-bold text-emerald-600">Téléphone</label>
-              <div className="flex h-12 overflow-hidden rounded-xl border border-emerald-200 bg-white transition focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/25">
+              <div className="flex h-10 overflow-hidden rounded-lg border border-emerald-200 bg-white transition focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/25">
                 <span className="flex items-center gap-1 border-r border-emerald-100 bg-emerald-50 px-3 text-[13px] font-bold text-emerald-800">
                   <span>🇨🇮</span>
                   <span className="font-mono">+225</span>
@@ -261,19 +261,9 @@ export default function OrderModalCremeAntiLipome({ open, onClose, cfg, product,
                 placeholder="Abidjan, Bouaké, Daloa…"
                 autoComplete="address-level2"
                 required
-                className="block h-12 w-full rounded-xl border border-emerald-200 bg-white px-3 text-[15px] font-medium text-emerald-950 outline-none transition placeholder:text-emerald-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 sm:text-[14px]"
+                className="block h-10 w-full rounded-lg border border-emerald-200 bg-white px-3 text-[15px] font-medium text-emerald-950 outline-none transition placeholder:text-emerald-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 sm:text-[14px]"
               />
             </div>
-          </div>
-
-          {/* Trust mini */}
-          <div className="flex items-center justify-between gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-[10px] font-bold text-emerald-700">
-            <span className="inline-flex items-center gap-1">
-              <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2L12 8H18L13 12L15 18L10 14L5 18L7 12L2 8H8L10 2Z"/></svg>
-              4,9/5 · 3 250 avis
-            </span>
-            <span>Livraison gratuite</span>
-            <span className="hidden sm:inline">Cash livraison</span>
           </div>
 
           {formErr && (
@@ -281,13 +271,16 @@ export default function OrderModalCremeAntiLipome({ open, onClose, cfg, product,
           )}
         </form>
 
+        {/* Indicateur de scroll - fade en bas du form */}
+        <div className="cal-scroll-fade pointer-events-none -mt-3 h-3 w-full bg-gradient-to-t from-white to-transparent" />
+
         {/* FOOTER sticky avec recap + CTA glow */}
         <div
-          className="flex-none border-t border-emerald-100 bg-white px-5 pt-3 shadow-[0_-6px_20px_-6px_rgba(16,185,129,0.18)]"
-          style={{ paddingBottom: 'calc(0.85rem + env(safe-area-inset-bottom, 0px))' }}
+          className="flex-none border-t border-emerald-100 bg-white px-5 pt-2 shadow-[0_-6px_20px_-6px_rgba(16,185,129,0.18)]"
+          style={{ paddingBottom: 'calc(0.7rem + env(safe-area-inset-bottom, 0px))' }}
         >
-          <div className="mb-2.5 rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-lime-50/70 p-3 ring-1 ring-emerald-100">
-            <div className="space-y-1 text-[12px]">
+          <div className="mb-2 rounded-xl bg-gradient-to-br from-emerald-50 via-white to-lime-50/70 p-2.5 ring-1 ring-emerald-100">
+            <div className="space-y-0.5 text-[12px]">
               <div className="flex items-baseline justify-between">
                 <span className="text-emerald-700">Sous-total · {qty} tube{qty > 1 ? 's' : ''}</span>
                 <span className="font-bold tabular-nums text-emerald-900">{fmt(fullPrice)}</span>
@@ -306,12 +299,12 @@ export default function OrderModalCremeAntiLipome({ open, onClose, cfg, product,
                 </span>
               </div>
             </div>
-            <div className="my-2 border-t border-dashed border-emerald-200" />
+            <div className="my-1.5 border-t border-dashed border-emerald-200" />
             <div className="flex items-baseline justify-between">
-              <span className="text-[12px] font-black uppercase tracking-wider text-emerald-800">Total</span>
+              <span className="text-[11px] font-black uppercase tracking-wider text-emerald-800">Total</span>
               <div className="flex items-baseline gap-2">
                 {qty > 1 && <span className="text-[11px] text-emerald-400 line-through">{fmt(oldTotal)}</span>}
-                <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-lime-600 bg-clip-text text-[22px] font-black tabular-nums text-transparent">
+                <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-lime-600 bg-clip-text text-[20px] font-black tabular-nums text-transparent">
                   {fmt(total)}
                 </span>
               </div>
@@ -322,7 +315,7 @@ export default function OrderModalCremeAntiLipome({ open, onClose, cfg, product,
             type="submit"
             form="cal-form"
             disabled={sending}
-            className="cal-cta group relative flex h-[56px] w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-500 via-green-600 to-emerald-700 text-[15px] font-black text-white shadow-[0_14px_30px_-6px_rgba(16,185,129,.6)] ring-2 ring-white/30 transition hover:shadow-[0_18px_36px_-6px_rgba(16,185,129,.8)] active:translate-y-px disabled:cursor-wait disabled:opacity-60"
+            className="cal-cta group relative flex h-[50px] w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-emerald-500 via-green-600 to-emerald-700 text-[14px] font-black text-white shadow-[0_14px_30px_-6px_rgba(16,185,129,.6)] ring-2 ring-white/30 transition hover:shadow-[0_18px_36px_-6px_rgba(16,185,129,.8)] active:translate-y-px disabled:cursor-wait disabled:opacity-60"
           >
             <span className="cal-cta-sheen pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/45 to-transparent" />
             {sending ? (
@@ -340,7 +333,7 @@ export default function OrderModalCremeAntiLipome({ open, onClose, cfg, product,
             )}
           </button>
 
-          <div className="mt-2 flex items-center justify-center gap-3 text-[10px] font-semibold text-emerald-600">
+          <div className="mt-1.5 flex items-center justify-center gap-3 text-[10px] font-semibold text-emerald-600">
             <span>🔒 Paiement à la livraison</span>
             <span className="h-3 w-px bg-emerald-200" />
             <span>📦 Express CI</span>
