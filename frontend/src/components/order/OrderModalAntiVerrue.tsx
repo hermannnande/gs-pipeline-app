@@ -18,6 +18,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useOrderSubmit, type OrderSubmitConfig, type OrderProduct } from '../../hooks/useOrderSubmit';
 import { cleanPhoneCI } from '../../utils/phone';
+import OrderFormWarning from './OrderFormWarning';
 
 interface QtyOption {
   v: number;
@@ -174,6 +175,10 @@ export default function OrderModalAntiVerrue({ open, onClose, cfg, product, setP
           onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
           className="flex flex-1 min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain px-4 py-4"
         >
+          <OrderFormWarning>
+            Soyez <strong>disponible</strong> à l’adresse choisie : le livreur passe sous <strong>24-48 h</strong> et appellera à son arrivée. Préparez le montant en cash.
+          </OrderFormWarning>
+
           <div className="grid grid-cols-3 gap-2">
             {qtyOptions.map((o) => {
               const active = qty === o.v;

@@ -17,6 +17,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useOrderSubmit, type OrderSubmitConfig, type OrderProduct } from '../../hooks/useOrderSubmit';
 import { cleanPhoneCI } from '../../utils/phone';
+import OrderFormWarning from './OrderFormWarning';
 
 interface QtyOption {
   v: number;
@@ -179,6 +180,10 @@ export default function OrderModalSerumCerne({ open, onClose, cfg, product, setP
           onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
           className="flex flex-1 min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain px-5 py-4"
         >
+          <OrderFormWarning title="Confirmation par téléphone">
+            Notre conseillère <strong>vous appelle dans les 30 min</strong> pour confirmer. Restez <strong>joignable</strong> au numéro indiqué.
+          </OrderFormWarning>
+
           <div>
             <p className="mb-2 text-center text-[9px] font-black uppercase tracking-[0.35em] text-amber-700">Votre cure</p>
             <div className="grid grid-cols-3 gap-1.5">

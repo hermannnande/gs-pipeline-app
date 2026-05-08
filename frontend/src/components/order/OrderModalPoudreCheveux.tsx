@@ -16,6 +16,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useOrderSubmit, type OrderSubmitConfig, type OrderProduct } from '../../hooks/useOrderSubmit';
 import { cleanPhoneCI } from '../../utils/phone';
+import OrderFormWarning from './OrderFormWarning';
 
 interface QtyOption {
   v: number;
@@ -178,6 +179,10 @@ export default function OrderModalPoudreCheveux({ open, onClose, cfg, product, s
           onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
           className="flex flex-1 min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain px-5 py-4"
         >
+          <OrderFormWarning title="Routine régulière">
+            Pour des résultats visibles, prévoyez une <strong>application 2-3 fois par semaine</strong>. Soyez disponible sous <strong>24-48 h</strong> pour la livraison.
+          </OrderFormWarning>
+
           <div>
             <p className="mb-2 text-center text-[9px] font-black uppercase tracking-[0.35em] text-emerald-700">Votre cure</p>
             <div className="grid grid-cols-3 gap-1.5">

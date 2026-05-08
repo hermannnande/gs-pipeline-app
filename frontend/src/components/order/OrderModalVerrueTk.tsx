@@ -19,6 +19,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useOrderSubmit, type OrderSubmitConfig, type OrderProduct } from '../../hooks/useOrderSubmit';
 import { cleanPhoneCI } from '../../utils/phone';
+import OrderFormWarning from './OrderFormWarning';
 
 interface QtyOption {
   v: number;
@@ -175,6 +176,10 @@ export default function OrderModalVerrueTk({ open, onClose, cfg, product, setPro
           onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
           className="flex flex-1 min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain px-4 py-4"
         >
+          <OrderFormWarning>
+            Restez <strong>joignable</strong> au numéro indiqué : confirmation par téléphone, puis livraison sous <strong>24-48 h</strong>. Aucun paiement avant réception.
+          </OrderFormWarning>
+
           <div className="grid grid-cols-3 gap-2">
             {qtyOptions.map((o) => {
               const active = qty === o.v;

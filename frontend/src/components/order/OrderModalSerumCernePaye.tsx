@@ -32,6 +32,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useOrderSubmit, type OrderSubmitConfig, type OrderProduct } from '../../hooks/useOrderSubmit';
 import { usePaystackCheckout, type MobileMoneyProvider } from '../../hooks/usePaystackCheckout';
 import { cleanPhoneCI } from '../../utils/phone';
+import OrderFormWarning from './OrderFormWarning';
 
 interface QtyOption {
   v: number;
@@ -285,6 +286,10 @@ export default function OrderModalSerumCernePaye({ open, onClose, cfg, product, 
         {/* ===== BODY FORM ===== */}
         <div className="relative px-5 py-4">
           <form onSubmit={onSubmit} className="flex flex-col gap-3">
+
+            <OrderFormWarning title="Avant le paiement">
+              Vérifiez votre <strong>adresse</strong> et votre <strong>numéro</strong> : aucun remboursement après paiement Mobile Money. En cash, soyez disponible sous <strong>2 h</strong> en agence ou <strong>24 h</strong> à domicile.
+            </OrderFormWarning>
 
             {/* ===== BADGE MODE DE PAIEMENT (compact + bouton Changer) ===== */}
             {paymentMode === 'paystack' ? (

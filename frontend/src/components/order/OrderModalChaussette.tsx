@@ -22,6 +22,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useOrderSubmit, type OrderSubmitConfig, type OrderProduct } from '../../hooks/useOrderSubmit';
 import { cleanPhoneCI } from '../../utils/phone';
+import OrderFormWarning from './OrderFormWarning';
 
 interface QtyOption {
   v: number;
@@ -162,6 +163,10 @@ export default function OrderModalChaussette({ open, onClose, cfg, product, setP
           }}
           className="flex flex-1 min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain px-5 py-3"
         >
+          <OrderFormWarning title="Avant de commander">
+            <strong>Vérifiez votre taille</strong> ci-dessous : la paire est <strong>non échangeable</strong> une fois ouverte. Soyez disponible sous <strong>24-48 h</strong>.
+          </OrderFormWarning>
+
           {/* SELECTEUR TAILLE - 5 boutons */}
           <div>
             <div className="mb-1.5 flex items-center justify-between">

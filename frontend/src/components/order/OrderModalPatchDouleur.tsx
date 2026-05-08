@@ -16,6 +16,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useOrderSubmit, type OrderSubmitConfig, type OrderProduct } from '../../hooks/useOrderSubmit';
 import { cleanPhoneCI } from '../../utils/phone';
+import OrderFormWarning from './OrderFormWarning';
 
 interface QtyOption {
   v: number;
@@ -259,6 +260,10 @@ export default function OrderModalPatchDouleur({ open, onClose, cfg, product, se
               onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
               className="mx-auto flex max-w-[520px] flex-col gap-4"
             >
+              <OrderFormWarning title="Avant de commander">
+                Paiement <strong>uniquement en cash</strong> à la livraison. Soyez <strong>présent(e)</strong> à l’adresse choisie sous <strong>24-48 h</strong> et préparez le montant exact.
+              </OrderFormWarning>
+
               {/* Step 1 — quantite */}
               <div>
                 <label className="mb-2 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-neutral-500">

@@ -18,6 +18,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useOrderSubmit, type OrderSubmitConfig, type OrderProduct } from '../../hooks/useOrderSubmit';
 import { cleanPhoneCI } from '../../utils/phone';
+import OrderFormWarning from './OrderFormWarning';
 
 interface QtyOption {
   v: number;
@@ -145,6 +146,10 @@ export default function OrderModalOngleIncarne({ open, onClose, cfg, product, se
           onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
           className="flex flex-1 min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain px-5 py-3"
         >
+          <OrderFormWarning title="Avant la livraison">
+            Préparez le montant <strong>en cash</strong> à la réception. Vérifiez le produit avant de payer. Livraison sous <strong>24-48 h</strong>, soyez <strong>disponible</strong>.
+          </OrderFormWarning>
+
           <div>
             <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-violet-200/80">
               Nombre de tubes

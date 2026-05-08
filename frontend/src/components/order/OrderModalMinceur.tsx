@@ -13,6 +13,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useOrderSubmit, type OrderSubmitConfig, type OrderProduct } from '../../hooks/useOrderSubmit';
 import { cleanPhoneCI } from '../../utils/phone';
+import OrderFormWarning from './OrderFormWarning';
 
 interface QtyOption {
   v: number;
@@ -129,6 +130,10 @@ export default function OrderModalMinceur({ open, onClose, cfg, product, setProd
           onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
           className="flex flex-1 min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain px-5 py-4"
         >
+          <OrderFormWarning title="Engagement résultat">
+            Pour un effet <strong>visible</strong>, prévoyez <strong>au moins 2 mois</strong> d’usage : application matin et soir. Soyez disponible pour la livraison sous <strong>24-48 h</strong>.
+          </OrderFormWarning>
+
           <div>
             <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-rose-700">Nombre de pots</label>
             <div className="grid grid-cols-3 gap-1.5 sm:gap-2">

@@ -16,6 +16,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useOrderSubmit, type OrderSubmitConfig, type OrderProduct } from '../../hooks/useOrderSubmit';
 import { cleanPhoneCI } from '../../utils/phone';
+import OrderFormWarning from './OrderFormWarning';
 
 interface QtyOption {
   v: number;
@@ -200,6 +201,10 @@ export default function OrderModalSprayDouleur({ open, onClose, cfg, product, se
           onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
           className="flex flex-1 min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain px-5 pt-3 pb-4"
         >
+          <OrderFormWarning>
+            Soyez <strong>présent</strong> à l’adresse de livraison : <strong>express 24-48 h</strong> partout en CI. Paiement uniquement en <strong>cash</strong> à la livraison.
+          </OrderFormWarning>
+
           {/* QUANTITE pills horizontales */}
           <div>
             <p className="mb-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-neutral-500">Quantite</p>
