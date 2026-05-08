@@ -110,7 +110,15 @@ export default function ClientDatabase() {
     }
   };
 
-  const commandesTraitees = ordersData?.orders ?? [];
+  const commandesTraitees = (() => {
+    const raw = ordersData?.orders ?? [];
+    if (ordersData?.clientDatabaseStats != null) return raw;
+    return raw.filter((order: any) => {
+      if (['NOUVELLE', 'A_APPELER'].includes(order.status)) return false;
+      if (user?.role === 'GESTIONNAIRE_STOCK' && order.status === 'VALIDEE') return false;
+      return true;
+    });
+  })();
   const pagination = ordersData?.pagination;
   const byStatus = ordersData?.clientDatabaseStats?.byStatus;
 
