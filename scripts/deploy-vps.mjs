@@ -172,7 +172,7 @@ function packageBuild() {
 
   const candidates = ['index.html', 'robots.txt', '.htaccess', 'assets'];
   if (FLAGS.withImages) {
-    candidates.push('verrue-tk', 'spray-douleur', 'creme-minceur', 'patch-douleur-tk');
+    candidates.push('verrue-tk', 'creme-anti-verrue', 'spray-douleur', 'spray-lipome', 'lipome', 'serum-yeux', 'creme-minceur', 'patch-douleur-tk', 'poudre-pousse-cheveux');
   }
 
   // Note : on n'utilise NI -C NI shell:true (les deux explosent avec les
@@ -226,7 +226,7 @@ if [ -d assets ]; then
 fi
 
 WEB_ROOT=$(dirname "$APP_DIR")
-for img_dir in verrue-tk spray-douleur creme-minceur patch-douleur-tk; do
+for img_dir in verrue-tk creme-anti-verrue spray-douleur spray-lipome lipome serum-yeux creme-minceur patch-douleur-tk poudre-pousse-cheveux; do
   if [ -d "$img_dir" ]; then
     rm -rf "$WEB_ROOT/$img_dir"
     mv "$img_dir" "$WEB_ROOT/$img_dir"
@@ -301,7 +301,7 @@ async function testUrls(env) {
   step(5, 'Test des URLs publiques');
 
   const slugs = (env.LANDING_SLUGS ||
-    'creme-anti-verrue,creme-verrue-tk,spraydouleurtk,creme-ongle-incarne,chaussette-compression,patchdouleurtk,patchdouleurfb,crememinceurfb'
+    'boutique,creme-anti-verrue,creme-verrue-tk,spraydouleurtk,creme-ongle-incarne,chaussette-compression,patchdouleurtk,patchdouleurfb,crememinceurfb,coffret-boxer-homme'
   ).split(',').map(s => s.trim()).filter(Boolean);
   const domain = env.PUBLIC_DOMAIN || 'obrille.com';
   const basePath = env.VITE_BASE_PATH || '/landings-app/';

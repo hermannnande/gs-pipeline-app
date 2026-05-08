@@ -12,6 +12,7 @@ import CremeVerrueTk2Landing from './CremeVerrueTk2Landing';
 import SprayDouleurTkLanding from './SprayDouleurTkLanding';
 import SprayLipomeLanding from './SprayLipomeLanding';
 import SprayLipomeTkLanding from './SprayLipomeTkLanding';
+import CremeAntiLipomeLanding from './CremeAntiLipomeLanding';
 import SerumCerneLanding from './SerumCerneLanding';
 import SerumCerneTkLanding from './SerumCerneTkLanding';
 import SerumCernePayeLanding from './SerumCernePayeLanding';
@@ -45,7 +46,7 @@ export default function LandingRouter() {
 
   useEffect(() => {
     // Landings autonomes : zero call API template
-    if (!slug || slug === 'coffret-boxer-homme' || slug === 'creme-anti-verrue' || slug === 'patchdouleurtk' || slug === 'patchdouleurfb' || slug === 'creme-verrue-tk' || slug === 'creme-verrue-tk2' || slug === 'spraydouleurtk' || slug === 'spraylipome' || slug === 'spraylipometk' || slug === 'serum-cerne' || slug === 'serum-cerne-tk' || slug === 'serum-cerne-paye' || slug === 'poudre-pousse-cheveux' || slug === 'boutique') return;
+    if (!slug || slug === 'coffret-boxer-homme' || slug === 'creme-anti-verrue' || slug === 'patchdouleurtk' || slug === 'patchdouleurfb' || slug === 'creme-verrue-tk' || slug === 'creme-verrue-tk2' || slug === 'spraydouleurtk' || slug === 'spraylipome' || slug === 'spraylipometk' || slug === 'creme-anti-lipome' || slug === 'serum-cerne' || slug === 'serum-cerne-tk' || slug === 'serum-cerne-paye' || slug === 'poudre-pousse-cheveux' || slug === 'boutique') return;
     axios.get(`${API_URL}/templates/public/${slug}`)
       .then(r => {
         try {
@@ -147,6 +148,16 @@ export default function LandingRouter() {
     return (
       <ErrorBoundary>
         <SprayLipomeTkLanding />
+      </ErrorBoundary>
+    );
+  }
+
+  // Landing creme anti-lipome — palette VERT EMERAUDE / LIME / FORET (couleur du produit),
+  // disposition tunnel "1 fiche = 1 micro-texte + 1 media + 1 CTA fluide", mapping CREME_ANTI_LIPOME.
+  if (slug === 'creme-anti-lipome') {
+    return (
+      <ErrorBoundary>
+        <CremeAntiLipomeLanding />
       </ErrorBoundary>
     );
   }

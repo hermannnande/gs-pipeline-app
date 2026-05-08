@@ -40,7 +40,7 @@ Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains
 RewriteEngine On
 # Si le fichier existe physiquement (ex: /poudre-pousse-cheveux/hero.webp), on le sert direct.
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^(creme-anti-verrue|creme-verrue-tk|spraydouleurtk|spraylipome|spraylipometk|serum-cerne|serum-cerne-tk|serum-cerne-paye|creme-ongle-incarne|chaussette-compression|patchdouleurtk|patchdouleurfb|crememinceurfb|coffret-boxer-homme|poudre-pousse-cheveux)(/.*)?$ /landings-app/index.html [L]
+RewriteRule ^(boutique|creme-anti-verrue|creme-verrue-tk|creme-verrue-tk2|spraydouleurtk|spraylipome|spraylipometk|creme-anti-lipome|serum-cerne|serum-cerne-tk|serum-cerne-paye|creme-ongle-incarne|chaussette-compression|patchdouleurtk|patchdouleurfb|crememinceurfb|coffret-boxer-homme|poudre-pousse-cheveux)(/.*)?$ /landings-app/index.html [L]
 </IfModule>
 # === END React Landings ===
 
