@@ -14,10 +14,10 @@ interface OrderFormWarningProps {
 
 export default function OrderFormWarning({ title = 'Avant de commander', children }: OrderFormWarningProps) {
   return (
-    <div className="ofw-wrap relative overflow-hidden rounded-2xl border border-amber-300 bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 px-3 py-2.5 shadow-sm">
-      <span className="ofw-stripe pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-amber-200/55 to-transparent" />
-      <div className="relative flex items-start gap-2.5">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-400 text-amber-950 shadow ring-2 ring-white">
+    <div className="ofw-wrap relative isolate w-full shrink-0 self-stretch overflow-x-clip rounded-2xl border border-amber-300 bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 px-3 py-3 shadow-sm">
+      <span className="ofw-stripe pointer-events-none absolute inset-y-0 left-0 right-0 -z-10 -translate-x-full bg-gradient-to-r from-transparent via-amber-200/55 to-transparent" />
+      <div className="flex items-start gap-2.5">
+        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-400 text-amber-950 shadow ring-2 ring-white">
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.6}>
             <path
               strokeLinecap="round"
@@ -26,9 +26,9 @@ export default function OrderFormWarning({ title = 'Avant de commander', childre
             />
           </svg>
         </span>
-        <div className="text-[12px] leading-snug text-amber-900">
-          <p className="font-black uppercase tracking-wider text-amber-800">{title}</p>
-          <p className="mt-0.5 font-semibold">{children}</p>
+        <div className="min-w-0 flex-1 text-[12px] leading-snug text-amber-900">
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-amber-800">{title}</p>
+          <p className="mt-1 font-semibold">{children}</p>
         </div>
       </div>
       <style>{`
