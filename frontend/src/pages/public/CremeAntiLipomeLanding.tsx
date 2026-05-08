@@ -273,7 +273,6 @@ export default function CremeAntiLipomeLanding() {
   const [stock, setStock] = useState(15);
   const [countdown, setCountdown] = useState({ h: 0, m: 0, s: 0 });
   const [carouselIdx, setCarouselIdx] = useState(0);
-  const [showSticky, setShowSticky] = useState(false);
 
   const pixelFired = useRef(false);
 
@@ -342,13 +341,6 @@ export default function CremeAntiLipomeLanding() {
   useEffect(() => {
     const id = setInterval(() => setCarouselIdx((c) => (c + 1) % 4), 5500);
     return () => clearInterval(id);
-  }, []);
-
-  // Sticky CTA apparait apres scroll
-  useEffect(() => {
-    const onScroll = () => setShowSticky(window.scrollY > 700);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   useEffect(() => {
@@ -1045,7 +1037,7 @@ export default function CremeAntiLipomeLanding() {
       {/* ====================================================================== */}
       <div
         className={`fixed inset-x-0 bottom-0 z-40 transform border-t border-emerald-300/40 bg-emerald-950/95 px-3 py-2.5 backdrop-blur-md transition-all duration-300 sm:hidden ${
-          showSticky && !modal ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
+          modal ? 'translate-y-full opacity-0' : 'translate-y-0 opacity-100 cal-fade-up'
         }`}
         style={{ paddingBottom: 'calc(0.6rem + env(safe-area-inset-bottom, 0px))' }}
       >

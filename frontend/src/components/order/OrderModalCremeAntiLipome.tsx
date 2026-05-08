@@ -168,6 +168,24 @@ export default function OrderModalCremeAntiLipome({ open, onClose, cfg, product,
           onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
           className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-5 py-4"
         >
+          {/* AVERTISSEMENT DISPONIBILITE - barre toujours visible en haut */}
+          <div className="relative overflow-hidden rounded-2xl border border-amber-300 bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 px-3 py-2.5 shadow-sm">
+            <span className="cal-warn-stripe pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-amber-200/50 to-transparent" />
+            <div className="relative flex items-start gap-2.5">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-400 text-amber-950 shadow ring-2 ring-white">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.6}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4a2 2 0 00-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z" />
+                </svg>
+              </span>
+              <div className="text-[12px] leading-snug text-amber-900">
+                <p className="font-black uppercase tracking-wider text-amber-800">Avant de commander</p>
+                <p className="mt-0.5 font-semibold">
+                  Assurez-vous d'être <span className="font-black text-amber-950">disponible</span> à l'adresse indiquée pour recevoir le colis sous <span className="font-black text-amber-950">24-48 h</span>. Le livreur appellera à votre arrivée.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* QUANTITE - segmented control */}
           <div>
             <label className="mb-1.5 flex items-baseline justify-between">
@@ -350,10 +368,12 @@ export default function OrderModalCremeAntiLipome({ open, onClose, cfg, product,
         @keyframes calSheen { 0% { transform: translateX(-100%) } 100% { transform: translateX(100%) } }
         @keyframes calBarGlow { 0%,100% { filter: brightness(1) saturate(1) } 50% { filter: brightness(1.3) saturate(1.4) } }
         @keyframes calPulseRing { 0% { transform: scale(.95); opacity: .7 } 100% { transform: scale(1.4); opacity: 0 } }
+        @keyframes calWarnStripe { 0% { transform: translateX(-100%) } 65% { transform: translateX(120%) } 100% { transform: translateX(120%) } }
         .cal-pulse-digit { animation: calPulseDigit 1s ease-in-out infinite }
         .cal-bar-glow { animation: calBarGlow 2.4s ease-in-out infinite }
         .cal-pulse-ring { animation: calPulseRing 1.6s cubic-bezier(0,0,.2,1) infinite }
         .cal-cta-sheen { animation: calSheen 3.2s ease-in-out infinite }
+        .cal-warn-stripe { animation: calWarnStripe 4s ease-in-out infinite }
         @supports (height: 100svh) { .cal-shell { height: 100svh; } }
         @media (min-width: 640px) { .cal-shell { height: auto !important; } }
         @media (max-width: 639px) {
