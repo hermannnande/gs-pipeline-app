@@ -1,9 +1,9 @@
 /**
- * Banniere d'avertissement reutilisable affichee en haut des formulaires de
- * commande. Palette ambre (universelle) pour rester lisible quelle que soit
- * la palette du modal hote. Animation discrete (stripe glissante).
+ * Barre d'avertissement reutilisable affichee en haut des formulaires de
+ * commande. Format ticker / marquee horizontal : une seule ligne, le texte
+ * defile en boucle. Palette ambre (universelle) lisible sur tous les modals.
  */
-import type { ReactNode } from 'react';
+import { Children, type ReactNode } from 'react';
 
 interface OrderFormWarningProps {
   /** Titre court en MAJUSCULES, ex: "AVANT DE COMMANDER". */
@@ -12,28 +12,43 @@ interface OrderFormWarningProps {
   children: ReactNode;
 }
 
-export default function OrderFormWarning({ title = 'Avant de commander', children }: OrderFormWarningProps) {
+function Item({ title, children }: OrderFormWarningProps) {
   return (
-    <div className="ofw-wrap relative isolate w-full shrink-0 self-stretch overflow-x-clip rounded-2xl border border-amber-300 bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 px-3 py-3 shadow-sm">
-      <span className="ofw-stripe pointer-events-none absolute inset-y-0 left-0 right-0 -z-10 -translate-x-full bg-gradient-to-r from-transparent via-amber-200/55 to-transparent" />
-      <div className="flex items-start gap-2.5">
-        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-400 text-amber-950 shadow ring-2 ring-white">
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.6}>
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4a2 2 0 00-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"
-            />
-          </svg>
-        </span>
-        <div className="min-w-0 flex-1 text-[12px] leading-snug text-amber-900">
-          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-amber-800">{title}</p>
-          <p className="mt-1 font-semibold">{children}</p>
-        </div>
+    <span className="inline-flex shrink-0 items-center gap-2 px-5 text-amber-900">
+      <span className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-700">{title}</span>
+      <span className="text-[12px] font-semibold">{children}</span>
+      <span className="text-amber-500" aria-hidden="true">★</span>
+    </span>
+  );
+}
+
+export default function OrderFormWarning({ title = 'Avant de commander', children }: OrderFormWarningProps) {
+  // On rend 4 copies du contenu cote a cote pour creer un defilement continu
+  // (l'animation translate de 0 a -50% du conteneur double la sequence).
+  const COPIES = 4;
+  const items = Children.toArray(
+    Array.from({ length: COPIES }, (_, i) => <Item key={i} title={title}>{children}</Item>)
+  );
+
+  return (
+    <div className="relative w-full shrink-0 overflow-hidden border-y border-amber-300 bg-amber-50/85 py-2">
+      <span className="pointer-events-none absolute inset-y-0 left-0 z-10 w-6 bg-gradient-to-r from-amber-50/90 to-transparent" />
+      <span className="pointer-events-none absolute inset-y-0 right-0 z-10 w-6 bg-gradient-to-l from-amber-50/90 to-transparent" />
+
+      <div className="ofw-track flex w-max items-center whitespace-nowrap will-change-transform">
+        {items}
+        {items}
       </div>
+
       <style>{`
-        @keyframes ofwStripe { 0% { transform: translateX(-100%) } 65% { transform: translateX(120%) } 100% { transform: translateX(120%) } }
-        .ofw-stripe { animation: ofwStripe 4s ease-in-out infinite }
+        @keyframes ofwScroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .ofw-track { animation: ofwScroll 26s linear infinite; }
+        @media (prefers-reduced-motion: reduce) {
+          .ofw-track { animation: none; }
+        }
       `}</style>
     </div>
   );
