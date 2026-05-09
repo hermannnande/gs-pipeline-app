@@ -387,18 +387,18 @@ export default function ChaussetteHommeLanding() {
       <Marquee items={['CHAUSSETTES HOMME LUXE', '5 PAIRES ASSORTIES', 'COTON PEIGNE', 'BUREAU & SORTIES', '24H ABIDJAN', 'CASH LIVRAISON']} />
 
       {/* HERO editorial */}
-      <section className="relative overflow-hidden bg-[#fafaf6] py-14 sm:py-20">
+      <section className="relative overflow-hidden bg-[#fafaf6] py-6 sm:py-10">
         <div className="pointer-events-none absolute -left-16 -top-16 h-72 w-72 rounded-full bg-amber-300/30 blur-3xl chh-float-slow" />
         <div className="pointer-events-none absolute -right-20 top-32 h-72 w-72 rounded-full bg-yellow-300/25 blur-3xl chh-float-slow" style={{ animationDelay: '3s' }} />
 
         <div className="relative mx-auto max-w-3xl px-4 text-center">
-          <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-300/50 bg-white/80 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.32em] text-amber-700 backdrop-blur chh-fade-up">
+          <p className="inline-flex items-center gap-2 rounded-full border border-amber-300/50 bg-white/80 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.32em] text-amber-700 backdrop-blur chh-fade-up">
             <span className="h-1 w-1 rounded-full bg-amber-500" />
             Edition signature 2026
             <span className="h-1 w-1 rounded-full bg-amber-500" />
           </p>
 
-          <div className="relative mt-6 chh-fade-up" style={{ animationDelay: '.05s' }}>
+          <div className="relative mt-4 chh-fade-up" style={{ animationDelay: '.05s' }}>
             <div className="pointer-events-none absolute -inset-6 rounded-[3rem] bg-gradient-to-br from-amber-300/40 via-yellow-200/30 to-amber-300/40 blur-3xl" />
             <div className="relative mx-auto max-w-md overflow-hidden rounded-[2.2rem] bg-white shadow-[0_30px_80px_-20px_rgba(0,0,0,.4)] ring-2 ring-amber-300/50 chh-bob">
               <LazyImg src={M('m1.webp')} alt="Chaussettes homme luxe pack 5" aspect="4/5" priority />
@@ -417,17 +417,17 @@ export default function ChaussetteHommeLanding() {
             </div>
           </div>
 
-          <h1 className="mt-8 text-[40px] leading-[1.05] tracking-tight chh-fade-up sm:text-[58px]" style={{ animationDelay: '.1s' }}>
+          <h1 className="mt-5 text-[34px] leading-[1.05] tracking-tight chh-fade-up sm:text-[48px]" style={{ animationDelay: '.1s' }}>
             <span className="chh-serif block text-neutral-900">L'allure</span>
             <span className="chh-shimmer-gold block font-black">d'un homme</span>
-            <span className="chh-serif mt-1 block text-neutral-700">commence aux pieds.</span>
+            <span className="chh-serif block text-neutral-700">commence aux pieds.</span>
           </h1>
 
-          <p className="mx-auto mt-5 max-w-md text-[14px] font-semibold leading-relaxed text-neutral-700 chh-fade-up sm:text-[16px]" style={{ animationDelay: '.15s' }}>
+          <p className="mx-auto mt-3 max-w-md text-[13px] font-semibold leading-relaxed text-neutral-700 chh-fade-up sm:text-[15px]" style={{ animationDelay: '.15s' }}>
             <Gold>5 paires</Gold> assorties. Coton peigne. <Gold>Bureau, sortie, week-end</Gold>.
           </p>
 
-          <div className="mt-8 chh-fade-up" style={{ animationDelay: '.2s' }}>
+          <div className="mt-5 chh-fade-up" style={{ animationDelay: '.2s' }}>
             <div className="flex items-baseline justify-center gap-3">
               <span className="chh-shimmer-gold text-4xl font-black sm:text-5xl">9 900</span>
               <span className="text-lg font-bold text-neutral-800 sm:text-xl">FCFA</span>
@@ -436,10 +436,10 @@ export default function ChaussetteHommeLanding() {
             </div>
             <p className="mt-1 text-[12px] font-bold text-amber-700">🚚 Livraison gratuite Abidjan</p>
 
-            <div className="mx-auto mt-6 max-w-sm">
+            <div className="mx-auto mt-4 max-w-sm">
               <FluidCTA onClick={() => openModal(1)}>Je commande — 9 900 F <Arrow /></FluidCTA>
             </div>
-            <p className="mt-3 text-[11px] text-neutral-500">🔒 Paiement à la livraison · Sans risque</p>
+            <p className="mt-2 text-[11px] text-neutral-500">🔒 Paiement à la livraison · Sans risque</p>
           </div>
         </div>
       </section>
