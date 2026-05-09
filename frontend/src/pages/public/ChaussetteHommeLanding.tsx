@@ -398,17 +398,7 @@ export default function ChaussetteHommeLanding() {
             <span className="h-1 w-1 rounded-full bg-amber-500" />
           </p>
 
-          <h1 className="mt-4 text-[40px] leading-[1.05] tracking-tight chh-fade-up sm:text-[58px]" style={{ animationDelay: '.05s' }}>
-            <span className="chh-serif block text-neutral-900">L'allure</span>
-            <span className="chh-shimmer-gold block font-black">d'un homme</span>
-            <span className="chh-serif mt-1 block text-neutral-700">commence aux pieds.</span>
-          </h1>
-
-          <p className="mx-auto mt-5 max-w-md text-[14px] font-semibold leading-relaxed text-neutral-700 chh-fade-up sm:text-[16px]" style={{ animationDelay: '.1s' }}>
-            <Gold>5 paires</Gold> assorties. Coton peigne. <Gold>Bureau, sortie, week-end</Gold>.
-          </p>
-
-          <div className="relative mt-8 chh-fade-up" style={{ animationDelay: '.15s' }}>
+          <div className="relative mt-6 chh-fade-up" style={{ animationDelay: '.05s' }}>
             <div className="pointer-events-none absolute -inset-6 rounded-[3rem] bg-gradient-to-br from-amber-300/40 via-yellow-200/30 to-amber-300/40 blur-3xl" />
             <div className="relative mx-auto max-w-md overflow-hidden rounded-[2.2rem] bg-white shadow-[0_30px_80px_-20px_rgba(0,0,0,.4)] ring-2 ring-amber-300/50 chh-bob">
               <LazyImg src={M('m1.webp')} alt="Chaussettes homme luxe pack 5" aspect="4/5" priority />
@@ -426,6 +416,16 @@ export default function ChaussetteHommeLanding() {
               </p>
             </div>
           </div>
+
+          <h1 className="mt-8 text-[40px] leading-[1.05] tracking-tight chh-fade-up sm:text-[58px]" style={{ animationDelay: '.1s' }}>
+            <span className="chh-serif block text-neutral-900">L'allure</span>
+            <span className="chh-shimmer-gold block font-black">d'un homme</span>
+            <span className="chh-serif mt-1 block text-neutral-700">commence aux pieds.</span>
+          </h1>
+
+          <p className="mx-auto mt-5 max-w-md text-[14px] font-semibold leading-relaxed text-neutral-700 chh-fade-up sm:text-[16px]" style={{ animationDelay: '.15s' }}>
+            <Gold>5 paires</Gold> assorties. Coton peigne. <Gold>Bureau, sortie, week-end</Gold>.
+          </p>
 
           <div className="mt-8 chh-fade-up" style={{ animationDelay: '.2s' }}>
             <div className="flex items-baseline justify-center gap-3">
