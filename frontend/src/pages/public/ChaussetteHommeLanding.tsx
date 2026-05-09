@@ -208,8 +208,21 @@ export default function ChaussetteHommeLanding() {
   const [stock, setStock] = useState(15);
   const [countdown, setCountdown] = useState({ h: 0, m: 0, s: 0 });
   const [carouselIdx, setCarouselIdx] = useState(0);
+  const [toast, setToast] = useState<{ n: string; v: string; t: string; visible: boolean } | null>(null);
 
   const pixelFired = useRef(false);
+  const toastIdx = useRef(0);
+
+  const TOASTS = useMemo(() => [
+    { n: 'Konan A.',     v: 'Plateau',   t: '3 min'  },
+    { n: 'Yao M.',       v: 'Cocody',    t: '7 min'  },
+    { n: 'Diabate F.',   v: 'Yopougon',  t: '12 min' },
+    { n: 'Kouassi B.',   v: 'Bouake',    t: '16 min' },
+    { n: 'Traore I.',    v: 'Marcory',   t: '21 min' },
+    { n: 'Kone S.',      v: 'San Pedro', t: '25 min' },
+    { n: 'Bamba D.',     v: 'Daloa',     t: '29 min' },
+    { n: 'Coulibaly E.', v: 'Korhogo',   t: '34 min' },
+  ], []);
 
   const openModal = useCallback((q?: number) => {
     setQty(q || 1);
@@ -275,6 +288,19 @@ export default function ChaussetteHommeLanding() {
   }, []);
 
   useEffect(() => {
+    const show = () => {
+      const t = TOASTS[toastIdx.current % TOASTS.length];
+      toastIdx.current++;
+      setToast({ ...t, visible: true });
+      setTimeout(() => setToast((prev) => (prev ? { ...prev, visible: false } : null)), 4000);
+      setTimeout(() => setToast(null), 4400);
+    };
+    const first = setTimeout(show, 5000);
+    const id = setInterval(show, 15000);
+    return () => { clearInterval(id); clearTimeout(first); };
+  }, [TOASTS]);
+
+  useEffect(() => {
     document.body.style.overflow = modal ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [modal]);
@@ -320,6 +346,10 @@ export default function ChaussetteHommeLanding() {
         .chh-serif { font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif; font-style: italic; font-weight: 500 }
         @keyframes chh-pulse-dot { 0% { transform: scale(.95); opacity: 1 } 100% { transform: scale(2); opacity: 0 } }
         .chh-pulse-dot::after { content: ''; position: absolute; inset: 0; border-radius: 9999px; background: currentColor; animation: chh-pulse-dot 1.6s cubic-bezier(0,0,.2,1) infinite }
+        @keyframes chh-toast-slide-in { from { opacity: 0; transform: translateX(-110%) } to { opacity: 1; transform: translateX(0) } }
+        @keyframes chh-toast-slide-out { from { opacity: 1; transform: translateX(0) } to { opacity: 0; transform: translateX(-110%) } }
+        .chh-toast-in { animation: chh-toast-slide-in .45s cubic-bezier(.22,1,.36,1) both }
+        .chh-toast-out { animation: chh-toast-slide-out .4s cubic-bezier(.55,.08,.68,.53) both }
       `}</style>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" />
 
@@ -892,9 +922,60 @@ export default function ChaussetteHommeLanding() {
         media={<LazyImg src={M('m5.webp')} alt="Pack famille 15 paires" aspect="4/5" />}
       />
 
-      <footer className="bg-neutral-950 py-7 text-center text-[10px] font-semibold text-amber-300/80">
+      <footer className="bg-neutral-950 py-7 pb-24 text-center text-[10px] font-semibold text-amber-300/80 sm:pb-7">
         © {new Date().getFullYear()} · Chaussettes homme luxe · Coton peigne premium · Côte d'Ivoire
       </footer>
+
+      {/* TOAST SOCIAL PROOF (bas gauche, mobile + desktop, sauf si modal ouvert) */}
+      {toast && !modal && (
+        <div
+          className={`fixed bottom-20 left-3 z-30 w-[88vw] max-w-[280px] sm:bottom-5 ${
+            toast.visible ? 'chh-toast-in' : 'chh-toast-out'
+          }`}
+        >
+          <div className="flex items-center gap-2.5 rounded-xl border border-amber-300/40 bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950 px-3 py-2.5 shadow-[0_12px_30px_-6px_rgba(0,0,0,.55)]">
+            <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 via-yellow-300 to-amber-400 text-neutral-950 font-black ring-2 ring-amber-200/40">
+              <span className="absolute inset-0 animate-ping rounded-full bg-amber-300/40" />
+              <span className="relative text-[12px]">{toast.n.split(' ').map((p) => p[0]).join('').slice(0, 2)}</span>
+            </span>
+            <div className="min-w-0 flex-1 leading-tight">
+              <p className="text-[11px] font-black text-white">
+                <span className="text-amber-300">{toast.n}</span> · {toast.v}
+              </p>
+              <p className="mt-0.5 text-[10px] text-stone-300">
+                vient de commander <span className="font-bold text-amber-200">il y a {toast.t}</span>
+              </p>
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">✓</span>
+          </div>
+        </div>
+      )}
+
+      {/* STICKY CTA BOTTOM (mobile only) — visible des l'arrivee */}
+      <div
+        className={`fixed inset-x-0 bottom-0 z-40 border-t border-amber-300/40 bg-neutral-950/95 px-3 py-2.5 backdrop-blur-md sm:hidden ${
+          modal ? 'translate-y-full opacity-0' : 'translate-y-0 opacity-100 chh-fade-up'
+        } transition-all duration-300`}
+        style={{ paddingBottom: 'calc(0.6rem + env(safe-area-inset-bottom, 0px))' }}
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex-1">
+            <p className="text-[10px] font-black uppercase tracking-wider text-amber-300">
+              Promo · {pad(countdown.h)}:{pad(countdown.m)}:{pad(countdown.s)}
+            </p>
+            <p className="text-[11px] font-bold text-white">9 900 F · livraison gratuite</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => openModal(1)}
+            className="chh-fluid chh-fluid-pulse relative inline-flex items-center gap-1.5 overflow-hidden rounded-full bg-gradient-to-r from-amber-300 via-yellow-300 to-amber-400 px-5 py-2.5 text-[13px] font-black uppercase tracking-[0.18em] text-neutral-950 shadow-[0_10px_24px_-4px_rgba(212,175,55,.65)] ring-2 ring-amber-200/30"
+          >
+            <span className="chh-sheen pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/45 to-transparent" />
+            <span className="relative">Commander ici</span>
+            <Arrow />
+          </button>
+        </div>
+      </div>
 
       <OrderModalDispatcher
         slug={SLUG}
