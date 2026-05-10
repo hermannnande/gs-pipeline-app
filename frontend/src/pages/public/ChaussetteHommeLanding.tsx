@@ -65,22 +65,12 @@ function useOnScreen(rootMargin = '300px') {
 }
 
 function LazyImg({ src, alt, aspect, priority, className = '' }: {
-  src: string; alt: string;
-  /** Si fourni: cadre fixe (object-cover, peut rogner). Si omis: ratio natif (object-contain) -> aucun decoupage. */
-  aspect?: string;
-  priority?: boolean;
-  className?: string;
+  src: string; alt: string; aspect?: string; priority?: boolean; className?: string;
 }) {
   const { ref, visible } = useOnScreen('320px');
-  // Avec aspect fixe -> cover (remplit, peut rogner les bords).
-  // Sans aspect -> hauteur auto, l'image trouve sa taille naturelle (aucun decoupage, aucune bande vide).
-  const hasAspect = !!aspect;
-  const wrapStyle = hasAspect ? { aspectRatio: aspect } : undefined;
-  const imgClass = hasAspect ? 'h-full w-full object-cover' : 'block h-auto w-full';
-
   if (priority) {
     return (
-      <div className={`overflow-hidden ${className}`} style={wrapStyle}>
+      <div className={`overflow-hidden ${className}`} style={aspect ? { aspectRatio: aspect } : undefined}>
         <img
           src={src}
           alt={alt}
@@ -88,17 +78,17 @@ function LazyImg({ src, alt, aspect, priority, className = '' }: {
           decoding="async"
           // @ts-expect-error fetchpriority
           fetchpriority="high"
-          className={imgClass}
+          className="h-full w-full object-cover"
         />
       </div>
     );
   }
   return (
-    <div ref={ref} className={`overflow-hidden ${className}`} style={wrapStyle}>
+    <div ref={ref} className={`overflow-hidden ${className}`} style={aspect ? { aspectRatio: aspect } : undefined}>
       {visible ? (
-        <img src={src} alt={alt} loading="lazy" decoding="async" className={imgClass} />
+        <img src={src} alt={alt} loading="lazy" decoding="async" className="h-full w-full object-cover" />
       ) : (
-        <div className={`w-full animate-pulse bg-neutral-100 ${hasAspect ? 'h-full' : 'min-h-[280px]'}`} />
+        <div className="h-full min-h-[260px] w-full animate-pulse bg-neutral-200" />
       )}
     </div>
   );
@@ -478,7 +468,7 @@ export default function ChaussetteHommeLanding() {
         qty={1}
         onOrder={openModal}
         variant="ivory"
-        media={<LazyImg src={M('m2.webp')} alt="Coton peigne haut de gamme" />}
+        media={<LazyImg src={M('m2.webp')} alt="Coton peigne haut de gamme" aspect="4/5" />}
       />
 
       {/* FICHE 2 — m4 / les 5 paires */}
@@ -489,7 +479,7 @@ export default function ChaussetteHommeLanding() {
         qty={2}
         onOrder={openModal}
         variant="noir"
-        media={<LazyImg src={M('m4.webp')} alt="5 paires assorties" />}
+        media={<LazyImg src={M('m4.webp')} alt="5 paires assorties" aspect="1/1" />}
       />
 
       {/* FICHE 3 — m6 / au pied */}
@@ -500,7 +490,7 @@ export default function ChaussetteHommeLanding() {
         qty={1}
         onOrder={openModal}
         variant="sand"
-        media={<LazyImg src={M('m6.webp')} alt="Confort au pied" />}
+        media={<LazyImg src={M('m6.webp')} alt="Confort au pied" aspect="4/5" />}
       />
 
       {/* SECTION : VU DANS - presse */}
@@ -528,7 +518,7 @@ export default function ChaussetteHommeLanding() {
         qty={1}
         onOrder={openModal}
         variant="ivory"
-        media={<LazyImg src={M('m7.webp')} alt="Look bureau" />}
+        media={<LazyImg src={M('m7.webp')} alt="Look bureau" aspect="1/1" />}
       />
 
       {/* FICHE 5 — m8 / look sortie */}
@@ -539,7 +529,7 @@ export default function ChaussetteHommeLanding() {
         qty={2}
         onOrder={openModal}
         variant="noir"
-        media={<LazyImg src={M('m8.webp')} alt="Look soir" />}
+        media={<LazyImg src={M('m8.webp')} alt="Look soir" aspect="4/5" />}
       />
 
       {/* SECTION CARROUSEL TEMOIGNAGES */}
@@ -638,7 +628,7 @@ export default function ChaussetteHommeLanding() {
         qty={1}
         onOrder={openModal}
         variant="sand"
-        media={<LazyImg src={M('m9.webp')} alt="Look complet" />}
+        media={<LazyImg src={M('m9.webp')} alt="Look complet" aspect="4/5" />}
       />
 
       {/* SECTION EXPERT (portrait) */}
@@ -674,7 +664,7 @@ export default function ChaussetteHommeLanding() {
         qty={1}
         onOrder={openModal}
         variant="ivory"
-        media={<LazyImg src={M('m11.webp')} alt="Detail couture luxe" />}
+        media={<LazyImg src={M('m11.webp')} alt="Detail couture luxe" aspect="1/1" />}
       />
 
       {/* FICHE 8 — m12 */}
@@ -685,7 +675,7 @@ export default function ChaussetteHommeLanding() {
         qty={2}
         onOrder={openModal}
         variant="noir"
-        media={<LazyImg src={M('m12.webp')} alt="Tenue jour soir" />}
+        media={<LazyImg src={M('m12.webp')} alt="Tenue jour soir" aspect="4/5" />}
       />
 
       {/* SECTION BUNDLES */}
@@ -789,7 +779,7 @@ export default function ChaussetteHommeLanding() {
         qty={1}
         onOrder={openModal}
         variant="ivory"
-        media={<LazyImg src={M('m13.webp')} alt="Standard luxe" />}
+        media={<LazyImg src={M('m13.webp')} alt="Standard luxe" aspect="1/1" />}
       />
 
       {/* FICHE 10 — m14 */}
@@ -800,7 +790,7 @@ export default function ChaussetteHommeLanding() {
         qty={2}
         onOrder={openModal}
         variant="noir"
-        media={<LazyImg src={M('m14.webp')} alt="Logo brode signature" />}
+        media={<LazyImg src={M('m14.webp')} alt="Logo brode signature" aspect="4/5" />}
       />
 
       {/* GARANTIE BOX */}
@@ -898,7 +888,7 @@ export default function ChaussetteHommeLanding() {
         qty={1}
         onOrder={openModal}
         variant="sand"
-        media={<LazyImg src={M('m16.webp')} alt="Geste signature" />}
+        media={<LazyImg src={M('m16.webp')} alt="Geste signature" aspect="4/5" />}
       />
 
       <Fiche
@@ -908,7 +898,7 @@ export default function ChaussetteHommeLanding() {
         qty={2}
         onOrder={openModal}
         variant="ivory"
-        media={<LazyImg src={M('m17.webp')} alt="Decontracte chic" />}
+        media={<LazyImg src={M('m17.webp')} alt="Decontracte chic" aspect="1/1" />}
       />
 
       <Fiche
@@ -918,7 +908,7 @@ export default function ChaussetteHommeLanding() {
         qty={1}
         onOrder={openModal}
         variant="noir"
-        media={<LazyImg src={M('m3.webp')} alt="Signature quotidienne" />}
+        media={<LazyImg src={M('m3.webp')} alt="Signature quotidienne" aspect="1/1" />}
       />
 
       {/* FICHE 14 — m5 */}
@@ -929,7 +919,7 @@ export default function ChaussetteHommeLanding() {
         qty={3}
         onOrder={openModal}
         variant="sand"
-        media={<LazyImg src={M('m5.webp')} alt="Pack famille 15 paires" />}
+        media={<LazyImg src={M('m5.webp')} alt="Pack famille 15 paires" aspect="4/5" />}
       />
 
       <footer className="bg-neutral-950 py-7 pb-24 text-center text-[10px] font-semibold text-amber-300/80 sm:pb-7">
