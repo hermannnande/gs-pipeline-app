@@ -65,19 +65,53 @@ function useOnScreen(rootMargin = '300px') {
 }
 
 function LazyImg({ src, alt, aspect, priority, className = '', cover = false }: {
-  src: string; alt: string; aspect?: string; priority?: boolean; className?: string;
-  /** Si true: object-cover (rogne pour remplir le cadre, pour hero/arriere-plan).
-   *  Si false (defaut): object-contain (respecte le ratio natif de l'image, aucun decoupage). */
+  src: string; alt: string;
+  /** Si fourni : cadre fixe + object-cover/contain selon `cover`. Si omis : ratio natif (height auto), aucun decoupage. */
+  aspect?: string;
+  priority?: boolean;
+  className?: string;
+  /** N'agit que si `aspect` est fourni. true = remplit le cadre (peut rogner). false = contain avec fond beige. */
   cover?: boolean;
 }) {
   const { ref, visible } = useOnScreen('320px');
+  const hasAspect = !!aspect;
+
+  // Sans aspect : l'image trouve sa hauteur naturelle (block + h-auto + w-full).
+  if (!hasAspect) {
+    if (priority) {
+      return (
+        <div className={`overflow-hidden ${className}`}>
+          <img
+            src={src}
+            alt={alt}
+            loading="eager"
+            decoding="async"
+            // @ts-expect-error fetchpriority
+            fetchpriority="high"
+            className="block h-auto w-full"
+          />
+        </div>
+      );
+    }
+    return (
+      <div ref={ref} className={`overflow-hidden ${className}`}>
+        {visible ? (
+          <img src={src} alt={alt} loading="lazy" decoding="async" className="block h-auto w-full" />
+        ) : (
+          <div className="min-h-[280px] w-full animate-pulse bg-rose-50" />
+        )}
+      </div>
+    );
+  }
+
+  // Avec aspect : cadre fixe.
   const fit = cover ? 'object-cover' : 'object-contain';
-  // En mode contain, on ajoute un fond ivoire neutre pour habiller les eventuelles bandes laterales
   const bg = cover ? '' : 'bg-stone-50';
+  const wrapStyle = { aspectRatio: aspect };
 
   if (priority) {
     return (
-      <div className={`overflow-hidden ${bg} ${className}`} style={aspect ? { aspectRatio: aspect } : undefined}>
+      <div className={`overflow-hidden ${bg} ${className}`} style={wrapStyle}>
         <img
           src={src}
           alt={alt}
@@ -91,11 +125,11 @@ function LazyImg({ src, alt, aspect, priority, className = '', cover = false }: 
     );
   }
   return (
-    <div ref={ref} className={`overflow-hidden ${bg} ${className}`} style={aspect ? { aspectRatio: aspect } : undefined}>
+    <div ref={ref} className={`overflow-hidden ${bg} ${className}`} style={wrapStyle}>
       {visible ? (
         <img src={src} alt={alt} loading="lazy" decoding="async" className={`h-full w-full ${fit}`} />
       ) : (
-        <div className="h-full min-h-[260px] w-full animate-pulse bg-rose-50" />
+        <div className="h-full w-full animate-pulse bg-rose-50" />
       )}
     </div>
   );
@@ -490,7 +524,7 @@ export default function CremeAntiCerneLanding() {
             ))}
           </ul>
           <div className="mx-auto mt-6 max-w-[420px] overflow-hidden rounded-[2rem] ring-1 ring-rose-200 shadow-xl">
-            <LazyImg src={M('m2.webp')} alt="Regard fatigué cernes poches ridules" aspect="16/9" />
+            <LazyImg src={M('m2.webp')} alt="Regard fatigué cernes poches ridules" />
           </div>
           <div className="mx-auto mt-6 max-w-sm">
             <FluidCTA onClick={() => openModal(1)}>Je veux corriger mon regard <Arrow/></FluidCTA>
@@ -536,7 +570,7 @@ export default function CremeAntiCerneLanding() {
         qty={1}
         onOrder={openModal}
         variant="white"
-        media={<LazyImg src={M('m3.webp')} alt="Avant après cernes" aspect="1/1" />}
+        media={<LazyImg src={M('m3.webp')} alt="Avant après cernes" />}
       />
 
       {/* FICHE 2 — m4 */}
@@ -547,7 +581,7 @@ export default function CremeAntiCerneLanding() {
         qty={2}
         onOrder={openModal}
         variant="beige"
-        media={<LazyImg src={M('m4.webp')} alt="Résultat sur les poches" aspect="1/1" />}
+        media={<LazyImg src={M('m4.webp')} alt="Résultat sur les poches" />}
       />
 
       {/* FICHE 3 — m5 application */}
@@ -558,7 +592,7 @@ export default function CremeAntiCerneLanding() {
         qty={1}
         onOrder={openModal}
         variant="white"
-        media={<LazyImg src={M('m5.webp')} alt="Application de la crème" aspect="4/5" />}
+        media={<LazyImg src={M('m5.webp')} alt="Application de la crème" />}
       />
 
       {/* SECTION : VU PAR LES CLIENTES (sans fausses sources) */}
@@ -593,7 +627,7 @@ export default function CremeAntiCerneLanding() {
                   key={img}
                   className={`absolute inset-0 transition-opacity duration-700 ${i === galleryIdx ? 'opacity-100' : 'opacity-0'}`}
                 >
-                  <LazyImg src={M(img)} alt={`Galerie ${i + 1}`} aspect="" className="h-full w-full" />
+                  <img src={M(img)} alt={`Galerie ${i + 1}`} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
                 </div>
               ))}
               {/* Flèches */}
@@ -683,7 +717,7 @@ export default function CremeAntiCerneLanding() {
         qty={1}
         onOrder={openModal}
         variant="white"
-        media={<LazyImg src={M('m6.webp')} alt="Avant après carnation africaine" aspect="1/1" />}
+        media={<LazyImg src={M('m6.webp')} alt="Avant après carnation africaine" />}
       />
 
       {/* FICHE 5 — m7 produit */}
@@ -694,7 +728,7 @@ export default function CremeAntiCerneLanding() {
         qty={1}
         onOrder={openModal}
         variant="beige"
-        media={<LazyImg src={M('m7.webp')} alt="Crème packaging premium" aspect="1/1" />}
+        media={<LazyImg src={M('m7.webp')} alt="Crème packaging premium" />}
       />
 
       {/* SECTION EXPERT / RASSURANCE */}
@@ -728,7 +762,7 @@ export default function CremeAntiCerneLanding() {
         qty={2}
         onOrder={openModal}
         variant="beige"
-        media={<LazyImg src={M('m8.webp')} alt="Avant après traitement" aspect="1/1" />}
+        media={<LazyImg src={M('m8.webp')} alt="Avant après traitement" />}
       />
 
       {/* MODE D'EMPLOI */}
@@ -770,7 +804,7 @@ export default function CremeAntiCerneLanding() {
         qty={2}
         onOrder={openModal}
         variant="white"
-        media={<LazyImg src={M('m9.webp')} alt="Regard transformé" aspect="1/1" />}
+        media={<LazyImg src={M('m9.webp')} alt="Regard transformé" />}
       />
 
       {/* SECTION BUNDLES */}
@@ -841,7 +875,7 @@ export default function CremeAntiCerneLanding() {
         qty={1}
         onOrder={openModal}
         variant="beige"
-        media={<LazyImg src={M('m10.webp')} alt="Application crème geste simple" aspect="1/1" />}
+        media={<LazyImg src={M('m10.webp')} alt="Application crème geste simple" />}
       />
 
       {/* FICHE 9 — m11 carnation */}
@@ -852,7 +886,7 @@ export default function CremeAntiCerneLanding() {
         qty={2}
         onOrder={openModal}
         variant="white"
-        media={<LazyImg src={M('m11.webp')} alt="Crème universelle toutes carnations" aspect="1/1" />}
+        media={<LazyImg src={M('m11.webp')} alt="Crème universelle toutes carnations" />}
       />
 
       {/* FICHE 10 — m12 routine */}
@@ -863,7 +897,7 @@ export default function CremeAntiCerneLanding() {
         qty={1}
         onOrder={openModal}
         variant="beige"
-        media={<LazyImg src={M('m12.webp')} alt="Routine quotidienne contour des yeux" aspect="1/1" />}
+        media={<LazyImg src={M('m12.webp')} alt="Routine quotidienne contour des yeux" />}
       />
 
       {/* FICHE 11 — m14 hommes aussi */}
@@ -874,7 +908,7 @@ export default function CremeAntiCerneLanding() {
         qty={3}
         onOrder={openModal}
         variant="white"
-        media={<LazyImg src={M('m14.webp')} alt="Avant après homme contour des yeux" aspect="1/1" />}
+        media={<LazyImg src={M('m14.webp')} alt="Avant après homme contour des yeux" />}
       />
 
       {/* GARANTIE BOX */}
