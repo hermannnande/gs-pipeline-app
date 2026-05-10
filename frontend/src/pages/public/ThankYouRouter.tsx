@@ -128,8 +128,8 @@ export default function ThankYouRouter() {
           <div className="flex items-center gap-3"><span className="text-2xl">🚚</span><span>Livraison rapide partout en Côte d'Ivoire</span></div>
           <div className="flex items-center gap-3"><span className="text-2xl">💵</span><span>Paiement uniquement à la livraison</span></div>
         </div>
-        <Link to="/" className="mt-6 inline-block rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 px-8 py-3 text-sm font-bold text-white shadow-lg transition hover:scale-105">
-          Retour à l'accueil
+        <Link to={slug ? `/${slug}` : '/'} className="mt-6 inline-block rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 px-8 py-3 text-sm font-bold text-white shadow-lg transition hover:scale-105">
+          Retour au produit
         </Link>
       </div>
     </div>

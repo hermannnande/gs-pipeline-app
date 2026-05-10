@@ -198,10 +198,10 @@ export default function PatchDouleurFbThankYou() {
             {/* CTA retour */}
             <div className="mt-6 text-center">
               <Link
-                to="/boutique"
+                to="/patchdouleurfb"
                 className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-400 via-cyan-500 to-sky-500 px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.18em] text-white shadow-[0_10px_25px_-5px_rgba(6,182,212,0.55)] transition hover:-translate-y-0.5 hover:shadow-[0_15px_35px_-5px_rgba(6,182,212,0.75)]"
               >
-                Voir d'autres produits
+                Retour au produit
                 <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
               </Link>
             </div>
