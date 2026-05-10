@@ -64,13 +64,20 @@ function useOnScreen(rootMargin = '300px') {
   return { ref, visible };
 }
 
-function LazyImg({ src, alt, aspect, priority, className = '' }: {
+function LazyImg({ src, alt, aspect, priority, className = '', cover = false }: {
   src: string; alt: string; aspect?: string; priority?: boolean; className?: string;
+  /** Si true: object-cover (rogne pour remplir le cadre, pour hero/arriere-plan).
+   *  Si false (defaut): object-contain (respecte le ratio natif de l'image, aucun decoupage). */
+  cover?: boolean;
 }) {
   const { ref, visible } = useOnScreen('320px');
+  const fit = cover ? 'object-cover' : 'object-contain';
+  // En mode contain, on ajoute un fond ivoire neutre pour habiller les eventuelles bandes laterales
+  const bg = cover ? '' : 'bg-stone-50';
+
   if (priority) {
     return (
-      <div className={`overflow-hidden ${className}`} style={aspect ? { aspectRatio: aspect } : undefined}>
+      <div className={`overflow-hidden ${bg} ${className}`} style={aspect ? { aspectRatio: aspect } : undefined}>
         <img
           src={src}
           alt={alt}
@@ -78,15 +85,15 @@ function LazyImg({ src, alt, aspect, priority, className = '' }: {
           decoding="async"
           // @ts-expect-error fetchpriority
           fetchpriority="high"
-          className="h-full w-full object-cover"
+          className={`h-full w-full ${fit}`}
         />
       </div>
     );
   }
   return (
-    <div ref={ref} className={`overflow-hidden ${className}`} style={aspect ? { aspectRatio: aspect } : undefined}>
+    <div ref={ref} className={`overflow-hidden ${bg} ${className}`} style={aspect ? { aspectRatio: aspect } : undefined}>
       {visible ? (
-        <img src={src} alt={alt} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+        <img src={src} alt={alt} loading="lazy" decoding="async" className={`h-full w-full ${fit}`} />
       ) : (
         <div className="h-full min-h-[260px] w-full animate-pulse bg-rose-50" />
       )}
@@ -408,7 +415,7 @@ export default function CremeAntiCerneLanding() {
           <div className="relative mt-5 cac-fade-up" style={{ animationDelay: '.05s' }}>
             <div className="pointer-events-none absolute -inset-6 rounded-[3rem] bg-gradient-to-br from-rose-300/40 via-red-200/30 to-rose-300/40 blur-3xl" />
             <div className="relative mx-auto max-w-md overflow-hidden rounded-[2.2rem] bg-white shadow-[0_30px_80px_-20px_rgba(239,68,68,.3)] ring-2 ring-rose-200 cac-bob">
-              <LazyImg src={M('m1.webp')} alt="Crème contour des yeux anti-cernes premium" aspect="4/5" priority />
+              <LazyImg src={M('m1.webp')} alt="Crème contour des yeux anti-cernes premium" aspect="4/5" priority cover />
             </div>
 
             <div className="absolute -left-3 top-10 rotate-[-7deg] rounded-md bg-red-700 px-3 py-2 text-center shadow-xl">
@@ -932,7 +939,7 @@ export default function CremeAntiCerneLanding() {
 
       {/* CLOTURE FORTE — m15 / m16 carrousel témoignages premium */}
       <section className="relative overflow-hidden">
-        <LazyImg src={M('m13.webp')} alt="" className="absolute inset-0 h-full w-full" />
+        <LazyImg src={M('m13.webp')} alt="" className="absolute inset-0 h-full w-full" cover />
         <div className="absolute inset-0 bg-gradient-to-br from-red-950/95 via-red-900/85 to-rose-900/85" />
         <div className="pointer-events-none absolute -left-12 top-10 h-40 w-40 rounded-full bg-rose-400/30 blur-3xl cac-float-slow" />
         <div className="pointer-events-none absolute -right-16 bottom-12 h-48 w-48 rounded-full bg-red-300/20 blur-3xl cac-float-slow" style={{ animationDelay: '2s' }} />
