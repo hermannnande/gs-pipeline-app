@@ -15,7 +15,7 @@ import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'chaussette-homme';
 const PRODUCT_CODE = 'CHAUSSETTE_HOMME';
-const META_PIXEL_ID = '952340034030644';
+const META_PIXEL_ID = '1613380123108753';
 const THANK_YOU_URL = '/chaussette-homme/merci';
 
 const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };

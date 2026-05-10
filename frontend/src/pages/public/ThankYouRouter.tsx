@@ -14,6 +14,8 @@ import PatchDouleurFbThankYou from './PatchDouleurFbThankYou';
 import SerumCernePayeThankYou from './SerumCernePayeThankYou';
 import SerumCernePayeThankYouCash from './SerumCernePayeThankYouCash';
 import CremeAntiVerrueThankYou from './CremeAntiVerrueThankYou';
+import CremeAntiLipomeThankYou from './CremeAntiLipomeThankYou';
+import ChaussetteHommeThankYou from './ChaussetteHommeThankYou';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -22,6 +24,8 @@ const DEDICATED_THANKYOU_SLUGS = new Set<string>([
   'patchdouleurfb',
   'serum-cerne-paye',
   'creme-anti-verrue',
+  'creme-anti-lipome',
+  'chaussette-homme',
 ]);
 
 /**
@@ -72,6 +76,16 @@ export default function ThankYouRouter() {
   // Page de remerciement creme-anti-verrue — pixel Meta dedie coachingexpertci.com / campagnes.
   if (slug === 'creme-anti-verrue') {
     return <CremeAntiVerrueThankYou />;
+  }
+
+  // Page de remerciement creme-anti-lipome — pixel Meta 1857129471642967 (Purchase).
+  if (slug === 'creme-anti-lipome') {
+    return <CremeAntiLipomeThankYou />;
+  }
+
+  // Page de remerciement chaussette-homme — pixel Meta 1613380123108753 (Purchase).
+  if (slug === 'chaussette-homme') {
+    return <ChaussetteHommeThankYou />;
   }
 
   // Page de remerciement dediee patchdouleurfb avec pixel Meta 952340034030644
