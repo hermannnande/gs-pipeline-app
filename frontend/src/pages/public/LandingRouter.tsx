@@ -14,6 +14,7 @@ import SprayLipomeLanding from './SprayLipomeLanding';
 import SprayLipomeTkLanding from './SprayLipomeTkLanding';
 import CremeAntiLipomeLanding from './CremeAntiLipomeLanding';
 import ChaussetteHommeLanding from './ChaussetteHommeLanding';
+import CremeAntiCerneLanding from './CremeAntiCerneLanding';
 import SerumCerneLanding from './SerumCerneLanding';
 import SerumCerneTkLanding from './SerumCerneTkLanding';
 import SerumCernePayeLanding from './SerumCernePayeLanding';
@@ -47,7 +48,7 @@ export default function LandingRouter() {
 
   useEffect(() => {
     // Landings autonomes : zero call API template
-    if (!slug || slug === 'coffret-boxer-homme' || slug === 'creme-anti-verrue' || slug === 'patchdouleurtk' || slug === 'patchdouleurfb' || slug === 'creme-verrue-tk' || slug === 'creme-verrue-tk2' || slug === 'spraydouleurtk' || slug === 'spraylipome' || slug === 'spraylipometk' || slug === 'creme-anti-lipome' || slug === 'chaussette-homme' || slug === 'serum-cerne' || slug === 'serum-cerne-tk' || slug === 'serum-cerne-paye' || slug === 'poudre-pousse-cheveux' || slug === 'boutique') return;
+    if (!slug || slug === 'coffret-boxer-homme' || slug === 'creme-anti-verrue' || slug === 'patchdouleurtk' || slug === 'patchdouleurfb' || slug === 'creme-verrue-tk' || slug === 'creme-verrue-tk2' || slug === 'spraydouleurtk' || slug === 'spraylipome' || slug === 'spraylipometk' || slug === 'creme-anti-lipome' || slug === 'chaussette-homme' || slug === 'creme-anti-cerne' || slug === 'serum-cerne' || slug === 'serum-cerne-tk' || slug === 'serum-cerne-paye' || slug === 'poudre-pousse-cheveux' || slug === 'boutique') return;
     axios.get(`${API_URL}/templates/public/${slug}`)
       .then(r => {
         try {
@@ -169,6 +170,16 @@ export default function LandingRouter() {
     return (
       <ErrorBoundary>
         <ChaussetteHommeLanding />
+      </ErrorBoundary>
+    );
+  }
+
+  // Landing crème contour des yeux anti-cernes — palette PREMIUM blanc/rouge,
+  // disposition tunnel "1 média + texte court + CTA fluide", mapping CREME_ANTI_CERNE.
+  if (slug === 'creme-anti-cerne') {
+    return (
+      <ErrorBoundary>
+        <CremeAntiCerneLanding />
       </ErrorBoundary>
     );
   }

@@ -17,6 +17,7 @@ import OrderModalPatchDouleur from './OrderModalPatchDouleur';
 import OrderModalSprayLipome from './OrderModalSprayLipome';
 import OrderModalCremeAntiLipome from './OrderModalCremeAntiLipome';
 import OrderModalChaussetteHomme from './OrderModalChaussetteHomme';
+import OrderModalCremeAntiCerne from './OrderModalCremeAntiCerne';
 import OrderModalSerumCerne from './OrderModalSerumCerne';
 import OrderModalSerumCerneTk from './OrderModalSerumCerneTk';
 import OrderModalSerumCernePaye from './OrderModalSerumCernePaye';
@@ -37,6 +38,7 @@ const CUSTOM_SLUGS = [
   'spraylipometk',
   'creme-anti-lipome',
   'chaussette-homme',
+  'creme-anti-cerne',
   'serum-cerne',
   'serum-cerne-tk',
   'serum-cerne-paye',
@@ -100,6 +102,8 @@ export default function OrderModalDispatcher({ slug, ...rest }: Props) {
       return <OrderModalCremeAntiLipome {...rest} />;
     case 'chaussette-homme':
       return <OrderModalChaussetteHomme {...rest} />;
+    case 'creme-anti-cerne':
+      return <OrderModalCremeAntiCerne {...rest} />;
     case 'serum-cerne':
       return <OrderModalSerumCerne {...rest} />;
     case 'serum-cerne-tk':

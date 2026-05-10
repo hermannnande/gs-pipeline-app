@@ -172,7 +172,7 @@ function packageBuild() {
 
   const candidates = ['index.html', 'robots.txt', '.htaccess', 'assets'];
   if (FLAGS.withImages) {
-    candidates.push('verrue-tk', 'creme-anti-verrue', 'spray-douleur', 'spray-lipome', 'lipome', 'serum-yeux', 'creme-minceur', 'patch-douleur-tk', 'poudre-pousse-cheveux', 'chaussettes-homme');
+    candidates.push('verrue-tk', 'creme-anti-verrue', 'spray-douleur', 'spray-lipome', 'lipome', 'serum-yeux', 'creme-minceur', 'patch-douleur-tk', 'poudre-pousse-cheveux', 'chaussettes-homme', 'creme-anti-cerne');
   }
 
   // Note : on n'utilise NI -C NI shell:true (les deux explosent avec les
@@ -226,7 +226,7 @@ if [ -d assets ]; then
 fi
 
 WEB_ROOT=$(dirname "$APP_DIR")
-for img_dir in verrue-tk creme-anti-verrue spray-douleur spray-lipome lipome serum-yeux creme-minceur patch-douleur-tk poudre-pousse-cheveux chaussettes-homme; do
+for img_dir in verrue-tk creme-anti-verrue spray-douleur spray-lipome lipome serum-yeux creme-minceur patch-douleur-tk poudre-pousse-cheveux chaussettes-homme creme-anti-cerne; do
   if [ -d "$img_dir" ]; then
     rm -rf "$WEB_ROOT/$img_dir"
     mv "$img_dir" "$WEB_ROOT/$img_dir"

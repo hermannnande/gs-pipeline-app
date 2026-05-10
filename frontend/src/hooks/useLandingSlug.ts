@@ -17,6 +17,7 @@ export const LANDING_SLUGS = [
   'spraylipometk',
   'creme-anti-lipome',
   'chaussette-homme',
+  'creme-anti-cerne',
   'serum-cerne',
   'serum-cerne-tk',
   'serum-cerne-paye',
