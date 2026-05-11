@@ -20,6 +20,7 @@ export default function ClientDatabase() {
   const [page, setPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [exporting, setExporting] = useState(false);
+  const [exportingZip, setExportingZip] = useState(false);
 
   useEffect(() => {
     setPage(1);
@@ -107,6 +108,51 @@ export default function ClientDatabase() {
       alert('Export impossible. Verifiez votre connexion ou reessayez.');
     } finally {
       setExporting(false);
+    }
+  };
+
+  /**
+   * Export ZIP complet de la base de donnees clients depuis la creation,
+   * categorisee par produit (1 CSV par produit + 1 recap + 1 global).
+   * Pas de deduplication par telephone : on conserve TOUTES les commandes.
+   */
+  const handleExportFullByProduct = async () => {
+    try {
+      setExportingZip(true);
+      const params: Record<string, string> = {};
+      if (searchTerm.trim()) params.search = searchTerm.trim();
+      if (filterStatus !== 'ALL') params.status = filterStatus;
+      if (filterVille) params.ville = filterVille;
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      if (filterCaller) params.callerId = filterCaller;
+      if (filterProductId) params.productId = filterProductId;
+      if (filterNiche.trim()) params.niche = filterNiche.trim();
+
+      const res = await api.get('/orders/full-export-by-product', {
+        params,
+        responseType: 'blob',
+        timeout: 180000,
+      });
+      const blob = new Blob([res.data], { type: 'application/zip' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const cd = res.headers['content-disposition'];
+      const m = cd && /filename="([^"]+)"/.exec(cd);
+      a.download = m ? m[1] : `base-clients-par-produit-${new Date().toISOString().slice(0, 10)}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e: any) {
+      console.error(e);
+      const msg = e?.response?.status === 404
+        ? "Le backend doit etre redeploye pour activer cet export. Reessayez dans quelques minutes."
+        : "Export ZIP impossible. Verifiez votre connexion ou reessayez.";
+      alert(msg);
+    } finally {
+      setExportingZip(false);
     }
   };
 
@@ -376,14 +422,25 @@ export default function ClientDatabase() {
             <button
               type="button"
               onClick={handleExportCsv}
-              disabled={exporting}
-              className="btn btn-primary inline-flex items-center gap-2 disabled:opacity-50"
+              disabled={exporting || exportingZip}
+              className="btn btn-secondary inline-flex items-center gap-2 disabled:opacity-50"
+              title="Une ligne par numéro de téléphone unique (dernière commande). Idéal pour le retargeting."
             >
               <Download size={18} />
-              {exporting ? 'Export…' : 'Exporter contacts CSV (tél. uniques)'}
+              {exporting ? 'Export…' : 'Contacts uniques (CSV)'}
             </button>
-            <div className="text-sm text-gray-500">
-              {CLIENT_DB_PAGE_SIZE} lignes par page · export CSV = tout le périmètre filtré
+            <button
+              type="button"
+              onClick={handleExportFullByProduct}
+              disabled={exporting || exportingZip}
+              className="btn btn-primary inline-flex items-center gap-2 disabled:opacity-50"
+              title="Export ZIP : toutes les commandes depuis la création, 1 fichier CSV par produit + récap + global"
+            >
+              <Download size={18} />
+              {exportingZip ? 'Génération du ZIP…' : 'Base complète par produit (ZIP)'}
+            </button>
+            <div className="text-sm text-gray-500 basis-full">
+              {CLIENT_DB_PAGE_SIZE} lignes par page · les exports tiennent compte des filtres ci-dessus
             </div>
           </div>
         </div>

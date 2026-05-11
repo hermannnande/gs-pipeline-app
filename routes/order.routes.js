@@ -1,5 +1,6 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
+import JSZip from 'jszip';
 import { authenticate, authorize } from '../middlewares/auth.middleware.js';
 import { logAudit } from '../middlewares/audit.middleware.js';
 import { notifyOrderValidated, notifyOrderDelivered, notifyOrderRefused } from '../utils/notifications.js';
@@ -415,6 +416,324 @@ router.get('/contacts-export', async (req, res) => {
   } catch (error) {
     console.error('Erreur export contacts:', error);
     res.status(500).json({ error: "Erreur lors de l'export des contacts." });
+  }
+});
+
+/**
+ * GET /api/orders/full-export-by-product
+ *
+ * Export COMPLET de la base de donnees clients depuis la creation du systeme,
+ * categorise par produit. Toutes les commandes traitees (hors A_APPELER/NOUVELLE)
+ * sont incluses, SANS deduplication par numero (contrairement a /contacts-export).
+ *
+ * Format : ZIP contenant :
+ *   - `_TOUTES-COMMANDES.csv`        : toutes les commandes (triees par produit puis date desc)
+ *   - `_RECAP-PRODUITS.csv`          : 1 ligne par produit avec totaux (nb commandes, qty, montant)
+ *   - `<CODE_PRODUIT>__<slug-nom>.csv` : 1 fichier par produit avec ses commandes
+ *
+ * Filtres optionnels (sinon = TOUT depuis la creation) :
+ *   - startDate, endDate     : bornes sur createdAt
+ *   - status                 : un statut precis
+ *   - ville                  : ville client (contient)
+ *   - callerId               : appelant qui a traite
+ *   - delivererId            : livreur assigne
+ *   - deliveryType           : LOCAL / EXPEDITION / EXPRESS
+ *   - search                 : nom ou telephone client
+ *   - productId / productCode: limite a un seul produit (optionnel)
+ *   - niche                  : page produit / source / campagne (contient)
+ *
+ * Acces : tous roles authentifies, mais filtre par role pour APPELANT et LIVREUR.
+ * GESTIONNAIRE_STOCK : exclut VALIDEE (comme Base Clients).
+ */
+router.get('/full-export-by-product', async (req, res) => {
+  try {
+    const user = req.user;
+    const {
+      productId,
+      productCode,
+      niche,
+      status,
+      ville,
+      startDate,
+      endDate,
+      callerId,
+      delivererId,
+      deliveryType,
+      search,
+    } = req.query;
+
+    const where = { companyId: req.user.companyId };
+
+    if (user.role === 'APPELANT') {
+      where.AND = where.AND || [];
+      where.AND.push({
+        OR: [
+          { status: { in: ['NOUVELLE', 'A_APPELER'] } },
+          { deliveryType: 'EXPEDITION' },
+          { deliveryType: 'EXPRESS' },
+        ],
+      });
+    } else if (user.role === 'LIVREUR') {
+      where.delivererId = user.id;
+    }
+
+    if (status) where.status = status;
+    if (ville) where.clientVille = { contains: String(ville), mode: 'insensitive' };
+    if (callerId) where.callerId = parseInt(callerId, 10);
+    if (delivererId) where.delivererId = parseInt(delivererId, 10);
+    if (deliveryType) where.deliveryType = deliveryType;
+
+    if (productId) {
+      const pid = parseInt(String(productId), 10);
+      if (!Number.isNaN(pid)) where.productId = pid;
+    }
+    if (productCode && String(productCode).trim()) {
+      where.AND = where.AND || [];
+      where.AND.push({
+        product: {
+          code: { equals: String(productCode).trim(), mode: 'insensitive' },
+        },
+      });
+    }
+
+    if (niche && String(niche).trim()) {
+      const q = String(niche).trim();
+      where.AND = where.AND || [];
+      where.AND.push({
+        OR: [
+          { produitPage: { contains: q, mode: 'insensitive' } },
+          { sourcePage: { contains: q, mode: 'insensitive' } },
+          { sourceCampagne: { contains: q, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    if (search && String(search).trim()) {
+      const q = String(search).trim();
+      where.AND = where.AND || [];
+      where.AND.push({
+        OR: [
+          { clientNom: { contains: q, mode: 'insensitive' } },
+          { clientTelephone: { contains: q, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(String(startDate));
+      if (endDate) where.createdAt.lte = new Date(String(endDate));
+    }
+
+    /* Exclure le pipeline "non traitees" (comme Base Clients) */
+    where.AND = where.AND || [];
+    where.AND.push({ status: { notIn: ['NOUVELLE', 'A_APPELER'] } });
+
+    if (user.role === 'GESTIONNAIRE_STOCK') {
+      where.AND.push({ status: { not: 'VALIDEE' } });
+    }
+
+    const orders = await prisma.order.findMany({
+      where,
+      select: {
+        id: true,
+        orderReference: true,
+        clientNom: true,
+        clientTelephone: true,
+        clientVille: true,
+        clientCommune: true,
+        clientAdresse: true,
+        produitNom: true,
+        produitPage: true,
+        sourcePage: true,
+        sourceCampagne: true,
+        quantite: true,
+        montant: true,
+        montantPaye: true,
+        modePaiement: true,
+        deliveryType: true,
+        status: true,
+        nombreAppels: true,
+        noteAppelant: true,
+        noteLivreur: true,
+        createdAt: true,
+        calledAt: true,
+        product: { select: { id: true, code: true, nom: true } },
+        caller: { select: { prenom: true, nom: true } },
+        deliverer: { select: { prenom: true, nom: true } },
+      },
+      orderBy: [{ productId: 'asc' }, { createdAt: 'desc' }],
+      take: 200000,
+    });
+
+    /* Regrouper par produit */
+    const groups = new Map(); // key = code produit (ou SANS_PRODUIT)
+    for (const o of orders) {
+      const code = o.product?.code?.trim() || '_SANS_PRODUIT';
+      const nom = o.product?.nom || o.produitNom || 'Sans produit';
+      if (!groups.has(code)) {
+        groups.set(code, { code, nom, orders: [] });
+      }
+      groups.get(code).orders.push(o);
+    }
+
+    /* Header CSV commun pour les fichiers detailles */
+    const detailHeader = [
+      'date_creation',
+      'reference',
+      'code_produit',
+      'produit',
+      'quantite',
+      'montant',
+      'montant_paye',
+      'mode_paiement',
+      'type_livraison',
+      'statut',
+      'client_nom',
+      'client_telephone',
+      'client_ville',
+      'client_commune',
+      'client_adresse',
+      'page_source',
+      'campagne',
+      'nb_appels',
+      'appelant',
+      'livreur',
+      'date_appel',
+      'note_appelant',
+      'note_livreur',
+    ];
+
+    const rowFor = (o) => [
+      csvEscape(new Date(o.createdAt).toISOString()),
+      csvEscape(o.orderReference || ''),
+      csvEscape(o.product?.code || ''),
+      csvEscape(o.product?.nom || o.produitNom || ''),
+      csvEscape(o.quantite ?? ''),
+      csvEscape(o.montant ?? ''),
+      csvEscape(o.montantPaye ?? ''),
+      csvEscape(o.modePaiement || ''),
+      csvEscape(o.deliveryType || ''),
+      csvEscape(o.status || ''),
+      csvEscape(o.clientNom || ''),
+      csvEscape(o.clientTelephone || ''),
+      csvEscape(o.clientVille || ''),
+      csvEscape(o.clientCommune || ''),
+      csvEscape(o.clientAdresse || ''),
+      csvEscape(o.produitPage || o.sourcePage || ''),
+      csvEscape(o.sourceCampagne || ''),
+      csvEscape(o.nombreAppels ?? 0),
+      csvEscape(o.caller ? `${o.caller.prenom} ${o.caller.nom}` : ''),
+      csvEscape(o.deliverer ? `${o.deliverer.prenom} ${o.deliverer.nom}` : ''),
+      csvEscape(o.calledAt ? new Date(o.calledAt).toISOString() : ''),
+      csvEscape(o.noteAppelant || ''),
+      csvEscape(o.noteLivreur || ''),
+    ];
+
+    const bom = '\ufeff';
+    const buildCsv = (rows) => bom + [detailHeader.join(';'), ...rows.map((o) => rowFor(o).join(';'))].join('\n');
+
+    const zip = new JSZip();
+
+    /* Fichier global : toutes commandes triees par produit puis date */
+    zip.file('_TOUTES-COMMANDES.csv', buildCsv(orders));
+
+    /* Fichier recap : 1 ligne par produit */
+    const recapHeader = [
+      'code_produit',
+      'produit',
+      'nb_commandes',
+      'qty_totale',
+      'montant_total',
+      'nb_livrees',
+      'nb_validees',
+      'nb_annulees',
+      'nb_refusees',
+      'nb_injoignables',
+      'derniere_commande',
+    ];
+    const recapRows = Array.from(groups.values())
+      .map((g) => {
+        const list = g.orders;
+        const qty = list.reduce((s, o) => s + (o.quantite || 0), 0);
+        const montant = list.reduce(
+          (s, o) => (['VALIDEE', 'ASSIGNEE', 'LIVREE', 'EXPRESS_LIVRE'].includes(o.status) ? s + (o.montant || 0) : s),
+          0,
+        );
+        const count = (st) => list.filter((o) => o.status === st).length;
+        const last = list[0]?.createdAt ? new Date(list[0].createdAt).toISOString() : '';
+        return [
+          csvEscape(g.code),
+          csvEscape(g.nom),
+          csvEscape(list.length),
+          csvEscape(qty),
+          csvEscape(montant),
+          csvEscape(count('LIVREE') + count('EXPRESS_LIVRE')),
+          csvEscape(count('VALIDEE')),
+          csvEscape(count('ANNULEE') + count('ANNULEE_LIVRAISON')),
+          csvEscape(count('REFUSEE')),
+          csvEscape(count('INJOIGNABLE')),
+          csvEscape(last),
+        ].join(';');
+      });
+    zip.file('_RECAP-PRODUITS.csv', bom + [recapHeader.join(';'), ...recapRows].join('\n'));
+
+    /* 1 fichier CSV par produit */
+    const slug = (s) =>
+      String(s || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9-_]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+        .toLowerCase()
+        .slice(0, 60);
+
+    for (const g of groups.values()) {
+      const safeCode = slug(g.code) || 'sans-code';
+      const safeNom = slug(g.nom) || 'sans-nom';
+      const filename = `${safeCode}__${safeNom}.csv`;
+      zip.file(filename, buildCsv(g.orders));
+    }
+
+    /* Mini README dans le zip */
+    const readme = [
+      `EXPORT BASE CLIENTS - GS Pipeline`,
+      `Date export       : ${new Date().toISOString()}`,
+      `Nb commandes      : ${orders.length}`,
+      `Nb produits       : ${groups.size}`,
+      `Filtres appliques :`,
+      `  - startDate   : ${startDate || '(depuis la creation)'}`,
+      `  - endDate     : ${endDate || '(jusqu\'a aujourd\'hui)'}`,
+      `  - status      : ${status || '(tous sauf NOUVELLE/A_APPELER)'}`,
+      `  - ville       : ${ville || '(toutes)'}`,
+      `  - productId   : ${productId || '(tous)'}`,
+      `  - productCode : ${productCode || '(tous)'}`,
+      `  - niche       : ${niche || '(toutes)'}`,
+      `  - callerId    : ${callerId || '(tous)'}`,
+      `  - delivererId : ${delivererId || '(tous)'}`,
+      `  - search      : ${search || '(aucun)'}`,
+      ``,
+      `Fichiers :`,
+      `  _TOUTES-COMMANDES.csv : toutes les commandes triees par produit puis date desc`,
+      `  _RECAP-PRODUITS.csv   : 1 ligne par produit avec totaux`,
+      `  <CODE>__<nom>.csv     : 1 fichier par produit avec ses commandes detaillees`,
+      ``,
+      `Encodage : UTF-8 avec BOM (Excel compatible). Separateur : point-virgule (;).`,
+    ].join('\n');
+    zip.file('README.txt', readme);
+
+    const buf = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+    const stamp = new Date().toISOString().slice(0, 10);
+    const fname = `base-clients-par-produit-${stamp}.zip`;
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${fname}"`);
+    res.setHeader('Content-Length', String(buf.length));
+    res.send(buf);
+  } catch (error) {
+    console.error('Erreur export complet par produit:', error);
+    res.status(500).json({ error: "Erreur lors de l'export complet de la base clients." });
   }
 });
 

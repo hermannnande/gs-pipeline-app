@@ -15,7 +15,10 @@
     "prisma:seed": "node prisma/seed.js",
     "deploy:vps": "node scripts/deploy-vps.mjs",
     "deploy:vps:images": "node scripts/deploy-vps.mjs --with-images",
-    "deploy:vps:dry": "node scripts/deploy-vps.mjs --dry-run"
+    "deploy:vps:dry": "node scripts/deploy-vps.mjs --dry-run",
+    "vps:landing-regex": "node scripts/generate-landing-slug-regex.mjs",
+    "vps:patch-htaccess-coffret": "node scripts/patch-vps-root-htaccess-coffret.mjs",
+    "deploy:coffret-versace": "node scripts/deploy-coffret-versace.mjs"
   },
   "keywords": [
     "ecommerce",
@@ -33,11 +36,13 @@
     "express": "^4.18.2",
     "express-validator": "^7.0.1",
     "jsonwebtoken": "^9.0.2",
+    "jszip": "^3.10.1",
     "multer": "^1.4.5-lts.1",
     "node-cron": "^4.2.1",
     "socket.io": "^4.7.2"
   },
   "devDependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "nodemon": "^3.0.2",
     "prisma": "^5.7.0",
     "sharp": "^0.34.5"
