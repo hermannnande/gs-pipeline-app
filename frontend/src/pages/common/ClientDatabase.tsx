@@ -21,6 +21,7 @@ export default function ClientDatabase() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [exporting, setExporting] = useState(false);
   const [exportingZip, setExportingZip] = useState(false);
+  const [includeAllOrders, setIncludeAllOrders] = useState(false);
 
   useEffect(() => {
     setPage(1);
@@ -73,6 +74,23 @@ export default function ClientDatabase() {
       const { data } = await api.get('/users', { params: { role: 'APPELANT' } });
       return data;
     },
+  });
+
+  // Comptage global (sans filtre) -- permet de verifier le perimetre exact
+  const { data: counts } = useQuery({
+    queryKey: ['orders-counts'],
+    queryFn: async () => {
+      const { data } = await api.get('/orders/counts');
+      return data as {
+        grandTotal: number;
+        traitees: number;
+        nonTraitees: number;
+        withProduct: number;
+        withoutProduct: number;
+        byStatus: Record<string, number>;
+      };
+    },
+    refetchInterval: 30000,
   });
 
   const handleExportCsv = async () => {
@@ -128,6 +146,7 @@ export default function ClientDatabase() {
       if (filterCaller) params.callerId = filterCaller;
       if (filterProductId) params.productId = filterProductId;
       if (filterNiche.trim()) params.niche = filterNiche.trim();
+      if (includeAllOrders) params.includeAll = '1';
 
       const res = await api.get('/orders/full-export-by-product', {
         params,
@@ -419,6 +438,15 @@ export default function ClientDatabase() {
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none basis-full sm:basis-auto">
+              <input
+                type="checkbox"
+                checked={includeAllOrders}
+                onChange={(e) => setIncludeAllOrders(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              Inclure les commandes non traitées (NOUVELLE / À appeler)
+            </label>
             <button
               type="button"
               onClick={handleExportCsv}
@@ -440,7 +468,17 @@ export default function ClientDatabase() {
               {exportingZip ? 'Génération du ZIP…' : 'Base complète par produit (ZIP)'}
             </button>
             <div className="text-sm text-gray-500 basis-full">
-              {CLIENT_DB_PAGE_SIZE} lignes par page · les exports tiennent compte des filtres ci-dessus
+              {counts ? (
+                <>
+                  <strong>{counts.grandTotal.toLocaleString('fr-FR')}</strong> commandes en base ·{' '}
+                  <strong className="text-emerald-700">{counts.traitees.toLocaleString('fr-FR')}</strong> traitées ·{' '}
+                  <strong className="text-amber-700">{counts.nonTraitees.toLocaleString('fr-FR')}</strong> non traitées ·{' '}
+                  {counts.withProduct.toLocaleString('fr-FR')} avec produit lié ·{' '}
+                  {counts.withoutProduct.toLocaleString('fr-FR')} sans produit
+                </>
+              ) : (
+                <>{CLIENT_DB_PAGE_SIZE} lignes par page · les exports tiennent compte des filtres ci-dessus</>
+              )}
             </div>
           </div>
         </div>

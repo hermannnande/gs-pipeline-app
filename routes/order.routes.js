@@ -445,6 +445,57 @@ router.get('/contacts-export', async (req, res) => {
  * Acces : tous roles authentifies, mais filtre par role pour APPELANT et LIVREUR.
  * GESTIONNAIRE_STOCK : exclut VALIDEE (comme Base Clients).
  */
+/**
+ * GET /api/orders/counts
+ * Comptage rapide des commandes en base, par statut. Utile pour verifier
+ * combien il y a EXACTEMENT de commandes (toutes versus traitees uniquement).
+ */
+router.get('/counts', async (req, res) => {
+  try {
+    const user = req.user;
+    const where = { companyId: req.user.companyId };
+
+    if (user.role === 'APPELANT') {
+      where.AND = [{
+        OR: [
+          { status: { in: ['NOUVELLE', 'A_APPELER'] } },
+          { deliveryType: 'EXPEDITION' },
+          { deliveryType: 'EXPRESS' },
+        ],
+      }];
+    } else if (user.role === 'LIVREUR') {
+      where.delivererId = user.id;
+    }
+
+    const [grandTotal, byStatusRaw, withProduct, withoutProduct] = await Promise.all([
+      prisma.order.count({ where }),
+      prisma.order.groupBy({ by: ['status'], where, _count: { _all: true } }),
+      prisma.order.count({ where: { ...where, productId: { not: null } } }),
+      prisma.order.count({ where: { ...where, productId: null } }),
+    ]);
+
+    const byStatus = {};
+    for (const row of byStatusRaw) byStatus[row.status] = row._count._all;
+
+    const traitees = Object.entries(byStatus)
+      .filter(([s]) => !['NOUVELLE', 'A_APPELER'].includes(s))
+      .reduce((sum, [, n]) => sum + n, 0);
+    const nonTraitees = (byStatus.NOUVELLE || 0) + (byStatus.A_APPELER || 0);
+
+    res.json({
+      grandTotal,
+      traitees,
+      nonTraitees,
+      withProduct,
+      withoutProduct,
+      byStatus,
+    });
+  } catch (error) {
+    console.error('Erreur /orders/counts:', error);
+    res.status(500).json({ error: 'Erreur comptage commandes.' });
+  }
+});
+
 router.get('/full-export-by-product', async (req, res) => {
   try {
     const user = req.user;
@@ -460,7 +511,11 @@ router.get('/full-export-by-product', async (req, res) => {
       delivererId,
       deliveryType,
       search,
+      includeAll, // si "1" / "true" => inclut NOUVELLE et A_APPELER aussi (export brut)
     } = req.query;
+
+    const includeAllOrders =
+      includeAll === '1' || includeAll === 'true' || String(includeAll || '').toLowerCase() === 'yes';
 
     const where = { companyId: req.user.companyId };
 
@@ -525,9 +580,12 @@ router.get('/full-export-by-product', async (req, res) => {
       if (endDate) where.createdAt.lte = new Date(String(endDate));
     }
 
-    /* Exclure le pipeline "non traitees" (comme Base Clients) */
+    /* Par defaut on exclut le pipeline "non traitees" (cohrent avec Base Clients).
+     * Avec includeAll=1, on garde TOUT (utile pour exports comptables / brutes). */
     where.AND = where.AND || [];
-    where.AND.push({ status: { notIn: ['NOUVELLE', 'A_APPELER'] } });
+    if (!includeAllOrders) {
+      where.AND.push({ status: { notIn: ['NOUVELLE', 'A_APPELER'] } });
+    }
 
     if (user.role === 'GESTIONNAIRE_STOCK') {
       where.AND.push({ status: { not: 'VALIDEE' } });
