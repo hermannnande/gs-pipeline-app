@@ -3,7 +3,6 @@ import Overview from './Overview';
 import ValidatedOrders from './ValidatedOrders';
 import Deliveries from './Deliveries';
 import Stats from './Stats';
-import ClientDatabase from '../common/ClientDatabase';
 import CallerSupervision from '../common/CallerSupervision';
 import AppelantOrders from '../appelant/Orders';
 import ExpeditionsExpress from '../admin/ExpeditionsExpress';
@@ -27,7 +26,6 @@ export default function GestionnaireDashboard() {
       <Route path="livraisons-en-cours" element={<LiveraisonEnCours />} />
       <Route path="deliveries" element={<Deliveries />} />
       <Route path="users" element={<Users />} />
-      <Route path="database" element={<ClientDatabase />} />
       <Route path="supervision" element={<CallerSupervision />} />
       <Route path="stats" element={<Stats />} />
       <Route path="chat" element={<Chat />} />

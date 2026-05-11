@@ -106,7 +106,6 @@ export default function Layout({ children }: LayoutProps) {
           { icon: Warehouse, label: '🚚 Livraisons en cours', path: '/gestionnaire/livraisons-en-cours' },
           { icon: Truck, label: 'Livraisons', path: '/gestionnaire/deliveries' },
           { icon: Users, label: 'Utilisateurs', path: '/gestionnaire/users' },
-          { icon: Database, label: 'Base Clients', path: '/gestionnaire/database' },
           { icon: Eye, label: 'Supervision Appelants', path: '/gestionnaire/supervision' },
           { icon: BarChart3, label: 'Statistiques', path: '/gestionnaire/stats' },
         ];
@@ -119,7 +118,6 @@ export default function Layout({ children }: LayoutProps) {
           { icon: TrendingUp, label: 'Listes de livraison', path: '/stock/deliveries' },
           { icon: Package, label: 'Produits', path: '/stock/products' },
           { icon: History, label: 'Mouvements', path: '/stock/movements' },
-          { icon: Database, label: 'Base Clients', path: '/stock/database' },
         ];
       case 'APPELANT':
         return [
@@ -132,7 +130,6 @@ export default function Layout({ children }: LayoutProps) {
           { icon: Bell, label: 'EXPRESS - En agence', path: '/appelant/express-agence' },
           { icon: TrendingUp, label: 'Listes de livraison', path: '/appelant/deliveries' },
           { icon: CheckCircle, label: 'Mes commandes traitées', path: '/appelant/processed' },
-          { icon: Database, label: 'Base Clients', path: '/appelant/database' },
           { icon: BarChart3, label: 'Mes statistiques', path: '/appelant/stats' },
         ];
       case 'LIVREUR':

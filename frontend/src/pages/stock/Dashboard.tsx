@@ -4,7 +4,6 @@ import Tournees from './Tournees';
 import Products from './Products';
 import Movements from './Movements';
 import LiveraisonEnCours from './LiveraisonEnCours';
-import ClientDatabase from '../common/ClientDatabase';
 import ExpeditionsExpress from '../admin/ExpeditionsExpress';
 import Deliveries from '../gestionnaire/Deliveries';
 import Chat from '../common/Chat';
@@ -20,7 +19,6 @@ export default function StockDashboard() {
       <Route path="deliveries" element={<Deliveries />} />
       <Route path="products" element={<Products />} />
       <Route path="movements" element={<Movements />} />
-      <Route path="database" element={<ClientDatabase />} />
       <Route path="chat" element={<Chat />} />
     </Routes>
   );

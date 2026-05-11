@@ -71,6 +71,11 @@ router.get('/', async (req, res) => {
       clientDatabase === 'true' ||
       String(clientDatabase || '').toLowerCase() === 'yes';
 
+    // Base clients accessible uniquement a l'ADMIN
+    if (isClientDb && user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Accès réservé à l\'administrateur.' });
+    }
+
     let where = { companyId: req.user.companyId };
 
     // Filtres selon le rôle
@@ -253,7 +258,7 @@ function csvEscape(v) {
  * Filtres : productId, productCode, niche (contient sourcePage | produitPage | sourceCampagne),
  * status, ville, dates, callerId, search (nom/tel), delivererId, deliveryType
  */
-router.get('/contacts-export', async (req, res) => {
+router.get('/contacts-export', authorize('ADMIN'), async (req, res) => {
   try {
     const user = req.user;
     const {
@@ -450,7 +455,7 @@ router.get('/contacts-export', async (req, res) => {
  * Comptage rapide des commandes en base, par statut. Utile pour verifier
  * combien il y a EXACTEMENT de commandes (toutes versus traitees uniquement).
  */
-router.get('/counts', async (req, res) => {
+router.get('/counts', authorize('ADMIN'), async (req, res) => {
   try {
     const user = req.user;
     const where = { companyId: req.user.companyId };
@@ -496,7 +501,7 @@ router.get('/counts', async (req, res) => {
   }
 });
 
-router.get('/full-export-by-product', async (req, res) => {
+router.get('/full-export-by-product', authorize('ADMIN'), async (req, res) => {
   try {
     const user = req.user;
     const {
