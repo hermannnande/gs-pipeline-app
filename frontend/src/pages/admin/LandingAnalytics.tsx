@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   TrendingUp, ShoppingCart, Truck, DollarSign,
-  Calendar, XCircle, CheckCircle, Eye, Users, Smartphone, Monitor, Tablet, Globe
+  Calendar, XCircle, CheckCircle, Eye, Users, Smartphone, Monitor, Tablet, Globe,
+  Activity, Zap, Radio, ArrowUpRight
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -67,6 +68,192 @@ interface LandingData {
   devicesBreakdown: DeviceEntry[];
   browsersBreakdown: BrowserEntry[];
   sourcesBreakdown: SourceEntry[];
+}
+
+interface RealtimeBySlug { slug: string; activeVisitors: number; activeSessions: number; activeViews: number; viewsLastHour: number }
+interface RealtimeActivity { slug: string; visitorId: string; device: string | null; browser: string | null; country: string | null; city: string | null; createdAt: string; utmSource: string | null }
+interface RealtimeTopConv { slug: string; views: number; uniqueVisitors: number; orders: number; conversionRate: number }
+interface RealtimeData {
+  timestamp: string;
+  activeNow: { totalVisitors: number; totalSessions: number; totalPageviews: number };
+  bySlug: RealtimeBySlug[];
+  recentActivity: RealtimeActivity[];
+  topConverting24h: RealtimeTopConv[];
+}
+
+/* ---------- Panneau Temps reel (refresh auto 10s) ---------- */
+function RealtimePanel() {
+  const { data, isLoading } = useQuery<RealtimeData>({
+    queryKey: ['analytics-realtime'],
+    queryFn: () => api.get('/analytics/realtime').then((r) => r.data),
+    refetchInterval: 10_000,
+    refetchOnWindowFocus: true,
+  });
+
+  const active = data?.activeNow ?? { totalVisitors: 0, totalSessions: 0, totalPageviews: 0 };
+  const bySlug = data?.bySlug ?? [];
+  const recent = data?.recentActivity ?? [];
+  const topConv = data?.topConverting24h ?? [];
+
+  const fmtRelative = (iso: string) => {
+    const diffS = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+    if (diffS < 5) return "à l'instant";
+    if (diffS < 60) return `il y a ${diffS}s`;
+    const m = Math.floor(diffS / 60);
+    if (m < 60) return `il y a ${m} min`;
+    return `il y a ${Math.floor(m / 60)} h`;
+  };
+
+  const deviceIcon = (d?: string | null) => {
+    const k = (d || '').toLowerCase();
+    if (k === 'mobile') return <Smartphone className="h-3 w-3" />;
+    if (k === 'tablet') return <Tablet className="h-3 w-3" />;
+    return <Monitor className="h-3 w-3" />;
+  };
+
+  return (
+    <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-cyan-50 p-4 shadow-sm sm:p-5">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"/>
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"/>
+          </span>
+          <h2 className="text-sm font-extrabold uppercase tracking-wider text-emerald-700 sm:text-base">Temps réel</h2>
+          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">refresh 10s</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-lg bg-white px-3 py-1.5 text-[11px] font-bold text-neutral-600 shadow-sm ring-1 ring-emerald-200">
+            <Radio className="mr-1 inline h-3 w-3 text-emerald-600" />
+            <span className="text-emerald-700">{active.totalVisitors}</span> visiteurs actifs
+          </span>
+          <span className="rounded-lg bg-white px-3 py-1.5 text-[11px] font-bold text-neutral-600 shadow-sm ring-1 ring-cyan-200">
+            <Users className="mr-1 inline h-3 w-3 text-cyan-600" />
+            <span className="text-cyan-700">{active.totalSessions}</span> sessions
+          </span>
+          <span className="rounded-lg bg-white px-3 py-1.5 text-[11px] font-bold text-neutral-600 shadow-sm ring-1 ring-violet-200">
+            <Activity className="mr-1 inline h-3 w-3 text-violet-600" />
+            <span className="text-violet-700">{active.totalPageviews}</span> pageviews/5min
+          </span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {/* Colonne 1 : visiteurs actifs par page */}
+        <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-neutral-200">
+          <h3 className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-neutral-500">
+            <Zap className="h-3 w-3 text-amber-500" />
+            Visiteurs actifs par page
+          </h3>
+          {isLoading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-9 animate-pulse rounded bg-neutral-100"/>)}
+            </div>
+          ) : bySlug.length === 0 ? (
+            <p className="py-6 text-center text-[12px] text-neutral-400">Aucun visiteur actif pour le moment.</p>
+          ) : (
+            <div className="max-h-[420px] space-y-1.5 overflow-y-auto pr-1">
+              {bySlug.map((s) => (
+                <div key={s.slug} className="flex items-center justify-between gap-2 rounded-lg bg-neutral-50 p-2 transition hover:bg-emerald-50">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[12px] font-bold text-neutral-700">/{s.slug}</p>
+                    <p className="truncate text-[10px] text-neutral-400">{s.viewsLastHour} vues / heure</p>
+                  </div>
+                  <div className="flex flex-col items-end gap-0.5">
+                    <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold tabular-nums ${s.activeVisitors > 0 ? 'bg-emerald-500 text-white' : 'bg-neutral-200 text-neutral-500'}`}>
+                      {s.activeVisitors > 0 && (
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"/>
+                          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white"/>
+                        </span>
+                      )}
+                      {s.activeVisitors} en ligne
+                    </span>
+                    <span className="text-[9px] text-neutral-400">{s.activeSessions} sessions</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Colonne 2 : flux activité */}
+        <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-neutral-200">
+          <h3 className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-neutral-500">
+            <Activity className="h-3 w-3 text-cyan-500" />
+            Flux d'activité (5 dernières min)
+          </h3>
+          {isLoading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-8 animate-pulse rounded bg-neutral-100"/>)}
+            </div>
+          ) : recent.length === 0 ? (
+            <p className="py-6 text-center text-[12px] text-neutral-400">Aucune activité récente.</p>
+          ) : (
+            <div className="max-h-[420px] space-y-1 overflow-y-auto pr-1">
+              {recent.map((a, i) => (
+                <div key={`${a.visitorId}-${i}`} className="flex items-start gap-2 rounded-lg p-1.5 text-[11px] hover:bg-neutral-50">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-100 text-cyan-700">
+                    {deviceIcon(a.device)}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-bold text-neutral-700">
+                      <span className="text-emerald-700">●</span> visite{' '}
+                      <span className="font-extrabold text-neutral-900">/{a.slug}</span>
+                    </p>
+                    <p className="truncate text-[10px] text-neutral-400">
+                      {a.browser || '?'} · {a.device || 'inconnu'}
+                      {a.city ? ` · ${a.city}` : ''}{a.country ? ` (${a.country})` : ''}
+                      {a.utmSource ? ` · src=${a.utmSource}` : ''}
+                      {' · '}{fmtRelative(a.createdAt)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Colonne 3 : top conversion 24h */}
+        <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-neutral-200">
+          <h3 className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-neutral-500">
+            <TrendingUp className="h-3 w-3 text-rose-500" />
+            Top conversion (24 h)
+          </h3>
+          {isLoading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-9 animate-pulse rounded bg-neutral-100"/>)}
+            </div>
+          ) : topConv.length === 0 ? (
+            <p className="py-6 text-center text-[12px] text-neutral-400">Pas encore assez de données.</p>
+          ) : (
+            <div className="max-h-[420px] space-y-1.5 overflow-y-auto pr-1">
+              {topConv.map((c, i) => (
+                <div key={c.slug} className="flex items-center justify-between gap-2 rounded-lg bg-neutral-50 p-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-extrabold ${i === 0 ? 'bg-amber-100 text-amber-700' : i === 1 ? 'bg-neutral-200 text-neutral-600' : i === 2 ? 'bg-orange-100 text-orange-700' : 'bg-neutral-100 text-neutral-400'}`}>
+                      {i + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-[12px] font-bold text-neutral-700">/{c.slug}</p>
+                      <p className="truncate text-[10px] text-neutral-400">{c.views} vues · {c.orders} commandes</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className="flex items-center gap-0.5 text-[12px] font-extrabold text-rose-600">
+                      {c.conversionRate}%
+                      <ArrowUpRight className="h-3 w-3" />
+                    </span>
+                    <span className="text-[9px] text-neutral-400">conversion</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function KpiCard({ icon: Icon, label, value, sub, color }: {
@@ -181,6 +368,9 @@ export default function LandingAnalytics() {
           </div>
         </div>
       </div>
+
+      {/* ⚡ TEMPS RÉEL — visiteurs actifs maintenant + flux + top conversion */}
+      <RealtimePanel />
 
       {/* KPIs Trafic */}
       <div>

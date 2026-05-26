@@ -1,22 +1,9 @@
 /**
- * Modal de commande pour "Creme Verrue TK" - FULLSCREEN MOBILE + STICKY CTA.
- *
- * Design v2 (fix bug bouton invisible sur mobile) :
- *   - Mobile : modal en plein ecran (inset-0 + h-[100svh] qui suit le clavier)
- *   - Desktop : modal centre avec max-w-[440px] et coins arrondis
- *   - Layout flexbox 3 zones :
- *       1) HEADER  (flex-none, sticky top) : titre + bouton fermer + countdown
- *       2) BODY    (flex-1, overflow-y-auto) : qty + inputs (le client scroll)
- *       3) FOOTER  (flex-none, sticky bottom) : total + CTA TOUJOURS VISIBLE
- *   - Footer respecte safe-area iPhone (env(safe-area-inset-bottom))
- *   - Inputs ~44px de haut pour bonne tappabilite sur mobile
- *   - Le CTA reste visible MEME quand le clavier mobile s'ouvre (flex-1 du body
- *     scroll au lieu de pousser le footer hors ecran).
- *
- * Palette : BLEU dominante (sky / blue / cyan) + CTA ORANGE (contraste fort).
- * Logique metier 100% inchangee (useOrderSubmit -> obgestion).
+ * Modal commande — Crème Anti-Verrues TK (CREME_ANTI_VERRUES).
+ * REFONTE V2 : palette PREMIUM marron + blanc + rose + accents dores.
+ * Compte a rebours interne, recap facture, CTA rose glow lumineux, fullscreen mobile.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useOrderSubmit, type OrderSubmitConfig, type OrderProduct } from '../../hooks/useOrderSubmit';
 import { cleanPhoneCI } from '../../utils/phone';
 import OrderFormWarning from './OrderFormWarning';
@@ -32,20 +19,17 @@ interface QtyOption {
 interface Props {
   open: boolean;
   onClose: () => void;
-  cfg: OrderSubmitConfig & { images: { hero: string; avant?: string; apres?: string; comparison?: { before: string; after: string } } };
+  cfg: OrderSubmitConfig & {
+    images: { hero: string; avant?: string; apres?: string; comparison?: { before: string; after: string } };
+  };
   product: OrderProduct | null;
   setProduct?: (p: OrderProduct | null) => void;
   qtyOptions: QtyOption[];
   initialQty?: number;
 }
 
-function fmt(n: number): string {
-  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' F';
-}
-
-function pad(n: number): string {
-  return String(n).padStart(2, '0');
-}
+const fmt = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' F';
+const pad = (n: number) => String(n).padStart(2, '0');
 
 export default function OrderModalVerrueTk({ open, onClose, cfg, product, setProduct, qtyOptions, initialQty = 1 }: Props) {
   const { submit, sending, formErr, trackOpen } = useOrderSubmit({ cfg, product, setProduct });
@@ -55,7 +39,7 @@ export default function OrderModalVerrueTk({ open, onClose, cfg, product, setPro
   const [city, setCity] = useState('');
   const [phone, setPhone] = useState('');
   const [stock, setStock] = useState(12);
-  const [countdown, setCountdown] = useState({ m: 14, s: 59 });
+  const [countdown, setCountdown] = useState({ m: 9, s: 59 });
 
   const wasOpenRef = useRef(false);
   const trackRef = useRef(trackOpen);
@@ -66,8 +50,8 @@ export default function OrderModalVerrueTk({ open, onClose, cfg, product, setPro
       wasOpenRef.current = true;
       setName(''); setCity(''); setPhone('');
       setQty(initialQty);
-      setCountdown({ m: 14, s: 59 });
-      setStock(8 + Math.floor(Math.random() * 6));
+      setCountdown({ m: 9, s: 59 });
+      setStock(7 + Math.floor(Math.random() * 8));
       trackRef.current(initialQty);
     }
     if (!open && wasOpenRef.current) wasOpenRef.current = false;
@@ -76,7 +60,7 @@ export default function OrderModalVerrueTk({ open, onClose, cfg, product, setPro
   useEffect(() => {
     if (!open) return;
     const id = setInterval(() => {
-      setCountdown(c => {
+      setCountdown((c) => {
         const total = Math.max(0, c.m * 60 + c.s - 1);
         return { m: Math.floor(total / 60), s: total % 60 };
       });
@@ -99,265 +83,279 @@ export default function OrderModalVerrueTk({ open, onClose, cfg, product, setPro
     return () => window.removeEventListener('keydown', onKey);
   }, [open, sending, onClose]);
 
-  if (!open) return null;
-
   const total = cfg.prices?.[qty] || cfg.prices?.[1] || 0;
-  const oldTotal = total + (qty * 5000);
-  const stockPct = Math.max(20, Math.min(100, Math.round((stock / 30) * 100)));
+  const unitPrice = cfg.prices?.[1] || 0;
+  const fullPrice = unitPrice * qty;
+  const saving = fullPrice - total;
+  const oldTotal = fullPrice + qty * 4000;
+
+  const qtyIndex = useMemo(() => qtyOptions.findIndex((o) => o.v === qty), [qty, qtyOptions]);
+
+  if (!open) return null;
 
   return (
     <div
       className="fixed inset-0 z-[60] flex items-stretch justify-center sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="vtm-title"
+      aria-labelledby="cv-title"
     >
       <div
         onClick={() => !sending && onClose()}
-        className="absolute inset-0 bg-blue-950/80 backdrop-blur-sm animate-[vtmfade_.2s_ease-out]"
+        className="absolute inset-0 bg-[#2a1810]/85 backdrop-blur-md animate-[cvfade_.2s_ease-out]"
       />
 
-      {/*
-        Conteneur modal - LAYOUT FLEXBOX VERTICAL :
-        - Mobile  : h-[100svh] (suit le clavier mobile via small viewport units)
-        - Desktop : max-h-[92vh] + max-w-[440px] + rounded-2xl
+      <div className="cv-shell relative z-10 flex h-[100svh] w-full flex-col overflow-hidden bg-white shadow-2xl animate-[cvslide_.3s_cubic-bezier(.22,.8,.4,1)] sm:h-auto sm:max-h-[94vh] sm:max-w-[440px] sm:rounded-[28px]">
+        <div className="h-1 w-full flex-none bg-gradient-to-r from-pink-500 via-rose-400 to-pink-600 cv-bar-glow" />
 
-        flex flex-col -> 3 zones empilees (header / body / footer)
-        Le footer reste TOUJOURS visible grace au flex-1 du body qui scroll.
-      */}
-      <div className="vtm-shell relative z-10 flex h-[100svh] w-full flex-col overflow-hidden bg-white shadow-2xl animate-[vtmslide_.25s_cubic-bezier(.22,.8,.4,1)] sm:h-auto sm:max-h-[92vh] sm:max-w-[440px] sm:rounded-2xl">
+        {/* HEADER marron + accents roses */}
+        <div className="relative flex-none bg-gradient-to-br from-[#3d2317] via-[#5a3a20] to-[#3d2317] text-amber-100">
+          <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-pink-400/25 blur-2xl" />
+          <div className="pointer-events-none absolute -left-8 -bottom-8 h-24 w-24 rounded-full bg-amber-300/20 blur-2xl" />
 
-        {/* ========== HEADER (flex-none) ========== */}
-        <div className="relative flex-none overflow-hidden bg-gradient-to-br from-blue-600 via-sky-600 to-cyan-600 px-4 pt-3 pb-3 text-white">
-          <div className="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-sky-300/25 blur-2xl"/>
-          <div className="pointer-events-none absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-white/15 blur-2xl"/>
-
-          <button
-            type="button"
-            onClick={() => !sending && onClose()}
-            aria-label="Fermer"
-            className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition hover:bg-white/30 hover:scale-105 disabled:opacity-50"
-            disabled={sending}
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-
-          <div className="relative flex items-center justify-between gap-3 pr-9">
-            <h3 id="vtm-title" className="text-[15px] font-black leading-tight sm:text-[16px]">
-              Commander maintenant
-            </h3>
-            <div className="flex items-center gap-1 rounded-md bg-black/30 px-2 py-1 ring-1 ring-sky-300/30">
-              <span className="text-[9px] font-black uppercase tracking-widest text-sky-100">Fin</span>
-              <span className="font-mono text-[12px] font-black tabular-nums">
-                <span className="vtm-pulse-digit">{pad(countdown.m)}</span>
-                <span className="mx-0.5 opacity-60">:</span>
-                <span className="vtm-pulse-digit">{pad(countdown.s)}</span>
-              </span>
+          <div className="relative flex items-start justify-between gap-3 px-5 pb-2 pt-3.5">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 via-rose-400 to-pink-600 text-white shadow-[0_8px_24px_-6px_rgba(236,72,153,.55)] ring-1 ring-pink-300/40">
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C9.79 2 8 3.79 8 6c0 1.66.99 3.08 2.4 3.72L9.5 12H8c-1.1 0-2 .9-2 2v6c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2v-6c0-1.1-.9-2-2-2h-1.5l-.9-2.28C15.01 9.08 16 7.66 16 6c0-2.21-1.79-4-4-4z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-[8px] font-black uppercase tracking-[0.32em] text-pink-300">Soin ciblé peau</p>
+                <h3 id="cv-title" className="mt-0.5 text-[15px] font-black leading-tight">
+                  Crème <span className="bg-gradient-to-r from-pink-300 to-pink-400 bg-clip-text text-transparent">Anti-Verrues</span>
+                </h3>
+                <div className="mt-1 flex items-center gap-2 text-[10px]">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 font-black text-amber-200 ring-1 ring-amber-300/30 backdrop-blur">
+                    <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="font-mono tabular-nums">
+                      {pad(countdown.m)}:<span className="cv-pulse-digit">{pad(countdown.s)}</span>
+                    </span>
+                  </span>
+                  <span className="rounded-full bg-pink-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">
+                    Offre du jour
+                  </span>
+                </div>
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={() => !sending && onClose()}
+              aria-label="Fermer"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-amber-200 transition hover:bg-white/20 disabled:opacity-50 ring-1 ring-amber-300/20"
+              disabled={sending}
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
 
-          <div className="relative mt-2 flex items-center gap-2">
-            <div className="h-1 flex-1 overflow-hidden rounded-full bg-black/30">
-              <div className="h-full bg-gradient-to-r from-sky-300 to-white transition-all" style={{ width: `${stockPct}%` }}/>
+          <div className="flex items-center gap-2 px-5 pb-2.5">
+            <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/15">
+              <div
+                className="h-full bg-gradient-to-r from-pink-400 via-pink-300 to-amber-200 transition-all"
+                style={{ width: `${Math.max(20, Math.min(100, Math.round((stock / 25) * 100)))}%` }}
+              />
             </div>
-            <span className="text-[10px] font-black tabular-nums text-sky-100">{stock} restants</span>
+            <span className="text-[10px] font-black tabular-nums text-pink-300">
+              {stock} restants
+            </span>
           </div>
         </div>
 
-        {/*
-          ========== BODY (flex-1, scrollable) ==========
-          C'est ici que le client peut scroller si tout ne tient pas a l'ecran.
-          overscroll-contain empeche le scroll de "sortir" du modal.
-        */}
         <form
-          id="vtm-form"
+          id="cv-form"
           onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
-          className="flex flex-1 min-h-0 flex-col gap-2.5 overflow-y-auto overscroll-contain px-4 pb-3 pt-2"
+          className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto overscroll-contain px-5 pb-3 pt-3 bg-[#fef7f0]"
         >
-          <OrderFormWarning>
-            Restez <strong>joignable</strong> au numéro indiqué : confirmation par téléphone, puis livraison sous <strong>24-48 h</strong>. Aucun paiement avant réception.
+          <input type="hidden" name="produit" value="CREME_ANTI_VERRUES" />
+
+          <OrderFormWarning title="Avant de commander">
+            Soyez <strong>disponible</strong> pour la livraison sous <strong>24-48 h</strong>. Paiement <strong>cash</strong> à la réception.
           </OrderFormWarning>
 
-          <div className="grid grid-cols-3 gap-2">
-            {qtyOptions.map((o) => {
-              const active = qty === o.v;
-              return (
-                <button
-                  key={o.v}
-                  type="button"
-                  onClick={() => setQty(o.v)}
-                  className={`relative flex flex-col items-center justify-center rounded-xl border-2 px-1 py-2 transition-all ${
-                    active
-                      ? 'border-blue-500 bg-blue-50 shadow-md'
-                      : 'border-neutral-200 bg-white hover:border-sky-300'
-                  }`}
-                >
-                  {o.tag && (
-                    <span className="absolute -right-1 -top-1.5 rounded-full bg-gradient-to-r from-blue-500 via-sky-500 to-cyan-500 px-1.5 py-px text-[8px] font-black uppercase tracking-wider text-white shadow">
-                      {o.tag}
-                    </span>
-                  )}
-                  <span className={`text-[20px] font-black leading-none ${active ? 'text-blue-700' : 'text-neutral-900'}`}>{o.v}</span>
-                  <span className="mt-1 text-[9px] font-bold uppercase tracking-wider text-neutral-500">{o.label}</span>
-                  <span className={`mt-0.5 text-[10px] font-black ${active ? 'text-blue-600' : 'text-sky-500'}`}>{o.sub}</span>
-                </button>
-              );
-            })}
+          {/* QUANTITE - segmented control */}
+          <div>
+            <label className="mb-1 flex items-baseline justify-between">
+              <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#3d2317]">Choisissez votre pack</span>
+              {qty > 1 && saving > 0 && (
+                <span className="rounded-full bg-pink-100 px-2 py-0.5 text-[10px] font-black text-pink-700 ring-1 ring-pink-300">
+                  -{fmt(saving)}
+                </span>
+              )}
+            </label>
+            <div className="relative rounded-xl bg-pink-50 p-1 ring-1 ring-pink-200">
+              <div
+                className="absolute inset-y-1 left-1 rounded-lg bg-gradient-to-br from-pink-500 via-rose-400 to-pink-600 shadow-[0_4px_18px_rgba(236,72,153,.45)] transition-all duration-300 ease-out"
+                style={{
+                  width: `calc((100% - 8px) / ${qtyOptions.length})`,
+                  transform: `translateX(${qtyIndex * 100}%)`,
+                }}
+              />
+              <div className="relative grid" style={{ gridTemplateColumns: `repeat(${qtyOptions.length}, 1fr)` }}>
+                {qtyOptions.map((o) => {
+                  const active = qty === o.v;
+                  return (
+                    <button
+                      key={o.v}
+                      type="button"
+                      onClick={() => setQty(o.v)}
+                      className={`relative z-10 flex flex-col items-center justify-center rounded-lg px-2 py-1.5 transition-colors ${active ? 'text-white' : 'text-pink-700/80 hover:text-pink-900'}`}
+                    >
+                      <span className="text-[18px] font-black leading-none">{o.v}</span>
+                      <span className={`mt-0.5 text-[9px] font-black uppercase tracking-wider ${active ? 'text-pink-100' : 'text-pink-600/70'}`}>
+                        {o.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
-          {/*
-            INPUTS - taille 44px min pour tappabilite mobile (recommande Apple/Google)
-            font-size: 16px sur mobile pour eviter le zoom auto de iOS sur focus
-          */}
-          <div className="space-y-2.5">
+          <div className="flex flex-col gap-1.5">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#3d2317]">Coordonnées</p>
+
             <div>
-              <label htmlFor="vtm-name" className="mb-1 block text-[10px] font-black uppercase tracking-wider text-neutral-600">
-                Nom complet <span className="text-red-500">*</span>
-              </label>
+              <label htmlFor="cv-name" className="mb-0.5 block text-[10px] font-bold text-[#8b5a2b]">Nom complet</label>
               <input
-                id="vtm-name"
                 type="text"
+                id="cv-name"
+                name="nom"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Prenom et nom"
+                placeholder="Ex. Mariam K."
                 autoComplete="name"
                 required
-                className="block h-11 w-full rounded-lg border-[1.5px] border-neutral-200 bg-white px-3 text-[15px] sm:text-[14px] font-medium text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                className="block h-11 w-full rounded-lg border border-pink-200 bg-white px-3 text-[15px] font-medium text-[#3d2317] outline-none transition placeholder:text-pink-300 focus:border-pink-500 focus:ring-2 focus:ring-pink-500/25 sm:text-[14px]"
               />
             </div>
 
             <div>
-              <label htmlFor="vtm-city" className="mb-1 block text-[10px] font-black uppercase tracking-wider text-neutral-600">
-                Ville <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="vtm-city"
-                type="text"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                placeholder="Abidjan, Bouake, Daloa..."
-                autoComplete="address-level2"
-                required
-                className="block h-11 w-full rounded-lg border-[1.5px] border-neutral-200 bg-white px-3 text-[15px] sm:text-[14px] font-medium text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="vtm-phone" className="mb-1 block text-[10px] font-black uppercase tracking-wider text-neutral-600">
-                Telephone <span className="text-red-500">*</span>
-              </label>
-              <div className="flex h-11 overflow-hidden rounded-lg border-[1.5px] border-neutral-200 bg-white transition focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
-                <span className="flex items-center gap-1 border-r border-neutral-200 bg-neutral-50 px-3 text-[13px] font-bold text-neutral-700">🇨🇮 +225</span>
+              <label htmlFor="cv-phone" className="mb-0.5 block text-[10px] font-bold text-[#8b5a2b]">Téléphone</label>
+              <div className="flex h-11 overflow-hidden rounded-lg border border-pink-200 bg-white transition focus-within:border-pink-500 focus-within:ring-2 focus-within:ring-pink-500/25">
+                <span className="flex items-center gap-1 border-r border-pink-200 bg-pink-50 px-3 text-[13px] font-bold text-[#3d2317]">
+                  <span>🇨🇮</span>
+                  <span className="font-mono">+225</span>
+                </span>
                 <input
-                  id="vtm-phone"
                   type="tel"
+                  id="cv-phone"
+                  name="telephone"
                   inputMode="numeric"
                   value={phone}
                   onChange={(e) => setPhone(cleanPhoneCI(e.target.value))}
                   placeholder="07 XX XX XX XX"
                   autoComplete="tel-national"
                   required
-                  className="h-full w-full bg-white px-3 text-[15px] sm:text-[14px] font-medium text-neutral-900 outline-none placeholder:text-neutral-400"
+                  className="h-full w-full bg-white px-3 text-[15px] font-medium text-[#3d2317] outline-none placeholder:text-pink-300 sm:text-[14px]"
                 />
               </div>
             </div>
-          </div>
 
-          {/* Trust ribbons (rapides, rassurants) */}
-          <div className="grid grid-cols-3 gap-1.5 pt-1">
-            <div className="flex flex-col items-center justify-center rounded-md bg-blue-50 px-1 py-1.5 ring-1 ring-blue-100">
-              <span className="text-[14px]">💵</span>
-              <span className="text-[8px] font-bold uppercase tracking-wider text-blue-800">A la livraison</span>
-            </div>
-            <div className="flex flex-col items-center justify-center rounded-md bg-emerald-50 px-1 py-1.5 ring-1 ring-emerald-100">
-              <span className="text-[14px]">🚚</span>
-              <span className="text-[8px] font-bold uppercase tracking-wider text-emerald-800">Livraison rapide</span>
-            </div>
-            <div className="flex flex-col items-center justify-center rounded-md bg-amber-50 px-1 py-1.5 ring-1 ring-amber-100">
-              <span className="text-[14px]">📞</span>
-              <span className="text-[8px] font-bold uppercase tracking-wider text-amber-800">Conseil 30 min</span>
+            <div>
+              <label htmlFor="cv-city" className="mb-0.5 block text-[10px] font-bold text-[#8b5a2b]">Commune / Ville</label>
+              <input
+                type="text"
+                id="cv-city"
+                name="ville"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="Cocody, Yopougon, Bingerville…"
+                autoComplete="address-level2"
+                required
+                className="block h-11 w-full rounded-lg border border-pink-200 bg-white px-3 text-[15px] font-medium text-[#3d2317] outline-none transition placeholder:text-pink-300 focus:border-pink-500 focus:ring-2 focus:ring-pink-500/25 sm:text-[14px]"
+              />
             </div>
           </div>
 
           {formErr && (
-            <p className="rounded-md bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-600 ring-1 ring-red-100">{formErr}</p>
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-600 ring-1 ring-red-100">{formErr}</p>
           )}
         </form>
 
-        {/*
-          ========== FOOTER (flex-none, TOUJOURS VISIBLE) ==========
-          Reste colle au bas du modal MEME quand le clavier mobile s'ouvre,
-          car le body au-dessus a flex-1 et scrolle son contenu.
-          padding-bottom : safe-area-inset-bottom pour iPhones avec notch.
-        */}
+        {/* FOOTER recap + CTA rose glow */}
         <div
-          className="flex-none border-t border-neutral-200 bg-white px-4 pt-3 shadow-[0_-4px_16px_-4px_rgba(0,0,0,0.06)]"
-          style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
+          className="flex-none border-t border-pink-200 bg-[#fef7f0] px-5 pt-2.5 shadow-[0_-6px_20px_-6px_rgba(236,72,153,0.15)]"
+          style={{ paddingBottom: 'calc(0.7rem + env(safe-area-inset-bottom, 0px))' }}
         >
-          <div className="mb-2.5 flex items-center justify-between rounded-lg bg-gradient-to-br from-blue-950 via-sky-900 to-blue-950 px-3 py-2.5 text-white ring-1 ring-sky-500/30">
-            <div className="flex flex-col leading-tight">
-              <span className="text-[11px] font-black uppercase tracking-wide">Total a payer</span>
-              <span className="text-[10px] font-medium text-cyan-300">livraison offerte</span>
+          <div className="mb-2 rounded-xl bg-white/80 p-2.5 ring-1 ring-pink-200">
+            <div className="space-y-0.5 text-[12px]">
+              <div className="flex items-baseline justify-between">
+                <span className="text-[#8b5a2b]">Sous-total · {qty} boîte{qty > 1 ? 's' : ''}</span>
+                <span className="font-bold tabular-nums text-[#3d2317]">{fmt(fullPrice)}</span>
+              </div>
+              {saving > 0 && (
+                <div className="flex items-baseline justify-between">
+                  <span className="text-[#8b5a2b]">Remise pack</span>
+                  <span className="font-bold tabular-nums text-emerald-600">-{fmt(saving)}</span>
+                </div>
+              )}
+              <div className="flex items-baseline justify-between">
+                <span className="text-[#8b5a2b]">Livraison</span>
+                <span className="font-black tabular-nums text-emerald-600">À la commune</span>
+              </div>
             </div>
-            <div className="flex items-baseline gap-2">
-              {qty > 1 && <span className="text-[11px] text-neutral-400 line-through">{fmt(oldTotal)}</span>}
-              <span className="text-[20px] font-black text-sky-300">{fmt(total)}</span>
+            <div className="my-1.5 border-t border-dashed border-pink-300" />
+            <div className="flex items-baseline justify-between">
+              <span className="text-[11px] font-black uppercase tracking-wider text-[#3d2317]">Total à payer</span>
+              <div className="flex items-baseline gap-2">
+                {qty > 1 && <span className="text-[11px] text-[#8b5a2b]/60 line-through">{fmt(oldTotal)}</span>}
+                <span className="bg-gradient-to-r from-pink-600 via-rose-500 to-pink-700 bg-clip-text text-[20px] font-black tabular-nums text-transparent">
+                  {fmt(total)}
+                </span>
+              </div>
             </div>
           </div>
 
           <button
             type="submit"
-            form="vtm-form"
+            form="cv-form"
             disabled={sending}
-            className="vtm-cta group relative flex h-[52px] w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-red-500 text-[15px] font-black text-white shadow-[0_10px_24px_-4px_rgba(249,115,22,0.6)] transition hover:shadow-[0_14px_30px_-4px_rgba(249,115,22,0.8)] active:translate-y-px disabled:cursor-wait disabled:opacity-60"
+            className="cv-cta group relative flex h-[52px] w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-pink-500 via-rose-400 to-pink-600 text-[14px] font-black uppercase tracking-[0.16em] text-white shadow-[0_14px_30px_-6px_rgba(236,72,153,.7)] ring-2 ring-pink-300/50 transition hover:shadow-[0_18px_36px_-6px_rgba(236,72,153,.9)] hover:ring-pink-200 active:translate-y-px disabled:cursor-wait disabled:opacity-60"
           >
-            <span className="vtm-cta-sheen pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent"/>
+            <span className="cv-cta-sheen pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/50 to-transparent" />
             {sending ? (
-              <><span className="relative h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /><span className="relative">Envoi en cours...</span></>
+              <>
+                <span className="relative h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                <span className="relative">Envoi…</span>
+              </>
             ) : (
               <>
-                <svg className="relative h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                <svg className="relative h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.6}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.62-4.02A11.96 11.96 0 0112 2.94a11.96 11.96 0 01-8.62 3.04A12.02 12.02 0 003 9c0 5.59 3.82 10.29 9 11.62 5.18-1.33 9-6.03 9-11.62 0-1.04-.13-2.05-.38-3.02z" />
+                </svg>
                 <span className="relative">Valider ma commande</span>
               </>
             )}
           </button>
 
-          <p className="mt-1.5 text-center text-[10px] font-medium text-neutral-500">🔒 Paiement a la livraison · Sans risque</p>
+          <div className="mt-2 flex items-center justify-center gap-3 text-[10px] font-semibold text-[#8b5a2b]">
+            <span>🔒 Cash livraison</span>
+            <span className="h-3 w-px bg-pink-300" />
+            <span>📞 Confirmation 30 min</span>
+            <span className="h-3 w-px bg-pink-300" />
+            <span>📦 Express CI</span>
+          </div>
         </div>
       </div>
 
       <style>{`
-        @keyframes vtmfade { from { opacity: 0 } to { opacity: 1 } }
-        @keyframes vtmslide { from { transform: translateY(24px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
-        @keyframes vtmPulseDigit { 0%,100% { opacity: 1 } 50% { opacity: 0.6 } }
-        @keyframes vtmSheen { 0% { transform: translateX(-100%) } 100% { transform: translateX(100%) } }
-        @keyframes vtmFloat { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-1.5px) } }
-        .vtm-pulse-digit { animation: vtmPulseDigit 1s ease-in-out infinite }
-        .vtm-cta { animation: vtmFloat 2.6s ease-in-out infinite }
-        .vtm-cta:hover { animation: none; transform: translateY(-2px) }
-        .vtm-cta-sheen { animation: vtmSheen 3.2s ease-in-out infinite }
-
-        /*
-          Layout fullscreen mobile : on tente d'utiliser 100svh (small viewport
-          height) qui SUIT la barre d'adresse mobile et le clavier virtuel.
-          Fallback : 100dvh, puis 100vh pour les vieux navigateurs.
-        */
-        @supports (height: 100svh) {
-          .vtm-shell { height: 100svh; }
-        }
-        @media (min-width: 640px) {
-          .vtm-shell { height: auto !important; }
-        }
-
-        /*
-          Pour eviter le bug iOS qui zoom automatiquement quand on focus un
-          input avec font-size < 16px. On force 16px sur mobile via :focus.
-        */
+        @keyframes cvfade { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes cvslide { from { transform: translateY(36px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+        @keyframes cvPulseDigit { 0%,100% { opacity: 1 } 50% { opacity: 0.45 } }
+        @keyframes cvSheen { 0% { transform: translateX(-100%) } 100% { transform: translateX(100%) } }
+        @keyframes cvBarGlow { 0%,100% { filter: brightness(1) saturate(1) } 50% { filter: brightness(1.3) saturate(1.4) } }
+        .cv-pulse-digit { animation: cvPulseDigit 1s ease-in-out infinite }
+        .cv-bar-glow { animation: cvBarGlow 2.4s ease-in-out infinite }
+        .cv-cta-sheen { animation: cvSheen 3.2s ease-in-out infinite }
+        @supports (height: 100svh) { .cv-shell { height: 100svh; } }
+        @media (min-width: 640px) { .cv-shell { height: auto !important; } }
         @media (max-width: 639px) {
-          .vtm-shell input:focus,
-          .vtm-shell textarea:focus { font-size: 16px !important; }
+          .cv-shell input:focus { font-size: 16px !important; }
         }
       `}</style>
     </div>

@@ -10,6 +10,10 @@ export default function Deliveries() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [note, setNote] = useState('');
+  // Pour la livraison partielle : nombre d'unites prises par le client
+  const [partialQty, setPartialQty] = useState<number>(1);
+  // Mode "saisie quantite partielle" affiche dans la modal
+  const [showPartialInput, setShowPartialInput] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: ordersData, isLoading } = useQuery({
@@ -18,13 +22,15 @@ export default function Deliveries() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status, note }: { id: number; status: string; note?: string }) =>
-      ordersApi.updateStatus(id, status, note),
+    mutationFn: ({ id, status, note, quantiteLivree }: { id: number; status: string; note?: string; quantiteLivree?: number }) =>
+      ordersApi.updateStatus(id, status, note, quantiteLivree),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['livreur-deliveries'] });
       queryClient.invalidateQueries({ queryKey: ['livreur-my-stats'] });
       setSelectedOrder(null);
       setNote('');
+      setShowPartialInput(false);
+      setPartialQty(1);
       toast.success('Livraison mise à jour avec succès');
     },
     onError: (error: any) => {
@@ -32,26 +38,27 @@ export default function Deliveries() {
     },
   });
 
-  const handleUpdateStatus = (status: string) => {
+  const handleUpdateStatus = (status: string, quantiteLivree?: number) => {
     if (!selectedOrder) return;
-    
+
     // Vérifier si le délai de 24h n'est pas dépassé
     if (selectedOrder.status !== 'ASSIGNEE' && !canModifyOrder(selectedOrder)) {
       toast.error('Le délai de 24h pour modifier cette livraison est dépassé');
       setSelectedOrder(null);
       return;
     }
-    
+
     updateStatusMutation.mutate({
       id: selectedOrder.id,
       status,
       note: note || undefined,
+      quantiteLivree,
     });
   };
 
   const pendingOrders = ordersData?.orders?.filter((o: Order) => o.status === 'ASSIGNEE') || [];
-  const completedOrders = ordersData?.orders?.filter((o: Order) => 
-    ['LIVREE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'].includes(o.status)
+  const completedOrders = ordersData?.orders?.filter((o: Order) =>
+    ['LIVREE', 'LIVREE_PARTIELLE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'].includes(o.status)
   ) || [];
 
   // Fonction pour vérifier si une commande peut être modifiée (moins de 24h)
@@ -331,8 +338,71 @@ export default function Deliveries() {
                 className="btn btn-success w-full"
                 disabled={updateStatusMutation.isPending}
               >
-                ✓ Livraison effectuée
+                ✓ Livraison effectuée ({selectedOrder.quantite} unité{selectedOrder.quantite > 1 ? 's' : ''})
               </button>
+
+              {/* Livraison partielle : visible UNIQUEMENT si quantite > 1 */}
+              {selectedOrder.quantite > 1 && (
+                <>
+                  {!showPartialInput ? (
+                    <button
+                      onClick={() => {
+                        setShowPartialInput(true);
+                        setPartialQty(Math.min(selectedOrder.quantite - 1, 1));
+                      }}
+                      className="btn w-full bg-orange-500 hover:bg-orange-600 text-white"
+                      disabled={updateStatusMutation.isPending}
+                    >
+                      ⚠ Livraison partielle (client prend moins)
+                    </button>
+                  ) : (
+                    <div className="rounded-lg border-2 border-orange-300 bg-orange-50 p-3">
+                      <p className="text-sm font-semibold text-orange-900 mb-2">
+                        Combien d'unités le client a-t-il pris ?
+                      </p>
+                      <div className="flex items-center gap-2 mb-3">
+                        <button
+                          type="button"
+                          onClick={() => setPartialQty((q) => Math.max(1, q - 1))}
+                          className="grid h-10 w-10 place-items-center rounded-full bg-white text-xl font-bold text-orange-700 ring-1 ring-orange-300 hover:bg-orange-100"
+                        >
+                          −
+                        </button>
+                        <div className="flex-1 text-center">
+                          <div className="text-3xl font-black text-orange-900 tabular-nums">{partialQty}</div>
+                          <div className="text-xs text-orange-700">
+                            sur {selectedOrder.quantite} commandés · {selectedOrder.quantite - partialQty} retour magasin
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setPartialQty((q) => Math.min(selectedOrder.quantite - 1, q + 1))}
+                          className="grid h-10 w-10 place-items-center rounded-full bg-white text-xl font-bold text-orange-700 ring-1 ring-orange-300 hover:bg-orange-100"
+                        >
+                          +
+                        </button>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleUpdateStatus('LIVREE_PARTIELLE', partialQty)}
+                          className="btn flex-1 bg-orange-600 hover:bg-orange-700 text-white"
+                          disabled={updateStatusMutation.isPending}
+                        >
+                          ✓ Confirmer {partialQty} livré{partialQty > 1 ? 's' : ''}
+                        </button>
+                        <button
+                          onClick={() => { setShowPartialInput(false); setPartialQty(1); }}
+                          className="btn btn-secondary"
+                          disabled={updateStatusMutation.isPending}
+                        >
+                          Annuler
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
               <button
                 onClick={() => handleUpdateStatus('REFUSEE')}
                 className="btn btn-danger w-full"
@@ -353,6 +423,8 @@ export default function Deliveries() {
               onClick={() => {
                 setSelectedOrder(null);
                 setNote('');
+                setShowPartialInput(false);
+                setPartialQty(1);
               }}
               className="btn btn-secondary w-full mt-4"
             >

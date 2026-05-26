@@ -1220,6 +1220,19 @@ export default function Tournees() {
                         <span>Livrés:</span>
                         <span className="font-semibold text-green-600">{selectedTournee.stats.livrees}</span>
                       </div>
+                      {/* Compteur livraisons partielles (calcule depuis selectedTournee.orders si dispo) */}
+                      {(() => {
+                        const partielles = (selectedTournee.orders || []).filter(
+                          (o: any) => o.status === 'LIVREE_PARTIELLE'
+                        ).length;
+                        if (partielles === 0) return null;
+                        return (
+                          <div className="flex justify-between">
+                            <span>Livrés partiels:</span>
+                            <span className="font-semibold text-orange-700">{partielles}</span>
+                          </div>
+                        );
+                      })()}
                       <div className="flex justify-between">
                         <span>Refusés:</span>
                         <span className="font-semibold text-red-600">{selectedTournee.stats.refusees}</span>
@@ -1305,6 +1318,12 @@ export default function Tournees() {
                             <td className="px-3 py-2">{order.produitNom}</td>
                             <td className="px-3 py-2 text-center">
                               <span className="font-semibold text-blue-600">×{order.quantite}</span>
+                              {/* Indication livraison partielle : "1 livre / 1 retour" */}
+                              {order.status === 'LIVREE_PARTIELLE' && order.quantiteLivree != null && (
+                                <div className="mt-0.5 text-[10px] font-bold text-orange-700">
+                                  ✓ {order.quantiteLivree} pris · ↩ {order.quantite - order.quantiteLivree} retour
+                                </div>
+                              )}
                             </td>
                             <td className="px-3 py-2 text-right">
                               <span className="font-medium">{formatCurrency(order.montant)}</span>
@@ -1346,9 +1365,14 @@ export default function Tournees() {
                         <p className="text-xs text-gray-600 mb-1">Montant livré</p>
                         <p className="text-lg font-bold text-green-600">
                           {formatCurrency(
-                            tourneeDetail.tournee.orders
-                              .filter((o: any) => o.status === 'LIVREE')
-                              .reduce((sum: number, order: any) => sum + order.montant, 0)
+                            tourneeDetail.tournee.orders.reduce((sum: number, order: any) => {
+                              if (order.status === 'LIVREE') return sum + order.montant;
+                              // Livraison partielle : on proratise le montant selon les unites prises
+                              if (order.status === 'LIVREE_PARTIELLE' && order.quantiteLivree && order.quantite > 0) {
+                                return sum + (order.montant * order.quantiteLivree / order.quantite);
+                              }
+                              return sum;
+                            }, 0)
                           )}
                         </p>
                       </div>

@@ -135,6 +135,7 @@ router.post('/make', verifyApiKey, [
       'patch anti cicatrice': 'PATCH_ANTI_CICATRICE',
       'creme anti cerne': 'CREME_ANTI_CERNE',
       'creme anti lipome': 'CREME_ANTI_LIPOME',
+      'creme anti lipome tk': 'CREME_ANTI_LIPOME_TK',
       'crème anti-verrues': 'CREME_ANTI_VERRUES',
       'creme verrue tk': 'VERRUE_TK',
       'creme probleme de peau': 'CREME_PROBLEME_DE_PEAU',

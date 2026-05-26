@@ -6,6 +6,153 @@ const router = express.Router();
 
 router.use(authenticate);
 
+// GET /api/analytics/realtime - Vue temps reel (5 dernieres minutes) des visiteurs
+// actifs par slug + flux des dernieres activites (10 dernieres pageviews) +
+// top conversion 24h pour comprendre quelle page convertit le mieux maintenant.
+// Reponse :
+// {
+//   activeNow: { totalVisitors, totalSessions, totalPageviews },
+//   bySlug: [{ slug, activeVisitors, activeSessions, viewsLastHour }, ...],
+//   recentActivity: [{ slug, visitorId, device, browser, country, city, createdAt }, ...],
+//   topConverting24h: [{ slug, views, orders, conversionRate }, ...],
+// }
+router.get('/realtime', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
+  try {
+    const companyId = req.user.companyId;
+    const now = Date.now();
+    const fiveMinAgo = new Date(now - 5 * 60 * 1000);
+    const oneHourAgo = new Date(now - 60 * 60 * 1000);
+    const dayAgo = new Date(now - 24 * 60 * 60 * 1000);
+
+    // 1) Visiteurs actifs (5 min) detailles
+    const activeRows = await prisma.pageView.findMany({
+      where: { companyId, createdAt: { gte: fiveMinAgo } },
+      select: { slug: true, visitorId: true, sessionId: true },
+    });
+
+    const totalActiveVisitors = new Set(activeRows.map((r) => r.visitorId)).size;
+    const totalActiveSessions = new Set(activeRows.map((r) => r.sessionId)).size;
+    const totalActivePageviews = activeRows.length;
+
+    // 2) Agregat par slug (5 min)
+    const bySlugMap = new Map();
+    for (const r of activeRows) {
+      const k = r.slug || 'unknown';
+      if (!bySlugMap.has(k)) bySlugMap.set(k, { slug: k, visitors: new Set(), sessions: new Set(), views: 0 });
+      const e = bySlugMap.get(k);
+      e.visitors.add(r.visitorId);
+      e.sessions.add(r.sessionId);
+      e.views += 1;
+    }
+
+    // 2bis) Enrichir avec totaux derniere heure (pour ranking)
+    const lastHourRows = await prisma.pageView.groupBy({
+      by: ['slug'],
+      where: { companyId, createdAt: { gte: oneHourAgo } },
+      _count: { id: true },
+    });
+    const lastHourBySlug = new Map(lastHourRows.map((r) => [r.slug, r._count.id]));
+
+    // Fusionner : meme si pas actifs maintenant mais actifs dans l'heure
+    for (const r of lastHourRows) {
+      if (!bySlugMap.has(r.slug)) {
+        bySlugMap.set(r.slug, { slug: r.slug, visitors: new Set(), sessions: new Set(), views: 0 });
+      }
+    }
+
+    const bySlug = Array.from(bySlugMap.values())
+      .map((e) => ({
+        slug: e.slug,
+        activeVisitors: e.visitors.size,
+        activeSessions: e.sessions.size,
+        activeViews: e.views,
+        viewsLastHour: lastHourBySlug.get(e.slug) || 0,
+      }))
+      .sort((a, b) => (b.activeVisitors - a.activeVisitors) || (b.viewsLastHour - a.viewsLastHour));
+
+    // 3) Flux temps reel : 15 dernieres pageviews (toutes pages)
+    const recentActivity = await prisma.pageView.findMany({
+      where: { companyId, createdAt: { gte: fiveMinAgo } },
+      orderBy: { createdAt: 'desc' },
+      take: 15,
+      select: {
+        slug: true, visitorId: true, device: true, browser: true,
+        country: true, city: true, createdAt: true, utmSource: true,
+      },
+    });
+
+    // 4) Top conversion 24h (pages avec ratio commandes/vues le plus haut)
+    const views24h = await prisma.pageView.groupBy({
+      by: ['slug'],
+      where: { companyId, createdAt: { gte: dayAgo } },
+      _count: { id: true },
+    });
+    const viewsMapDay = new Map(views24h.map((r) => [r.slug, r._count.id]));
+
+    // Visiteurs uniques 24h par slug (pour conversion sur visiteurs uniques)
+    const viewers24h = await prisma.pageView.findMany({
+      where: { companyId, createdAt: { gte: dayAgo } },
+      select: { slug: true, visitorId: true },
+    });
+    const uniqueBySlug = new Map();
+    for (const v of viewers24h) {
+      if (!uniqueBySlug.has(v.slug)) uniqueBySlug.set(v.slug, new Set());
+      uniqueBySlug.get(v.slug).add(v.visitorId);
+    }
+
+    // Commandes 24h liees a un slug (via niche / source qui matche le slug ou produitCode)
+    // On fait simple : on regarde toutes les commandes 24h et on tente de matcher source.
+    const orders24h = await prisma.order.findMany({
+      where: { companyId, createdAt: { gte: dayAgo } },
+      select: { source: true, niche: true, status: true, productId: true, produitNom: true },
+    });
+    const ordersBySlug = new Map();
+    for (const o of orders24h) {
+      const candidates = [o.source, o.niche]
+        .filter(Boolean)
+        .map((s) => String(s).toLowerCase().replace(/[_\s]+/g, '-'));
+      for (const s of candidates) {
+        if (viewsMapDay.has(s)) {
+          ordersBySlug.set(s, (ordersBySlug.get(s) || 0) + 1);
+          break;
+        }
+      }
+    }
+
+    const topConverting24h = Array.from(viewsMapDay.entries())
+      .map(([slug, views]) => {
+        const orders = ordersBySlug.get(slug) || 0;
+        const uniques = (uniqueBySlug.get(slug) || new Set()).size || views;
+        const conversionRate = uniques > 0 ? (orders / uniques) * 100 : 0;
+        return { slug, views, uniqueVisitors: uniques, orders, conversionRate: Math.round(conversionRate * 10) / 10 };
+      })
+      .filter((r) => r.views > 0)
+      .sort((a, b) => (b.conversionRate - a.conversionRate) || (b.orders - a.orders) || (b.views - a.views))
+      .slice(0, 10);
+
+    res.json({
+      timestamp: new Date().toISOString(),
+      activeNow: {
+        totalVisitors: totalActiveVisitors,
+        totalSessions: totalActiveSessions,
+        totalPageviews: totalActivePageviews,
+      },
+      bySlug,
+      recentActivity,
+      topConverting24h,
+    });
+  } catch (error) {
+    console.error('Erreur /analytics/realtime:', error);
+    res.status(500).json({
+      error: 'Erreur lors du calcul des stats temps reel',
+      activeNow: { totalVisitors: 0, totalSessions: 0, totalPageviews: 0 },
+      bySlug: [],
+      recentActivity: [],
+      topConverting24h: [],
+    });
+  }
+});
+
 // GET /api/analytics/products - Statistiques détaillées des produits
 router.get('/products', authorize('ADMIN'), async (req, res) => {
   try {

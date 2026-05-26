@@ -42,9 +42,9 @@ npm run deploy:vps
 ```
 
 ### Ajout d'un nouveau slug landing
-1. Ajouter le slug dans `frontend/src/hooks/useLandingSlug.ts` -> `VALID_LANDING_SLUGS`
+1. Ajouter le slug dans `frontend/src/hooks/useLandingSlug.ts` -> `LANDING_SLUGS`
 2. Ajouter les 2 routes dans `frontend/src/App.tsx` (landing + merci)
-3. Ajouter le slug dans le `.htaccess` racine du VPS (regex)
+3. **Obligatoire sur le VPS** : éditer `/web/.htaccess` (racine) et **ajouter le slug dans la regex** qui réécrit vers `/landings-app/index.html`. Sinon WordPress renvoie une 404 (« La page ne peut pas être trouvée »). Voir `scripts/vps-root-htaccess-landings-snippet.txt` et `npm run vps:landing-regex` pour la liste à jour.
 4. Ajouter le slug dans `.env.vps` -> `LANDING_SLUGS` (pour les tests auto)
 5. `npm run deploy:vps`
 

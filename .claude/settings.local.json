@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem \"C:\\\\Users\\\\nande\\\\Desktop\\\\GS cursor\\\\backups\")",
+      "Bash(Select-Object Name, Length, LastWriteTime)",
+      "Bash(Format-Table -AutoSize)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\nande\\\\Desktop\\\\GS cursor\\\\backups\" -Force | Select-Object Name, @{N='Size\\(MB\\)';E={[math]::Round\\($_.Length/1MB,2\\)}}, LastWriteTime | Format-Table -AutoSize)",
+      "PowerShell($slugs = @\\('creme-anti-verrue','poudre-pousse-cheveux','coffret-versace','coffret-boxer-homme','creme-anti-lipome','creme-anti-lipome-tk','chaussette-homme','creme-anti-cerne'\\); foreach \\($s in $slugs\\) { $r = curl.exe -s -o NUL -w \"%{http_code} -> %{redirect_url}\" \"https://obrille.com/$s\"; Write-Host \"  $s -> $r\" })",
+      "PowerShell($code = curl.exe -s -o NUL -w \"%{http_code}\" \"https://obrille.com/serum-cerne/\"; Write-Host \"serum-cerne -> $code\")"
+    ]
+  }
+}

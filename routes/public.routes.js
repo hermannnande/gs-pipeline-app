@@ -289,6 +289,48 @@ router.post('/pageview', async (req, res) => {
   }
 });
 
+// GET /api/public/realtime/:slug - Compte les visiteurs actifs sur une page
+// dans les 5 dernieres minutes (fenetre glissante). Public, pas d'auth.
+// Reponse : { activeVisitors: number, activeSessions: number, totalLastHour: number }
+//
+// "Actif" = au moins 1 pageview dans les 5 dernieres minutes.
+// On compte les visitorId distincts (un meme visiteur sur plusieurs pages = 1 actif).
+router.get('/realtime/:slug', async (req, res) => {
+  try {
+    await ensurePageViewTable();
+    const slug = String(req.params.slug || '').slice(0, 200);
+    if (!slug) {
+      return res.status(400).json({ activeVisitors: 0, activeSessions: 0, totalLastHour: 0 });
+    }
+
+    const companyId = await resolveCompanyId(req);
+    const now = Date.now();
+    const fiveMinAgo = new Date(now - 5 * 60 * 1000);
+    const oneHourAgo = new Date(now - 60 * 60 * 1000);
+
+    // Visiteurs distincts actifs (5 min)
+    const activeRows = await prisma.pageView.findMany({
+      where: { slug, companyId, createdAt: { gte: fiveMinAgo } },
+      select: { visitorId: true, sessionId: true },
+    });
+    const activeVisitors = new Set(activeRows.map((r) => r.visitorId)).size;
+    const activeSessions = new Set(activeRows.map((r) => r.sessionId)).size;
+
+    // Total derniere heure
+    const totalLastHour = await prisma.pageView.count({
+      where: { slug, companyId, createdAt: { gte: oneHourAgo } },
+    });
+
+    // Cache-Control court pour limiter le DDoS sans laisser le compteur figer trop
+    res.set('Cache-Control', 'public, max-age=8');
+    res.json({ activeVisitors, activeSessions, totalLastHour });
+  } catch (error) {
+    console.error('Erreur realtime/:slug (non bloquante):', error.message);
+    // Reponse permissive : 0 plutot qu'erreur, pour ne pas casser le front
+    res.json({ activeVisitors: 0, activeSessions: 0, totalLastHour: 0 });
+  }
+});
+
 // POST /api/public/track-purchase - Renvoie un Purchase CAPI server-side a chaque atterrissage
 // sur la page de remerciement. Utilise event_id base sur orderRef pour dedoublonnage avec le pixel browser.
 router.post('/track-purchase', async (req, res) => {

@@ -36,7 +36,7 @@ wc -c "$TARGET"
 echo "=== Premieres lignes ==="
 head -5 "$TARGET"
 echo "=== Recherche slugs ==="
-grep -oE '(creme-anti-verrue|creme-verrue-tk|spraydouleurtk|creme-ongle-incarne|chaussette-compression|patchdouleurtk|crememinceurfb)' "$TARGET" | sort -u
+grep -oE '(creme-anti-verrue|creme-verrue-tk|spraydouleurtk|creme-ongle-incarne|chaussette-compression|patchdouleurtk|patchdouleurfb|crememinceurfb|coffret-boxer-homme)' "$TARGET" | sort -u
 `;
 
 const sshArgs = [

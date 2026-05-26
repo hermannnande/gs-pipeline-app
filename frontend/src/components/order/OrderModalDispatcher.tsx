@@ -16,12 +16,15 @@ import OrderModalMinceur from './OrderModalMinceur';
 import OrderModalPatchDouleur from './OrderModalPatchDouleur';
 import OrderModalSprayLipome from './OrderModalSprayLipome';
 import OrderModalCremeAntiLipome from './OrderModalCremeAntiLipome';
+import OrderModalCremeAntiLipomeTk from './OrderModalCremeAntiLipomeTk';
 import OrderModalChaussetteHomme from './OrderModalChaussetteHomme';
 import OrderModalCremeAntiCerne from './OrderModalCremeAntiCerne';
 import OrderModalSerumCerne from './OrderModalSerumCerne';
 import OrderModalSerumCerneTk from './OrderModalSerumCerneTk';
 import OrderModalSerumCernePaye from './OrderModalSerumCernePaye';
 import OrderModalPoudreCheveux from './OrderModalPoudreCheveux';
+import OrderModalSprayVitiligo from './OrderModalSprayVitiligo';
+import OrderModalChapeauGavroche from './OrderModalChapeauGavroche';
 import type { OrderSubmitConfig, OrderProduct } from '../../hooks/useOrderSubmit';
 
 const CUSTOM_SLUGS = [
@@ -37,12 +40,15 @@ const CUSTOM_SLUGS = [
   'spraylipome',
   'spraylipometk',
   'creme-anti-lipome',
+  'creme-anti-lipome-tk',
   'chaussette-homme',
   'creme-anti-cerne',
   'serum-cerne',
   'serum-cerne-tk',
   'serum-cerne-paye',
   'poudre-pousse-cheveux',
+  'spray-vitiligo',
+  'chapeau-gavroche',
 ] as const;
 
 export type CustomSlug = typeof CUSTOM_SLUGS[number];
@@ -100,6 +106,8 @@ export default function OrderModalDispatcher({ slug, ...rest }: Props) {
       return <OrderModalSprayLipome {...rest} />;
     case 'creme-anti-lipome':
       return <OrderModalCremeAntiLipome {...rest} />;
+    case 'creme-anti-lipome-tk':
+      return <OrderModalCremeAntiLipomeTk {...rest} />;
     case 'chaussette-homme':
       return <OrderModalChaussetteHomme {...rest} />;
     case 'creme-anti-cerne':
@@ -112,6 +120,10 @@ export default function OrderModalDispatcher({ slug, ...rest }: Props) {
       return <OrderModalSerumCernePaye {...rest} />;
     case 'poudre-pousse-cheveux':
       return <OrderModalPoudreCheveux {...rest} />;
+    case 'spray-vitiligo':
+      return <OrderModalSprayVitiligo {...rest} />;
+    case 'chapeau-gavroche':
+      return <OrderModalChapeauGavroche {...rest} />;
     default:
       return null;
   }

@@ -8,6 +8,7 @@ export type OrderStatus =
   | 'INJOIGNABLE'
   | 'ASSIGNEE'
   | 'LIVREE'
+  | 'LIVREE_PARTIELLE'
   | 'REFUSEE'
   | 'ANNULEE_LIVRAISON'
   | 'RETOURNE'
@@ -42,6 +43,8 @@ export interface Order {
   produitNom: string;
   produitPage?: string;
   quantite: number;
+  /** Nombre d'unites effectivement prises par le client (LIVREE_PARTIELLE). null = egal a quantite */
+  quantiteLivree?: number | null;
   montant: number;
   sourceCampagne?: string;
   sourcePage?: string;

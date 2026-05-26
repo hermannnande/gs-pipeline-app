@@ -379,8 +379,11 @@ router.post('/tournees/:id/confirm-retour', authorize('ADMIN', 'GESTIONNAIRE', '
       return res.status(404).json({ error: 'Tournée non trouvée.' });
     }
 
-    // Calculer les colis livrés
-    const colisLivres = deliveryList.orders.filter(o => o.status === 'LIVREE').length;
+    // Calculer les colis livrés (LIVREE + LIVREE_PARTIELLE : dans les 2 cas
+    // le livreur a remis le colis au client, meme partiellement)
+    const colisLivres = deliveryList.orders.filter(o =>
+      o.status === 'LIVREE' || o.status === 'LIVREE_PARTIELLE'
+    ).length;
     const colisRemis = deliveryList.tourneeStock?.colisRemis || deliveryList.orders.length;
     const ecart = colisRemis - (colisLivres + parseInt(colisRetour));
 
@@ -432,24 +435,41 @@ router.post('/tournees/:id/confirm-retour', authorize('ADMIN', 'GESTIONNAIRE', '
       }
 
       // ⚡ RETOURNER LE STOCK : stockLocalReserve → stockActuel
-      // Pour chaque commande NON livrée (REFUSEE, ANNULEE_LIVRAISON, RETOURNE, ASSIGNEE)
+      // Cas couverts pour chaque commande LOCAL avec productId :
+      //   1. Commandes NON livrées (REFUSEE, ANNULEE_LIVRAISON, RETOURNE, ASSIGNEE)
+      //      → on retourne TOUTE la quantite commandee (rien n'a ete livre)
+      //   2. Commandes LIVREE_PARTIELLE
+      //      → on retourne SEULEMENT (quantite - quantiteLivree) (ce qui n'a pas ete pris)
+      //   3. Commandes LIVREE : aucun retour (tout a ete livre)
       const stockMovements = [];
-      const ordersToReturn = deliveryList.orders.filter(o => 
-        !['LIVREE'].includes(o.status) && o.productId && o.deliveryType === 'LOCAL'
+      const ordersToReturn = deliveryList.orders.filter(o =>
+        o.productId && o.deliveryType === 'LOCAL' &&
+        (
+          (!['LIVREE', 'LIVREE_PARTIELLE'].includes(o.status)) // cas 1
+          ||
+          (o.status === 'LIVREE_PARTIELLE' && o.quantiteLivree && o.quantite > o.quantiteLivree) // cas 2
+        )
       );
 
       for (const order of ordersToReturn) {
         if (order.product) {
           const product = order.product;
+          // Quantite a retourner = ce qui n'a pas ete livre
+          const qtyARetourner = order.status === 'LIVREE_PARTIELLE'
+            ? (order.quantite - (order.quantiteLivree || 0))
+            : order.quantite;
+
+          if (qtyARetourner <= 0) continue;
+
           const stockActuelAvant = product.stockActuel;
           const stockLocalReserveAvant = product.stockLocalReserve;
-          const stockActuelApres = stockActuelAvant + order.quantite;
-          const stockLocalReserveApres = stockLocalReserveAvant - order.quantite;
+          const stockActuelApres = stockActuelAvant + qtyARetourner;
+          const stockLocalReserveApres = stockLocalReserveAvant - qtyARetourner;
 
           // Mettre à jour les deux stocks
           await tx.product.update({
             where: { id: order.productId, companyId: req.user.companyId },
-            data: { 
+            data: {
               stockActuel: stockActuelApres,
               stockLocalReserve: stockLocalReserveApres
             }
@@ -460,13 +480,15 @@ router.post('/tournees/:id/confirm-retour', authorize('ADMIN', 'GESTIONNAIRE', '
             data: {
               productId: order.productId,
               type: 'RETOUR_LOCAL',
-              quantite: order.quantite,
+              quantite: qtyARetourner,
               stockAvant: stockActuelAvant,
               stockApres: stockActuelApres,
               orderId: order.id,
               tourneeId: tourneeStock.id,
               effectuePar: req.user.id,
-              motif: `Retour tournée ${deliveryList.nom} - ${order.orderReference} - ${order.status} - ${order.clientNom}`
+              motif: order.status === 'LIVREE_PARTIELLE'
+                ? `Retour partiel tournée ${deliveryList.nom} - ${order.orderReference} - ${qtyARetourner}/${order.quantite} non pris - ${order.clientNom}`
+                : `Retour tournée ${deliveryList.nom} - ${order.orderReference} - ${order.status} - ${order.clientNom}`
             }
           });
           stockMovements.push(movement);

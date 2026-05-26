@@ -9,7 +9,8 @@ const router = express.Router();
 router.use(authenticate);
 
 // GET /api/products - Liste des produits
-router.get('/', authorize('ADMIN', 'GESTIONNAIRE_STOCK'), async (req, res) => {
+// GESTIONNAIRE + APPELANT : lecture seule (filtres export Base Clients, etc.)
+router.get('/', authorize('ADMIN', 'GESTIONNAIRE_STOCK', 'GESTIONNAIRE', 'APPELANT'), async (req, res) => {
   try {
     const { actif, search } = req.query;
 

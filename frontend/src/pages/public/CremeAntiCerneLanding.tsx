@@ -15,7 +15,7 @@ import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'creme-anti-cerne';
 const PRODUCT_CODE = 'CREME_ANTI_CERNE';
-const META_PIXEL_ID = '952340034030644';
+const META_PIXEL_ID = '950944984510412';
 const THANK_YOU_URL = '/creme-anti-cerne/merci';
 
 const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };

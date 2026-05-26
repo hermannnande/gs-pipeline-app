@@ -14,8 +14,15 @@ import PatchDouleurFbThankYou from './PatchDouleurFbThankYou';
 import SerumCernePayeThankYou from './SerumCernePayeThankYou';
 import SerumCernePayeThankYouCash from './SerumCernePayeThankYouCash';
 import CremeAntiVerrueThankYou from './CremeAntiVerrueThankYou';
+import CremeVerrueTkThankYou from './CremeVerrueTkThankYou';
 import CremeAntiLipomeThankYou from './CremeAntiLipomeThankYou';
+import CremeAntiLipomeTkThankYou from './CremeAntiLipomeTkThankYou';
+import CremeAntiCerneThankYou from './CremeAntiCerneThankYou';
 import ChaussetteHommeThankYou from './ChaussetteHommeThankYou';
+import CoffretBoxerThankYou from './CoffretBoxerThankYou';
+import ChapeauGavrocheThankYou from './ChapeauGavrocheThankYou';
+import SprayVitiligoThankYou from './SprayVitiligoThankYou';
+import PoudrePousseCheveuxThankYou from './PoudrePousseCheveuxThankYou';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -24,8 +31,15 @@ const DEDICATED_THANKYOU_SLUGS = new Set<string>([
   'patchdouleurfb',
   'serum-cerne-paye',
   'creme-anti-verrue',
+  'creme-verrue-tk',
   'creme-anti-lipome',
+  'creme-anti-lipome-tk',
+  'creme-anti-cerne',
   'chaussette-homme',
+  'coffret-boxer-homme',
+  'chapeau-gavroche',
+  'spray-vitiligo',
+  'poudre-pousse-cheveux',
 ]);
 
 /**
@@ -78,14 +92,49 @@ export default function ThankYouRouter() {
     return <CremeAntiVerrueThankYou />;
   }
 
+  // Page de remerciement creme-verrue-tk — pixel Meta 1417398840151713 (Purchase + CAPI dedup).
+  if (slug === 'creme-verrue-tk') {
+    return <CremeVerrueTkThankYou />;
+  }
+
   // Page de remerciement creme-anti-lipome — pixel Meta 1857129471642967 (Purchase).
   if (slug === 'creme-anti-lipome') {
     return <CremeAntiLipomeThankYou />;
   }
 
+  // Page de remerciement creme-anti-lipome-tk — meme pixel, produit CREME_ANTI_LIPOME_TK.
+  if (slug === 'creme-anti-lipome-tk') {
+    return <CremeAntiLipomeTkThankYou />;
+  }
+
+  // Page de remerciement creme-anti-cerne — pixel Meta 950944984510412 (Purchase + CAPI dedup).
+  if (slug === 'creme-anti-cerne') {
+    return <CremeAntiCerneThankYou />;
+  }
+
   // Page de remerciement chaussette-homme — pixel Meta 1613380123108753 (Purchase).
   if (slug === 'chaussette-homme') {
     return <ChaussetteHommeThankYou />;
+  }
+
+  // Page de remerciement coffret-boxer-homme — pixel Meta 26809431761984777 (Purchase).
+  if (slug === 'coffret-boxer-homme') {
+    return <CoffretBoxerThankYou />;
+  }
+
+  // Page de remerciement chapeau-gavroche — pixel Meta 1613380123108753 (Purchase + CAPI dedup).
+  if (slug === 'chapeau-gavroche') {
+    return <ChapeauGavrocheThankYou />;
+  }
+
+  // Page de remerciement spray-vitiligo — palette bleu medical, Purchase + WhatsApp CTA.
+  if (slug === 'spray-vitiligo') {
+    return <SprayVitiligoThankYou />;
+  }
+
+  // Page de remerciement poudre-pousse-cheveux — pixel Meta 1629520061493542 (Purchase + CAPI dedup).
+  if (slug === 'poudre-pousse-cheveux') {
+    return <PoudrePousseCheveuxThankYou />;
   }
 
   // Page de remerciement dediee patchdouleurfb avec pixel Meta 952340034030644

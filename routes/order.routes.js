@@ -977,7 +977,7 @@ router.post('/:id/toggle-priorite', authorize('ADMIN'), async (req, res) => {
 router.put('/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, note, raisonRetour } = req.body;
+    const { status, note, raisonRetour, quantiteLivree: bodyQtyLivree } = req.body;
     const user = req.user;
 
     const order = await prisma.order.findFirst({
@@ -1005,12 +1005,22 @@ router.put('/:id/status', async (req, res) => {
         });
       }
     } else if (user.role === 'LIVREUR') {
-      // Le livreur peut changer : ASSIGNEE -> LIVREE/REFUSEE/ANNULEE_LIVRAISON/RETOURNE
-      if (!['LIVREE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'].includes(status)) {
+      // Le livreur peut changer : ASSIGNEE -> LIVREE/LIVREE_PARTIELLE/REFUSEE/ANNULEE_LIVRAISON/RETOURNE
+      if (!['LIVREE', 'LIVREE_PARTIELLE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'].includes(status)) {
         return res.status(400).json({ error: 'Statut invalide pour un livreur.' });
       }
       if (order.delivererId !== user.id) {
         return res.status(403).json({ error: 'Cette commande ne vous est pas assignée.' });
+      }
+
+      // Validation specifique livraison partielle : 1 <= quantiteLivree < order.quantite
+      if (status === 'LIVREE_PARTIELLE') {
+        const qtyLivree = parseInt(bodyQtyLivree, 10);
+        if (!Number.isInteger(qtyLivree) || qtyLivree < 1 || qtyLivree >= order.quantite) {
+          return res.status(400).json({
+            error: `Quantité livrée invalide. Doit être entre 1 et ${order.quantite - 1} (sur ${order.quantite} commandés).`
+          });
+        }
       }
 
       // ✅ Garde-fou anti désynchronisation:
@@ -1035,6 +1045,16 @@ router.put('/:id/status', async (req, res) => {
       }
     }
 
+    // Quantite livree effective pour ce changement de statut :
+    //  - LIVREE          → toute la quantite commandee
+    //  - LIVREE_PARTIELLE → quantite saisie par le livreur (validee plus haut)
+    //  - autres statuts  → null (pas de livraison)
+    const qtyLivreePartielle = status === 'LIVREE_PARTIELLE' ? parseInt(bodyQtyLivree, 10) : null;
+    const qtyLivreeEffective =
+      status === 'LIVREE' ? order.quantite :
+      status === 'LIVREE_PARTIELLE' ? qtyLivreePartielle :
+      null;
+
     // Transaction pour gérer le statut + stock de manière cohérente
     const updatedOrder = await prisma.$transaction(async (tx) => {
       // Mettre à jour le statut de la commande
@@ -1046,7 +1066,12 @@ router.put('/:id/status', async (req, res) => {
           noteLivreur: user.role === 'LIVREUR' && note ? note : order.noteLivreur,
           noteGestionnaire: (user.role === 'GESTIONNAIRE' || user.role === 'ADMIN') && note ? note : order.noteGestionnaire,
           validatedAt: status === 'VALIDEE' ? new Date() : order.validatedAt,
-          deliveredAt: status === 'LIVREE' ? new Date() : order.deliveredAt,
+          deliveredAt: (status === 'LIVREE' || status === 'LIVREE_PARTIELLE') ? new Date() : order.deliveredAt,
+          // quantiteLivree :
+          //   - LIVREE_PARTIELLE → valeur partielle saisie
+          //   - LIVREE → on stocke explicitement order.quantite pour clarte (utile pour le retour partiel)
+          //   - autre → on remet a null (cas correction <24h)
+          quantiteLivree: qtyLivreeEffective,
           raisonRetour: status === 'RETOURNE' && raisonRetour ? raisonRetour : order.raisonRetour,
           retourneAt: status === 'RETOURNE' ? new Date() : order.retourneAt
         },
@@ -1065,8 +1090,15 @@ router.put('/:id/status', async (req, res) => {
       // Le stock se déplacera UNIQUEMENT lors de la confirmation de REMISE
       // par le gestionnaire de stock (voir routes/stock.routes.js ligne 207)
 
-      // RÈGLE MÉTIER 1 : Décrémenter le stock quand la commande passe à LIVRÉE
-      if (status === 'LIVREE' && order.status !== 'LIVREE' && order.productId) {
+      // RÈGLE MÉTIER 1 : Décrémenter le stock quand la commande passe à LIVRÉE ou LIVREE_PARTIELLE
+      // LIVREE         → on décrémente order.quantite (toute la commande)
+      // LIVREE_PARTIELLE → on décrémente qtyLivreeEffective (seulement ce qui est livré).
+      //                    Le reste (quantite - qtyLivreeEffective) reste dans stockLocalReserve
+      //                    et sera retourné lors du confirm-retour gestionnaire stock.
+      const isLivraison = (status === 'LIVREE' || status === 'LIVREE_PARTIELLE');
+      const wasLivraison = (order.status === 'LIVREE' || order.status === 'LIVREE_PARTIELLE');
+      if (isLivraison && !wasLivraison && order.productId) {
+        const qtyToDeduct = qtyLivreeEffective || order.quantite;
         const product = await tx.product.findUnique({
           where: { id: order.productId }
         });
@@ -1077,11 +1109,11 @@ router.put('/:id/status', async (req, res) => {
             // Liste des statuts où le colis est chez le livreur
             // Aligné avec la logique RETOUR (routes/stock.routes.js ligne 420)
             const statusAvecLivreur = ['ASSIGNEE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'];
-            
+
             if (statusAvecLivreur.includes(order.status)) {
-              // ✅ Le colis était chez le livreur, réduire stockLocalReserve
+              // ✅ Le colis était chez le livreur, réduire stockLocalReserve de la quantité livrée
           const stockLocalReserveAvant = product.stockLocalReserve;
-              const stockLocalReserveApres = stockLocalReserveAvant - order.quantite;
+              const stockLocalReserveApres = stockLocalReserveAvant - qtyToDeduct;
 
           await tx.product.update({
             where: { id: order.productId },
@@ -1089,21 +1121,23 @@ router.put('/:id/status', async (req, res) => {
               });
 
               await tx.stockMovement.create({
-            data: { 
+            data: {
                   productId: order.productId,
                   type: 'LIVRAISON_LOCAL',
-                  quantite: -order.quantite,
+                  quantite: -qtyToDeduct,
                   stockAvant: stockLocalReserveAvant,
                   stockApres: stockLocalReserveApres,
                   orderId: order.id,
                   effectuePar: user.id,
-                  motif: `Livraison locale ${order.orderReference} - ${order.status} → LIVREE - ${order.clientNom}`
+                  motif: status === 'LIVREE_PARTIELLE'
+                    ? `Livraison partielle ${order.orderReference} - ${qtyToDeduct}/${order.quantite} pris - ${order.clientNom}`
+                    : `Livraison locale ${order.orderReference} - ${order.status} → LIVREE - ${order.clientNom}`
                 }
               });
             } else {
               // Cas rare : LOCAL → LIVREE sans passer par les statuts avec livreur
               // Cela peut arriver si la commande n'a pas encore été remise (pas de REMISE confirmée)
-              console.warn(`Commande ${order.orderReference} : LOCAL → LIVREE depuis statut ${order.status} (pas de REMISE préalable détectée)`);
+              console.warn(`Commande ${order.orderReference} : LOCAL → ${status} depuis statut ${order.status} (pas de REMISE préalable détectée)`);
             }
           }
           // 📮 EXPEDITION : Stock déjà réduit lors de la création, ne rien faire
@@ -1121,7 +1155,7 @@ router.put('/:id/status', async (req, res) => {
           else {
             // Réduire stockActuel pour les cas non gérés spécifiquement
             const stockAvant = product.stockActuel;
-            const stockApres = stockAvant - order.quantite;
+            const stockApres = stockAvant - qtyToDeduct;
 
             await tx.product.update({
               where: { id: order.productId },
@@ -1132,7 +1166,7 @@ router.put('/:id/status', async (req, res) => {
             data: {
               productId: order.productId,
                 type: 'LIVRAISON',
-                quantite: -order.quantite,
+                quantite: -qtyToDeduct,
                 stockAvant,
                 stockApres,
               orderId: order.id,
@@ -1147,9 +1181,17 @@ router.put('/:id/status', async (req, res) => {
       // ⚠️ NOTE : Le stock ne bouge PAS ici lors du changement de statut par le livreur
       // Le stock revient UNIQUEMENT lors de la confirmation de retour par le gestionnaire de stock
 
-      // RÈGLE MÉTIER 2 : Réincrémenter le stock si la commande était LIVRÉE et change vers un autre statut
-      // (Le livreur corrige son erreur dans les 24h : la livraison n'a pas été effectuée)
-      if (order.status === 'LIVREE' && status !== 'LIVREE' && order.productId) {
+      // RÈGLE MÉTIER 2 : Réincrémenter le stock si la commande était LIVRÉE (ou LIVREE_PARTIELLE)
+      // et change vers un autre statut (correction < 24h).
+      // On utilise la quantite QUI A ETE LIVREE (order.quantiteLivree pour LIVREE_PARTIELLE,
+      // sinon order.quantite). Tout le reste etait deja dans stockLocalReserve.
+      const wasLivreeOuPartielle = (order.status === 'LIVREE' || order.status === 'LIVREE_PARTIELLE');
+      const isNowLivreeOuPartielle = (status === 'LIVREE' || status === 'LIVREE_PARTIELLE');
+      if (wasLivreeOuPartielle && !isNowLivreeOuPartielle && order.productId) {
+        // Quantite a remettre = celle qui avait ete soustraite a la livraison precedente
+        const qtyToReturn = (order.status === 'LIVREE_PARTIELLE' && order.quantiteLivree)
+          ? order.quantiteLivree
+          : order.quantite;
         const product = await tx.product.findUnique({
           where: { id: order.productId }
         });
@@ -1158,7 +1200,7 @@ router.put('/:id/status', async (req, res) => {
           // 📦 LOCAL : Remettre dans stockLocalReserve (le colis est encore chez le livreur)
           if (order.deliveryType === 'LOCAL') {
             const stockLocalReserveAvant = product.stockLocalReserve;
-            const stockLocalReserveApres = stockLocalReserveAvant + order.quantite;
+            const stockLocalReserveApres = stockLocalReserveAvant + qtyToReturn;
 
             await tx.product.update({
               where: { id: order.productId },
@@ -1169,7 +1211,7 @@ router.put('/:id/status', async (req, res) => {
               data: {
                 productId: order.productId,
                 type: 'CORRECTION_LIVRAISON_LOCAL',
-                quantite: order.quantite, // Positif car on rajoute
+                quantite: qtyToReturn, // Positif car on rajoute
                 stockAvant: stockLocalReserveAvant,
                 stockApres: stockLocalReserveApres,
                 orderId: order.id,
@@ -1181,7 +1223,7 @@ router.put('/:id/status', async (req, res) => {
           // 📮 EXPEDITION : Remettre dans stockActuel (le colis peut revenir)
           else if (order.deliveryType === 'EXPEDITION') {
           const stockAvant = product.stockActuel;
-            const stockApres = stockAvant + order.quantite;
+            const stockApres = stockAvant + qtyToReturn;
 
           await tx.product.update({
             where: { id: order.productId },
@@ -1192,7 +1234,7 @@ router.put('/:id/status', async (req, res) => {
             data: {
               productId: order.productId,
                 type: 'RETOUR_EXPEDITION',
-                quantite: order.quantite,
+                quantite: qtyToReturn,
               stockAvant,
               stockApres,
               orderId: order.id,
@@ -1204,7 +1246,7 @@ router.put('/:id/status', async (req, res) => {
           // ⚡ EXPRESS : Remettre dans stockExpress
           else if (order.deliveryType === 'EXPRESS') {
             const stockExpressAvant = product.stockExpress || 0;
-            const stockExpressApres = stockExpressAvant + order.quantite;
+            const stockExpressApres = stockExpressAvant + qtyToReturn;
 
             await tx.product.update({
               where: { id: order.productId },
@@ -1215,7 +1257,7 @@ router.put('/:id/status', async (req, res) => {
               data: {
                 productId: order.productId,
                 type: 'CORRECTION_EXPRESS',
-                quantite: order.quantite,
+                quantite: qtyToReturn,
                 stockAvant: stockExpressAvant,
                 stockApres: stockExpressApres,
                 orderId: order.id,
@@ -1227,7 +1269,7 @@ router.put('/:id/status', async (req, res) => {
           // 🔹 Autres types : Comportement par défaut (stockActuel)
           else {
           const stockAvant = product.stockActuel;
-            const stockApres = stockAvant + order.quantite;
+            const stockApres = stockAvant + qtyToReturn;
 
           await tx.product.update({
             where: { id: order.productId },
@@ -1238,7 +1280,7 @@ router.put('/:id/status', async (req, res) => {
             data: {
               productId: order.productId,
               type: 'RETOUR',
-                quantite: order.quantite,
+                quantite: qtyToReturn,
               stockAvant,
               stockApres,
               orderId: order.id,

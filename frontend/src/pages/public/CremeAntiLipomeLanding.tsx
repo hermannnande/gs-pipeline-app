@@ -24,7 +24,7 @@ import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'creme-anti-lipome';
 const PRODUCT_CODE = 'CREME_ANTI_LIPOME';
-const META_PIXEL_ID = '952340034030644';
+const META_PIXEL_ID = '1857129471642967';
 const THANK_YOU_URL = '/creme-anti-lipome/merci';
 
 const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };

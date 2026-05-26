@@ -105,8 +105,11 @@ export const ordersApi = {
     return data;
   },
 
-  updateStatus: async (id: number, status: string, note?: string) => {
-    const { data } = await api.put(`/orders/${id}/status`, { status, note });
+  updateStatus: async (id: number, status: string, note?: string, quantiteLivree?: number) => {
+    const payload: Record<string, unknown> = { status, note };
+    // Pour LIVREE_PARTIELLE, le livreur saisit la quantite effectivement prise
+    if (typeof quantiteLivree === 'number') payload.quantiteLivree = quantiteLivree;
+    const { data } = await api.put(`/orders/${id}/status`, payload);
     return data;
   },
 

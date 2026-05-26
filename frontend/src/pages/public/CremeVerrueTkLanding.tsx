@@ -1,69 +1,65 @@
 /**
- * Landing ULTRA PREMIUM — Creme Anti-Verrues (CREME_ANTI_VERRUES)
- * ==================================================================
+ * Tunnel de vente — CREME VERRUE TK (mapping CREME_ANTI_VERRUES).
+ * Slug : creme-verrue-tk
  *
- * Palette : BLEU DOMINANT (produit bleu)
- *   - sky / blue / cyan / indigo : couleurs principales
- *   - orange / amber : urgence (contraste fort)
- *   - emerald : accents discrets (checkmarks)
+ * REFONTE COMPLETE V2 :
+ *   Palette PREMIUM marron + blanc + rose + accents dores/champagne.
+ *   Vibe : cosmetique luxe, vintage chic, dermatologique premium.
+ *   Layout : hero asymetrique + 13 medias uniques en fiches + barres
+ *   defilantes lumineuses + temoignages etoiles + bundles + notifications.
  *
- * 9 images UNIQUES utilisees (aucune repetition) :
- *   - new-6  -> Hero stacke (+ fond banniere finale)
- *   - man-1  -> Bloc probleme
- *   - new-1  -> Etape 1 (timeline)
- *   - new-2  -> Etape 2
- *   - new-3  -> Etape 3
- *   - new-4  -> Bloc usage (en 3 gestes)
- *   - man-2  -> Avant
- *   - new-5  -> Apres
- *   - new-7  -> Bloc engagement
+ * Config conservee :
+ *   - PRODUCT_CODE : CREME_ANTI_VERRUES
+ *   - META_PIXEL_ID : 1417398840151713
+ *   - Prix : 9 900 / 16 900 / 24 900 FCFA
  *
- * + 3 videos conservees : video-1 / video-2 / video-3
- *
- * Hero = STACKE : titre principal -> image -> CTA en bas (comme demande)
+ * Pour modifier les medias : voir scripts/compress-creme-verrue-tk.mjs
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { trackPageView } from '../../utils/pageTracking';
 import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
+import type { OrderProduct } from '../../hooks/useOrderSubmit';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'creme-verrue-tk';
 const PRODUCT_CODE = 'CREME_ANTI_VERRUES';
-const META_PIXEL_ID = '1607715340249349';
+const META_PIXEL_ID = '1417398840151713';
 const THANK_YOU_URL = '/creme-verrue-tk/merci';
 
+// Prix faciles a modifier
 const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
-const OLD_PRICE_UNIT = 15000;
 const QTY_OPTS = [
-  { v: 1, label: '1 boite', sub: '9 900 FCFA' },
-  { v: 2, label: '2 boites', sub: '16 900 FCFA', tag: 'Populaire', save: 'Economisez 2 900 F' },
-  { v: 3, label: '3 boites', sub: '24 900 FCFA', tag: 'Meilleure offre', save: 'Economisez 4 800 F' },
+  { v: 1, label: '1 boîte',  sub: '9 900 F' },
+  { v: 2, label: '2 boîtes', sub: '16 900 F', tag: 'Le + choisi',     save: 'Économisez 2 900 F' },
+  { v: 3, label: '3 boîtes', sub: '24 900 F', tag: 'Meilleure offre', save: 'Économisez 4 800 F + guide offert' },
 ];
 
-// ================= 9 images UNIQUES + 3 videos =================
+// Images compressees en WebP local (creme-verrue-tk-v2) + video existante
+const M = (n: string) => `/creme-verrue-tk-v2/${n}.webp`;
 const MEDIA = {
-  hero:       '/verrue-tk/new-6.webp',
-  problem:    '/verrue-tk/man-1.webp',
-  step1:      '/verrue-tk/new-1.webp',
-  step2:      '/verrue-tk/new-2.webp',
-  step3:      '/verrue-tk/new-3.webp',
-  usage:      '/verrue-tk/new-4.webp',
-  avant:      '/verrue-tk/man-2.webp',
-  apres:      '/verrue-tk/new-5.webp',
-  engagement: '/verrue-tk/new-7.webp',
-  video1:     '/verrue-tk/video-1.mp4',
-  video1Post: '/verrue-tk/promo-video.webp',
-  video2:     '/verrue-tk/video-2.mp4',
-  video3:     '/verrue-tk/video-3.mp4',
+  hero:    M('hero'),
+  m01:     M('m01'),
+  m02:     M('m02'),
+  m03:     M('m03'),
+  m04:     M('m04'),
+  m05:     M('m05'),
+  m06:     M('m06'),
+  m07:     M('m07'),
+  wa:      M('wa'),
+  m08:     M('m08'),
+  avant:   M('avant'),
+  apres:   M('apres'),
+  m09:     M('m09'),
+  new7:    '/verrue-tk/new-7.webp',          // ancien webp deja optimise
+  video2:  '/verrue-tk/video-2.mp4',         // video existante
 };
 
-declare global { interface Window { fbq: any; _fbq: any; } }
+declare global { interface Window { fbq?: (...args: any[]) => void; _fbq?: any } }
 
 function initMetaPixel(pixelId: string) {
   if (!pixelId || window.fbq) return;
-  const f: any = window.fbq = function (...args: any[]) { f.callMethod ? f.callMethod(...args) : f.queue.push(args); };
+  const f: any = (window.fbq = function (...args: any[]) {
+    f.callMethod ? f.callMethod(...args) : f.queue.push(args);
+  });
   if (!window._fbq) window._fbq = f;
   f.push = f; f.loaded = true; f.version = '2.0'; f.queue = [];
   const s = document.createElement('script');
@@ -73,1225 +69,900 @@ function initMetaPixel(pixelId: string) {
   window.fbq('track', 'PageView');
 }
 
-interface Product { id: number; code: string; nom: string; prixUnitaire: number }
-
-const co = () => new URLSearchParams(window.location.search).get('company') || 'ci';
-const fmt = (v: number) => v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
+const fmt = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' F';
 const pad = (n: number) => String(n).padStart(2, '0');
 
-// =========================================================
-// Lazy helpers
-// =========================================================
-function useOnScreen(rootMargin = '200px') {
+/* ---------------- Hooks ---------------- */
+
+function useOnScreen(rootMargin = '320px') {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } }, { rootMargin });
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } },
+      { rootMargin },
+    );
     obs.observe(el);
     return () => obs.disconnect();
   }, [rootMargin]);
   return { ref, visible };
 }
 
-function LazyVideo({ src, poster, aspect = '9/16' }: { src: string; poster?: string; aspect?: string }) {
-  const { ref, visible } = useOnScreen('300px');
-  return (
-    <div
-      ref={ref}
-      className="relative w-full overflow-hidden rounded-3xl border border-sky-200 bg-blue-950 shadow-[0_20px_60px_-12px_rgba(37,99,235,.45)]"
-      style={{ aspectRatio: aspect }}
-    >
-      {visible ? (
-        <video src={src} poster={poster} autoPlay loop muted playsInline preload="none" className="h-full w-full object-cover"/>
-      ) : (
-        <div className="flex h-full w-full items-center justify-center">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-sky-400"/>
-        </div>
-      )}
-      <span className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-blue-950/80 to-transparent"/>
-    </div>
-  );
+function useEndOfDayCountdown() {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  return useMemo(() => {
+    const end = new Date(now); end.setHours(23, 59, 59, 999);
+    let diff = Math.max(0, Math.floor((end.getTime() - now) / 1000));
+    const h = Math.floor(diff / 3600); diff -= h * 3600;
+    const m = Math.floor(diff / 60); const s = diff - m * 60;
+    return { h: pad(h), m: pad(m), s: pad(s) };
+  }, [now]);
 }
 
-function LazyImg({ src, alt, className, aspect }: { src: string; alt: string; className?: string; aspect?: string }) {
-  const { ref, visible } = useOnScreen('300px');
-  return (
-    <div ref={ref} className={`overflow-hidden ${className || ''}`} style={aspect ? { aspectRatio: aspect } : undefined}>
-      {visible
-        ? <img src={src} alt={alt} loading="lazy" decoding="async" className="h-full w-full object-cover"/>
-        : <div className="h-full w-full animate-pulse bg-sky-50"/>}
-    </div>
-  );
-}
+/* ---------------- Lazy image + video ---------------- */
 
-// =========================================================
-// UI atoms — palette BLEU dominante
-// =========================================================
-const Check = () => (
-  <svg className="h-4 w-4 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
-  </svg>
-);
-
-const Arrow = () => (
-  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-  </svg>
-);
-
-const Star = () => (
-  <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
-    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-  </svg>
-);
-
-// Divider en vague (SVG) - signature visuelle
-function WaveDivider({ color = '#eff6ff', flip = false }: { color?: string; flip?: boolean }) {
-  return (
-    <div className={`pointer-events-none w-full overflow-hidden leading-none ${flip ? 'rotate-180' : ''}`} aria-hidden="true">
-      <svg className="block h-12 w-full sm:h-16" preserveAspectRatio="none" viewBox="0 0 1200 120">
-        <path
-          d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z"
-          fill={color}
-        />
-      </svg>
-    </div>
-  );
-}
-
-// CTA premium - palette bleu dominant + orange pour l'urgence
-function CTA({
-  onClick,
-  children,
-  variant = 'blue',
-  size = 'md',
-  fullWidth = true,
-}: {
-  onClick: () => void;
-  children: React.ReactNode;
-  variant?: 'blue' | 'sky' | 'indigo' | 'orange' | 'cyan';
-  size?: 'sm' | 'md' | 'lg';
-  fullWidth?: boolean;
+function LazyImg({ src, alt, priority, className = '', width, height, aspect }: {
+  src: string; alt: string; priority?: boolean; className?: string;
+  width?: number; height?: number; aspect?: string;
 }) {
-  const grads: Record<string, string> = {
-    blue:    'from-blue-600 via-sky-500 to-cyan-500',
-    sky:     'from-sky-500 via-blue-500 to-indigo-600',
-    indigo:  'from-indigo-600 via-blue-600 to-sky-500',
-    cyan:    'from-cyan-500 via-sky-500 to-blue-600',
-    orange:  'from-orange-500 via-amber-500 to-red-500',
-  };
-  const glows: Record<string, string> = {
-    blue:    'shadow-[0_12px_40px_-4px_rgba(37,99,235,.6)] hover:shadow-[0_16px_50px_-4px_rgba(37,99,235,.8)]',
-    sky:     'shadow-[0_12px_40px_-4px_rgba(14,165,233,.55)] hover:shadow-[0_16px_50px_-4px_rgba(14,165,233,.75)]',
-    indigo:  'shadow-[0_12px_40px_-4px_rgba(79,70,229,.55)] hover:shadow-[0_16px_50px_-4px_rgba(79,70,229,.75)]',
-    cyan:    'shadow-[0_12px_40px_-4px_rgba(6,182,212,.55)] hover:shadow-[0_16px_50px_-4px_rgba(6,182,212,.75)]',
-    orange:  'shadow-[0_12px_40px_-4px_rgba(249,115,22,.6)] hover:shadow-[0_16px_50px_-4px_rgba(249,115,22,.85)]',
-  };
-  const sizes: Record<string, string> = {
-    sm: 'px-5 py-2.5 text-[13px]',
-    md: 'px-6 py-3.5 text-[14px]',
-    lg: 'px-8 py-4 text-[15px] sm:text-base',
+  const { ref, visible } = useOnScreen('340px');
+  if (priority) {
+    return (
+      <div className={`overflow-hidden ${className}`}>
+        <img src={src} alt={alt} loading="eager" decoding="async" width={width} height={height}
+          // @ts-expect-error fetchpriority valid HTML
+          fetchpriority="high"
+          className="block h-auto w-full"
+        />
+      </div>
+    );
+  }
+  return (
+    <div ref={ref} className={`overflow-hidden ${className}`}>
+      {visible ? (
+        <img src={src} alt={alt} loading="lazy" decoding="async" width={width} height={height} className="block h-auto w-full" />
+      ) : (
+        <div className={`w-full bg-gradient-to-br from-pink-50 to-amber-50 ${aspect || 'aspect-[4/5]'}`} />
+      )}
+    </div>
+  );
+}
+
+function LazyVideo({ src }: { src: string }) {
+  const { ref, visible } = useOnScreen('400px');
+  return (
+    <div ref={ref} className="relative overflow-hidden rounded-2xl bg-pink-50 ring-1 ring-pink-200/60">
+      {visible ? (
+        <video src={src} className="block h-auto w-full" preload="metadata" playsInline muted loop autoPlay controls={false} />
+      ) : (
+        <div className="aspect-[9/16] w-full bg-gradient-to-br from-pink-50 to-amber-50" />
+      )}
+    </div>
+  );
+}
+
+/* ---------------- CTA lumineux bounce ---------------- */
+
+function BounceCTA({ onClick, children, variant = 'rose', large, className = '' }: {
+  onClick: () => void; children: ReactNode;
+  variant?: 'rose' | 'brown' | 'gold' | 'outline';
+  large?: boolean; className?: string;
+}) {
+  const palettes: Record<string, string> = {
+    rose:
+      'from-pink-500 via-rose-400 to-pink-600 text-white shadow-[0_18px_44px_-10px_rgba(236,72,153,0.75)] ring-2 ring-pink-300/70',
+    brown:
+      'from-[#6b3e1e] via-[#8b5a2b] to-[#6b3e1e] text-amber-100 shadow-[0_18px_44px_-12px_rgba(107,62,30,0.7)] ring-2 ring-amber-300/60',
+    gold:
+      'from-amber-400 via-yellow-300 to-amber-500 text-[#4a2a14] shadow-[0_18px_44px_-10px_rgba(245,158,11,0.7)] ring-2 ring-amber-200/70',
+    outline:
+      'from-transparent to-transparent text-[#6b3e1e] shadow-[0_8px_24px_-12px_rgba(107,62,30,0.3)] ring-2 ring-[#6b3e1e] hover:bg-[#6b3e1e]/5',
   };
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`group vt-cta relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full bg-gradient-to-r ${grads[variant]} font-extrabold text-white ${glows[variant]} transition-shadow ${sizes[size]} ${fullWidth ? 'w-full' : ''}`}
+      className={`cv-cta cv-cta-bounce group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full bg-gradient-to-r ${palettes[variant]} ${large ? 'px-8 py-4 text-base font-extrabold' : 'px-6 py-3 text-sm font-bold'} uppercase tracking-[0.1em] transition-all duration-300 active:scale-95 ${className}`}
     >
-      <span className="vt-cta-sheen absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent"/>
-      <span className="relative z-10 flex items-center gap-2">{children}</span>
+      <span className="cv-cta-sheen pointer-events-none absolute inset-0" aria-hidden />
+      <span className="cv-cta-glow pointer-events-none absolute inset-0 rounded-full" aria-hidden />
+      <span className="relative">{children}</span>
+      <svg className="relative h-4 w-4 transition-transform group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6">
+        <path d="M5 12h14M13 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
     </button>
   );
 }
 
-// =========================================================
-// Main component
-// =========================================================
-export default function CremeVerrueTkLanding() {
-  const navigate = useNavigate();
-  const company = useMemo(co, []);
+/* ---------------- Barre defilante lumineuse ---------------- */
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [modal, setModal] = useState(false);
-  const [qty, setQty] = useState(1);
-  const [stock, setStock] = useState(29);
-  const [countdown, setCountdown] = useState({ h: 0, m: 0, s: 0 });
-  const [toast, setToast] = useState<{ n: string; v: string; t: string; visible: boolean } | null>(null);
-  const [exitPopup, setExitPopup] = useState(false);
-  const exitShown = useRef(false);
-  const pixelFired = useRef(false);
-  const toastIdx = useRef(0);
-
-  const TOASTS = useMemo(() => [
-    { n: 'Awa K.',       v: 'Abidjan',   t: '3 min'  },
-    { n: 'Jean-Marc B.', v: 'Bouake',    t: '7 min'  },
-    { n: 'Mariam D.',    v: 'Yopougon',  t: '11 min' },
-    { n: 'Kouassi F.',   v: 'Daloa',     t: '15 min' },
-    { n: 'Fatou S.',     v: 'San Pedro', t: '19 min' },
-    { n: 'Aminata C.',   v: 'Man',       t: '24 min' },
-  ], []);
-
-  useEffect(() => {
-    if (pixelFired.current) return;
-    pixelFired.current = true;
-    trackPageView(SLUG, company);
-    initMetaPixel(META_PIXEL_ID);
-    window.fbq?.('track', 'ViewContent', {
-      content_name: 'Creme Anti-Verrues',
-      content_ids: [PRODUCT_CODE],
-      content_type: 'product',
-      value: PRICES[1],
-      currency: 'XOF',
-    });
-  }, [company]);
-
-  useEffect(() => {
-    axios.get(`${API_URL}/public/products`, { params: { company } })
-      .then(r => {
-        const p = (r.data?.products || []).find((p: Product) => p.code?.toUpperCase() === PRODUCT_CODE);
-        if (p) setProduct(p);
-      }).catch(() => {});
-  }, [company]);
-
-  useEffect(() => {
-    const tick = () => {
-      const now = new Date();
-      const end = new Date(); end.setHours(23, 59, 59, 999);
-      const d = Math.max(0, end.getTime() - now.getTime());
-      setCountdown({
-        h: Math.floor(d / 3600000),
-        m: Math.floor((d % 3600000) / 60000),
-        s: Math.floor((d % 60000) / 1000),
-      });
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  useEffect(() => {
-    const id = setInterval(() => setStock(s => (s > 9 ? s - 1 : s)), 42000);
-    return () => clearInterval(id);
-  }, []);
-
-  useEffect(() => {
-    const show = () => {
-      const t = TOASTS[toastIdx.current % TOASTS.length];
-      toastIdx.current++;
-      setToast({ ...t, visible: true });
-      setTimeout(() => setToast(prev => prev ? { ...prev, visible: false } : null), 3000);
-      setTimeout(() => setToast(null), 3400);
-    };
-    const first = setTimeout(show, 6000);
-    const id = setInterval(show, 17000);
-    return () => { clearInterval(id); clearTimeout(first); };
-  }, [TOASTS]);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (e.clientY < 10 && !exitShown.current && !modal) { exitShown.current = true; setExitPopup(true); }
-    };
-    document.addEventListener('mousemove', handler);
-    return () => document.removeEventListener('mousemove', handler);
-  }, [modal]);
-
-  useEffect(() => {
-    document.body.style.overflow = (modal || exitPopup) ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
-  }, [modal, exitPopup]);
-
-  const openModal = useCallback((q?: number) => {
-    if (q) setQty(q); else setQty(1);
-    setModal(true);
-    setExitPopup(false);
-  }, []);
-
-  const stockPct = Math.round((stock / 40) * 100);
-
-  // ============================================================
-  // RENDER
-  // ============================================================
+function ScrollingBar({ variant = 'brown' }: { variant?: 'brown' | 'rose' | 'cream' }) {
+  const messages = {
+    brown: '✦ Paiement à la livraison ✦ Livraison rapide CI ✦ Soin ciblé peau ✦ Édition 2026 ✦ Stock limité ✦ Service client réactif',
+    rose:  '⚡ OFFRE DU JOUR — 1 boîte 9 900 F ⚡ Pack 2 = -2 900 F ⚡ Pack 3 = -4 800 F + guide ⚡ Profitez avant fin ⚡',
+    cream: '★ Crème dermatologique premium ★ Aide à atténuer les verrues ★ Application simple ★ +500 clients satisfaits ★',
+  };
+  const text = messages[variant];
   return (
-    <div className="min-h-screen bg-[#f8fbff] text-neutral-900" style={{ fontFamily: "'Inter',system-ui,-apple-system,sans-serif" }}>
-      {/* Styles locaux - classes "vt-" (verrue-tk) */}
-      <style>{`
-        @keyframes vt-marquee { 0% { transform: translateX(0) } 100% { transform: translateX(-50%) } }
-        @keyframes vt-fade-up { from { opacity: 0; transform: translateY(24px) } to { opacity: 1; transform: translateY(0) } }
-        @keyframes vt-fade-in { from { opacity: 0 } to { opacity: 1 } }
-        @keyframes vt-float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }
-        @keyframes vt-float-slow { 0%,100% { transform: translateY(0) translateX(0) } 50% { transform: translateY(-20px) translateX(14px) } }
-        @keyframes vt-sheen { 0% { transform: translateX(-100%) } 100% { transform: translateX(100%) } }
-        @keyframes vt-pulse-ring { 0% { transform: scale(.95); opacity: 1 } 100% { transform: scale(1.65); opacity: 0 } }
-        @keyframes vt-slide-in-left { from { opacity: 0; transform: translateX(-100%) } to { opacity: 1; transform: translateX(0) } }
-        @keyframes vt-slide-out-left { from { opacity: 1; transform: translateX(0) } to { opacity: 0; transform: translateX(-100%) } }
-        @keyframes vt-gradient-shift { 0%,100% { background-position: 0% 50% } 50% { background-position: 100% 50% } }
-        @keyframes vt-heartbeat { 0%,100% { transform: scale(1) } 25% { transform: scale(1.1) } 50% { transform: scale(.95) } 75% { transform: scale(1.05) } }
-        @keyframes vt-shimmer-text { 0% { background-position: -200% 50% } 100% { background-position: 200% 50% } }
-        @keyframes vt-pulse-bg { 0%,100% { opacity: .25 } 50% { opacity: .55 } }
-        @keyframes vt-bob { 0%,100% { transform: translateY(0) rotate(0) } 50% { transform: translateY(-8px) rotate(1deg) } }
+    <div className={`relative overflow-hidden cv-bar-${variant}`}>
+      <div className="cv-bar-shine pointer-events-none absolute inset-0" aria-hidden />
+      <div className="cv-bar-track relative flex whitespace-nowrap py-2.5 text-sm font-black uppercase tracking-[0.22em]">
+        <span>{text}</span>
+        <span className="mx-12">✦</span>
+        <span aria-hidden>{text}</span>
+        <span aria-hidden className="mx-12">✦</span>
+      </div>
+    </div>
+  );
+}
 
-        .vt-fade-up { animation: vt-fade-up .6s cubic-bezier(.22,.8,.4,1) both }
-        .vt-fade-in { animation: vt-fade-in .5s ease-out both }
-        .vt-marquee { animation: vt-marquee 28s linear infinite }
-        .vt-float { animation: vt-float 3s ease-in-out infinite }
-        .vt-float-slow { animation: vt-float-slow 8s ease-in-out infinite }
-        .vt-bob { animation: vt-bob 4s ease-in-out infinite }
-        .vt-cta { animation: vt-float 2.6s ease-in-out infinite }
-        .vt-cta:hover { animation: none; transform: translateY(-2px) }
-        .vt-cta-sheen { animation: vt-sheen 3.2s ease-in-out infinite }
-        .vt-pulse-dot::after { content: ''; position: absolute; inset: 0; border-radius: 9999px; background: currentColor; animation: vt-pulse-ring 1.6s cubic-bezier(0,0,.2,1) infinite }
-        .vt-toast-in { animation: vt-slide-in-left .4s cubic-bezier(.22,1,.36,1) both }
-        .vt-toast-out { animation: vt-slide-out-left .35s cubic-bezier(.55,.08,.68,.53) both }
-        .vt-animated-bg { background-size: 220% 220%; animation: vt-gradient-shift 9s ease infinite }
-        .vt-heartbeat { animation: vt-heartbeat 1.4s ease-in-out infinite }
-        .vt-pulse-bg { animation: vt-pulse-bg 3s ease-in-out infinite }
-        .vt-shimmer-text {
-          background: linear-gradient(90deg, #0ea5e9 0%, #2563eb 25%, #0891b2 50%, #2563eb 75%, #0ea5e9 100%);
-          background-size: 200% auto;
-          background-clip: text; -webkit-background-clip: text;
-          color: transparent; -webkit-text-fill-color: transparent;
-          animation: vt-shimmer-text 3.5s linear infinite;
-        }
-        .vt-rail::before {
-          content: '';
-          position: absolute;
-          left: 50%; top: 0; bottom: 0;
-          width: 3px;
-          transform: translateX(-50%);
-          background: linear-gradient(180deg, transparent 0%, #0ea5e9 10%, #2563eb 50%, #4f46e5 90%, transparent 100%);
-          border-radius: 9999px;
-          opacity: .4;
-        }
-        @media (max-width: 767px) {
-          .vt-rail::before { left: 20px }
-        }
-        details[open] summary .vt-chev { transform: rotate(180deg) }
-      `}</style>
+/* ---------------- Fiche : media + phrase + CTA ---------------- */
 
-      {/* ===================================================== */}
-      {/* STICKY TOP BAR - bleu dominant + urgence orange        */}
-      {/* ===================================================== */}
-      <div className="sticky top-0 z-50 border-b border-sky-400/30 bg-gradient-to-r from-blue-700 via-sky-600 to-cyan-600 vt-animated-bg">
-        <div className="mx-auto flex max-w-6xl items-center justify-center gap-2 px-3 py-2 sm:gap-3">
-          <span className="relative flex h-2 w-2 text-orange-300 vt-pulse-dot">
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-orange-300"/>
-          </span>
-          <span className="text-[10px] font-black uppercase tracking-[0.15em] text-white sm:text-[11px]">
-            Offre speciale - fin dans
-          </span>
-          <div className="flex items-center gap-1">
-            {[pad(countdown.h), pad(countdown.m), pad(countdown.s)].map((v, i) => (
-              <div key={i} className="flex items-center gap-1">
-                {i > 0 && <span className="text-[10px] font-bold text-white/70">:</span>}
-                <span className="inline-flex h-6 min-w-[28px] items-center justify-center rounded-md bg-black/30 px-1.5 font-mono text-[12px] font-black tabular-nums text-white ring-1 ring-white/20 sm:h-7 sm:min-w-[32px] sm:text-[13px]">
-                  {v}
+function ImageFiche({ src, isVideo, alt, phrase, highlight, ctaLabel, ctaVariant = 'rose', onOrder, priority, dark = false }: {
+  src: string;
+  isVideo?: boolean;
+  alt: string;
+  phrase: string;
+  highlight?: string[];
+  ctaLabel: string;
+  ctaVariant?: 'rose' | 'brown' | 'gold';
+  onOrder: () => void;
+  priority?: boolean;
+  dark?: boolean;
+}) {
+  let rendered: ReactNode = phrase;
+  if (highlight && highlight.length) {
+    const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const parts = phrase.split(new RegExp(`(${highlight.map(escape).join('|')})`, 'gi'));
+    rendered = parts.map((p, i) =>
+      highlight.some((h) => h.toLowerCase() === p.toLowerCase()) ? (
+        <span key={i} className="cv-grad-rose font-black">{p}</span>
+      ) : (<span key={i}>{p}</span>),
+    );
+  }
+  return (
+    <section className={`relative px-3 py-10 sm:py-14 ${dark ? 'bg-[#3d2317]' : 'bg-white'}`}>
+      <div className="mx-auto max-w-3xl">
+        <div className="relative">
+          <div className="pointer-events-none absolute -inset-2 -z-10 rounded-3xl bg-pink-300/25 blur-2xl" aria-hidden />
+          <div className={`relative overflow-hidden rounded-3xl shadow-[0_30px_70px_-30px_rgba(107,62,30,0.4)] ${dark ? 'ring-1 ring-amber-300/30' : 'ring-1 ring-pink-200'}`}>
+            {isVideo ? <LazyVideo src={src} /> : <LazyImg src={src} alt={alt} priority={priority} aspect="aspect-[4/5]" width={1024} height={1280} />}
+          </div>
+        </div>
+        <p className={`mx-auto mt-7 max-w-xl text-center text-xl font-bold leading-snug sm:text-2xl ${dark ? 'text-amber-100' : 'text-[#3d2317]'}`}>
+          {rendered}
+        </p>
+        <div className="mt-6 flex justify-center">
+          <BounceCTA onClick={onOrder} variant={ctaVariant} large>
+            {ctaLabel}
+          </BounceCTA>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------- Notifications achats ---------------- */
+
+const NOTIFICATIONS = [
+  { nom: 'Awa',     ville: 'Cocody',      pack: '1 boîte',  t: 3 },
+  { nom: 'Mariam',  ville: 'Yopougon',    pack: '2 boîtes', t: 9 },
+  { nom: 'Kouadio', ville: 'Marcory',     pack: '1 boîte',  t: 17 },
+  { nom: 'Fatou',   ville: 'Bingerville', pack: '3 boîtes', t: 24 },
+  { nom: 'Aminata', ville: 'Treichville', pack: '2 boîtes', t: 38 },
+  { nom: 'Konaté',  ville: 'Abobo',       pack: '1 boîte',  t: 51 },
+  { nom: 'Salif',   ville: 'Bouaké',      pack: '2 boîtes', t: 67 },
+  { nom: 'Adjoua',  ville: 'San-Pédro',   pack: '1 boîte',  t: 89 },
+  { nom: 'Yao',     ville: 'Plateau',     pack: '3 boîtes', t: 105 },
+  { nom: 'Brou',    ville: 'Adjamé',      pack: '1 boîte',  t: 118 },
+];
+
+function RecentToast() {
+  const [i, setI] = useState(0);
+  const [phase, setPhase] = useState<'hidden' | 'in' | 'out'>('hidden');
+
+  useEffect(() => {
+    let cancelled = false;
+    let timers: number[] = [];
+    const schedule = (fn: () => void, ms: number) => {
+      const id = window.setTimeout(() => { if (!cancelled) fn(); }, ms);
+      timers.push(id);
+    };
+    const showCycle = (idx: number) => {
+      if (cancelled) return;
+      setI(idx); setPhase('in');
+      schedule(() => {
+        setPhase('out');
+        schedule(() => {
+          setPhase('hidden');
+          schedule(() => showCycle((idx + 1) % NOTIFICATIONS.length), 8000 + Math.random() * 5000);
+        }, 450);
+      }, 6000);
+    };
+    schedule(() => showCycle(0), 4500);
+    return () => { cancelled = true; timers.forEach((t) => window.clearTimeout(t)); };
+  }, []);
+
+  if (phase === 'hidden') return null;
+  const n = NOTIFICATIONS[i];
+  const tLabel = n.t < 60 ? `il y a ${n.t} min` : `il y a ${Math.floor(n.t / 60)} h`;
+
+  return (
+    <div className={`cv-toast fixed bottom-24 left-3 z-[55] sm:bottom-4 sm:left-4 ${phase === 'in' ? 'cv-toast-in' : 'cv-toast-out'}`} role="status" aria-live="polite">
+      <div className="flex items-center gap-3 rounded-2xl bg-white px-3 py-2.5 pr-4 shadow-[0_18px_48px_-18px_rgba(107,62,30,0.35)] ring-1 ring-pink-200/80 backdrop-blur-md">
+        <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 text-white shadow-md">
+          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+            <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span className="cv-pulse absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-white" />
+        </div>
+        <div className="leading-tight">
+          <p className="text-[13px] font-extrabold text-[#3d2317]">
+            {n.nom} <span className="font-semibold text-[#8b5a2b]">à {n.ville}</span>
+          </p>
+          <p className="text-[11px] text-[#5a3a20]">vient de commander <span className="font-bold text-pink-600">{n.pack}</span></p>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-600">
+            <span className="cv-pulse mr-1 inline-block h-1.5 w-1.5 translate-y-[-1px] rounded-full bg-emerald-500" />
+            {tLabel}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- Page principale ---------------- */
+
+export default function CremeVerrueTkLanding() {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [initialQty, setInitialQty] = useState(1);
+  const [product, setProduct] = useState<OrderProduct | null>(null);
+  const cd = useEndOfDayCountdown();
+  const pixelFired = useRef(false);
+
+  const openModal = useCallback((qty: number = 1) => {
+    setInitialQty(qty); setModalOpen(true);
+  }, []);
+  const closeModal = useCallback(() => setModalOpen(false), []);
+
+  useEffect(() => {
+    const prev = document.title;
+    document.title = 'Crème Anti-Verrues TK — Soin ciblé peau premium';
+    trackPageView(SLUG);
+    if (!pixelFired.current && META_PIXEL_ID) {
+      pixelFired.current = true;
+      initMetaPixel(META_PIXEL_ID);
+      window.fbq?.('track', 'ViewContent', {
+        content_name: 'Crème Anti-Verrues TK',
+        content_ids: [PRODUCT_CODE], content_type: 'product',
+        value: PRICES[1], currency: 'XOF',
+      });
+    }
+    return () => { document.title = prev; };
+  }, []);
+
+  const orderCfg = {
+    slug: SLUG, productCode: PRODUCT_CODE, title: 'Crème Anti-Verrues TK',
+    prices: PRICES, metaPixelId: META_PIXEL_ID || undefined,
+    thankYouUrl: THANK_YOU_URL,
+    images: { hero: MEDIA.hero, avant: MEDIA.avant, apres: MEDIA.apres },
+  };
+
+  return (
+    <div className="cv-root antialiased">
+      <CvCSS />
+
+      {/* ============ BARRE DEFILANTE TOP (marron) ============ */}
+      <ScrollingBar variant="brown" />
+
+      {/* ============ HERO ============ */}
+      <header className="relative overflow-hidden">
+        <div className="cv-hero-bg absolute inset-0" aria-hidden />
+        <div className="cv-hero-grain absolute inset-0 opacity-[0.05]" aria-hidden />
+        <div className="relative mx-auto max-w-6xl px-4 py-10 sm:py-14 lg:py-16">
+          <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
+
+            {/* Image hero priority */}
+            <div className="order-1">
+              <div className="relative">
+                <div className="pointer-events-none absolute -inset-3 -z-10 rounded-[40px] bg-gradient-to-br from-pink-300/40 via-amber-200/30 to-[#6b3e1e]/20 blur-3xl" aria-hidden />
+                <div className="relative overflow-hidden rounded-3xl bg-white ring-1 ring-pink-200 shadow-[0_40px_80px_-30px_rgba(107,62,30,0.45)]">
+                  <LazyImg src={MEDIA.hero} alt="Crème Anti-Verrues TK" priority width={1200} height={1200} />
+                </div>
+                <span className="absolute -right-2 top-4 -rotate-3 rounded-xl border-2 border-[#6b3e1e] bg-amber-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-[#6b3e1e] shadow-lg">
+                  Édition <span className="text-pink-600">2026</span>
+                </span>
+                <span className="absolute -left-2 bottom-4 rotate-2 rounded-xl bg-[#3d2317] px-3 py-1.5 text-amber-200 shadow-xl">
+                  <span className="block text-[8px] font-bold uppercase tracking-[0.3em] text-amber-300/80">À partir de</span>
+                  <span className="block text-lg font-black leading-none">9 900 <span className="text-pink-300">F</span></span>
                 </span>
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ===================================================== */}
-      {/* MARQUEE                                                */}
-      {/* ===================================================== */}
-      <div className="overflow-hidden bg-blue-950 py-1.5">
-        <div className="vt-marquee flex w-[200%] items-center gap-8 text-[9px] font-bold uppercase tracking-[0.2em] text-sky-300/90 sm:text-[10px]">
-          {[0, 1].map(k => (
-            <div key={k} className="flex shrink-0 items-center gap-8">
-              {[
-                'Formule dermatologique brevetee',
-                'Sans douleur - sans cicatrice',
-                'Resultat en 5 a 10 jours',
-                'Paiement a la livraison',
-                'Livraison 24h Abidjan',
-                '2 000+ peaux liberees',
-              ].map((t, i) => (
-                <span key={`${k}-${i}`}>{t}<span className="ml-8 inline-block h-1 w-1 rounded-full bg-sky-400/60"/></span>
-              ))}
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* ===================================================== */}
-      {/* HERO STACKE : titre -> image -> CTA en bas             */}
-      {/* (comme demande par l'utilisateur)                      */}
-      {/* ===================================================== */}
-      <section className="relative overflow-hidden">
-        {/* Fond gradient bleu */}
-        <div className="absolute inset-0 bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-50"/>
-        <div className="pointer-events-none absolute -top-20 -left-20 h-80 w-80 rounded-full bg-sky-300/40 blur-3xl vt-float-slow"/>
-        <div className="pointer-events-none absolute -bottom-20 -right-20 h-80 w-80 rounded-full bg-indigo-300/40 blur-3xl vt-float-slow" style={{ animationDelay: '2s' }}/>
-        <div className="pointer-events-none absolute top-1/3 right-10 h-48 w-48 rounded-full bg-cyan-300/30 blur-3xl vt-pulse-bg"/>
+            {/* Texte hero */}
+            <div className="order-2 text-center lg:text-left">
+              <div className="inline-flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-pink-100 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-pink-700 ring-1 ring-pink-200">
+                  <span className="cv-pulse h-1.5 w-1.5 rounded-full bg-pink-500" />
+                  Édition Premium · Stock limité
+                </span>
+              </div>
 
-        <div className="relative mx-auto max-w-3xl px-4 pb-10 pt-6 text-center sm:pt-10 md:pt-14 md:pb-14">
+              <h1 className="mt-5 text-4xl font-black leading-[1] tracking-tight text-[#3d2317] sm:text-5xl md:text-6xl">
+                Crème <span className="cv-grad-rose italic">Anti-Verrues</span>
+                <br />
+                <span className="cv-grad-brown italic">TK Premium</span>
+              </h1>
+              <p className="mt-4 max-w-md mx-auto lg:mx-0 text-base text-[#5a3a20] sm:text-lg">
+                Un soin ciblé pour <span className="font-bold text-[#3d2317]">accompagner votre peau</span> et aider à atténuer l'apparence des verrues.
+              </p>
 
-          {/* Badge */}
-          <div className="vt-fade-up">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-blue-700 shadow-md ring-1 ring-blue-100 sm:text-[11px]">
-              <span className="h-1.5 w-1.5 rounded-full bg-sky-500 vt-heartbeat"/>
-              Creme dermatologique - serum bleu
-            </span>
+              {/* Note étoilée */}
+              <div className="mt-5 flex items-center justify-center gap-3 lg:justify-start">
+                <div className="flex">
+                  {[1,2,3,4,5].map(s => (
+                    <svg key={s} className="h-5 w-5 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M9.05 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.366 2.446a1 1 0 00-.364 1.118l1.287 3.957c.3.922-.755 1.688-1.539 1.118L10 15.347l-3.366 2.446c-.784.57-1.838-.196-1.539-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.652 9.384c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69L9.05 2.927z" />
+                    </svg>
+                  ))}
+                </div>
+                <span className="text-sm font-bold text-[#3d2317]">4.9/5 · 312 avis</span>
+              </div>
+
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+                <BounceCTA onClick={() => openModal(1)} variant="rose" large>
+                  Commander — 9 900 F
+                </BounceCTA>
+              </div>
+
+              {/* Badges confiance */}
+              <div className="mx-auto mt-6 grid max-w-md grid-cols-4 gap-1.5 lg:mx-0">
+                {[
+                  { ic: '🚚', t: 'Livraison' },
+                  { ic: '💵', t: 'Cash' },
+                  { ic: '✨', t: 'Premium' },
+                  { ic: '🔥', t: 'Stock limité' },
+                ].map((b) => (
+                  <div key={b.t} className="flex items-center justify-center gap-1 rounded-lg bg-white/90 px-1.5 py-1.5 text-[10px] font-bold text-[#3d2317] ring-1 ring-pink-100">
+                    <span className="text-sm">{b.ic}</span>
+                    <span>{b.t}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
+        </div>
+      </header>
 
-          {/* TITRE PRINCIPAL */}
-          <h1 className="mt-4 text-[36px] font-black leading-[1.02] tracking-tight sm:text-5xl md:text-[56px] vt-fade-up" style={{ animationDelay: '.05s' }}>
-            <span className="vt-shimmer-text">VERRUE TK</span>
-            <span className="mt-1 block text-neutral-900">
-              efface vos verrues
-            </span>
-            <span className="block text-neutral-900">
-              <span className="bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-500 bg-clip-text text-transparent">sans douleur</span>.
-            </span>
-          </h1>
+      {/* ============ BARRE DEFILANTE 2 (rose) ============ */}
+      <ScrollingBar variant="rose" />
 
-          <p className="mx-auto mt-4 max-w-xl text-[14px] leading-relaxed text-neutral-600 sm:text-[16px] vt-fade-up" style={{ animationDelay: '.1s' }}>
-            Serum dermatologique bleu brevete. Resultat visible en{' '}
-            <span className="font-black text-blue-600">5 a 10 jours</span>. Plus de{' '}
-            <span className="font-black text-sky-700">2 000 clients</span> soulages.
+      {/* ============ FICHE 1 — m01 ============ */}
+      <ImageFiche
+        src={MEDIA.m01}
+        alt="Verrue visible sur la peau"
+        phrase="Les verrues visibles peuvent toucher la confiance."
+        highlight={['verrues visibles']}
+        ctaLabel="Je commande maintenant"
+        ctaVariant="rose"
+        onOrder={() => openModal(1)}
+      />
+
+      {/* ============ FICHE 2 — m02 ============ */}
+      <ImageFiche
+        src={MEDIA.m02}
+        alt="Crème en application"
+        phrase="Un geste simple, une routine ciblée."
+        highlight={['geste simple', 'routine ciblée']}
+        ctaLabel="Je veux ce soin"
+        ctaVariant="brown"
+        onOrder={() => openModal(1)}
+      />
+
+      {/* ============ FICHE 3 — video démo ============ */}
+      <ImageFiche
+        src={MEDIA.video2}
+        isVideo
+        alt="Démo application crème"
+        phrase="Application rapide. Format pratique. Routine facile."
+        highlight={['Application rapide']}
+        ctaLabel="Profiter de l'offre"
+        ctaVariant="rose"
+        onOrder={() => openModal(2)}
+      />
+
+      {/* ============ FICHE 4 — m03 ============ */}
+      <ImageFiche
+        src={MEDIA.m03}
+        alt="Soin ciblé peau"
+        phrase="Aide à atténuer l'apparence des verrues."
+        highlight={['atténuer l\'apparence']}
+        ctaLabel="Acheter à 9 900 F"
+        ctaVariant="gold"
+        onOrder={() => openModal(1)}
+      />
+
+      {/* ============ BARRE DEFILANTE 3 (cream/champagne) ============ */}
+      <ScrollingBar variant="cream" />
+
+      {/* ============ FICHE 5 — m04 (fond marron) ============ */}
+      <ImageFiche
+        src={MEDIA.m04}
+        alt="Application zone ciblée"
+        phrase="Pour les zones visibles : mains, pieds, doigts."
+        highlight={['mains', 'pieds', 'doigts']}
+        ctaLabel="Je le veux"
+        ctaVariant="gold"
+        dark
+        onOrder={() => openModal(1)}
+      />
+
+      {/* ============ FICHE 6 — m05 ============ */}
+      <ImageFiche
+        src={MEDIA.m05}
+        alt="Routine soin peau"
+        phrase="Votre peau mérite une attention douce et régulière."
+        highlight={['attention douce', 'régulière']}
+        ctaLabel="Je commande maintenant"
+        ctaVariant="rose"
+        onOrder={() => openModal(1)}
+      />
+
+      {/* ============ FICHE 7 — m06 ============ */}
+      <ImageFiche
+        src={MEDIA.m06}
+        alt="Crème dermatologique"
+        phrase="Formule pensée pour accompagner votre routine."
+        highlight={['accompagner votre routine']}
+        ctaLabel="Voir l'offre"
+        ctaVariant="brown"
+        onOrder={() => openModal(2)}
+      />
+
+      {/* ============ AVANT / APRES (utilise avant + apres) ============ */}
+      <section className="bg-gradient-to-b from-pink-50/40 to-white px-4 py-14">
+        <div className="mx-auto max-w-5xl">
+          <p className="text-center text-xs font-bold uppercase tracking-[0.4em] text-pink-700">Preuves visuelles</p>
+          <h2 className="mt-3 text-center text-3xl font-black tracking-tight text-[#3d2317] sm:text-4xl">
+            <span className="cv-grad-rose italic">Avant</span> / <span className="cv-grad-brown italic">Après</span>
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-center text-sm italic text-[#8b5a2b]">
+            Images illustratives. Les résultats peuvent varier selon les personnes.
           </p>
-
-          {/* ============= IMAGE CENTRALE (stackee) ============= */}
-          <div className="relative mt-6 vt-fade-up" style={{ animationDelay: '.15s' }}>
-            <div className="pointer-events-none absolute -inset-6 rounded-[2.5rem] bg-gradient-to-br from-sky-400/50 via-blue-400/40 to-indigo-400/50 blur-3xl"/>
-            <div className="relative mx-auto max-w-md overflow-hidden rounded-[2rem] bg-white shadow-2xl ring-1 ring-blue-100 vt-bob">
-              <LazyImg src={MEDIA.hero} alt="Creme Verrue TK" aspect="1/1"/>
-              {/* Overlay liseret bas */}
-              <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-blue-950/40 to-transparent"/>
-            </div>
-
-            {/* Badges flottants */}
-            <div className="absolute -left-2 top-8 rotate-[-8deg] rounded-2xl bg-gradient-to-br from-orange-500 via-amber-500 to-red-500 px-3 py-2 text-center text-white shadow-xl vt-heartbeat sm:-left-4">
-              <p className="text-[9px] font-black uppercase tracking-widest opacity-90">Stock</p>
-              <p className="text-[18px] font-black leading-none">Limite</p>
-            </div>
-            <div className="absolute -right-2 bottom-6 rotate-[6deg] rounded-xl bg-white px-3 py-2 shadow-xl ring-1 ring-blue-100 sm:-right-4">
-              <p className="text-[9px] font-black uppercase tracking-widest text-blue-700">Testee cliniquement</p>
-              <p className="flex items-center gap-0.5 text-amber-400">
-                {[1,2,3,4,5].map(i => <Star key={i}/>)}
-              </p>
-            </div>
+          <div className="mt-8 grid gap-5 sm:grid-cols-2">
+            <figure className="relative overflow-hidden rounded-3xl bg-white ring-1 ring-pink-200/60 shadow-[0_24px_60px_-28px_rgba(107,62,30,0.25)]">
+              <span className="absolute left-3 top-3 z-10 rounded-full bg-[#3d2317]/90 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-amber-200 backdrop-blur">Avant</span>
+              <LazyImg src={MEDIA.avant} alt="Avant utilisation" width={1024} height={1280} />
+              <figcaption className="px-4 py-3 text-center text-xs font-semibold text-[#5a3a20]">Verrue visible</figcaption>
+            </figure>
+            <figure className="relative overflow-hidden rounded-3xl bg-white ring-1 ring-pink-200/60 shadow-[0_24px_60px_-28px_rgba(107,62,30,0.25)]">
+              <span className="absolute left-3 top-3 z-10 rounded-full bg-pink-600 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white backdrop-blur">Après routine</span>
+              <LazyImg src={MEDIA.apres} alt="Après routine régulière" width={1024} height={1280} />
+              <figcaption className="px-4 py-3 text-center text-xs font-semibold text-[#5a3a20]">Peau visiblement plus nette</figcaption>
+            </figure>
           </div>
-
-          {/* Prix + CTA juste sous l'image */}
-          <div className="mt-8 vt-fade-up" style={{ animationDelay: '.2s' }}>
-            <div className="flex items-baseline justify-center gap-3">
-              <span className="bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-500 bg-clip-text text-4xl font-black text-transparent sm:text-5xl">
-                9 900
-              </span>
-              <span className="text-lg font-bold text-neutral-900 sm:text-xl">FCFA</span>
-              <span className="text-sm text-neutral-400 line-through sm:text-base">15 000 FCFA</span>
-              <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-orange-600">-34%</span>
-            </div>
-            <p className="mt-1 text-[12px] font-semibold text-sky-600">🚚 Livraison gratuite a Abidjan</p>
-
-            {/* CTA orange (contraste fort avec le bleu, tres visible) */}
-            <div className="mx-auto mt-5 max-w-sm">
-              <CTA onClick={() => openModal(1)} variant="orange" size="lg">
-                Je commande - 9 900 FCFA <Arrow/>
-              </CTA>
-            </div>
-            <p className="mt-3 text-[11px] text-neutral-500">
-              🔒 Paiement a la livraison - sans risque
-            </p>
+          <div className="mt-8 flex justify-center">
+            <BounceCTA onClick={() => openModal(2)} variant="rose" large>
+              Essayer maintenant
+            </BounceCTA>
           </div>
+        </div>
+      </section>
 
-          {/* Trust badges en bas */}
-          <div className="mt-6 grid grid-cols-2 gap-2 text-[11px] font-semibold text-neutral-700 sm:grid-cols-4 sm:gap-3 sm:text-[12px] vt-fade-up" style={{ animationDelay: '.25s' }}>
-            <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-white px-3 py-1.5 ring-1 ring-blue-100"><Check/>100% vegetal</span>
-            <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-white px-3 py-1.5 ring-1 ring-blue-100"><Check/>Sans douleur</span>
-            <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-white px-3 py-1.5 ring-1 ring-blue-100"><Check/>Livre en 24h</span>
-            <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-white px-3 py-1.5 ring-1 ring-blue-100"><Check/>Cash livraison</span>
-          </div>
+      {/* ============ FICHE 8 — m07 ============ */}
+      <ImageFiche
+        src={MEDIA.m07}
+        alt="Formule premium"
+        phrase="Élégance et soin. Tout dans une boîte."
+        highlight={['Élégance', 'soin']}
+        ctaLabel="L'ajouter à ma routine"
+        ctaVariant="brown"
+        onOrder={() => openModal(1)}
+      />
 
-          {/* Reviews */}
-          <div className="mt-6 flex items-center justify-center gap-2 vt-fade-up" style={{ animationDelay: '.3s' }}>
-            <div className="flex -space-x-2">
-              {['bg-sky-400','bg-blue-400','bg-cyan-400','bg-indigo-400','bg-orange-400'].map((c, i) => (
-                <div key={i} className={`h-7 w-7 rounded-full ${c} ring-2 ring-white`}/>
+      {/* ============ FICHE 9 — m08 ============ */}
+      <ImageFiche
+        src={MEDIA.m08}
+        alt="Crème en boîte premium"
+        phrase="Texture légère, application douce."
+        highlight={['Texture légère']}
+        ctaLabel="Je commande à 9 900 F"
+        ctaVariant="gold"
+        onOrder={() => openModal(1)}
+      />
+
+      {/* ============ FICHE 10 — m09 (fond marron) ============ */}
+      <ImageFiche
+        src={MEDIA.m09}
+        alt="Soin peau prestige"
+        phrase="Le soin qui change ta routine peau."
+        highlight={['change ta routine']}
+        ctaLabel="Recevoir le mien"
+        ctaVariant="gold"
+        dark
+        onOrder={() => openModal(1)}
+      />
+
+      {/* ============ TEMOIGNAGES ETOILES ============ */}
+      <section className="bg-gradient-to-b from-pink-50/30 to-white px-4 py-14">
+        <div className="mx-auto max-w-6xl">
+          <p className="text-center text-xs font-bold uppercase tracking-[0.4em] text-pink-700">Témoignages clients</p>
+          <h2 className="mt-3 text-center text-3xl font-black tracking-tight text-[#3d2317] sm:text-4xl">
+            Ils l'ont <span className="cv-grad-rose italic">essayé</span>
+          </h2>
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <div className="flex">
+              {[1,2,3,4,5].map(s => (
+                <svg key={s} className="h-6 w-6 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M9.05 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.366 2.446a1 1 0 00-.364 1.118l1.287 3.957c.3.922-.755 1.688-1.539 1.118L10 15.347l-3.366 2.446c-.784.57-1.838-.196-1.539-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.652 9.384c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69L9.05 2.927z" />
+                </svg>
               ))}
             </div>
-            <div className="text-[11px] sm:text-[12px]">
-              <div className="flex items-center gap-0.5 text-amber-400">
-                {[1,2,3,4,5].map(i => <Star key={i}/>)}
-                <span className="ml-1 font-black text-neutral-900">4.9/5</span>
-              </div>
-              <p className="text-neutral-500">2 034 avis verifies</p>
-            </div>
+            <span className="text-base font-bold text-[#3d2317]">4.9/5 · 312 avis vérifiés</span>
           </div>
-        </div>
 
-        <WaveDivider color="#ffffff"/>
-      </section>
-
-      {/* ===================================================== */}
-      {/* STATS BAR                                              */}
-      {/* ===================================================== */}
-      <section className="bg-white">
-        <div className="mx-auto grid max-w-5xl grid-cols-2 gap-3 px-4 py-5 sm:grid-cols-4 sm:gap-4 sm:py-7">
-          {[
-            { n: '2 000+', l: 'Peaux liberees' },
-            { n: '5-10j',  l: 'Pour un resultat' },
-            { n: '100%',   l: 'Vegetal' },
-            { n: '4.9/5',  l: 'Avis clients' },
-          ].map((s, i) => (
-            <div key={i} className="text-center">
-              <p className="bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-500 bg-clip-text text-2xl font-black text-transparent sm:text-3xl">{s.n}</p>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 sm:text-[11px]">{s.l}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ===================================================== */}
-      {/* BLOC PROBLEME - avec man-1                             */}
-      {/* ===================================================== */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-white to-amber-50 py-12 sm:py-16">
-        <div className="pointer-events-none absolute -top-16 -right-16 h-72 w-72 rounded-full bg-orange-200/30 blur-3xl"/>
-
-        <div className="relative mx-auto max-w-6xl px-4">
-          <div className="grid items-center gap-8 md:grid-cols-2 md:gap-12">
-            <div className="vt-fade-up order-2 md:order-1">
-              <span className="inline-block rounded-full bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-orange-600 shadow ring-1 ring-orange-100">
-                🩺 Le probleme
-              </span>
-              <h2 className="mt-3 text-3xl font-black leading-tight sm:text-4xl">
-                Les verrues ne{' '}
-                <span className="bg-gradient-to-r from-orange-500 via-amber-500 to-red-500 bg-clip-text text-transparent">disparaissent pas</span>{' '}
-                seules.
-              </h2>
-              <p className="mt-3 text-[14px] leading-relaxed text-neutral-600 sm:text-[15px]">
-                Elles grossissent, se multiplient, se transmettent. Et les solutions cheres de pharmacie ? Douleur, brulure, cicatrice.
-                <span className="mt-2 block font-black text-orange-600">Il existe mieux.</span>
+          {/* Capture WhatsApp + témoignages */}
+          <div className="mt-10 grid items-center gap-6 rounded-3xl bg-white p-5 ring-1 ring-pink-200 shadow-[0_28px_56px_-32px_rgba(107,62,30,0.2)] sm:p-7 md:grid-cols-2">
+            <div>
+              <p className="text-xs font-extrabold uppercase tracking-[0.32em] text-emerald-700">Conversation client</p>
+              <h3 className="mt-2 text-2xl font-black text-[#3d2317]">
+                Témoignages reçus sur <span className="text-emerald-600">WhatsApp</span>
+              </h3>
+              <p className="mt-3 text-sm text-[#5a3a20]">
+                Nos clients nous écrivent au fil de leur routine. Voici un aperçu réel de leurs retours.
               </p>
               <div className="mt-5">
-                <CTA onClick={() => openModal(1)} variant="orange" size="lg" fullWidth={false}>
-                  Je veux en finir <Arrow/>
-                </CTA>
+                <BounceCTA onClick={() => openModal(2)} variant="rose" large>
+                  Je commande aussi
+                </BounceCTA>
               </div>
             </div>
-
-            <div className="order-1 vt-fade-up md:order-2" style={{ animationDelay: '.1s' }}>
-              <div className="relative">
-                <div className="pointer-events-none absolute -inset-3 rounded-3xl bg-gradient-to-br from-orange-300/40 via-amber-300/30 to-red-300/40 blur-2xl"/>
-                <div className="relative overflow-hidden rounded-3xl shadow-xl ring-1 ring-orange-100">
-                  <LazyImg src={MEDIA.problem} alt="Verrue tenace" aspect="1/1"/>
-                </div>
-              </div>
+            <div className="overflow-hidden rounded-2xl ring-1 ring-emerald-200/50">
+              <LazyImg src={MEDIA.wa} alt="Capture conversation client WhatsApp" width={800} height={1000} />
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* ===================================================== */}
-      {/* TIMELINE - 3 ETAPES avec new-1/2/3                     */}
-      {/* ===================================================== */}
-      <section className="relative overflow-hidden bg-white py-14 sm:py-20">
-        <div className="mx-auto max-w-5xl px-4">
-          <div className="mb-10 text-center">
-            <span className="inline-block rounded-full bg-gradient-to-r from-blue-600 to-sky-500 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-lg">
-              ✨ Comment ca marche
-            </span>
-            <h2 className="mt-3 text-3xl font-black leading-tight sm:text-4xl md:text-[44px]">
-              En{' '}
-              <span className="bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-500 bg-clip-text text-transparent">3 etapes</span>{' '}
-              simples.
-            </h2>
-            <p className="mt-2 text-[13px] text-neutral-500 sm:text-[14px]">
-              La formule agit en profondeur, jour apres jour.
-            </p>
-          </div>
-
-          {/* TIMELINE */}
-          <div className="vt-rail relative">
+          {/* Cartes témoignages */}
+          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[
-              { n: 1, img: MEDIA.step1, t: 'Application ciblee', d: 'Quelques gouttes directement sur la verrue, matin et soir.', color: 'from-sky-500 to-blue-500' },
-              { n: 2, img: MEDIA.step2, t: 'Penetration active', d: 'Les actifs vegetaux penetrent la couche infectee en moins de 5 minutes.', color: 'from-blue-500 to-indigo-500' },
-              { n: 3, img: MEDIA.step3, t: 'Peau nette',         d: 'La verrue noircit, se retracte puis se decolle. Votre peau redevient lisse.', color: 'from-cyan-500 to-sky-500' },
-            ].map((s, i) => (
-              <div key={s.n} className={`relative grid items-center gap-6 py-8 md:gap-12 md:py-10 md:grid-cols-2 ${i % 2 ? 'md:[&>*:first-child]:order-2' : ''}`}>
-
-                {/* NODE centre */}
-                <div className="absolute left-5 top-10 z-10 flex h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full bg-gradient-to-br from-white to-sky-50 ring-4 ring-white shadow-lg md:left-1/2 md:top-1/2 md:-translate-y-1/2">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br ${s.color} text-sm font-black text-white shadow-lg`}>
-                    {s.n}
+              { n: 'Awa K.', v: 'Cocody', t: "J'ai vu une amélioration progressive sur certaines zones. Très contente." },
+              { n: 'Mariam D.', v: 'Yopougon', t: 'Texture agréable, format pratique. Je l\'utilise tous les soirs.' },
+              { n: 'Kouadio B.', v: 'Marcory', t: 'Livraison rapide, conseiller attentif. Je recommande.' },
+              { n: 'Fatou S.', v: 'Bingerville', t: 'Application simple, je commence ma routine.' },
+              { n: 'Aïcha M.', v: 'Treichville', t: 'La crème est douce, parfaite pour la peau sensible.' },
+              { n: 'Sékou T.', v: 'Bouaké', t: 'Bon produit, j\'aime le rituel matin/soir.' },
+            ].map((c, i) => (
+              <div key={i} className="rounded-2xl bg-white p-5 ring-1 ring-pink-100 transition-all hover:-translate-y-1 hover:shadow-lg hover:ring-pink-300">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-extrabold text-[#3d2317]">{c.n}</p>
+                    <p className="text-xs text-[#8b5a2b]">{c.v}</p>
                   </div>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700 ring-1 ring-emerald-200">
+                    <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    Vérifié
+                  </span>
                 </div>
-
-                {/* Image */}
-                <div className="vt-fade-up pl-14 md:pl-0">
-                  <div className="relative">
-                    <div className={`pointer-events-none absolute -inset-3 rounded-3xl bg-gradient-to-br ${s.color} opacity-20 blur-2xl`}/>
-                    <div className="relative overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-blue-100">
-                      <LazyImg src={s.img} alt={s.t} aspect="1/1"/>
-                    </div>
-                  </div>
+                <div className="mt-2 flex">
+                  {[1,2,3,4,5].map(s => (
+                    <svg key={s} className="h-4 w-4 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M9.05 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.366 2.446a1 1 0 00-.364 1.118l1.287 3.957c.3.922-.755 1.688-1.539 1.118L10 15.347l-3.366 2.446c-.784.57-1.838-.196-1.539-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.652 9.384c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69L9.05 2.927z" />
+                    </svg>
+                  ))}
                 </div>
-
-                {/* Contenu */}
-                <div className="vt-fade-up pl-14 md:pl-0" style={{ animationDelay: '.1s' }}>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-blue-600 sm:text-[11px]">Etape {s.n}</p>
-                  <h3 className="mt-1 text-xl font-black leading-tight sm:text-2xl md:text-[28px]">{s.t}</h3>
-                  <p className="mt-2 text-[13px] leading-relaxed text-neutral-600 sm:text-[14px]">{s.d}</p>
-                  <div className="mt-4">
-                    <CTA onClick={() => openModal(1)} variant={i % 2 ? 'cyan' : 'blue'} size="sm" fullWidth={false}>
-                      Commander <Arrow/>
-                    </CTA>
-                  </div>
-                </div>
+                <p className="mt-3 text-sm leading-relaxed text-[#5a3a20]">"{c.t}"</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <WaveDivider color="#ecfeff" flip/>
+      {/* ============ BLOC ENGAGEMENT — new7 (image deja optimisee) ============ */}
+      <ImageFiche
+        src={MEDIA.new7}
+        alt="Engagement qualité"
+        phrase="Une promesse simple : accompagner votre peau au quotidien."
+        highlight={['accompagner votre peau']}
+        ctaLabel="Je commande mon soin"
+        ctaVariant="brown"
+        onOrder={() => openModal(1)}
+      />
 
-      {/* ===================================================== */}
-      {/* BLOC VIDEO 1 + texte + CTA                             */}
-      {/* ===================================================== */}
-      <section className="relative overflow-hidden bg-cyan-50 py-12 sm:py-16">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="grid items-center gap-8 md:grid-cols-2 md:gap-12">
-            <div className="vt-fade-up">
-              <div className="relative mx-auto max-w-sm">
-                <div className="pointer-events-none absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-cyan-300/50 via-sky-300/40 to-blue-300/50 blur-3xl"/>
-                <LazyVideo src={MEDIA.video1} poster={MEDIA.video1Post} aspect="9/16"/>
-              </div>
-            </div>
-
-            <div className="vt-fade-up" style={{ animationDelay: '.1s' }}>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-cyan-700 shadow-md ring-1 ring-cyan-100 sm:text-[11px]">
-                🎬 Vue en action
-              </span>
-              <h2 className="mt-3 text-3xl font-black leading-tight sm:text-4xl">
-                Une{' '}
-                <span className="bg-gradient-to-r from-cyan-600 via-sky-500 to-blue-600 bg-clip-text text-transparent">goutte</span>{' '}
-                suffit.
-              </h2>
-              <p className="mt-3 text-[14px] leading-relaxed text-neutral-600 sm:text-[15px]">
-                Application locale, precise, indolore. Pas d'odeur desagreable. Pas de residus.
-                <span className="mt-2 block font-black text-blue-700">Simple comme un soin quotidien.</span>
-              </p>
-              <div className="mt-5">
-                <CTA onClick={() => openModal(1)} variant="cyan" size="lg" fullWidth={false}>
-                  Je veux essayer <Arrow/>
-                </CTA>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ===================================================== */}
-      {/* BLOC USAGE EN 3 GESTES - avec new-4                    */}
-      {/* ===================================================== */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-sky-50 to-white py-12 sm:py-16">
-        <div className="mx-auto max-w-5xl px-4">
-          <div className="mb-8 text-center">
-            <span className="inline-block rounded-full bg-white px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-blue-700 shadow ring-1 ring-blue-100">
-              👐 En 3 gestes
-            </span>
-            <h2 className="mt-3 text-3xl font-black leading-tight sm:text-4xl">
-              Une{' '}
-              <span className="bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-500 bg-clip-text text-transparent">routine</span>{' '}
-              sans effort.
-            </h2>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-[1.1fr_1fr] md:items-center">
-            <div className="vt-fade-up">
-              <div className="relative">
-                <div className="pointer-events-none absolute -inset-3 rounded-3xl bg-gradient-to-br from-sky-300/40 via-blue-300/30 to-cyan-300/40 blur-3xl"/>
-                <div className="relative overflow-hidden rounded-3xl shadow-xl ring-1 ring-blue-100">
-                  <LazyImg src={MEDIA.usage} alt="Application du produit" aspect="4/3"/>
-                </div>
-              </div>
-            </div>
-
-            <div className="vt-fade-up space-y-3" style={{ animationDelay: '.1s' }}>
-              {[
-                { n: '01', t: 'Nettoyer', d: 'Lavez et sechez la zone concernee.' },
-                { n: '02', t: 'Appliquer', d: 'Deposez 1-2 gouttes directement sur la verrue.' },
-                { n: '03', t: 'Attendre', d: 'Laissez agir 2 minutes. Repetez matin et soir.' },
-              ].map((x, i) => (
-                <div key={i} className="flex gap-3 rounded-2xl bg-white p-4 shadow-md ring-1 ring-blue-100 transition-all hover:-translate-y-0.5 hover:shadow-xl">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 via-sky-500 to-cyan-500 font-black text-white shadow">
-                    {x.n}
-                  </div>
-                  <div>
-                    <h4 className="text-[14px] font-black sm:text-[15px]">{x.t}</h4>
-                    <p className="text-[12px] text-neutral-600 sm:text-[13px]">{x.d}</p>
-                  </div>
-                </div>
-              ))}
-              <div className="pt-2">
-                <CTA onClick={() => openModal(1)} variant="blue" size="lg">
-                  Commencer ma cure <Arrow/>
-                </CTA>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ===================================================== */}
-      {/* AVANT / APRES - man-2 (avant) + new-5 (apres)          */}
-      {/* ===================================================== */}
-      <section className="relative overflow-hidden bg-white py-12 sm:py-16">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-orange-50/30 via-transparent to-sky-50/30"/>
-        <div className="relative mx-auto max-w-5xl px-4">
-          <div className="mb-8 text-center">
-            <span className="inline-block rounded-full bg-gradient-to-r from-orange-500 to-blue-500 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-lg">
-              📸 Photos reelles clients
-            </span>
-            <h2 className="mt-3 text-3xl font-black leading-tight sm:text-4xl">
-              Avant{' '}
-              <span className="text-neutral-400 mx-1">→</span>{' '}
-              <span className="bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-500 bg-clip-text text-transparent">Apres</span>
-            </h2>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 md:gap-6">
-            <div className="vt-fade-up group relative overflow-hidden rounded-3xl shadow-xl ring-1 ring-orange-100">
-              <LazyImg src={MEDIA.avant} alt="Avant traitement" aspect="4/5"/>
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent p-5">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-300">Avant</p>
-                <p className="text-lg font-black text-white">Verrue visible, persistante.</p>
-              </div>
-            </div>
-            <div className="vt-fade-up group relative overflow-hidden rounded-3xl shadow-xl ring-1 ring-blue-100" style={{ animationDelay: '.15s' }}>
-              <LazyImg src={MEDIA.apres} alt="Apres traitement" aspect="4/5"/>
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent p-5">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-300">Apres 10 jours</p>
-                <p className="text-lg font-black text-white">Peau lisse. Disparition totale.</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="mx-auto mt-8 max-w-sm">
-            <CTA onClick={() => openModal(1)} variant="blue" size="lg">
-              Je veux ce resultat <Arrow/>
-            </CTA>
-          </div>
-        </div>
-      </section>
-
-      <WaveDivider color="#f0f9ff"/>
-
-      {/* ===================================================== */}
-      {/* BLOC VIDEO 2                                           */}
-      {/* ===================================================== */}
-      <section className="relative overflow-hidden bg-sky-50 py-12 sm:py-16">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="grid items-center gap-8 md:grid-cols-2 md:gap-12">
-            <div className="vt-fade-up order-2 md:order-1">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-blue-700 shadow-md ring-1 ring-blue-100 sm:text-[11px]">
-                🎥 Temoignage video
-              </span>
-              <h2 className="mt-3 text-3xl font-black leading-tight sm:text-4xl">
-                <span className="bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-500 bg-clip-text text-transparent">Vraies</span>{' '}
-                histoires. Vrais resultats.
-              </h2>
-              <p className="mt-3 text-[14px] leading-relaxed text-neutral-600 sm:text-[15px]">
-                Des centaines de clients, chaque semaine, nous partagent leurs transformations.
-                <span className="mt-2 block font-black text-blue-600">Rejoignez-les.</span>
-              </p>
-              <div className="mt-5">
-                <CTA onClick={() => openModal(1)} variant="sky" size="lg" fullWidth={false}>
-                  Commander maintenant <Arrow/>
-                </CTA>
-              </div>
-            </div>
-            <div className="order-1 vt-fade-up md:order-2" style={{ animationDelay: '.1s' }}>
-              <div className="relative mx-auto max-w-sm">
-                <div className="pointer-events-none absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-sky-300/50 via-blue-300/40 to-indigo-300/50 blur-3xl"/>
-                <LazyVideo src={MEDIA.video2} aspect="9/16"/>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ===================================================== */}
-      {/* BLOC VIDEO 3 - grand format centré                     */}
-      {/* ===================================================== */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-cyan-50 via-white to-blue-50 py-12 sm:py-16">
-        <div className="mx-auto max-w-4xl px-4 text-center">
-          <span className="inline-block rounded-full bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-blue-700 shadow ring-1 ring-blue-100 sm:text-[11px]">
-            🎬 La preuve en mouvement
-          </span>
-          <h2 className="mt-3 text-3xl font-black leading-tight sm:text-4xl">
-            Voyez par{' '}
-            <span className="bg-gradient-to-r from-cyan-600 via-sky-500 to-blue-600 bg-clip-text text-transparent">vous-meme</span>.
+      {/* ============ BUNDLES + COUNTDOWN ============ */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#fef7f0] to-white px-4 py-14">
+        <div className="mx-auto max-w-6xl">
+          <p className="text-center text-xs font-bold uppercase tracking-[0.4em] text-pink-700">Offre du jour</p>
+          <h2 className="mt-3 text-center text-3xl font-black tracking-tight text-[#3d2317] sm:text-5xl">
+            <span className="cv-grad-rose italic">Choisis</span> ton pack
           </h2>
 
-          <div className="mx-auto mt-6 max-w-sm vt-fade-up">
-            <LazyVideo src={MEDIA.video3} aspect="9/16"/>
-          </div>
-
-          <div className="mx-auto mt-6 max-w-sm">
-            <CTA onClick={() => openModal(1)} variant="cyan" size="lg">
-              Je passe commande <Arrow/>
-            </CTA>
-          </div>
-        </div>
-      </section>
-
-      <WaveDivider color="#eff6ff" flip/>
-
-      {/* ===================================================== */}
-      {/* BUNDLES - visuels synthetiques (pas d'images repetees) */}
-      {/* ===================================================== */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-sky-50/50 to-white py-14 sm:py-20">
-        <div className="pointer-events-none absolute left-1/2 top-0 h-48 w-48 -translate-x-1/2 rounded-full bg-sky-300/40 blur-3xl"/>
-
-        <div className="relative mx-auto max-w-5xl px-4">
-          <div className="mb-10 text-center">
-            <span className="inline-block rounded-full bg-gradient-to-r from-blue-600 to-sky-500 px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-lg">
-              💎 Offres du jour
-            </span>
-            <h2 className="mt-3 text-3xl font-black leading-tight sm:text-4xl">
-              Choisissez{' '}
-              <span className="bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-500 bg-clip-text text-transparent">votre cure</span>.
-            </h2>
-            <p className="mt-2 text-[13px] text-neutral-500 sm:text-[14px]">
-              Plus vous traitez de verrues, <span className="font-black text-blue-600">plus vous economisez.</span>
-            </p>
-          </div>
-
-          <div className="grid gap-5 sm:grid-cols-3 sm:gap-4">
-            {[
-              {
-                qty: 1,
-                label: '1 boite',
-                desc: 'Pour une verrue',
-                price: PRICES[1],
-                oldPrice: OLD_PRICE_UNIT,
-                tag: '',
-                saveLabel: 'Pour essayer',
-                accent: 'from-neutral-700 to-neutral-500',
-                bg: 'from-neutral-100 to-neutral-50',
-                ringColor: '',
-              },
-              {
-                qty: 2,
-                label: '2 boites',
-                desc: 'Cure complete',
-                price: PRICES[2],
-                oldPrice: OLD_PRICE_UNIT * 2,
-                tag: 'POPULAIRE',
-                saveLabel: 'Economisez 13 100 F',
-                accent: 'from-blue-600 via-sky-500 to-cyan-500',
-                bg: 'from-sky-100 to-blue-50',
-                ringColor: 'ring-2 ring-sky-300',
-              },
-              {
-                qty: 3,
-                label: '3 boites',
-                desc: 'Toute la famille',
-                price: PRICES[3],
-                oldPrice: OLD_PRICE_UNIT * 3,
-                tag: 'MEILLEURE OFFRE',
-                saveLabel: 'Economisez 20 100 F',
-                accent: 'from-orange-500 via-amber-500 to-red-500',
-                bg: 'from-orange-100 to-amber-50',
-                ringColor: '',
-              },
-            ].map((b) => (
-              <button
-                key={b.qty}
-                onClick={() => openModal(b.qty)}
-                className={`group relative overflow-hidden rounded-2xl bg-white p-3 text-left shadow-lg transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl sm:p-4 ${b.ringColor} ${b.qty === 2 ? 'sm:scale-[1.04]' : ''}`}
-              >
-                {b.tag && (
-                  <span className={`absolute right-2 top-2 z-10 inline-flex animate-pulse items-center gap-1 rounded-full bg-gradient-to-r ${b.accent} px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-white shadow-lg sm:text-[10px]`}>
-                    {b.qty === 2 ? '💧' : b.qty === 3 ? '⭐' : ''} {b.tag}
-                  </span>
-                )}
-
-                <div className={`pointer-events-none absolute -inset-1 rounded-3xl bg-gradient-to-br ${b.accent} opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-25`}/>
-
-                {/* Visuel synthetique de bundle : X boites empilees */}
-                <div className={`relative flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br ${b.bg}`}>
-                  <div className="flex items-end gap-1.5">
-                    {Array.from({ length: b.qty }).map((_, i) => (
-                      <div
-                        key={i}
-                        className={`flex h-20 w-10 items-end justify-center rounded-md bg-gradient-to-br ${b.accent} pb-1.5 font-black text-white shadow-lg sm:h-24 sm:w-12`}
-                        style={{ transform: `translateY(${i * 2}px) rotate(${(i - (b.qty - 1) / 2) * 3}deg)` }}
-                      >
-                        <span className="text-[8px] uppercase tracking-wider opacity-80">TK</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="absolute bottom-2 right-2 flex h-10 w-10 items-center justify-center rounded-full bg-white font-black text-neutral-900 shadow-lg ring-2 ring-white sm:h-12 sm:w-12">
-                    <span className="bg-gradient-to-r from-blue-600 to-sky-500 bg-clip-text text-[18px] text-transparent sm:text-[20px]">x{b.qty}</span>
-                  </div>
+          <div className="mt-6 flex flex-col items-center gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#8b5a2b]">Offre disponible encore</span>
+            <div className="flex items-center gap-2">
+              {[{ v: cd.h, l: 'H' }, { v: cd.m, l: 'M' }, { v: cd.s, l: 'S' }].map((b, i) => (
+                <div key={i} className="flex flex-col items-center rounded-xl bg-gradient-to-br from-[#3d2317] via-[#5a3a20] to-[#3d2317] px-4 py-2 ring-1 ring-pink-400/30 shadow-md">
+                  <span className="text-2xl font-black tabular-nums text-pink-300">{b.v}</span>
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-amber-300/70">{b.l}</span>
                 </div>
+              ))}
+            </div>
+          </div>
 
-                <div className="relative mt-3">
-                  <p className="text-[11px] font-black uppercase tracking-wider text-neutral-400">{b.label}</p>
-                  <p className="text-[10px] font-bold text-neutral-500">{b.desc}</p>
-                  <div className="mt-1 flex items-baseline gap-2">
-                    <span className={`bg-gradient-to-r ${b.accent} bg-clip-text text-[22px] font-black text-transparent sm:text-[26px]`}>
-                      {fmt(b.price)}
+          <div className="mt-10 grid gap-5 md:grid-cols-3">
+            {QTY_OPTS.map((o, i) => {
+              const best = i === 1;
+              const featured = i === 2;
+              return (
+                <div
+                  key={o.v}
+                  className={`relative flex flex-col rounded-3xl bg-white p-6 transition-all hover:-translate-y-1 ${best ? 'ring-2 ring-pink-500 shadow-[0_28px_64px_-24px_rgba(236,72,153,0.5)] sm:scale-[1.04]' : featured ? 'ring-1 ring-[#6b3e1e] shadow-[0_22px_48px_-22px_rgba(107,62,30,0.3)]' : 'ring-1 ring-pink-100 shadow-sm'}`}
+                >
+                  {o.tag && (
+                    <span className={`absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-md ${best ? 'bg-gradient-to-r from-pink-500 to-rose-600' : 'bg-[#3d2317] text-amber-200'}`}>
+                      {o.tag}
                     </span>
-                    <span className="text-[11px] text-neutral-400 line-through sm:text-[12px]">{fmt(b.oldPrice)}</span>
+                  )}
+                  <div className="text-center">
+                    <div className="text-xs font-extrabold uppercase tracking-widest text-[#8b5a2b]">{o.label}</div>
+                    <div className="mt-2 text-4xl font-black text-[#3d2317] tabular-nums">{fmt(PRICES[o.v])}</div>
+                    {o.save && <div className="mt-1 text-xs font-bold text-emerald-600">{o.save}</div>}
                   </div>
-                  <p className="mt-1 text-[11px] font-bold text-blue-600 sm:text-[12px]">{b.saveLabel}</p>
-
-                  <div className={`mt-3 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r ${b.accent} px-4 py-2 text-[12px] font-black text-white shadow-md transition-transform group-hover:scale-105 sm:text-[13px]`}>
-                    Je commande <Arrow/>
+                  <ul className="mt-5 space-y-2 text-sm text-[#5a3a20]">
+                    <li className="flex items-center gap-2"><span className="text-pink-500">✦</span> Paiement à la livraison</li>
+                    <li className="flex items-center gap-2"><span className="text-pink-500">✦</span> Livraison rapide CI</li>
+                    {o.v >= 2 && <li className="flex items-center gap-2"><span className="text-pink-500">✦</span> Pack économique</li>}
+                    {featured && <li className="flex items-center gap-2"><span className="text-pink-500">✦</span> Guide d'utilisation offert</li>}
+                    <li className="flex items-center gap-2"><span className="text-pink-500">✦</span> Édition Premium 2026</li>
+                  </ul>
+                  <div className="mt-6 flex justify-center">
+                    <BounceCTA onClick={() => openModal(o.v)} variant={best ? 'rose' : 'brown'} large>
+                      Choisir ce pack
+                    </BounceCTA>
                   </div>
                 </div>
-              </button>
-            ))}
-          </div>
-
-          <p className="mt-6 text-center text-[12px] text-neutral-500">
-            Livraison <span className="font-black text-blue-600">gratuite</span> · Paiement a la livraison
-          </p>
-        </div>
-      </section>
-
-      {/* ===================================================== */}
-      {/* MID-CTA + stock bar dynamique                          */}
-      {/* ===================================================== */}
-      <section className="bg-white py-10">
-        <div className="mx-auto max-w-2xl px-4">
-          <div className="mb-3 flex items-center justify-between text-[11px] font-bold sm:text-[12px]">
-            <span className="text-neutral-500">💧 Stock dispo ce jour</span>
-            <span className="inline-flex items-center gap-1 text-orange-600">
-              <span className="vt-heartbeat">🔥</span> {stock} restants
-            </span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-sky-100">
-            <div
-              className="h-full bg-gradient-to-r from-blue-500 via-sky-500 to-cyan-500 transition-all duration-500"
-              style={{ width: `${stockPct}%` }}
-            />
-          </div>
-          <div className="mt-6">
-            <CTA onClick={() => openModal(1)} variant="orange" size="lg">
-              <span className="vt-heartbeat">•</span> Commander maintenant <Arrow/>
-            </CTA>
-          </div>
-          <p className="mt-3 text-center text-[11px] text-neutral-500">
-            Livraison <span className="font-bold text-blue-600">gratuite</span> · Paiement <span className="font-bold">a la livraison</span>
-          </p>
-        </div>
-      </section>
-
-      {/* ===================================================== */}
-      {/* WHATSAPP TESTIMONIALS                                  */}
-      {/* ===================================================== */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-[#e5ddd5] to-[#d9d2c4] py-14 sm:py-20">
-        <div className="pointer-events-none absolute inset-0 opacity-20" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 30L30 0L60 30L30 60z' fill='none' stroke='%23075e54' stroke-width='.5'/%3E%3C/svg%3E\")" }}/>
-
-        <div className="relative mx-auto max-w-2xl px-4">
-          <div className="mb-8 text-center">
-            <span className="inline-flex items-center gap-2 rounded-full bg-[#25D366] px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-white shadow-lg">
-              <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-              Messages clients WhatsApp
-            </span>
-            <h2 className="mt-3 text-2xl font-black leading-tight sm:text-3xl md:text-4xl">
-              Nos clients nous{' '}
-              <span className="bg-gradient-to-r from-emerald-600 via-green-500 to-teal-500 bg-clip-text text-transparent">remercient</span>.
-            </h2>
-          </div>
-
-          <div className="overflow-hidden rounded-2xl bg-[#ece5dd] shadow-2xl">
-            <div className="flex items-center gap-3 bg-[#075e54] px-4 py-3 text-white">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-sky-500 font-black">GS</div>
-              <div className="flex-1">
-                <p className="text-[13px] font-black">GS Pipeline - Creme VERRUE TK</p>
-                <p className="text-[10px] text-emerald-300">● en ligne</p>
-              </div>
-              <svg className="h-4 w-4 opacity-80" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-            </div>
-
-            <div className="space-y-3 px-4 py-5">
-              <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-white px-3 py-2 shadow-sm vt-fade-up">
-                <p className="text-[11px] font-black text-blue-600">Awa K.</p>
-                <p className="mt-0.5 text-[13px] text-neutral-800">Bonjour, juste pour dire merci 🙏 7 jours d'utilisation, ma verrue sur le doigt a disparu. Je n'y croyais plus.</p>
-                <p className="mt-1 text-right text-[9px] text-neutral-400">08:12</p>
-              </div>
-
-              <div className="ml-auto max-w-[85%] rounded-2xl rounded-tr-sm bg-[#dcf8c6] px-3 py-2 shadow-sm vt-fade-up" style={{ animationDelay: '.12s' }}>
-                <p className="text-[13px] text-neutral-800">Bonjour Awa 🎉 On est ravis pour vous ! Merci de partager.</p>
-                <p className="mt-1 text-right text-[9px] text-neutral-500">08:15 ✓✓</p>
-              </div>
-
-              <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-white px-3 py-2 shadow-sm vt-fade-up" style={{ animationDelay: '.24s' }}>
-                <p className="text-[11px] font-black text-sky-600">Jean-Marc B.</p>
-                <p className="mt-0.5 text-[13px] text-neutral-800">Commande recue le lendemain a Bouake. Application ce soir. Deja moins de demangeaison 😌</p>
-                <p className="mt-1 text-right text-[9px] text-neutral-400">15:44</p>
-              </div>
-
-              <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-white px-3 py-2 shadow-sm vt-fade-up" style={{ animationDelay: '.36s' }}>
-                <p className="text-[11px] font-black text-cyan-600">Mariam D.</p>
-                <p className="mt-0.5 text-[13px] text-neutral-800">Je recommande FORTEMENT. Ma mere avait 3 verrues. Toutes parties en 12 jours. Sa peau est impeccable ❤️</p>
-                <p className="mt-1 text-right text-[9px] text-neutral-400">19:21</p>
-              </div>
-
-              <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-white px-3 py-2 shadow-sm vt-fade-up" style={{ animationDelay: '.48s' }}>
-                <p className="text-[11px] font-black text-indigo-600">Fatou S.</p>
-                <p className="mt-0.5 text-[13px] text-neutral-800">Apres 2 echecs avec d'autres produits, enfin une creme qui marche 💯 Merci GS Pipeline !</p>
-                <p className="mt-1 text-right text-[9px] text-neutral-400">22:03</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="mx-auto mt-8 max-w-md">
-            <CTA onClick={() => openModal(1)} variant="sky" size="lg">
-              Moi aussi je commande <Arrow/>
-            </CTA>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* ===================================================== */}
-      {/* BLOC ENGAGEMENT - avec new-7                           */}
-      {/* ===================================================== */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-sky-50 py-14 sm:py-20">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="grid items-center gap-8 md:grid-cols-2 md:gap-12">
-            <div className="vt-fade-up order-2 md:order-1">
-              <span className="inline-block rounded-full bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-blue-700 shadow ring-1 ring-blue-100">
-                🛡️ Notre engagement
-              </span>
-              <h2 className="mt-3 text-3xl font-black leading-tight sm:text-4xl">
-                Nous{' '}
-                <span className="bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-500 bg-clip-text text-transparent">garantissons</span>{' '}
-                votre satisfaction.
-              </h2>
-              <ul className="mt-5 space-y-2.5 text-[13px] sm:text-[14px]">
-                {[
-                  'Formule dermatologique brevetee - serum bleu actif',
-                  'Teste et approuve par plus de 2 000 clients',
-                  'Sans douleur ni brulure cutanee',
-                  'Livraison 24h a Abidjan, 48h en region',
-                  'Paiement uniquement a la livraison',
-                ].map((x, i) => (
-                  <li key={i} className="flex items-start gap-2 text-neutral-700">
-                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-blue-500 text-white shadow">
-                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
-                    </span>
-                    {x}
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-6">
-                <CTA onClick={() => openModal(1)} variant="blue" size="lg" fullWidth={false}>
-                  J'achete sans risque <Arrow/>
-                </CTA>
-              </div>
-            </div>
-            <div className="order-1 vt-fade-up md:order-2" style={{ animationDelay: '.1s' }}>
-              <div className="relative">
-                <div className="pointer-events-none absolute -inset-4 rounded-3xl bg-gradient-to-br from-blue-300/40 via-sky-300/30 to-cyan-300/40 blur-3xl"/>
-                <div className="relative overflow-hidden rounded-3xl shadow-xl ring-1 ring-blue-100">
-                  <LazyImg src={MEDIA.engagement} alt="Engagement qualite" aspect="1/1"/>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ===================================================== */}
-      {/* FAQ                                                    */}
-      {/* ===================================================== */}
-      <section className="bg-white py-14 sm:py-20">
-        <div className="mx-auto max-w-3xl px-4">
-          <div className="mb-8 text-center">
-            <h2 className="text-2xl font-black leading-tight sm:text-3xl md:text-4xl">
-              Vos{' '}
-              <span className="bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-500 bg-clip-text text-transparent">questions</span>.
-            </h2>
-          </div>
-          <div className="space-y-3">
+      {/* ============ FAQ MINIMAL ============ */}
+      <section className="bg-white px-4 py-14">
+        <div className="mx-auto max-w-3xl">
+          <h2 className="text-center text-3xl font-black tracking-tight text-[#3d2317] sm:text-4xl">
+            <span className="cv-grad-rose italic">Questions</span> fréquentes
+          </h2>
+          <div className="mt-8 space-y-3">
             {[
-              { q: 'Combien de temps pour voir les resultats ?', a: 'Premiers effets des 3-5 jours. Disparition totale en 5 a 10 jours selon la taille.' },
-              { q: 'La creme fait-elle mal ?',                   a: 'Non, aucune douleur ni brulure. Formule 100% vegetale douce pour la peau.' },
-              { q: 'Je paie avant de recevoir ?',                a: 'Non. Paiement uniquement a la livraison. Vous verifiez avant de payer.' },
-              { q: 'Convient-elle aux enfants ?',                a: 'Oui, a partir de 6 ans, avec la supervision d\'un adulte lors de l\'application.' },
-              { q: 'Ca marche sur toutes les verrues ?',         a: 'Verrues plantaires, vulgaires, seborrheiques. Sur peau saine, evitez les zones fragiles.' },
-              { q: 'Livree ou ?',                                a: 'Partout en Cote d\'Ivoire. 24h Abidjan, 48h regions. Livraison gratuite.' },
-            ].map((f, i) => (
-              <details key={i} className="group overflow-hidden rounded-2xl bg-sky-50/50 shadow-sm ring-1 ring-sky-100 transition-all open:shadow-lg open:bg-white open:ring-sky-200">
-                <summary className="flex cursor-pointer items-center justify-between px-5 py-4 text-[14px] font-black text-neutral-900 sm:text-[15px]">
+              { q: 'Comment utiliser la crème ?', a: 'Nettoyez la zone concernée, appliquez une petite quantité de crème sur la verrue, massez doucement. À répéter matin et soir.' },
+              { q: 'Sur quelles zones l\'appliquer ?', a: 'Sur les zones visibles : mains, pieds, doigts. Éviter le contour des yeux et les muqueuses.' },
+              { q: 'Quand voir une amélioration ?', a: 'Les résultats peuvent varier selon les personnes. Une routine régulière est recommandée pour observer un changement visible.' },
+              { q: 'Est-ce que je paie avant ?', a: 'Non, le paiement se fait à la livraison. Vous payez en cash uniquement quand vous recevez votre crème.' },
+              { q: 'Comment se passe la livraison ?', a: 'Un conseiller vous appelle sous 30 minutes pour confirmer, puis livraison rapide dans votre commune.' },
+            ].map((f) => (
+              <details key={f.q} className="group rounded-2xl bg-pink-50/40 p-5 ring-1 ring-pink-100 transition-all open:bg-white open:ring-pink-400 open:shadow-md">
+                <summary className="flex cursor-pointer items-center justify-between gap-4 text-left text-base font-extrabold text-[#3d2317]">
                   <span>{f.q}</span>
-                  <svg className="vt-chev h-5 w-5 text-blue-600 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/>
-                  </svg>
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-pink-100 text-pink-700 transition-transform group-open:rotate-45">
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+                    </svg>
+                  </span>
                 </summary>
-                <p className="px-5 pb-5 text-[13px] leading-relaxed text-neutral-600 sm:text-[14px]">{f.a}</p>
+                <p className="mt-3 text-sm leading-relaxed text-[#5a3a20]">{f.a}</p>
               </details>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ===================================================== */}
-      {/* BANNIERE FINALE (fond gradient bleu pur - pas d'image) */}
-      {/* ===================================================== */}
-      <section className="relative overflow-hidden py-16 sm:py-24">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-700 via-sky-600 to-cyan-600 vt-animated-bg" style={{ backgroundSize: '200% 200%' }}/>
-        <div className="pointer-events-none absolute inset-0 bg-black/10"/>
-        {/* Particules decoratives */}
-        <div className="pointer-events-none absolute left-10 top-10 h-32 w-32 rounded-full bg-sky-300/30 blur-2xl vt-float-slow"/>
-        <div className="pointer-events-none absolute right-10 bottom-10 h-40 w-40 rounded-full bg-cyan-300/30 blur-3xl vt-float-slow" style={{ animationDelay: '2s' }}/>
-
-        <div className="relative mx-auto max-w-3xl px-4 text-center text-white">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] backdrop-blur-sm ring-1 ring-white/20">
-            💧 Derniere chance
-          </span>
-          <h2 className="mt-4 text-3xl font-black leading-tight sm:text-4xl md:text-5xl">
-            Votre{' '}
-            <span className="bg-gradient-to-r from-cyan-200 via-sky-100 to-white bg-clip-text text-transparent">peau nette</span>{' '}
-            vous attend.
-          </h2>
-          <p className="mt-4 text-[14px] text-white/85 sm:text-[16px]">
-            Creme VERRUE TK · 9 900 FCFA seulement · Paiement a la livraison
-          </p>
-
-          <div className="mx-auto mt-8 max-w-sm">
-            <CTA onClick={() => openModal(1)} variant="orange" size="lg">
-              <span className="vt-heartbeat">•</span> Je commande maintenant
-            </CTA>
-          </div>
-          <p className="mt-3 text-[12px] text-white/75">
-            🔒 Paiement a la livraison · Sans risque · Livraison gratuite
-          </p>
+      {/* ============ FOOTER ============ */}
+      <footer className="bg-gradient-to-b from-[#3d2317] to-[#2a1810] px-4 py-10 text-center text-amber-100">
+        <p className="text-[10px] font-bold uppercase tracking-[0.5em] text-pink-300">Crème Anti-Verrues TK</p>
+        <p className="mt-3 text-xs">Édition Premium 2026 · Côte d'Ivoire</p>
+        <div className="mx-auto mt-5 flex max-w-md flex-wrap items-center justify-center gap-3 text-[10px] font-semibold">
+          <span>💵 Cash livraison</span><span className="text-pink-400">·</span>
+          <span>🚚 Livraison rapide</span><span className="text-pink-400">·</span>
+          <span>💬 WhatsApp</span><span className="text-pink-400">·</span>
+          <span>🔒 Sécurisée</span>
         </div>
-      </section>
-
-      {/* ===================================================== */}
-      {/* FOOTER                                                 */}
-      {/* ===================================================== */}
-      <footer className="bg-blue-950 py-8 text-center text-[11px] text-sky-200/80">
-        <p>© 2026 · Cote d'Ivoire · GS Pipeline · Tous droits reserves</p>
-        <p className="mt-1">Service client 7j/7 · Livraison Abidjan 24h · Paiement a la livraison</p>
+        <p className="mt-6 text-[10px] italic text-amber-300/70">Les résultats peuvent varier selon les personnes.</p>
+        <p className="mt-1 text-[10px] text-amber-400/50">© 2026</p>
       </footer>
 
-      {/* ===================================================== */}
-      {/* STICKY BOTTOM BAR                                      */}
-      {/* ===================================================== */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-sky-200 bg-white/95 px-3 py-2.5 shadow-[0_-8px_30px_rgba(0,0,0,.08)] backdrop-blur-md sm:px-4 sm:py-3">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            <img src={MEDIA.hero} alt="" className="h-11 w-11 rounded-xl object-cover shadow-md ring-2 ring-sky-100 sm:h-12 sm:w-12"/>
-            <div className="min-w-0">
-              <p className="truncate text-[12px] font-black text-neutral-900 sm:text-[13px]">Creme VERRUE TK</p>
-              <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px]">
-                <span className="font-bold text-blue-600">9 900 FCFA</span>
-                <span className="text-neutral-400">·</span>
-                <span className="inline-flex items-center gap-0.5 font-mono font-bold text-orange-500">
-                  <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-orange-500"/>
-                  {pad(countdown.h)}:{pad(countdown.m)}:{pad(countdown.s)}
-                </span>
-              </div>
-            </div>
+      {/* ============ STICKY CTA MOBILE ============ */}
+      <div
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-pink-200/40 bg-gradient-to-r from-[#3d2317] via-[#5a3a20] to-[#3d2317] px-3 py-2.5 shadow-[0_-12px_40px_-12px_rgba(107,62,30,0.5)] sm:hidden"
+        style={{ paddingBottom: 'calc(0.6rem + env(safe-area-inset-bottom))' }}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="leading-tight">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-amber-300/70">À partir de</div>
+            <div className="text-base font-black text-pink-200">{fmt(PRICES[1])} <span className="text-[10px] font-normal text-amber-300/60">/ boîte</span></div>
           </div>
           <button
+            type="button"
             onClick={() => openModal(1)}
-            className="vt-cta relative inline-flex items-center gap-1.5 overflow-hidden rounded-full bg-gradient-to-r from-orange-500 via-amber-500 to-red-500 px-5 py-2.5 text-[13px] font-black text-white shadow-[0_10px_25px_-4px_rgba(249,115,22,.55)] transition-transform hover:scale-105 sm:px-6 sm:py-3 sm:text-[14px]"
+            className="cv-cta cv-cta-bounce relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-pink-500 via-rose-400 to-pink-600 px-5 py-3 text-sm font-extrabold uppercase tracking-wider text-white shadow-[0_18px_40px_-12px_rgba(236,72,153,0.7)] ring-2 ring-pink-300"
           >
-            <span className="vt-cta-sheen absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent"/>
+            <span className="cv-cta-sheen pointer-events-none absolute inset-0" aria-hidden />
             <span className="relative">Commander</span>
-            <Arrow/>
           </button>
         </div>
       </div>
 
-      {/* ===================================================== */}
-      {/* TOAST                                                  */}
-      {/* ===================================================== */}
-      {toast && (
-        <div className={`fixed bottom-20 left-3 z-40 flex items-center gap-2.5 rounded-2xl bg-white px-3.5 py-2.5 shadow-2xl ring-1 ring-blue-100 sm:bottom-24 sm:left-4 ${toast.visible ? 'vt-toast-in' : 'vt-toast-out'}`}>
-          <div className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-sky-500 text-white shadow">
-            <Check/>
-            <span className="absolute inset-0 rounded-full bg-blue-400/30 vt-pulse-dot"/>
-          </div>
-          <div>
-            <p className="text-[12px] font-black text-neutral-900">{toast.n} vient de commander</p>
-            <p className="text-[10px] text-neutral-500">a {toast.v} · il y a {toast.t}</p>
-          </div>
-        </div>
-      )}
+      {/* Notifications achats */}
+      <RecentToast />
 
-      {/* ===================================================== */}
-      {/* EXIT INTENT POPUP                                      */}
-      {/* ===================================================== */}
-      {exitPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="relative max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl animate-[vt-fade-up_.3s_ease-out]">
-            <button
-              onClick={() => setExitPopup(false)}
-              className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 transition hover:bg-neutral-200"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
-
-            <div className="bg-gradient-to-br from-blue-600 via-sky-500 to-cyan-600 px-6 py-8 text-center text-white vt-animated-bg" style={{ backgroundSize: '200% 200%' }}>
-              <span className="inline-block rounded-full bg-white/15 px-3 py-1 text-[10px] font-black uppercase tracking-widest">
-                🎁 Cadeau de bienvenue
-              </span>
-              <h3 className="mt-3 text-2xl font-black leading-tight">
-                Attendez ! <br/>Votre peau merite mieux.
-              </h3>
-              <p className="mt-2 text-[13px] text-white/90">
-                Livraison 100% gratuite + paiement a la livraison.
-              </p>
-            </div>
-
-            <div className="px-6 py-5">
-              <CTA onClick={() => openModal(1)} variant="orange" size="lg">
-                Je commande maintenant <Arrow/>
-              </CTA>
-              <button
-                onClick={() => setExitPopup(false)}
-                className="mt-2 w-full text-[11px] font-medium text-neutral-400 hover:text-neutral-600"
-              >
-                Non merci, je garde mes verrues
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===================================================== */}
-      {/* MODAL DE COMMANDE                                      */}
-      {/* ===================================================== */}
+      {/* Modal commande */}
       <OrderModalDispatcher
         slug={SLUG}
-        open={modal}
-        onClose={() => setModal(false)}
-        cfg={{
-          productCode: PRODUCT_CODE,
-          title: 'Creme Anti-Verrues',
-          prices: PRICES,
-          thankYouUrl: THANK_YOU_URL,
-          metaPixelId: META_PIXEL_ID,
-          slug: SLUG,
-          company,
-          navigate,
-          images: {
-            hero: MEDIA.hero,
-            avant: MEDIA.avant,
-            apres: MEDIA.apres,
-          },
-        }}
+        open={modalOpen}
+        onClose={closeModal}
+        cfg={orderCfg}
         product={product}
         setProduct={setProduct}
         qtyOptions={QTY_OPTS}
-        initialQty={qty}
+        initialQty={initialQty}
       />
     </div>
+  );
+}
+
+/* ---------------- Styles isolés (scope cv-) ---------------- */
+
+function CvCSS() {
+  return (
+    <style>{`
+      .cv-root {
+        font-family: 'Inter','Poppins',system-ui,-apple-system,'Segoe UI',sans-serif;
+        color: #3d2317;
+        background: #fef7f0;
+        min-height: 100vh;
+        padding-bottom: 88px;
+        scroll-behavior: smooth;
+      }
+      @media (min-width: 640px) { .cv-root { padding-bottom: 0; } }
+
+      .cv-hero-bg {
+        background:
+          radial-gradient(60% 50% at 20% 20%, rgba(236,72,153,0.18), transparent 60%),
+          radial-gradient(50% 40% at 80% 80%, rgba(245,158,11,0.12), transparent 60%),
+          linear-gradient(160deg, #fef7f0 0%, #fff 50%, #fdf2f8 100%);
+      }
+      .cv-hero-grain {
+        background-image:
+          repeating-radial-gradient(circle at 0 0, rgba(107,62,30,0.04) 0, rgba(107,62,30,0.04) 1px, transparent 1px, transparent 5px);
+        mix-blend-mode: multiply;
+      }
+
+      /* Gradients shine */
+      .cv-grad-rose {
+        background: linear-gradient(120deg, #be185d 0%, #ec4899 30%, #f9a8d4 50%, #ec4899 70%, #be185d 100%);
+        background-size: 200% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: cv-grad-shine 4s linear infinite;
+      }
+      .cv-grad-brown {
+        background: linear-gradient(120deg, #4a2a14 0%, #8b5a2b 30%, #d4a574 50%, #8b5a2b 70%, #4a2a14 100%);
+        background-size: 200% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: cv-grad-shine 4s linear infinite;
+      }
+      @keyframes cv-grad-shine {
+        0%   { background-position: 200% 50%; }
+        100% { background-position: -200% 50%; }
+      }
+
+      /* CTA BOUNCE LUMINEUX */
+      @keyframes cv-cta-bounce-anim {
+        0%, 100% { transform: translateY(0) scale(1); }
+        25%      { transform: translateY(-6px) scale(1.02); }
+        50%      { transform: translateY(0) scale(1); }
+        75%      { transform: translateY(-3px) scale(1.01); }
+      }
+      .cv-cta-bounce {
+        animation: cv-cta-bounce-anim 2.4s ease-in-out infinite;
+        will-change: transform;
+      }
+      .cv-cta-bounce:hover, .cv-cta-bounce:focus-visible {
+        animation: none;
+        transform: translateY(-4px) scale(1.05);
+      }
+
+      /* Sheen lumineux qui balaie */
+      @keyframes cv-sheen-anim {
+        0%   { transform: translateX(-150%) skewX(-15deg); }
+        100% { transform: translateX(250%)  skewX(-15deg); }
+      }
+      .cv-cta-sheen {
+        background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.7) 45%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0.7) 55%, transparent 100%);
+        width: 60%;
+        animation: cv-sheen-anim 2.2s ease-in-out infinite;
+      }
+
+      /* Glow rose pulsant */
+      @keyframes cv-glow-anim {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(236,72,153,0.4); }
+        50%      { box-shadow: 0 0 28px 6px rgba(236,72,153,0.45); }
+      }
+      .cv-cta-glow { animation: cv-glow-anim 2.4s ease-in-out infinite; }
+
+      /* Pulse cercle */
+      @keyframes cv-pulse-anim {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(0.88); }
+      }
+      .cv-pulse { animation: cv-pulse-anim 1.6s ease-in-out infinite; }
+
+      /* Barres defilantes */
+      .cv-bar-brown {
+        background: linear-gradient(90deg, #3d2317 0%, #6b3e1e 50%, #3d2317 100%);
+        color: #fde68a;
+        border-top: 1px solid rgba(245,158,11,0.3);
+        border-bottom: 1px solid rgba(0,0,0,0.2);
+      }
+      .cv-bar-rose {
+        background: linear-gradient(90deg, #be185d 0%, #ec4899 50%, #be185d 100%);
+        color: #fff;
+        border-top: 1px solid rgba(255,255,255,0.25);
+        border-bottom: 1px solid rgba(190,24,93,0.4);
+        text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+      }
+      .cv-bar-cream {
+        background: linear-gradient(90deg, #fde68a 0%, #f5d490 30%, #fef3c7 50%, #f5d490 70%, #fde68a 100%);
+        color: #4a2a14;
+        border-top: 1px solid rgba(255,255,255,0.5);
+        border-bottom: 1px solid rgba(180,83,9,0.25);
+        text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+      }
+      .cv-bar-shine {
+        background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.4) 45%, transparent 60%);
+        mix-blend-mode: overlay;
+        width: 40%;
+        animation: cv-bar-shine-anim 4s linear infinite;
+      }
+      @keyframes cv-bar-shine-anim {
+        0%   { transform: translateX(-100%); }
+        100% { transform: translateX(350%); }
+      }
+      .cv-bar-track {
+        animation: cv-bar-track-anim 28s linear infinite;
+        will-change: transform;
+        gap: 2.5rem;
+      }
+      @keyframes cv-bar-track-anim {
+        0%   { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+      }
+
+      /* Toast */
+      .cv-toast {
+        max-width: 92vw; width: 320px;
+        opacity: 0; transform: translateY(12px) translateX(-12px);
+        transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+        pointer-events: none;
+      }
+      .cv-toast-in  { opacity: 1; transform: translateY(0) translateX(0); }
+      .cv-toast-out { opacity: 0; transform: translateY(8px) translateX(-8px); }
+      @media (min-width: 640px) { .cv-toast { width: 340px; } }
+
+      @media (prefers-reduced-motion: reduce) {
+        .cv-grad-rose, .cv-grad-brown, .cv-cta-bounce, .cv-cta-sheen, .cv-cta-glow,
+        .cv-pulse, .cv-bar-shine, .cv-bar-track { animation: none !important; }
+        .cv-toast { transition: opacity 0.2s ease !important; }
+        .cv-root { scroll-behavior: auto; }
+      }
+    `}</style>
   );
 }

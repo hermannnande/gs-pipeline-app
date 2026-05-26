@@ -1,0 +1,48 @@
+# ================================================================
+# Dossier /coffret-versace/ — Sécurité et routage
+# ================================================================
+# Ce dossier héberge :
+#   - index.html  (la page de vente)
+#   - order.php   (endpoint POST)
+#   - view.php    (admin)
+#   - merci.html  (thank-you)
+#
+# On veut :
+#   - Bloquer WordPress pour ce dossier (pas de rewrite vers /index.php)
+#   - Bloquer l'accès direct aux fichiers sensibles (.csv, .json, .php internes)
+#   - Autoriser CORS pour l'endpoint de commande
+# ================================================================
+
+# --- Bloquer WordPress pour ce dossier ---
+# Quand le .htaccess racine fait un RewriteRule . /index.php [L],
+# on veut être sûr que ce dossier utilise SES propres règles.
+RewriteEngine On
+RewriteBase /coffret-versace/
+
+# Index par défaut
+DirectoryIndex index.html index.php
+
+# --- Bloquer l'accès direct aux fichiers de données ---
+<FilesMatch "\.(csv|json|log|bak|sample\.php)$">
+    Require all denied
+</FilesMatch>
+<Files "config.php">
+    Require all denied
+</Files>
+<Files ".rate-limit.json">
+    Require all denied
+</Files>
+
+# --- CORS pour l'endpoint order.php ---
+<Files "order.php">
+    <IfModule mod_headers.c>
+        Header always set Access-Control-Allow-Origin "*"
+        Header always set Access-Control-Allow-Methods "POST, OPTIONS"
+        Header always set Access-Control-Allow-Headers "Content-Type"
+    </IfModule>
+</Files>
+
+# --- MIME correct pour les assets ---
+AddType text/html .html
+AddType application/json .json
+AddType text/csv .csv

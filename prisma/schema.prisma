@@ -47,7 +47,8 @@ enum OrderStatus {
   ANNULEE // Client a annulé
   INJOIGNABLE // Client non joignable
   ASSIGNEE // Assignée à un livreur
-  LIVREE // Livrée avec succès
+  LIVREE // Livrée avec succès (toute la quantité prise)
+  LIVREE_PARTIELLE // Client a pris une partie seulement (ex: 1 sur 2). Le reste = retour magasin
   REFUSEE // Refusée par le client à la livraison
   ANNULEE_LIVRAISON // Annulée pendant la livraison
   RETOURNE // Retourné par le livreur (client absent, etc.)
@@ -130,6 +131,10 @@ model Order {
   productId   Int? // Lien vers le produit (optionnel pour rétrocompatibilité)
   product     Product? @relation("ProductOrders", fields: [productId], references: [id])
   quantite    Int      @default(1)
+  // Nombre d'unités effectivement prises par le client à la livraison.
+  // null = égal à `quantite` (rétrocompat). Renseigné uniquement pour les
+  // LIVREE_PARTIELLE (ex: quantite=2, quantiteLivree=1 → 1 livré + 1 retour).
+  quantiteLivree Int?
   montant     Float
 
   // Gestion des paiements (pour EXPEDITION & EXPRESS)

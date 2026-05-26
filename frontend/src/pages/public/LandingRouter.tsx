@@ -13,12 +13,15 @@ import SprayDouleurTkLanding from './SprayDouleurTkLanding';
 import SprayLipomeLanding from './SprayLipomeLanding';
 import SprayLipomeTkLanding from './SprayLipomeTkLanding';
 import CremeAntiLipomeLanding from './CremeAntiLipomeLanding';
+import CremeAntiLipomeTkLanding from './CremeAntiLipomeTkLanding';
 import ChaussetteHommeLanding from './ChaussetteHommeLanding';
 import CremeAntiCerneLanding from './CremeAntiCerneLanding';
 import SerumCerneLanding from './SerumCerneLanding';
 import SerumCerneTkLanding from './SerumCerneTkLanding';
 import SerumCernePayeLanding from './SerumCernePayeLanding';
 import PoudrePousseCheveuxLanding from './PoudrePousseCheveuxLanding';
+import SprayVitiligoLanding from './SprayVitiligoLanding';
+import ChapeauGavrocheLanding from './ChapeauGavrocheLanding';
 import BoutiqueLanding from './BoutiqueLanding';
 import { useLandingSlug } from '../../hooks/useLandingSlug';
 
@@ -48,7 +51,7 @@ export default function LandingRouter() {
 
   useEffect(() => {
     // Landings autonomes : zero call API template
-    if (!slug || slug === 'coffret-boxer-homme' || slug === 'creme-anti-verrue' || slug === 'patchdouleurtk' || slug === 'patchdouleurfb' || slug === 'creme-verrue-tk' || slug === 'creme-verrue-tk2' || slug === 'spraydouleurtk' || slug === 'spraylipome' || slug === 'spraylipometk' || slug === 'creme-anti-lipome' || slug === 'chaussette-homme' || slug === 'creme-anti-cerne' || slug === 'serum-cerne' || slug === 'serum-cerne-tk' || slug === 'serum-cerne-paye' || slug === 'poudre-pousse-cheveux' || slug === 'boutique') return;
+    if (!slug || slug === 'coffret-boxer-homme' || slug === 'creme-anti-verrue' || slug === 'patchdouleurtk' || slug === 'patchdouleurfb' || slug === 'creme-verrue-tk' || slug === 'creme-verrue-tk2' || slug === 'spraydouleurtk' || slug === 'spraylipome' || slug === 'spraylipometk' || slug === 'creme-anti-lipome' || slug === 'creme-anti-lipome-tk' || slug === 'chaussette-homme' || slug === 'creme-anti-cerne' || slug === 'serum-cerne' || slug === 'serum-cerne-tk' || slug === 'serum-cerne-paye' || slug === 'poudre-pousse-cheveux' || slug === 'spray-vitiligo' || slug === 'chapeau-gavroche' || slug === 'boutique') return;
     axios.get(`${API_URL}/templates/public/${slug}`)
       .then(r => {
         try {
@@ -164,6 +167,15 @@ export default function LandingRouter() {
     );
   }
 
+  // Landing creme anti-lipome TK — meme tunnel vert, mapping CREME_ANTI_LIPOME_TK (campagne dediee).
+  if (slug === 'creme-anti-lipome-tk') {
+    return (
+      <ErrorBoundary>
+        <CremeAntiLipomeTkLanding />
+      </ErrorBoundary>
+    );
+  }
+
   // Landing chaussettes homme luxe — palette NOIR + OR + IVOIRE (responsable),
   // disposition magazine GQ, mapping CHAUSSETTE_HOMME, pack 5/10/15 paires.
   if (slug === 'chaussette-homme') {
@@ -217,6 +229,26 @@ export default function LandingRouter() {
     return (
       <ErrorBoundary>
         <PoudrePousseCheveuxLanding />
+      </ErrorBoundary>
+    );
+  }
+
+  // Landing SPRAY VITILIGO — palette blanc + rouge medical + accents navy/dore,
+  // mapping CREME_VITILIGO, page premium avec hero impactant + videos + bundles.
+  if (slug === 'spray-vitiligo') {
+    return (
+      <ErrorBoundary>
+        <SprayVitiligoLanding />
+      </ErrorBoundary>
+    );
+  }
+
+  // Landing CHAPEAU GAVROCHE — palette noir + beige + or vintage, magazine GQ vibe,
+  // mapping CHAPEAU_GAVROCHE, layout asymetrique + galerie magazine + bundle.
+  if (slug === 'chapeau-gavroche') {
+    return (
+      <ErrorBoundary>
+        <ChapeauGavrocheLanding />
       </ErrorBoundary>
     );
   }
