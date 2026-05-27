@@ -14,6 +14,14 @@ const RAISONS_RETOUR = {
   AUTRE: 'Autre raison'
 };
 
+/** Colis traités (LIVREE + LIVREE_PARTIELLE), aligné avec confirm-retour backend. */
+function getColisLivres(tournee: any): number {
+  const stats = tournee?.stats;
+  if (!stats) return 0;
+  if (typeof stats.colisLivres === 'number') return stats.colisLivres;
+  return (stats.livrees ?? 0) + (stats.livreesPartielles ?? 0);
+}
+
 export default function Tournees() {
   const today = new Date().toISOString().split('T')[0];
   const [dateDebut, setDateDebut] = useState(today);
@@ -237,7 +245,7 @@ export default function Tournees() {
     if (!selectedTournee || !colisRetour) return;
     
     const ecartCalcule = (selectedTournee.stats.colisRemis || selectedTournee.stats.totalOrders) - 
-                          (selectedTournee.stats.livrees + parseInt(colisRetour));
+                          (getColisLivres(selectedTournee) + parseInt(colisRetour));
     
     if (ecartCalcule !== 0 && !ecartMotif) {
       toast.error('Veuillez expliquer l\'écart de colis');
@@ -289,8 +297,8 @@ export default function Tournees() {
       setColisRetour('0');
       setTimeout(() => setModalType('clotureExpedition'), 100);
     } else {
-      const colisNonLivres = tournee.stats.totalOrders - tournee.stats.livrees;
-      setColisRetour(colisNonLivres.toString());
+      const colisNonLivres = (tournee.stats.colisRemis || tournee.stats.totalOrders) - getColisLivres(tournee);
+      setColisRetour(Math.max(0, colisNonLivres).toString());
       setTimeout(() => setModalType('retour'), 100);
     }
   };
@@ -373,7 +381,7 @@ export default function Tournees() {
     if (!filteredTournees) return null;
     
     const totalColisRemis = filteredTournees.reduce((sum: number, t: any) => sum + t.stats.colisRemis, 0);
-    const totalColisLivres = filteredTournees.reduce((sum: number, t: any) => sum + t.stats.livrees, 0);
+    const totalColisLivres = filteredTournees.reduce((sum: number, t: any) => sum + getColisLivres(t), 0);
     const totalColisRestants = filteredTournees.reduce((sum: number, t: any) => sum + t.stats.colisRestants, 0);
     const tauxLivraison = totalColisRemis > 0 ? ((totalColisLivres / totalColisRemis) * 100).toFixed(1) : 0;
     
@@ -971,12 +979,12 @@ export default function Tournees() {
               </div>
               <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
                 <span className="text-sm text-gray-700">Colis livrés:</span>
-                <span className="font-semibold text-green-600">{selectedTournee.stats.livrees}</span>
+                <span className="font-semibold text-green-600">{getColisLivres(selectedTournee)}</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
                 <span className="text-sm text-gray-700">Colis retournés attendus:</span>
                 <span className="font-semibold text-orange-600">
-                  {(selectedTournee.stats.colisRemis || selectedTournee.stats.totalOrders) - selectedTournee.stats.livrees}
+                  {(selectedTournee.stats.colisRemis || selectedTournee.stats.totalOrders) - getColisLivres(selectedTournee)}
                 </span>
               </div>
 
@@ -984,6 +992,35 @@ export default function Tournees() {
               <div className="mt-4">
                 <h4 className="font-semibold text-gray-800 mb-2">Détail des produits non livrés attendus :</h4>
                 <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {/* Unités en retour suite à livraison partielle (ex: commandé 2, pris 1) */}
+                  {tourneeDetail?.orders
+                    ?.filter((order: any) =>
+                      order.status === 'LIVREE_PARTIELLE'
+                      && order.quantiteLivree != null
+                      && order.quantite > order.quantiteLivree
+                    )
+                    .map((order: any) => (
+                      <div key={`partial-${order.id}`} className="bg-white p-3 rounded-lg border border-amber-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {order.product?.nom || order.produitNom}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              {order.clientNom} — livraison partielle
+                            </p>
+                            <p className="text-xs font-semibold text-amber-800 mt-1">
+                              ↩ {order.quantite - order.quantiteLivree} unité(s) à réintégrer au stock
+                              (sur {order.quantite} commandées, {order.quantiteLivree} prises)
+                            </p>
+                          </div>
+                          <span className="text-xl font-bold text-amber-700">
+                            {order.quantite - order.quantiteLivree}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+
                   {tourneeDetail?.orders
                     ?.filter((order: any) => ['REFUSEE', 'ANNULEE_LIVRAISON'].includes(order.status))
                     .map((order: any) => (
@@ -1018,9 +1055,20 @@ export default function Tournees() {
                       </div>
                     ))}
                   
-                  {tourneeDetail?.orders?.filter((order: any) => ['REFUSEE', 'ANNULEE_LIVRAISON'].includes(order.status)).length === 0 && (
-                    <p className="text-sm text-gray-500 italic">Aucun colis non livré.</p>
-                  )}
+                  {(() => {
+                    const ordersRefuses = tourneeDetail?.orders?.filter((order: any) =>
+                      ['REFUSEE', 'ANNULEE_LIVRAISON'].includes(order.status)
+                    ) ?? [];
+                    const ordersPartiels = tourneeDetail?.orders?.filter((order: any) =>
+                      order.status === 'LIVREE_PARTIELLE'
+                      && order.quantiteLivree != null
+                      && order.quantite > order.quantiteLivree
+                    ) ?? [];
+                    if (ordersRefuses.length === 0 && ordersPartiels.length === 0) {
+                      return <p className="text-sm text-gray-500 italic">Aucun colis non livré.</p>;
+                    }
+                    return null;
+                  })()}
                 </div>
               </div>
             </div>
@@ -1047,7 +1095,7 @@ export default function Tournees() {
               <div className="mb-6">
                 {(() => {
                   const ecart = (selectedTournee.stats.colisRemis || selectedTournee.stats.totalOrders) - 
-                                (selectedTournee.stats.livrees + parseInt(colisRetour));
+                                (getColisLivres(selectedTournee) + parseInt(colisRetour));
                   return ecart !== 0 ? (
                     <div className={`p-4 rounded-lg ${ecart > 0 ? 'bg-red-50 border border-red-200' : 'bg-orange-50 border border-orange-200'}`}>
                       <p className="text-sm font-medium text-gray-900 mb-2">
@@ -1220,19 +1268,19 @@ export default function Tournees() {
                         <span>Livrés:</span>
                         <span className="font-semibold text-green-600">{selectedTournee.stats.livrees}</span>
                       </div>
-                      {/* Compteur livraisons partielles (calcule depuis selectedTournee.orders si dispo) */}
-                      {(() => {
-                        const partielles = (selectedTournee.orders || []).filter(
-                          (o: any) => o.status === 'LIVREE_PARTIELLE'
-                        ).length;
-                        if (partielles === 0) return null;
-                        return (
-                          <div className="flex justify-between">
-                            <span>Livrés partiels:</span>
-                            <span className="font-semibold text-orange-700">{partielles}</span>
-                          </div>
-                        );
-                      })()}
+                      {/* Compteur livraisons partielles */}
+                      {(selectedTournee.stats.livreesPartielles ?? (selectedTournee.orders || []).filter(
+                        (o: any) => o.status === 'LIVREE_PARTIELLE'
+                      ).length) > 0 && (
+                        <div className="flex justify-between">
+                          <span>Livrés partiels:</span>
+                          <span className="font-semibold text-orange-700">
+                            {selectedTournee.stats.livreesPartielles ?? (selectedTournee.orders || []).filter(
+                              (o: any) => o.status === 'LIVREE_PARTIELLE'
+                            ).length}
+                          </span>
+                        </div>
+                      )}
                       <div className="flex justify-between">
                         <span>Refusés:</span>
                         <span className="font-semibold text-red-600">{selectedTournee.stats.refusees}</span>

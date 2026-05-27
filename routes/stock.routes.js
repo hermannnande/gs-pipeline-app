@@ -8,6 +8,27 @@ const router = express.Router();
 
 router.use(authenticate);
 
+/** Colis traités par le livreur (livraison complète ou partielle). */
+function countColisLivres(orders) {
+  return orders.filter(o => o.status === 'LIVREE' || o.status === 'LIVREE_PARTIELLE').length;
+}
+
+/** Agrège les quantités par produit (unités, pas colis). */
+function accumulateOrderQuantities(summary, order) {
+  summary.quantiteTotal += order.quantite;
+  if (order.status === 'LIVREE') {
+    summary.quantiteLivree += order.quantite;
+  } else if (order.status === 'LIVREE_PARTIELLE') {
+    const qtyPrise = order.quantiteLivree ?? 0;
+    summary.quantiteLivree += qtyPrise;
+    summary.quantiteRetour += Math.max(0, order.quantite - qtyPrise);
+  } else if (['REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'].includes(order.status)) {
+    summary.quantiteRetour += order.quantite;
+  } else if (order.status === 'ASSIGNEE') {
+    summary.quantiteEnCours += order.quantite;
+  }
+}
+
 // GET /api/stock/tournees - Liste des tournées pour gestion stock
 router.get('/tournees', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STOCK'), async (req, res) => {
   try {
@@ -62,6 +83,8 @@ router.get('/tournees', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STOCK')
     const tourneesWithStats = deliveryLists.map(list => {
       const totalOrders = list.orders.length;
       const livrees = list.orders.filter(o => o.status === 'LIVREE').length;
+      const livreesPartielles = list.orders.filter(o => o.status === 'LIVREE_PARTIELLE').length;
+      const colisLivres = livrees + livreesPartielles;
       const refusees = list.orders.filter(o => o.status === 'REFUSEE').length;
       const annulees = list.orders.filter(o => o.status === 'ANNULEE_LIVRAISON').length;
       const enAttente = list.orders.filter(o => o.status === 'ASSIGNEE').length;
@@ -75,10 +98,10 @@ router.get('/tournees', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STOCK')
         joursChezLivreur = Math.floor(diffTime / (1000 * 60 * 60 * 24));
       }
       
-      // Colis restants (non livrés et non retournés)
+      // Colis restants chez le livreur (LIVREE_PARTIELLE = colis traité, comme confirm-retour)
       const colisRestants = list.tourneeStock?.colisRetourConfirme 
         ? 0 
-        : (colisRemis - livrees);
+        : (colisRemis - colisLivres);
       
       // Alertes
       const alerteRetard = joursChezLivreur > 2 && colisRestants > 0; // Plus de 2 jours
@@ -89,6 +112,8 @@ router.get('/tournees', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STOCK')
         stats: {
           totalOrders,
           livrees,
+          livreesPartielles,
+          colisLivres,
           refusees,
           annulees,
           enAttente,
@@ -160,14 +185,7 @@ router.get('/tournees/:id', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STO
           quantiteEnCours: 0
         };
       }
-      produitsSummary[key].quantiteTotal += order.quantite;
-      if (order.status === 'LIVREE') {
-        produitsSummary[key].quantiteLivree += order.quantite;
-      } else if (['REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'].includes(order.status)) {
-        produitsSummary[key].quantiteRetour += order.quantite;
-      } else if (order.status === 'ASSIGNEE') {
-        produitsSummary[key].quantiteEnCours += order.quantite;
-      }
+      accumulateOrderQuantities(produitsSummary[key], order);
     });
     
     // Calcul des durées et statistiques détaillées
@@ -182,7 +200,7 @@ router.get('/tournees/:id', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STO
     }
     
     const colisRemis = deliveryList.tourneeStock?.colisRemis || deliveryList.orders.length;
-    const colisLivres = deliveryList.orders.filter(o => o.status === 'LIVREE').length;
+    const colisLivres = countColisLivres(deliveryList.orders);
     const colisRestants = dateRetour ? 0 : (colisRemis - colisLivres);
     
     res.json({ 
@@ -379,11 +397,7 @@ router.post('/tournees/:id/confirm-retour', authorize('ADMIN', 'GESTIONNAIRE', '
       return res.status(404).json({ error: 'Tournée non trouvée.' });
     }
 
-    // Calculer les colis livrés (LIVREE + LIVREE_PARTIELLE : dans les 2 cas
-    // le livreur a remis le colis au client, meme partiellement)
-    const colisLivres = deliveryList.orders.filter(o =>
-      o.status === 'LIVREE' || o.status === 'LIVREE_PARTIELLE'
-    ).length;
+    const colisLivres = countColisLivres(deliveryList.orders);
     const colisRemis = deliveryList.tourneeStock?.colisRemis || deliveryList.orders.length;
     const ecart = colisRemis - (colisLivres + parseInt(colisRetour));
 
