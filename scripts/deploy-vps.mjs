@@ -172,7 +172,7 @@ function packageBuild() {
 
   const candidates = ['index.html', 'robots.txt', '.htaccess', 'assets'];
   if (FLAGS.withImages) {
-    candidates.push('verrue-tk', 'creme-anti-verrue', 'spray-douleur', 'spray-lipome', 'lipome', 'serum-yeux', 'creme-minceur', 'patch-douleur-tk', 'poudre-pousse-cheveux', 'chaussettes-homme', 'chaussette-compression', 'creme-anti-cerne', 'coffret-boxer-homme', 'spray-vitiligo', 'creme-verrue-tk-v2');
+    candidates.push('verrue-tk', 'creme-anti-verrue', 'spray-douleur', 'spray-lipome', 'lipome', 'serum-yeux', 'creme-minceur', 'patch-douleur-tk', 'poudre-pousse-cheveux', 'chaussettes-homme', 'chaussette-premium-homme', 'chaussette-compression', 'creme-anti-cerne', 'coffret-boxer-homme', 'spray-vitiligo', 'creme-verrue-tk-v2');
   }
 
   // Note : on n'utilise NI -C NI shell:true (les deux explosent avec les
@@ -226,7 +226,7 @@ if [ -d assets ]; then
 fi
 
 WEB_ROOT=$(dirname "$APP_DIR")
-for img_dir in verrue-tk creme-anti-verrue spray-douleur spray-lipome lipome serum-yeux creme-minceur patch-douleur-tk poudre-pousse-cheveux chaussettes-homme chaussette-compression creme-anti-cerne coffret-boxer-homme spray-vitiligo creme-verrue-tk-v2; do
+for img_dir in verrue-tk creme-anti-verrue spray-douleur spray-lipome lipome serum-yeux creme-minceur patch-douleur-tk poudre-pousse-cheveux chaussettes-homme chaussette-premium-homme chaussette-compression creme-anti-cerne coffret-boxer-homme spray-vitiligo creme-verrue-tk-v2; do
   if [ -d "$img_dir" ]; then
     rm -rf "$WEB_ROOT/$img_dir"
     mv "$img_dir" "$WEB_ROOT/$img_dir"

@@ -42,6 +42,7 @@ const CUSTOM_SLUGS = [
   'creme-anti-lipome',
   'creme-anti-lipome-tk',
   'chaussette-homme',
+  'chaussette-premium-homme',
   'creme-anti-cerne',
   'serum-cerne',
   'serum-cerne-tk',
@@ -109,6 +110,7 @@ export default function OrderModalDispatcher({ slug, ...rest }: Props) {
     case 'creme-anti-lipome-tk':
       return <OrderModalCremeAntiLipomeTk {...rest} />;
     case 'chaussette-homme':
+    case 'chaussette-premium-homme':
       return <OrderModalChaussetteHomme {...rest} />;
     case 'creme-anti-cerne':
       return <OrderModalCremeAntiCerne {...rest} />;

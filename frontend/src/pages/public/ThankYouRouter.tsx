@@ -19,6 +19,7 @@ import CremeAntiLipomeThankYou from './CremeAntiLipomeThankYou';
 import CremeAntiLipomeTkThankYou from './CremeAntiLipomeTkThankYou';
 import CremeAntiCerneThankYou from './CremeAntiCerneThankYou';
 import ChaussetteHommeThankYou from './ChaussetteHommeThankYou';
+import ChaussettePremiumThankYou from './ChaussettePremiumThankYou';
 import CoffretBoxerThankYou from './CoffretBoxerThankYou';
 import ChapeauGavrocheThankYou from './ChapeauGavrocheThankYou';
 import SprayVitiligoThankYou from './SprayVitiligoThankYou';
@@ -36,6 +37,7 @@ const DEDICATED_THANKYOU_SLUGS = new Set<string>([
   'creme-anti-lipome-tk',
   'creme-anti-cerne',
   'chaussette-homme',
+  'chaussette-premium-homme',
   'coffret-boxer-homme',
   'chapeau-gavroche',
   'spray-vitiligo',
@@ -115,6 +117,11 @@ export default function ThankYouRouter() {
   // Page de remerciement chaussette-homme — pixel Meta 1613380123108753 (Purchase).
   if (slug === 'chaussette-homme') {
     return <ChaussetteHommeThankYou />;
+  }
+
+  // Page de remerciement chaussettes premium homme (page 2) — palette navy/or.
+  if (slug === 'chaussette-premium-homme') {
+    return <ChaussettePremiumThankYou />;
   }
 
   // Page de remerciement coffret-boxer-homme — pixel Meta 26809431761984777 (Purchase).

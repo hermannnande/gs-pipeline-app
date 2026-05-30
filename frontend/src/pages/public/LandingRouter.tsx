@@ -15,6 +15,7 @@ import SprayLipomeTkLanding from './SprayLipomeTkLanding';
 import CremeAntiLipomeLanding from './CremeAntiLipomeLanding';
 import CremeAntiLipomeTkLanding from './CremeAntiLipomeTkLanding';
 import ChaussetteHommeLanding from './ChaussetteHommeLanding';
+import ChaussettePremiumLanding from './ChaussettePremiumLanding';
 import ChaussetteCompressionLanding from './ChaussetteCompressionLanding';
 import CremeAntiCerneLanding from './CremeAntiCerneLanding';
 import SerumCerneLanding from './SerumCerneLanding';
@@ -52,7 +53,7 @@ export default function LandingRouter() {
 
   useEffect(() => {
     // Landings autonomes : zero call API template
-    if (!slug || slug === 'coffret-boxer-homme' || slug === 'creme-anti-verrue' || slug === 'patchdouleurtk' || slug === 'patchdouleurfb' || slug === 'creme-verrue-tk' || slug === 'creme-verrue-tk2' || slug === 'spraydouleurtk' || slug === 'spraylipome' || slug === 'spraylipometk' || slug === 'creme-anti-lipome' || slug === 'creme-anti-lipome-tk' || slug === 'chaussette-homme' || slug === 'chaussette-compression' || slug === 'creme-anti-cerne' || slug === 'serum-cerne' || slug === 'serum-cerne-tk' || slug === 'serum-cerne-paye' || slug === 'poudre-pousse-cheveux' || slug === 'spray-vitiligo' || slug === 'chapeau-gavroche' || slug === 'boutique') return;
+    if (!slug || slug === 'coffret-boxer-homme' || slug === 'creme-anti-verrue' || slug === 'patchdouleurtk' || slug === 'patchdouleurfb' || slug === 'creme-verrue-tk' || slug === 'creme-verrue-tk2' || slug === 'spraydouleurtk' || slug === 'spraylipome' || slug === 'spraylipometk' || slug === 'creme-anti-lipome' || slug === 'creme-anti-lipome-tk' || slug === 'chaussette-homme' || slug === 'chaussette-premium-homme' || slug === 'chaussette-compression' || slug === 'creme-anti-cerne' || slug === 'serum-cerne' || slug === 'serum-cerne-tk' || slug === 'serum-cerne-paye' || slug === 'poudre-pousse-cheveux' || slug === 'spray-vitiligo' || slug === 'chapeau-gavroche' || slug === 'boutique') return;
     axios.get(`${API_URL}/templates/public/${slug}`)
       .then(r => {
         try {
@@ -183,6 +184,16 @@ export default function LandingRouter() {
     return (
       <ErrorBoundary>
         <ChaussetteHommeLanding />
+      </ErrorBoundary>
+    );
+  }
+
+  // Landing chaussettes PREMIUM homme (page 2) — palette bleu marine/argent/noir/or,
+  // collection 5 modeles, mapping CHAUSSETTE_HOMME_MODLE2, pack 5/10/15 paires.
+  if (slug === 'chaussette-premium-homme') {
+    return (
+      <ErrorBoundary>
+        <ChaussettePremiumLanding />
       </ErrorBoundary>
     );
   }
