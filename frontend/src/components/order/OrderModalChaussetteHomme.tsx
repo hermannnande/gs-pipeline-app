@@ -137,7 +137,7 @@ export default function OrderModalChaussetteHomme({ open, onClose, cfg, product,
                     </span>
                   </span>
                   <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-neutral-950">
-                    -21 %
+                    -34 %
                   </span>
                 </div>
               </div>
@@ -295,12 +295,6 @@ export default function OrderModalChaussetteHomme({ open, onClose, cfg, product,
                   <span className="font-bold tabular-nums text-emerald-600">-{fmt(saving)}</span>
                 </div>
               )}
-              <div className="flex items-baseline justify-between">
-                <span className="text-neutral-600">Livraison</span>
-                <span className="inline-flex items-center gap-1 font-black tabular-nums text-emerald-600">
-                  GRATUIT
-                </span>
-              </div>
             </div>
             <div className="my-1.5 border-t border-dashed border-neutral-300" />
             <div className="flex items-baseline justify-between">
