@@ -19,7 +19,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 const META_PIXEL_ID = '1613380123108753';
-const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const PRICES: Record<number, number> = { 1: 11900, 2: 20900, 3: 28900 };
 const PRODUCT_CODE = 'CHAUSSETTE_HOMME';
 const CONTENT_NAME = 'Chaussettes Homme Luxe';
 

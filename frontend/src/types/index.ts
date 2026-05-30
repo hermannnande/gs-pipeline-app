@@ -99,6 +99,17 @@ export interface Order {
   priorite?: boolean;
   prioriteAt?: string;
   prioritePar?: number;
+
+  // Tournée (inclus côté API pour le livreur via /delivery/my-orders)
+  deliveryListId?: number;
+  deliveryList?: {
+    id: number;
+    nom?: string;
+    tourneeStock?: {
+      colisRemisConfirme?: boolean;
+      colisRetourConfirme?: boolean;
+    };
+  };
 }
 
 export interface StatusHistory {

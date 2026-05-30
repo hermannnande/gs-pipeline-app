@@ -27,7 +27,7 @@ import type { OrderProduct } from '../../hooks/useOrderSubmit';
 const SLUG = 'spray-vitiligo';
 const PRODUCT_CODE = 'CREME_VITILIGO';
 // Pixel Meta dedie a la campagne Spray Vitiligo (Purchase + CAPI dedup via eventID = orderReference)
-const META_PIXEL_ID = '2148866065900137';
+const META_PIXEL_ID = '1800280300964462';
 const THANK_YOU_URL = '/spray-vitiligo/merci';
 
 // Prix faciles a modifier

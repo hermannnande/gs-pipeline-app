@@ -1350,7 +1350,7 @@ export default function Tournees() {
                           <th className="px-3 py-2 text-left">Produit</th>
                           <th className="px-3 py-2 text-center">Qté</th>
                           <th className="px-3 py-2 text-right">Montant</th>
-                          <th className="px-3 py-2 text-left">Note</th>
+                          <th className="px-3 py-2 text-left">Note / Motif</th>
                           <th className="px-3 py-2 text-center">Statut</th>
                         </tr>
                       </thead>
@@ -1377,13 +1377,38 @@ export default function Tournees() {
                               <span className="font-medium">{formatCurrency(order.montant)}</span>
                             </td>
                             <td className="px-3 py-2 text-xs max-w-xs">
-                              {order.noteAppelant ? (
-                                <span className="text-gray-600 line-clamp-1" title={order.noteAppelant}>
-                                  💬 {order.noteAppelant}
-                                </span>
-                              ) : (
-                                <span className="text-gray-400">-</span>
-                              )}
+                              {(() => {
+                                const nonLivre = ['REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'].includes(order.status);
+                                return (
+                                  <div className="space-y-1">
+                                    {/* Motif livreur : prioritaire et obligatoire pour les colis non livrés */}
+                                    {nonLivre && (
+                                      order.noteLivreur ? (
+                                        <span className="block font-medium text-orange-700" title={order.noteLivreur}>
+                                          ⚠ Motif : {order.noteLivreur}
+                                        </span>
+                                      ) : (
+                                        <span className="block italic text-red-600">⚠ Motif manquant</span>
+                                      )
+                                    )}
+                                    {/* Note livreur sur un colis livré (facultative) */}
+                                    {!nonLivre && order.noteLivreur && (
+                                      <span className="block text-gray-700" title={order.noteLivreur}>
+                                        🚚 {order.noteLivreur}
+                                      </span>
+                                    )}
+                                    {/* Note de l'appelant */}
+                                    {order.noteAppelant && (
+                                      <span className="block text-gray-500 line-clamp-1" title={order.noteAppelant}>
+                                        💬 {order.noteAppelant}
+                                      </span>
+                                    )}
+                                    {!nonLivre && !order.noteLivreur && !order.noteAppelant && (
+                                      <span className="text-gray-400">-</span>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                             </td>
                             <td className="px-3 py-2 text-center">
                               <span className={`px-2 py-1 text-xs rounded ${getStatusColor(order.status)}`}>

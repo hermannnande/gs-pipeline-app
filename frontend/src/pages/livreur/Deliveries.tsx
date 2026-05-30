@@ -6,10 +6,26 @@ import { deliveryApi, ordersApi } from '@/lib/api';
 import { formatCurrency, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
 import type { Order } from '@/types';
 
+// Statuts "colis non livre" qui exigent un motif obligatoire de la part du livreur.
+const STATUTS_MOTIF_OBLIGATOIRE = ['REFUSEE', 'ANNULEE_LIVRAISON'];
+
+// Motifs rapides proposes au livreur (remplissent le champ motif en un clic).
+const MOTIFS_NON_LIVRAISON = [
+  'Client injoignable',
+  'Client absent au rendez-vous',
+  'Client a refusé le colis',
+  'Adresse incorrecte / introuvable',
+  'Client reporte la livraison',
+  'Zone inaccessible',
+  'Autre (préciser)',
+];
+
 export default function Deliveries() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [note, setNote] = useState('');
+  // Erreur affichee quand le livreur tente "non livre" sans motif
+  const [motifError, setMotifError] = useState(false);
   // Pour la livraison partielle : nombre d'unites prises par le client
   const [partialQty, setPartialQty] = useState<number>(1);
   // Mode "saisie quantite partielle" affiche dans la modal
@@ -29,6 +45,7 @@ export default function Deliveries() {
       queryClient.invalidateQueries({ queryKey: ['livreur-my-stats'] });
       setSelectedOrder(null);
       setNote('');
+      setMotifError(false);
       setShowPartialInput(false);
       setPartialQty(1);
       toast.success('Livraison mise à jour avec succès');
@@ -41,17 +58,17 @@ export default function Deliveries() {
   const handleUpdateStatus = (status: string, quantiteLivree?: number) => {
     if (!selectedOrder) return;
 
-    // Vérifier si le délai de 24h n'est pas dépassé
-    if (selectedOrder.status !== 'ASSIGNEE' && !canModifyOrder(selectedOrder)) {
-      toast.error('Le délai de 24h pour modifier cette livraison est dépassé');
-      setSelectedOrder(null);
+    // Colis non livré (refusé / annulé) → motif obligatoire.
+    if (STATUTS_MOTIF_OBLIGATOIRE.includes(status) && !note.trim()) {
+      setMotifError(true);
+      toast.error('Motif obligatoire : indiquez pourquoi le colis n\'a pas été livré.');
       return;
     }
 
     updateStatusMutation.mutate({
       id: selectedOrder.id,
       status,
-      note: note || undefined,
+      note: note.trim() || undefined,
       quantiteLivree,
     });
   };
@@ -61,29 +78,12 @@ export default function Deliveries() {
     ['LIVREE', 'LIVREE_PARTIELLE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'].includes(o.status)
   ) || [];
 
-  // Fonction pour vérifier si une commande peut être modifiée (moins de 24h)
-  const canModifyOrder = (order: Order) => {
-    if (!order.updatedAt) return false;
-    const updatedAt = new Date(order.updatedAt);
-    const now = new Date();
-    const diffInHours = (now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60);
-    return diffInHours < 24;
-  };
-
-  // Fonction pour calculer le temps restant pour modifier
-  const getTimeRemaining = (order: Order) => {
-    if (!order.updatedAt) return '';
-    const updatedAt = new Date(order.updatedAt);
-    const now = new Date();
-    const diffInHours = (now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60);
-    const hoursRemaining = 24 - diffInHours;
-    
-    if (hoursRemaining < 1) {
-      const minutesRemaining = Math.floor(hoursRemaining * 60);
-      return `${minutesRemaining} min`;
-    }
-    return `${Math.floor(hoursRemaining)}h`;
-  };
+  // Une tournée est verrouillée pour le livreur dès que le gestionnaire a confirmé le RETOUR.
+  // À ce moment-là, le stock a déjà été ré-équilibré (stockLocalReserve → stockActuel),
+  // donc plus aucune modification de statut par le livreur ne doit être possible
+  // (le backend bloque aussi cette tentative, c'est juste l'indication visuelle).
+  const isTourneeCloturee = (order: Order) =>
+    order.deliveryList?.tourneeStock?.colisRetourConfirme === true;
 
   return (
     <div className="space-y-6">
@@ -127,7 +127,9 @@ export default function Deliveries() {
             <div>
               <h2 className="text-xl font-semibold mb-4">À livrer ({pendingOrders.length})</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {pendingOrders.map((order: Order) => (
+                {pendingOrders.map((order: Order) => {
+                  const cloturee = isTourneeCloturee(order);
+                  return (
                   <div key={order.id} className="card border-2 border-orange-200 hover:shadow-lg transition-shadow">
                     <div className="flex items-start justify-between mb-3">
                       <div>
@@ -163,12 +165,21 @@ export default function Deliveries() {
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => setSelectedOrder(order)}
-                      className="btn btn-primary w-full"
-                    >
-                      Traiter la livraison
-                    </button>
+                    {cloturee ? (
+                      <div className="rounded-lg bg-gray-100 border border-gray-300 px-3 py-2 text-center">
+                        <p className="text-sm font-medium text-gray-700">🔒 Tournée clôturée</p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          Le gestionnaire a confirmé le retour. Contactez l'admin pour toute correction.
+                        </p>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => { setSelectedOrder(order); setNote(''); setMotifError(false); }}
+                        className="btn btn-primary w-full"
+                      >
+                        Traiter la livraison
+                      </button>
+                    )}
 
                     {/* Navigation */}
                     {order.clientAdresse && (
@@ -185,7 +196,8 @@ export default function Deliveries() {
                       </a>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -196,12 +208,14 @@ export default function Deliveries() {
               <h2 className="text-xl font-semibold mb-4">
                 Complétées ({completedOrders.length})
                 <span className="ml-2 text-sm font-normal text-gray-600">
-                  • Modification possible pendant 24h ⏰
+                  • Modification possible tant que la tournée n'est pas clôturée
                 </span>
               </h2>
               <div className="card">
                 <div className="space-y-2">
-                  {completedOrders.map((order: Order) => (
+                  {completedOrders.map((order: Order) => {
+                    const cloturee = isTourneeCloturee(order);
+                    return (
                     <div
                       key={order.id}
                       className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
@@ -218,33 +232,31 @@ export default function Deliveries() {
                             {getStatusLabel(order.status)}
                           </span>
                         </div>
-                        {canModifyOrder(order) ? (
-                          <div className="flex flex-col items-end gap-1">
-                            <button
-                              onClick={() => {
-                                setSelectedOrder(order);
-                                setNote(order.noteLivreur || '');
-                              }}
-                              className="btn btn-secondary px-3 py-2 flex items-center gap-1"
-                              title="Modifier la livraison"
-                            >
-                              <Edit2 size={16} />
-                              Modifier
-                            </button>
-                            <span className="text-xs text-orange-600">
-                              ⏰ {getTimeRemaining(order)} restant
-                            </span>
-                          </div>
+                        {cloturee ? (
+                          <span
+                            className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded flex items-center gap-1"
+                            title="Tournée clôturée par le gestionnaire - contactez l'admin pour toute correction"
+                          >
+                            🔒 Tournée clôturée
+                          </span>
                         ) : (
-                          <div className="text-right">
-                            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                              🔒 Délai dépassé
-                            </span>
-                          </div>
+                          <button
+                            onClick={() => {
+                              setSelectedOrder(order);
+                              setNote(order.noteLivreur || '');
+                              setMotifError(false);
+                            }}
+                            className="btn btn-secondary px-3 py-2 flex items-center gap-1"
+                            title="Modifier la livraison"
+                          >
+                            <Edit2 size={16} />
+                            Modifier
+                          </button>
                         )}
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 <div className="mt-4 pt-4 border-t text-right">
                   <p className="text-sm text-gray-600">
@@ -321,15 +333,40 @@ export default function Deliveries() {
 
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Note (optionnel)
+                Motif / Note{' '}
+                <span className="text-red-600 font-semibold">(obligatoire si le colis n'est pas livré)</span>
               </label>
+
+              {/* Motifs rapides : remplissent le champ en un clic */}
+              <div className="flex flex-wrap gap-2 mb-2">
+                {MOTIFS_NON_LIVRAISON.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => { setNote(m); setMotifError(false); }}
+                    className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
+                      note === m
+                        ? 'bg-primary-600 text-white border-primary-600'
+                        : 'bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100'
+                    }`}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+
               <textarea
                 value={note}
-                onChange={(e) => setNote(e.target.value)}
-                className="input"
+                onChange={(e) => { setNote(e.target.value); if (motifError) setMotifError(false); }}
+                className={`input ${motifError ? 'border-red-500 ring-1 ring-red-500' : ''}`}
                 rows={3}
-                placeholder="Ajouter une note..."
+                placeholder="Ex: Client injoignable après 3 appels, adresse introuvable..."
               />
+              {motifError && (
+                <p className="text-sm text-red-600 mt-1">
+                  Merci d'indiquer le motif avant de marquer le colis comme refusé ou non livré.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -423,6 +460,7 @@ export default function Deliveries() {
               onClick={() => {
                 setSelectedOrder(null);
                 setNote('');
+                setMotifError(false);
                 setShowPartialInput(false);
                 setPartialQty(1);
               }}

@@ -15,6 +15,7 @@ import SprayLipomeTkLanding from './SprayLipomeTkLanding';
 import CremeAntiLipomeLanding from './CremeAntiLipomeLanding';
 import CremeAntiLipomeTkLanding from './CremeAntiLipomeTkLanding';
 import ChaussetteHommeLanding from './ChaussetteHommeLanding';
+import ChaussetteCompressionLanding from './ChaussetteCompressionLanding';
 import CremeAntiCerneLanding from './CremeAntiCerneLanding';
 import SerumCerneLanding from './SerumCerneLanding';
 import SerumCerneTkLanding from './SerumCerneTkLanding';
@@ -51,7 +52,7 @@ export default function LandingRouter() {
 
   useEffect(() => {
     // Landings autonomes : zero call API template
-    if (!slug || slug === 'coffret-boxer-homme' || slug === 'creme-anti-verrue' || slug === 'patchdouleurtk' || slug === 'patchdouleurfb' || slug === 'creme-verrue-tk' || slug === 'creme-verrue-tk2' || slug === 'spraydouleurtk' || slug === 'spraylipome' || slug === 'spraylipometk' || slug === 'creme-anti-lipome' || slug === 'creme-anti-lipome-tk' || slug === 'chaussette-homme' || slug === 'creme-anti-cerne' || slug === 'serum-cerne' || slug === 'serum-cerne-tk' || slug === 'serum-cerne-paye' || slug === 'poudre-pousse-cheveux' || slug === 'spray-vitiligo' || slug === 'chapeau-gavroche' || slug === 'boutique') return;
+    if (!slug || slug === 'coffret-boxer-homme' || slug === 'creme-anti-verrue' || slug === 'patchdouleurtk' || slug === 'patchdouleurfb' || slug === 'creme-verrue-tk' || slug === 'creme-verrue-tk2' || slug === 'spraydouleurtk' || slug === 'spraylipome' || slug === 'spraylipometk' || slug === 'creme-anti-lipome' || slug === 'creme-anti-lipome-tk' || slug === 'chaussette-homme' || slug === 'chaussette-compression' || slug === 'creme-anti-cerne' || slug === 'serum-cerne' || slug === 'serum-cerne-tk' || slug === 'serum-cerne-paye' || slug === 'poudre-pousse-cheveux' || slug === 'spray-vitiligo' || slug === 'chapeau-gavroche' || slug === 'boutique') return;
     axios.get(`${API_URL}/templates/public/${slug}`)
       .then(r => {
         try {
@@ -182,6 +183,16 @@ export default function LandingRouter() {
     return (
       <ErrorBoundary>
         <ChaussetteHommeLanding />
+      </ErrorBoundary>
+    );
+  }
+
+  // Landing chaussettes compression — palette INDIGO + EMERAUDE + VIOLET,
+  // tunnel 1 bloc = texte + media + CTA, mapping CHAUSSETTE_COMPRESSION_LONG.
+  if (slug === 'chaussette-compression') {
+    return (
+      <ErrorBoundary>
+        <ChaussetteCompressionLanding />
       </ErrorBoundary>
     );
   }

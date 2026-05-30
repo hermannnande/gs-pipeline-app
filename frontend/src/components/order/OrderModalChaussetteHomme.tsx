@@ -137,7 +137,7 @@ export default function OrderModalChaussetteHomme({ open, onClose, cfg, product,
                     </span>
                   </span>
                   <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-neutral-950">
-                    -34 %
+                    -21 %
                   </span>
                 </div>
               </div>

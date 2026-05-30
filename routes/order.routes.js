@@ -1013,6 +1013,15 @@ router.put('/:id/status', async (req, res) => {
         return res.status(403).json({ error: 'Cette commande ne vous est pas assignée.' });
       }
 
+      // Motif OBLIGATOIRE quand le colis n'est pas livre (refuse / annule / retourne).
+      // Aucune obligation pour une livraison (LIVREE / LIVREE_PARTIELLE).
+      const STATUTS_MOTIF_OBLIGATOIRE = ['REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'];
+      if (STATUTS_MOTIF_OBLIGATOIRE.includes(status) && !String(note || '').trim()) {
+        return res.status(400).json({
+          error: 'Motif obligatoire : indiquez pourquoi le colis n\'a pas ete livre.',
+        });
+      }
+
       // Validation specifique livraison partielle : 1 <= quantiteLivree < order.quantite
       if (status === 'LIVREE_PARTIELLE') {
         const qtyLivree = parseInt(bodyQtyLivree, 10);
@@ -1040,6 +1049,18 @@ router.put('/:id/status', async (req, res) => {
         if (!tourneeStock?.colisRemisConfirme) {
           return res.status(400).json({
             error: 'Remise non confirmée. Le gestionnaire de stock doit confirmer la REMISE avant toute mise à jour par le livreur.'
+          });
+        }
+
+        // 🛡️ Garde-fou anti désynchronisation : tournée déjà clôturée (RETOUR confirmé)
+        // Une fois que le gestionnaire de stock a confirmé le RETOUR de la tournée,
+        // le stockLocalReserve a été nettoyé et le stockActuel réincrémenté pour les
+        // colis non livrés. Modifier le statut après cette étape désynchroniserait le
+        // stock (stockLocalReserve négatif ou stockActuel double-compté).
+        // → Toute correction post-clôture doit passer par un admin (ajustement manuel).
+        if (tourneeStock.colisRetourConfirme) {
+          return res.status(400).json({
+            error: 'Cette tournée a été clôturée par le gestionnaire de stock. Toute correction doit désormais être effectuée par un admin via un ajustement de stock.'
           });
         }
       }

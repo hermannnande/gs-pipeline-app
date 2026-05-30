@@ -35,7 +35,10 @@ interface QtyOption {
 interface Props {
   open: boolean;
   onClose: () => void;
-  cfg: OrderSubmitConfig & { images: { hero: string; avant?: string; apres?: string; comparison?: { before: string; after: string } } };
+  cfg: OrderSubmitConfig & {
+    images: { hero: string; avant?: string; apres?: string; comparison?: { before: string; after: string } };
+    countdownEnd?: number;
+  };
   product: OrderProduct | null;
   setProduct?: (p: OrderProduct | null) => void;
   qtyOptions: QtyOption[];
@@ -56,6 +59,8 @@ function fmt(n: number): string {
   return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
 }
 
+const pad2 = (n: number) => String(n).padStart(2, '0');
+
 export default function OrderModalChaussette({ open, onClose, cfg, product, setProduct, qtyOptions, initialQty = 1 }: Props) {
   const { submit, sending, formErr, trackOpen } = useOrderSubmit({ cfg, product, setProduct });
 
@@ -64,6 +69,7 @@ export default function OrderModalChaussette({ open, onClose, cfg, product, setP
   const [city, setCity] = useState('');
   const [phone, setPhone] = useState('');
   const [size, setSize] = useState<SizeCode>('M');
+  const [countdown, setCountdown] = useState({ h: 0, m: 0, s: 0 });
 
   const wasOpenRef = useRef(false);
   const trackRef = useRef(trackOpen);
@@ -95,6 +101,22 @@ export default function OrderModalChaussette({ open, onClose, cfg, product, setP
     return () => window.removeEventListener('keydown', onKey);
   }, [open, sending, onClose]);
 
+  useEffect(() => {
+    if (!open) return;
+    const end = cfg.countdownEnd ?? (() => { const d = new Date(); d.setHours(23, 59, 59, 999); return d.getTime(); })();
+    const tick = () => {
+      const d = Math.max(0, end - Date.now());
+      setCountdown({
+        h: Math.floor(d / 3600000),
+        m: Math.floor((d % 3600000) / 60000),
+        s: Math.floor((d % 60000) / 1000),
+      });
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [open, cfg.countdownEnd]);
+
   if (!open) return null;
 
   const total = cfg.prices?.[qty] || cfg.prices?.[1] || 0;
@@ -110,7 +132,7 @@ export default function OrderModalChaussette({ open, onClose, cfg, product, setP
     >
       <div
         onClick={() => !sending && onClose()}
-        className="absolute inset-0 bg-teal-950/80 backdrop-blur-sm animate-[chfade_.2s_ease-out]"
+        className="absolute inset-0 bg-indigo-950/85 backdrop-blur-sm animate-[chfade_.2s_ease-out]"
       />
 
       {/*
@@ -121,15 +143,15 @@ export default function OrderModalChaussette({ open, onClose, cfg, product, setP
         flex flex-col -> 3 zones empilees (header / body / footer)
         Le footer reste TOUJOURS visible grace au flex-1 du body qui scroll.
       */}
-      <div className="ch-shell relative z-10 flex h-[100svh] w-full flex-col overflow-hidden border-t border-teal-200 bg-white shadow-2xl animate-[chslide_.25s_cubic-bezier(.22,.8,.4,1)] sm:h-auto sm:max-h-[92vh] sm:max-w-[460px] sm:rounded-3xl sm:border sm:border-teal-100">
+      <div className="ch-shell relative z-10 flex h-[100svh] w-full flex-col overflow-hidden border-t border-violet-200 bg-white shadow-2xl animate-[chslide_.25s_cubic-bezier(.22,.8,.4,1)] sm:h-auto sm:max-h-[92vh] sm:max-w-[460px] sm:rounded-3xl sm:border sm:border-violet-100">
 
         {/* ========== HEADER (flex-none) ========== */}
-        <div className="relative flex-none px-5 pt-5 pb-4">
+        <div className="relative flex-none px-5 pt-5 pb-3">
           <button
             type="button"
             onClick={() => !sending && onClose()}
             aria-label="Fermer"
-            className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-700 transition hover:bg-teal-100 hover:scale-105 disabled:opacity-50"
+            className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-violet-50 text-violet-700 transition hover:bg-violet-100 hover:scale-105 disabled:opacity-50"
             disabled={sending}
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -138,15 +160,21 @@ export default function OrderModalChaussette({ open, onClose, cfg, product, setP
           </button>
 
           <div className="text-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 px-3 py-1 text-[10px] font-black uppercase tracking-[0.15em] text-white">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-violet-600 px-3 py-1 text-[10px] font-black uppercase tracking-[0.15em] text-white">
               ✓ Compression médicale
             </span>
-            <h3 id="chaus-modal-title" className="mt-2 text-[20px] font-black text-teal-900">
+            <h3 id="chaus-modal-title" className="mt-2 text-[20px] font-black text-indigo-950">
               {cfg.title || 'Chaussettes de compression'}
             </h3>
-            <p className="mt-1 text-[12px] font-medium text-teal-600/70">
+            <p className="mt-1 text-[12px] font-medium text-indigo-600/70">
               Choisissez votre taille et remplissez le formulaire.
             </p>
+          </div>
+
+          <div className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-950 via-violet-900 to-indigo-950 px-3 py-2 text-white ring-1 ring-violet-400/30">
+            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-300">Promo finit dans</span>
+            <span className="font-mono text-[14px] font-black tabular-nums">{pad2(countdown.h)}:{pad2(countdown.m)}:{pad2(countdown.s)}</span>
+            <span className="rounded-full bg-rose-500/90 px-2 py-0.5 text-[9px] font-black uppercase">−34 %</span>
           </div>
         </div>
 
@@ -170,8 +198,8 @@ export default function OrderModalChaussette({ open, onClose, cfg, product, setP
           {/* SELECTEUR TAILLE - 5 boutons */}
           <div>
             <div className="mb-1.5 flex items-center justify-between">
-              <label className="block text-[11px] font-bold uppercase tracking-[0.08em] text-teal-700">Votre taille</label>
-              <span className="text-[10px] font-semibold text-teal-600">Pointure {selectedSize.shoe} · {selectedSize.desc}</span>
+              <label className="block text-[11px] font-bold uppercase tracking-[0.08em] text-violet-700">Votre taille</label>
+              <span className="text-[10px] font-semibold text-emerald-600">Pointure {selectedSize.shoe} · {selectedSize.desc}</span>
             </div>
             <div className="grid grid-cols-5 gap-1.5">
               {SIZES.map((s) => {
@@ -183,12 +211,12 @@ export default function OrderModalChaussette({ open, onClose, cfg, product, setP
                     onClick={() => setSize(s.code)}
                     className={`flex flex-col items-center rounded-xl border-2 px-1 py-2 transition-all ${
                       active
-                        ? 'border-teal-500 bg-teal-50 shadow-sm'
-                        : 'border-slate-200 bg-white hover:border-teal-300 hover:bg-teal-50/30'
+                        ? 'border-emerald-500 bg-emerald-50 shadow-sm'
+                        : 'border-slate-200 bg-white hover:border-violet-300 hover:bg-violet-50/30'
                     }`}
                   >
-                    <span className={`text-[13px] font-black ${active ? 'text-teal-700' : 'text-slate-800'}`}>{s.code}</span>
-                    <span className={`text-[9px] font-bold ${active ? 'text-teal-600' : 'text-slate-400'}`}>{s.shoe}</span>
+                    <span className={`text-[13px] font-black ${active ? 'text-emerald-700' : 'text-slate-800'}`}>{s.code}</span>
+                    <span className={`text-[9px] font-bold ${active ? 'text-emerald-600' : 'text-slate-400'}`}>{s.shoe}</span>
                   </button>
                 );
               })}
@@ -197,7 +225,7 @@ export default function OrderModalChaussette({ open, onClose, cfg, product, setP
 
           {/* SELECTEUR QUANTITE */}
           <div>
-            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-teal-700">Nombre de paires</label>
+            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-violet-700">Nombre de paires</label>
             <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
               {qtyOptions.map((o) => {
                 const active = qty === o.v;
@@ -208,8 +236,8 @@ export default function OrderModalChaussette({ open, onClose, cfg, product, setP
                     onClick={() => setQty(o.v)}
                     className={`relative flex flex-col items-center rounded-xl border-2 px-1 py-2 transition-all ${
                       active
-                        ? 'border-teal-500 bg-teal-50 shadow-sm'
-                        : 'border-slate-200 bg-white hover:border-teal-300 hover:bg-teal-50/30'
+                        ? 'border-emerald-500 bg-emerald-50 shadow-sm'
+                        : 'border-slate-200 bg-white hover:border-violet-300 hover:bg-violet-50/30'
                     }`}
                   >
                     {o.tag && (
@@ -217,9 +245,9 @@ export default function OrderModalChaussette({ open, onClose, cfg, product, setP
                         {o.tag}
                       </span>
                     )}
-                    <span className={`text-xl font-black leading-none ${active ? 'text-teal-700' : 'text-slate-900'}`}>{o.v}</span>
+                    <span className={`text-xl font-black leading-none ${active ? 'text-violet-700' : 'text-slate-900'}`}>{o.v}</span>
                     <span className="mt-0.5 text-[8px] font-bold uppercase tracking-wider text-slate-500">{o.label}</span>
-                    <span className={`text-[10px] font-black ${active ? 'text-teal-600' : 'text-teal-500'}`}>{o.sub}</span>
+                    <span className={`text-[10px] font-black ${active ? 'text-emerald-600' : 'text-emerald-500'}`}>{o.sub}</span>
                   </button>
                 );
               })}
@@ -228,20 +256,20 @@ export default function OrderModalChaussette({ open, onClose, cfg, product, setP
 
           {/* INPUTS */}
           <div>
-            <label htmlFor="ch-name" className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-teal-700">Nom complet</label>
+            <label htmlFor="ch-name" className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-violet-700">Nom complet</label>
             <input id="ch-name" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Jean Kouassi" autoComplete="name" required
-              className="block h-11 w-full rounded-xl border-[1.5px] border-slate-200 bg-white px-3.5 text-[15px] sm:text-[14px] font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20" />
+              className="block h-11 w-full rounded-xl border-[1.5px] border-slate-200 bg-white px-3.5 text-[15px] sm:text-[14px] font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20" />
           </div>
 
           <div>
-            <label htmlFor="ch-city" className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-teal-700">Ville de livraison</label>
+            <label htmlFor="ch-city" className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-violet-700">Ville de livraison</label>
             <input id="ch-city" type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Abidjan, Bouaké, Daloa…" autoComplete="address-level2" required
-              className="block h-11 w-full rounded-xl border-[1.5px] border-slate-200 bg-white px-3.5 text-[15px] sm:text-[14px] font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20" />
+              className="block h-11 w-full rounded-xl border-[1.5px] border-slate-200 bg-white px-3.5 text-[15px] sm:text-[14px] font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20" />
           </div>
 
           <div>
-            <label htmlFor="ch-phone" className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-teal-700">Téléphone</label>
-            <div className="flex h-11 overflow-hidden rounded-xl border-[1.5px] border-slate-200 bg-white transition focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/20">
+            <label htmlFor="ch-phone" className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-violet-700">Téléphone</label>
+            <div className="flex h-11 overflow-hidden rounded-xl border-[1.5px] border-slate-200 bg-white transition focus-within:border-violet-500 focus-within:ring-2 focus-within:ring-violet-500/20">
               <span className="flex items-center gap-1 border-r border-slate-200 bg-slate-50 px-3 text-[13px] font-bold text-slate-700">🇨🇮 +225</span>
               <input id="ch-phone" type="tel" inputMode="numeric" value={phone}
                 onChange={(e) => setPhone(cleanPhoneCI(e.target.value))}
@@ -264,10 +292,10 @@ export default function OrderModalChaussette({ open, onClose, cfg, product, setP
           className="flex-none border-t border-neutral-200 bg-white px-5 pt-3 shadow-[0_-4px_16px_-4px_rgba(0,0,0,0.06)]"
           style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
         >
-          <div className="mb-2.5 flex items-center justify-between rounded-xl bg-gradient-to-r from-teal-900 to-cyan-900 px-3.5 py-3 text-white">
+          <div className="mb-2.5 flex items-center justify-between rounded-xl bg-gradient-to-r from-indigo-950 via-violet-900 to-indigo-950 px-3.5 py-3 text-white">
             <div className="flex items-baseline gap-1.5">
               <span className="text-[12px] font-semibold">Total</span>
-              <span className="text-[10px] text-cyan-300">livraison gratuite · Taille {size}</span>
+              <span className="text-[10px] text-emerald-300">livraison gratuite · Taille {size}</span>
             </div>
             <div className="flex items-baseline gap-2">
               {qty > 1 && <span className="text-[11px] text-slate-400 line-through">{fmt(oldTotal)}</span>}
@@ -279,7 +307,7 @@ export default function OrderModalChaussette({ open, onClose, cfg, product, setP
             type="submit"
             form="chaus-form"
             disabled={sending}
-            className="mt-1 flex h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-teal-500 via-cyan-500 to-teal-500 bg-[length:200%_100%] text-[15px] font-extrabold text-white shadow-[0_10px_25px_-5px_rgba(20,184,166,0.5)] transition-all hover:bg-[position:100%_0] hover:shadow-[0_14px_30px_-5px_rgba(20,184,166,0.6)] active:translate-y-px disabled:cursor-wait disabled:opacity-60"
+            className="mt-1 flex h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 via-violet-500 to-emerald-500 bg-[length:200%_100%] text-[15px] font-extrabold text-white shadow-[0_10px_25px_-5px_rgba(16,185,129,0.45)] transition-all hover:bg-[position:100%_0] hover:shadow-[0_14px_30px_-5px_rgba(139,92,246,0.45)] active:translate-y-px disabled:cursor-wait disabled:opacity-60 ch-modal-cta"
           >
             {sending ? (
               <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />Envoi...</>
@@ -298,6 +326,9 @@ export default function OrderModalChaussette({ open, onClose, cfg, product, setP
       <style>{`
         @keyframes chfade { from { opacity: 0 } to { opacity: 1 } }
         @keyframes chslide { from { transform: translateY(24px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+        @keyframes chcta-pulse { 0%,100% { transform: scale(1) } 50% { transform: scale(1.02) } }
+        .ch-modal-cta { animation: chcta-pulse 2.4s ease-in-out infinite }
+        .ch-modal-cta:hover { animation: none }
 
         @supports (height: 100svh) {
           .ch-shell { height: 100svh; }
