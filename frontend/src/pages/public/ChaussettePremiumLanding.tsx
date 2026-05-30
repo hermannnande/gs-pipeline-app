@@ -365,24 +365,6 @@ export default function ChaussettePremiumLanding() {
       {/* Barre 1 apres hero */}
       <Marquee tone="silver" items={['Style', 'Confort', 'Élégance', '5 modèles premium', 'Livraison rapide']} />
 
-      {/* 3. POURQUOI */}
-      <section className="bg-gradient-to-b from-white to-slate-100 py-14 text-slate-900">
-        <div className="mx-auto max-w-4xl px-4 text-center">
-          <h2 className="text-balance text-2xl font-black sm:text-3xl">Un petit détail. <span className="text-[#0b2350]">Un grand changement</span> dans votre style.</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-[14px] leading-relaxed text-slate-600">
-            Une belle chaussure attire le regard. Mais une belle chaussette complète le look. Avec cette collection premium, vos tenues deviennent plus propres, plus élégantes et plus travaillées.
-          </p>
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[{ i: '✨', t: 'Look plus élégant' }, { i: '🦶', t: 'Confort toute la journée' }, { i: '👞', t: 'Parfait avec chaussures de ville' }, { i: '🎨', t: '5 modèles faciles à associer' }].map((c) => (
-              <div key={c.t} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="text-3xl">{c.i}</div>
-                <p className="mt-2 text-[13px] font-bold text-slate-800">{c.t}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* 4. GALERIE 5 MODELES */}
       <section className="bg-gradient-to-b from-[#0a0e16] to-[#0a1f44] py-14">
         <div className="mx-auto max-w-5xl px-4">
@@ -496,62 +478,6 @@ export default function ChaussettePremiumLanding() {
         kicker="Finition premium" title={<>Une <span className="cph-gold">finition premium</span> qui se remarque.</>}
         text="Maille soignée, maintien parfait : le détail qui fait toute la différence." cta="Commander maintenant" />
 
-      {/* 8. BENEFICES */}
-      <section className="bg-gradient-to-b from-white to-slate-100 py-14 text-slate-900">
-        <div className="mx-auto max-w-4xl px-4">
-          <h2 className="text-center text-2xl font-black sm:text-3xl">Pourquoi vous allez les <span className="text-[#0b2350]">adopter</span></h2>
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {BENEFITS.map((b) => (
-              <div key={b.t} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-                <span className="text-2xl">{b.i}</span><span className="text-[12px] font-bold text-slate-800">{b.t}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 9. AVANT / APRES */}
-      <section className="bg-gradient-to-b from-[#0a0e16] to-[#0a1f44] py-14">
-        <div className="mx-auto max-w-3xl px-4">
-          <h2 className="text-center text-2xl font-black sm:text-3xl">Avant / Après <span className="cph-gold">style</span></h2>
-          <div className="mt-7 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-              <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">Avant</p>
-              <ul className="mt-3 space-y-2 text-[13px] text-slate-300">
-                {['Chaussettes basiques', 'Look moins travaillé', 'Chaussures moins mises en valeur'].map((x) => (<li key={x} className="flex gap-2"><span className="text-slate-500">✕</span>{x}</li>))}
-              </ul>
-            </div>
-            <div className="rounded-2xl border border-amber-300/30 bg-gradient-to-br from-[#0b2350] to-[#060b16] p-5">
-              <p className="text-[11px] font-black uppercase tracking-wider text-amber-300">Après</p>
-              <ul className="mt-3 space-y-2 text-[13px] text-white">
-                {['Chaussettes premium', 'Look plus élégant', 'Tenue mieux finie', 'Détail qui attire le regard'].map((x) => (<li key={x} className="flex gap-2"><span className="text-amber-400">✓</span>{x}</li>))}
-              </ul>
-            </div>
-          </div>
-          <p className="mt-6 text-center text-[16px] font-black text-white sm:text-[19px]">Ce sont les petits détails qui font les <span className="cph-gold">hommes bien habillés</span>.</p>
-        </div>
-      </section>
-
-      {/* 10. COMMENT PORTER */}
-      <section className="bg-gradient-to-b from-slate-100 to-white py-14 text-slate-900">
-        <div className="mx-auto max-w-4xl px-4">
-          <h2 className="text-center text-2xl font-black sm:text-3xl">Comment porter les <span className="text-[#0b2350]">5 modèles</span></h2>
-          <div className="mt-7 grid gap-3 sm:grid-cols-2">
-            {[
-              { t: 'Avec mocassins noirs', d: 'Choisissez le noir, le gris ou le bleu marine.' },
-              { t: 'Avec souliers marron', d: 'Essayez le bleu clair, le gris ou le bleu marine.' },
-              { t: 'Avec tenue bureau', d: 'Prenez le pack 10 ou 15 paires pour varier toute la semaine.' },
-              { t: 'Avec tenue casual chic', d: 'Le blanc et le bleu clair donnent un rendu plus moderne.' },
-            ].map((s) => (
-              <div key={s.t} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p className="text-[14px] font-black text-[#0b2350]">{s.t}</p>
-                <p className="mt-1 text-[13px] text-slate-600">{s.d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Barre 3 avant temoignages */}
       <Marquee tone="navy" items={['Des clients satisfaits', 'Paiement à la livraison', 'Commande confirmée par téléphone']} />
 
@@ -653,6 +579,82 @@ export default function ChaussettePremiumLanding() {
           </div>
           <p className="mt-4 text-[11px] text-slate-400">Stock disponible selon les modèles. Commande confirmée par téléphone.</p>
           <div className="mx-auto mt-5 max-w-sm"><CTA onClick={() => openModal(selectedPack)}>J'en profite maintenant <Arrow /></CTA></div>
+        </div>
+      </section>
+
+      {/* ===== BLOCS INFORMATIFS (texte seul) regroupes en bas de page ===== */}
+
+      {/* POURQUOI */}
+      <section className="bg-gradient-to-b from-white to-slate-100 py-14 text-slate-900">
+        <div className="mx-auto max-w-4xl px-4 text-center">
+          <h2 className="text-balance text-2xl font-black sm:text-3xl">Un petit détail. <span className="text-[#0b2350]">Un grand changement</span> dans votre style.</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-[14px] leading-relaxed text-slate-600">
+            Une belle chaussure attire le regard. Mais une belle chaussette complète le look. Avec cette collection premium, vos tenues deviennent plus propres, plus élégantes et plus travaillées.
+          </p>
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[{ i: '✨', t: 'Look plus élégant' }, { i: '🦶', t: 'Confort toute la journée' }, { i: '👞', t: 'Parfait avec chaussures de ville' }, { i: '🎨', t: '5 modèles faciles à associer' }].map((c) => (
+              <div key={c.t} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="text-3xl">{c.i}</div>
+                <p className="mt-2 text-[13px] font-bold text-slate-800">{c.t}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* BENEFICES */}
+      <section className="bg-gradient-to-b from-white to-slate-100 py-14 text-slate-900">
+        <div className="mx-auto max-w-4xl px-4">
+          <h2 className="text-center text-2xl font-black sm:text-3xl">Pourquoi vous allez les <span className="text-[#0b2350]">adopter</span></h2>
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {BENEFITS.map((b) => (
+              <div key={b.t} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                <span className="text-2xl">{b.i}</span><span className="text-[12px] font-bold text-slate-800">{b.t}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* AVANT / APRES */}
+      <section className="bg-gradient-to-b from-[#0a0e16] to-[#0a1f44] py-14">
+        <div className="mx-auto max-w-3xl px-4">
+          <h2 className="text-center text-2xl font-black sm:text-3xl">Avant / Après <span className="cph-gold">style</span></h2>
+          <div className="mt-7 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+              <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">Avant</p>
+              <ul className="mt-3 space-y-2 text-[13px] text-slate-300">
+                {['Chaussettes basiques', 'Look moins travaillé', 'Chaussures moins mises en valeur'].map((x) => (<li key={x} className="flex gap-2"><span className="text-slate-500">✕</span>{x}</li>))}
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-amber-300/30 bg-gradient-to-br from-[#0b2350] to-[#060b16] p-5">
+              <p className="text-[11px] font-black uppercase tracking-wider text-amber-300">Après</p>
+              <ul className="mt-3 space-y-2 text-[13px] text-white">
+                {['Chaussettes premium', 'Look plus élégant', 'Tenue mieux finie', 'Détail qui attire le regard'].map((x) => (<li key={x} className="flex gap-2"><span className="text-amber-400">✓</span>{x}</li>))}
+              </ul>
+            </div>
+          </div>
+          <p className="mt-6 text-center text-[16px] font-black text-white sm:text-[19px]">Ce sont les petits détails qui font les <span className="cph-gold">hommes bien habillés</span>.</p>
+        </div>
+      </section>
+
+      {/* COMMENT PORTER */}
+      <section className="bg-gradient-to-b from-slate-100 to-white py-14 text-slate-900">
+        <div className="mx-auto max-w-4xl px-4">
+          <h2 className="text-center text-2xl font-black sm:text-3xl">Comment porter les <span className="text-[#0b2350]">5 modèles</span></h2>
+          <div className="mt-7 grid gap-3 sm:grid-cols-2">
+            {[
+              { t: 'Avec mocassins noirs', d: 'Choisissez le noir, le gris ou le bleu marine.' },
+              { t: 'Avec souliers marron', d: 'Essayez le bleu clair, le gris ou le bleu marine.' },
+              { t: 'Avec tenue bureau', d: 'Prenez le pack 10 ou 15 paires pour varier toute la semaine.' },
+              { t: 'Avec tenue casual chic', d: 'Le blanc et le bleu clair donnent un rendu plus moderne.' },
+            ].map((s) => (
+              <div key={s.t} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="text-[14px] font-black text-[#0b2350]">{s.t}</p>
+                <p className="mt-1 text-[13px] text-slate-600">{s.d}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
