@@ -92,11 +92,17 @@ const Star = () => (
   <svg className="h-4 w-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.07 3.29a1 1 0 00.95.69h3.46c.97 0 1.37 1.24.59 1.81l-2.8 2.03a1 1 0 00-.36 1.12l1.07 3.29c.3.92-.76 1.69-1.54 1.12l-2.8-2.04a1 1 0 00-1.18 0l-2.8 2.04c-.78.57-1.84-.2-1.54-1.12l1.07-3.29a1 1 0 00-.36-1.12l-2.8-2.03c-.78-.57-.38-1.81.59-1.81h3.46a1 1 0 00.95-.69l1.07-3.29z" /></svg>
 );
 
-// Bouton CTA premium : degrade or -> bleu marine, pulse, ombre, texte sombre lisible.
-function CTA({ onClick, children, variant = 'gold', className = '' }: { onClick: () => void; children: ReactNode; variant?: 'gold' | 'navy'; className?: string }) {
-  const cls = variant === 'gold'
-    ? 'from-amber-300 via-yellow-400 to-amber-500 text-slate-950 ring-amber-200/50'
-    : 'from-[#0a1f44] via-[#0b2350] to-[#060b16] text-amber-300 ring-amber-300/30';
+// Boutons CTA : degrades colores varies, pulse, ombre premium, texte lisible.
+const CTA_TONES: Record<string, string> = {
+  gold: 'from-amber-300 via-yellow-400 to-amber-500 text-slate-950 ring-amber-200/50',
+  navy: 'from-[#0a1f44] via-[#0b2350] to-[#060b16] text-amber-300 ring-amber-300/30',
+  sky: 'from-sky-300 via-sky-500 to-blue-700 text-white ring-sky-200/50',
+  royal: 'from-indigo-500 via-blue-600 to-[#0a1f44] text-white ring-indigo-300/40',
+  emerald: 'from-emerald-400 via-teal-500 to-cyan-600 text-white ring-emerald-200/50',
+  steel: 'from-slate-200 via-slate-50 to-slate-300 text-[#0a1f44] ring-white/70',
+};
+function CTA({ onClick, children, tone = 'gold', className = '' }: { onClick: () => void; children: ReactNode; tone?: string; className?: string }) {
+  const cls = CTA_TONES[tone] || CTA_TONES.gold;
   return (
     <button type="button" onClick={onClick}
       className={`cph-cta cph-pulse group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r ${cls} px-6 py-4 text-[14px] font-black uppercase tracking-[0.16em] shadow-[0_18px_44px_-12px_rgba(10,31,68,.6)] ring-2 transition hover:scale-[1.02] sm:text-[15px] ${className}`}>
@@ -106,16 +112,23 @@ function CTA({ onClick, children, variant = 'gold', className = '' }: { onClick:
   );
 }
 
-function Marquee({ items, tone = 'navy' }: { items: string[]; tone?: 'navy' | 'silver' }) {
-  const bg = tone === 'navy'
-    ? 'border-amber-300/25 bg-gradient-to-r from-[#0a1f44] via-[#060b16] to-[#1a2740] text-amber-200/90'
-    : 'border-slate-300 bg-gradient-to-r from-slate-200 via-white to-slate-200 text-slate-700';
+// Barres defilantes d'info : plusieurs degrades colores.
+const MQ_TONES: Record<string, string> = {
+  navy: 'border-amber-300/25 bg-gradient-to-r from-[#0a1f44] via-[#060b16] to-[#1a2740] text-amber-200/90',
+  silver: 'border-slate-300 bg-gradient-to-r from-slate-200 via-white to-slate-200 text-slate-700',
+  gold: 'border-amber-200 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-slate-900',
+  sky: 'border-sky-300/40 bg-gradient-to-r from-sky-600 via-blue-700 to-[#0a1f44] text-sky-50',
+  royal: 'border-indigo-300/40 bg-gradient-to-r from-indigo-700 via-blue-800 to-[#0a0e16] text-indigo-50',
+};
+function Marquee({ items, tone = 'navy' }: { items: string[]; tone?: string }) {
+  const bg = MQ_TONES[tone] || MQ_TONES.navy;
+  const dot = tone === 'silver' || tone === 'gold' ? 'text-[#0a1f44]' : 'text-amber-300';
   return (
     <div className={`overflow-hidden border-y py-2.5 ${bg}`}>
       <div className="cph-marquee flex w-[200%] items-center gap-8 text-[10px] font-black uppercase tracking-[0.26em] sm:text-[11px]">
         {[0, 1].map((k) => (
           <div key={k} className="flex shrink-0 items-center gap-8">
-            {items.map((t, i) => (<span key={`${k}-${i}`} className="inline-flex items-center gap-2">{t}<span className="text-amber-400">◆</span></span>))}
+            {items.map((t, i) => (<span key={`${k}-${i}`} className="inline-flex items-center gap-2">{t}<span className={dot}>◆</span></span>))}
           </div>
         ))}
       </div>
@@ -123,22 +136,21 @@ function Marquee({ items, tone = 'navy' }: { items: string[]; tone?: 'navy' | 's
   );
 }
 
-// Bloc alterne image + texte + CTA, fond degrade variable.
-function FeatureBlock({ kicker, title, text, cta, img, qty, onOrder, bg, reverse }: {
-  kicker: string; title: ReactNode; text: string; cta: string; img: string; qty: number; onOrder: (q: number) => void; bg: string; reverse?: boolean;
+// Bloc vertical : image en haut, texte juste en dessous, CTA colore. Fond + couleurs variables.
+function FeatureBlock({ kicker, title, text, cta, ctaTone = 'gold', img, qty, onOrder, bg, textClass = 'text-white', kickerClass = 'text-amber-400' }: {
+  kicker: string; title: ReactNode; text: string; cta: string; ctaTone?: string; img: string; qty: number; onOrder: (q: number) => void; bg: string; textClass?: string; kickerClass?: string;
 }) {
+  const { ref, visible } = useOnScreen('260px');
   return (
-    <section className={`relative overflow-hidden py-12 sm:py-16 ${bg}`}>
-      <div className={`relative mx-auto flex max-w-5xl flex-col gap-6 px-4 sm:items-center sm:gap-10 ${reverse ? 'sm:flex-row-reverse' : 'sm:flex-row'}`}>
-        <div className="relative w-full overflow-hidden rounded-[2rem] ring-1 ring-white/15 shadow-[0_30px_70px_-25px_rgba(0,0,0,.6)] sm:w-1/2">
+    <section className={`relative overflow-hidden py-10 sm:py-14 ${bg}`}>
+      <div ref={ref} className={`relative mx-auto max-w-md px-4 text-center ${visible ? 'cph-fade-up' : ''}`}>
+        <div className="relative overflow-hidden rounded-[2rem] ring-1 ring-white/20 shadow-[0_30px_70px_-25px_rgba(0,0,0,.65)]">
           <LazyImg src={img} alt={typeof title === 'string' ? title : 'Chaussettes premium homme'} aspect="4/5" />
         </div>
-        <div className="w-full sm:w-1/2">
-          <p className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-amber-400">{kicker}</p>
-          <h3 className="text-balance text-[22px] font-black leading-tight sm:text-[28px]">{title}</h3>
-          <p className="mt-3 text-[14px] leading-relaxed opacity-80 sm:text-[15px]">{text}</p>
-          <div className="mt-5 max-w-sm"><CTA onClick={() => onOrder(qty)}>{cta} <Arrow /></CTA></div>
-        </div>
+        <p className={`mt-5 text-[10px] font-black uppercase tracking-[0.3em] ${kickerClass}`}>{kicker}</p>
+        <h3 className={`mt-2 text-balance text-[22px] font-black leading-tight sm:text-[27px] ${textClass}`}>{title}</h3>
+        <p className={`mt-3 text-[14px] leading-relaxed opacity-85 ${textClass}`}>{text}</p>
+        <div className="mx-auto mt-5 max-w-sm"><CTA tone={ctaTone} onClick={() => onOrder(qty)}>{cta} <Arrow /></CTA></div>
       </div>
     </section>
   );
@@ -425,19 +437,64 @@ export default function ChaussettePremiumLanding() {
       {/* Barre 2 avant offres / blocs */}
       <Marquee tone="navy" items={['5 paires 11 900 Fr', '10 paires 20 900 Fr', '15 paires 28 900 Fr']} />
 
-      {/* 6. BLOCS IMAGE + TEXTE + CTA alternes */}
-      <FeatureBlock kicker="Le détail" bg="bg-gradient-to-br from-[#0b2350] to-[#0a0e16] text-white" img={M('m6.webp')} qty={selectedPack} onOrder={openModal}
-        title={<>Avec vos souliers, le détail fait la <span className="cph-gold">différence</span>.</>}
+      {/* 6. BLOCS IMAGE (haut) + TEXTE (dessous) + CTA colore — toutes les images, fonds varies */}
+      <FeatureBlock img={M('m6.webp')} qty={selectedPack} onOrder={openModal}
+        bg="bg-gradient-to-b from-[#0b2350] to-[#0a0e16]" textClass="text-white" kickerClass="text-amber-400" ctaTone="gold"
+        kicker="Le détail" title={<>Avec vos souliers, le détail fait la <span className="cph-gold">différence</span>.</>}
         text="Ces chaussettes ajoutent une touche élégante à vos tenues de bureau et de sortie." cta="Je choisis mon pack" />
-      <FeatureBlock kicker="La collection" bg="bg-gradient-to-br from-slate-100 to-white text-slate-900" img={M('m7.webp')} qty={selectedPack} onOrder={openModal} reverse
-        title={<>5 modèles pour <span className="text-[#0b2350]">varier votre style</span>.</>}
+
+      <Marquee tone="gold" items={['Coton premium', '5 modèles premium', 'Livraison rapide', 'Paiement à la livraison']} />
+
+      <FeatureBlock img={M('m7.webp')} qty={selectedPack} onOrder={openModal}
+        bg="bg-gradient-to-b from-slate-200 via-white to-slate-100" textClass="text-slate-900" kickerClass="text-[#0b2350]" ctaTone="royal"
+        kicker="La collection" title={<>5 modèles pour <span className="text-[#0b2350]">varier votre style</span>.</>}
         text="Gris, noir, blanc, bleu clair ou bleu marine : choisissez selon votre tenue du jour." cta="Voir les offres" />
-      <FeatureBlock kicker="Confort" bg="bg-gradient-to-br from-[#1a2740] to-[#0a0e16] text-white" img={M('m8.webp')} qty={selectedPack} onOrder={openModal}
-        title={<>Confortables pour <span className="cph-gold">toute la journée</span>.</>}
+
+      <FeatureBlock img={M('m8.webp')} qty={selectedPack} onOrder={openModal}
+        bg="bg-gradient-to-br from-[#5b9bd5] via-[#2f6fb0] to-[#0a1f44]" textClass="text-white" kickerClass="text-amber-300" ctaTone="gold"
+        kicker="Confort" title={<>Confortables pour <span className="cph-gold">toute la journée</span>.</>}
         text="Une paire agréable à porter du matin au soir, avec un style propre et masculin." cta="Commander maintenant" />
-      <FeatureBlock kicker="Cadeau" bg="bg-gradient-to-br from-[#5b9bd5]/20 to-[#0a1f44] text-white" img={M('m9.webp')} qty={3} onOrder={openModal} reverse
-        title={<>Un <span className="cph-gold">cadeau utile</span> pour homme élégant.</>}
+
+      <Marquee tone="sky" items={['Style', 'Confort', 'Élégance', 'Bureau & sorties', 'Cadeau parfait']} />
+
+      <FeatureBlock img={M('m9.webp')} qty={3} onOrder={openModal}
+        bg="bg-gradient-to-b from-[#060b16] to-[#2a3340]" textClass="text-white" kickerClass="text-sky-300" ctaTone="sky"
+        kicker="Cadeau" title={<>Un <span className="cph-gold">cadeau utile</span> pour homme élégant.</>}
         text="Offrez ou portez une collection pratique, belle et facile à associer." cta="Profiter de l'offre" />
+
+      <FeatureBlock img={M('m10.webp')} qty={selectedPack} onOrder={openModal}
+        bg="bg-gradient-to-b from-[#0a1f44] to-[#0b2350]" textClass="text-white" kickerClass="text-amber-400" ctaTone="gold"
+        kicker="Bleu marine" title={<>Le <span className="cph-gold">bleu marine</span> qui va avec tout.</>}
+        text="Élégant et masculin, il s'accorde avec vos costumes comme avec vos tenues décontractées." cta="Je commande" />
+
+      <Marquee tone="silver" items={['5 paires 11 900 F', '10 paires 20 900 F', '15 paires 28 900 F']} />
+
+      <FeatureBlock img={M('m11.webp')} qty={selectedPack} onOrder={openModal}
+        bg="bg-gradient-to-b from-white to-slate-200" textClass="text-slate-900" kickerClass="text-[#0b2350]" ctaTone="navy"
+        kicker="Noir business" title={<>Le <span className="text-[#0b2350]">noir business</span>, l'indispensable.</>}
+        text="Le classique parfait avec souliers et mocassins, pour un look net et professionnel." cta="Choisir mon pack" />
+
+      <FeatureBlock img={M('m12.webp')} qty={selectedPack} onOrder={openModal}
+        bg="bg-gradient-to-br from-emerald-900 via-teal-800 to-[#0a1f44]" textClass="text-white" kickerClass="text-emerald-300" ctaTone="emerald"
+        kicker="Gris élégant" title={<>Le <span className="text-emerald-300">gris élégant</span>, discret et chic.</>}
+        text="Sobre et raffiné, idéal pour une tenue professionnelle qui reste élégante." cta="Voir les packs" />
+
+      <Marquee tone="royal" items={['Des clients satisfaits', 'Commande confirmée par téléphone', 'Livraison partout en CI']} />
+
+      <FeatureBlock img={M('m13.webp')} qty={selectedPack} onOrder={openModal}
+        bg="bg-gradient-to-b from-[#1a2740] to-[#0a0e16]" textClass="text-white" kickerClass="text-amber-400" ctaTone="gold"
+        kicker="Blanc propre" title={<>Le <span className="cph-gold">blanc propre</span>, lumineux et moderne.</>}
+        text="Un rendu net et frais qui apporte une touche moderne à vos tenues casual chic." cta="Commander" />
+
+      <FeatureBlock img={M('m14.webp')} qty={selectedPack} onOrder={openModal}
+        bg="bg-gradient-to-b from-sky-100 via-white to-sky-50" textClass="text-slate-900" kickerClass="text-sky-700" ctaTone="sky"
+        kicker="Bleu clair" title={<>Le <span className="text-sky-700">bleu clair</span>, frais et remarqué.</>}
+        text="Un style qui se remarque sans être trop voyant, parfait avec des souliers marron." cta="J'en profite" />
+
+      <FeatureBlock img={M('m15.webp')} qty={3} onOrder={openModal}
+        bg="bg-gradient-to-br from-indigo-900 via-blue-900 to-[#0a1f44]" textClass="text-white" kickerClass="text-amber-300" ctaTone="royal"
+        kicker="Finition premium" title={<>Une <span className="cph-gold">finition premium</span> qui se remarque.</>}
+        text="Maille soignée, maintien parfait : le détail qui fait toute la différence." cta="Commander maintenant" />
 
       {/* 8. BENEFICES */}
       <section className="bg-gradient-to-b from-white to-slate-100 py-14 text-slate-900">
