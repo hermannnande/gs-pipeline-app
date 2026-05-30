@@ -94,8 +94,8 @@ const Star = () => (
 
 // Boutons CTA : degrades colores varies, pulse, ombre premium, texte lisible.
 const CTA_TONES: Record<string, string> = {
-  gold: 'from-amber-300 via-yellow-400 to-amber-500 text-slate-950 ring-amber-200/50',
-  navy: 'from-[#0a1f44] via-[#0b2350] to-[#060b16] text-amber-300 ring-amber-300/30',
+  gold: 'from-sky-400 via-blue-600 to-blue-900 text-white ring-sky-200/50',
+  navy: 'from-[#0a1f44] via-[#0b2350] to-[#060b16] text-sky-200 ring-sky-300/30',
   sky: 'from-sky-300 via-sky-500 to-blue-700 text-white ring-sky-200/50',
   royal: 'from-indigo-500 via-blue-600 to-[#0a1f44] text-white ring-indigo-300/40',
   emerald: 'from-emerald-400 via-teal-500 to-cyan-600 text-white ring-emerald-200/50',
@@ -312,7 +312,7 @@ export default function ChaussettePremiumLanding() {
         @keyframes cph-fade-up { from { opacity:0; transform: translateY(20px) } to { opacity:1; transform: translateY(0) } }
         .cph-fade-up { animation: cph-fade-up .55s cubic-bezier(.22,.8,.4,1) both }
         @keyframes cph-shimmer { 0% { background-position: -200% 50% } 100% { background-position: 200% 50% } }
-        .cph-gold { background: linear-gradient(90deg,#d4af37,#fde68a,#f59e0b,#fef3c7,#d4af37); background-size:200% auto; background-clip:text; -webkit-background-clip:text; color:transparent; -webkit-text-fill-color:transparent; animation: cph-shimmer 3.5s linear infinite }
+        .cph-gold { background: linear-gradient(90deg,#e2e8f0,#7dd3fc,#ffffff,#38bdf8,#cbd5e1); background-size:200% auto; background-clip:text; -webkit-background-clip:text; color:transparent; -webkit-text-fill-color:transparent; animation: cph-shimmer 3.5s linear infinite }
         @keyframes cph-toast-in { from { opacity:0; transform: translateX(-110%) } to { opacity:1; transform: translateX(0) } }
         @keyframes cph-toast-out { from { opacity:1 } to { opacity:0; transform: translateX(-110%) } }
         .cph-toast-in { animation: cph-toast-in .45s cubic-bezier(.22,1,.36,1) both } .cph-toast-out { animation: cph-toast-out .4s ease both }
@@ -321,7 +321,7 @@ export default function ChaussettePremiumLanding() {
       {/* 1. BARRE SCROLLANTE STICKY HAUT */}
       <div className="sticky top-0 z-50 shadow-lg">
         <Marquee tone="navy" items={['Offre spéciale aujourd\'hui', '5 paires à 11 900 Fr', '10 paires à 20 900 Fr', '15 paires à 28 900 Fr', 'Paiement à la livraison', 'Livraison rapide', 'Collection 5 modèles premium', 'Style • Confort • Élégance']} />
-        <div className="h-[3px] w-full bg-[#060b16]"><div className="h-full bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 transition-all duration-700" style={{ width: `${stockPct}%` }} /></div>
+        <div className="h-[3px] w-full bg-[#060b16]"><div className="h-full bg-gradient-to-r from-sky-400 via-blue-500 to-blue-700 transition-all duration-700" style={{ width: `${stockPct}%` }} /></div>
       </div>
 
       {/* 2. HERO */}
@@ -364,57 +364,6 @@ export default function ChaussettePremiumLanding() {
 
       {/* Barre 1 apres hero */}
       <Marquee tone="silver" items={['Style', 'Confort', 'Élégance', '5 modèles premium', 'Livraison rapide']} />
-
-      {/* 4. GALERIE 5 MODELES */}
-      <section className="bg-gradient-to-b from-[#0a0e16] to-[#0a1f44] py-14">
-        <div className="mx-auto max-w-5xl px-4">
-          <div className="text-center">
-            <span className="rounded-full bg-amber-400/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-amber-300">La collection</span>
-            <h2 className="mt-3 text-2xl font-black sm:text-3xl">5 modèles <span className="cph-gold">premium</span></h2>
-          </div>
-          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-            {MODELS.map((m) => (
-              <div key={m.name} className="group overflow-hidden rounded-2xl bg-white/5 ring-1 ring-white/10 transition hover:ring-amber-300/40">
-                <div className="overflow-hidden"><LazyImg src={m.img} alt={m.name} aspect="1/1" /></div>
-                <div className="p-3">
-                  <p className="text-[13px] font-black text-white">{m.name}</p>
-                  <p className="mt-1 text-[11px] leading-snug text-slate-400">{m.desc}</p>
-                  <button type="button" onClick={() => openModal(selectedPack)} className="mt-3 w-full rounded-lg bg-gradient-to-r from-amber-300 to-amber-500 px-2 py-2 text-[11px] font-black uppercase tracking-wider text-slate-950 transition hover:scale-[1.02]">
-                    Choisir ce modèle
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 5. PACK SELECTOR */}
-      <section className="bg-gradient-to-b from-[#0a1f44] to-[#0a0e16] py-14">
-        <div className="mx-auto max-w-3xl px-4">
-          <div className="text-center">
-            <h2 className="text-2xl font-black sm:text-3xl">Choisissez votre pack</h2>
-            <p className="mt-2 text-[13px] text-slate-400">Plus vous prenez de paires, plus vous économisez.</p>
-          </div>
-          <div className="mt-7 grid gap-3 sm:grid-cols-3">
-            {PACKS.map((p) => {
-              const active = selectedPack === p.v;
-              return (
-                <button key={p.v} type="button" onClick={() => choosePack(p.v)}
-                  className={`relative overflow-hidden rounded-2xl border-2 p-5 text-left transition ${active ? 'border-amber-400 bg-gradient-to-br from-[#0b2350] to-[#060b16] shadow-[0_0_0_3px_rgba(212,175,55,.25)]' : 'border-white/10 bg-white/5 hover:border-white/25'}`}>
-                  {p.badge && <span className="absolute -top-1 right-3 rotate-3 rounded-b-md bg-amber-400 px-2 py-1 text-[8px] font-black uppercase tracking-wider text-slate-950">{p.badge}</span>}
-                  <p className="text-[10px] font-black uppercase tracking-wider text-amber-300">{p.paires}</p>
-                  <p className="mt-1 text-xl font-black text-white">{p.n}</p>
-                  <p className="mt-2 cph-gold text-2xl font-black">{fmt(p.p)} F</p>
-                  {p.save && <p className="mt-2 inline-flex rounded-full bg-amber-400/15 px-2 py-0.5 text-[9px] font-bold text-amber-300">{p.save}</p>}
-                  <p className="mt-2 text-[11px] text-slate-400">{p.sub}</p>
-                </button>
-              );
-            })}
-          </div>
-          <div className="mx-auto mt-6 max-w-sm"><CTA onClick={() => openModal(selectedPack)}>Je choisis ce pack ({QTY_OPTS[selectedPack - 1].label}) <Arrow /></CTA></div>
-        </div>
-      </section>
 
       {/* Barre 2 avant offres / blocs */}
       <Marquee tone="navy" items={['5 paires 11 900 Fr', '10 paires 20 900 Fr', '15 paires 28 900 Fr']} />
@@ -554,7 +503,7 @@ export default function ChaussettePremiumLanding() {
                 <p className="mt-3 cph-gold text-4xl font-black">{fmt(p.p)}</p>
                 <p className="text-[12px] font-bold text-slate-400">FCFA</p>
                 <p className="mt-3 flex-1 text-[12px] text-slate-300">{p.sub}</p>
-                <button type="button" onClick={() => { choosePack(p.v); openModal(p.v); }} className="mt-5 w-full rounded-xl bg-gradient-to-r from-amber-300 to-amber-500 px-4 py-3 text-[13px] font-black uppercase tracking-wider text-slate-950 shadow-lg transition hover:scale-[1.02]">
+                <button type="button" onClick={() => { choosePack(p.v); openModal(p.v); }} className="mt-5 w-full rounded-xl bg-gradient-to-r from-sky-400 via-blue-600 to-blue-900 px-4 py-3 text-[13px] font-black uppercase tracking-wider text-white shadow-lg transition hover:scale-[1.02]">
                   Commander {p.paires}
                 </button>
               </div>
@@ -704,6 +653,59 @@ export default function ChaussettePremiumLanding() {
         </div>
       </section>
 
+      {/* ===== GALERIE + PACK SELECTOR deplaces tout en bas de page ===== */}
+
+      {/* 4. GALERIE 5 MODELES */}
+      <section className="bg-gradient-to-b from-[#0a0e16] to-[#0a1f44] py-14">
+        <div className="mx-auto max-w-5xl px-4">
+          <div className="text-center">
+            <span className="rounded-full bg-sky-400/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-sky-300">La collection</span>
+            <h2 className="mt-3 text-2xl font-black sm:text-3xl">5 modèles <span className="cph-gold">premium</span></h2>
+          </div>
+          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            {MODELS.map((m) => (
+              <div key={m.name} className="group overflow-hidden rounded-2xl bg-white/5 ring-1 ring-white/10 transition hover:ring-sky-300/40">
+                <div className="overflow-hidden"><LazyImg src={m.img} alt={m.name} aspect="1/1" /></div>
+                <div className="p-3">
+                  <p className="text-[13px] font-black text-white">{m.name}</p>
+                  <p className="mt-1 text-[11px] leading-snug text-slate-400">{m.desc}</p>
+                  <button type="button" onClick={() => openModal(selectedPack)} className="mt-3 w-full rounded-lg bg-gradient-to-r from-sky-400 via-blue-600 to-blue-900 px-2 py-2 text-[11px] font-black uppercase tracking-wider text-white transition hover:scale-[1.02]">
+                    Choisir ce modèle
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 5. PACK SELECTOR */}
+      <section className="bg-gradient-to-b from-[#0a1f44] to-[#0a0e16] py-14">
+        <div className="mx-auto max-w-3xl px-4">
+          <div className="text-center">
+            <h2 className="text-2xl font-black sm:text-3xl">Choisissez votre pack</h2>
+            <p className="mt-2 text-[13px] text-slate-400">Plus vous prenez de paires, plus vous économisez.</p>
+          </div>
+          <div className="mt-7 grid gap-3 sm:grid-cols-3">
+            {PACKS.map((p) => {
+              const active = selectedPack === p.v;
+              return (
+                <button key={p.v} type="button" onClick={() => choosePack(p.v)}
+                  className={`relative overflow-hidden rounded-2xl border-2 p-5 text-left transition ${active ? 'border-sky-400 bg-gradient-to-br from-[#0b2350] to-[#060b16] shadow-[0_0_0_3px_rgba(56,189,248,.25)]' : 'border-white/10 bg-white/5 hover:border-white/25'}`}>
+                  {p.badge && <span className="absolute -top-1 right-3 rotate-3 rounded-b-md bg-sky-400 px-2 py-1 text-[8px] font-black uppercase tracking-wider text-slate-950">{p.badge}</span>}
+                  <p className="text-[10px] font-black uppercase tracking-wider text-sky-300">{p.paires}</p>
+                  <p className="mt-1 text-xl font-black text-white">{p.n}</p>
+                  <p className="mt-2 cph-gold text-2xl font-black">{fmt(p.p)} F</p>
+                  {p.save && <p className="mt-2 inline-flex rounded-full bg-sky-400/15 px-2 py-0.5 text-[9px] font-bold text-sky-300">{p.save}</p>}
+                  <p className="mt-2 text-[11px] text-slate-400">{p.sub}</p>
+                </button>
+              );
+            })}
+          </div>
+          <div className="mx-auto mt-6 max-w-sm"><CTA onClick={() => openModal(selectedPack)}>Je choisis ce pack ({QTY_OPTS[selectedPack - 1].label}) <Arrow /></CTA></div>
+        </div>
+      </section>
+
       <footer className="bg-[#060b16] py-8 pb-24 text-center text-[10px] font-semibold text-amber-300/70 sm:pb-8">
         © {new Date().getFullYear()} · Chaussettes Premium Homme · Collection 5 modèles · Côte d'Ivoire
       </footer>
@@ -729,7 +731,7 @@ export default function ChaussettePremiumLanding() {
             <p className="text-[10px] font-black uppercase tracking-wider text-amber-300">Offre · {pad(countdown.h)}:{pad(countdown.m)}:{pad(countdown.s)}</p>
             <p className="text-[11px] font-bold text-white">Dès 11 900 F · paiement à la livraison</p>
           </div>
-          <button type="button" onClick={() => openModal(selectedPack)} className="cph-pulse relative inline-flex items-center gap-1.5 overflow-hidden rounded-full bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 px-5 py-2.5 text-[13px] font-black uppercase tracking-[0.16em] text-slate-950 shadow-[0_10px_24px_-4px_rgba(212,175,55,.6)] ring-2 ring-amber-200/30">
+          <button type="button" onClick={() => openModal(selectedPack)} className="cph-pulse relative inline-flex items-center gap-1.5 overflow-hidden rounded-full bg-gradient-to-r from-sky-400 via-blue-600 to-blue-900 px-5 py-2.5 text-[13px] font-black uppercase tracking-[0.16em] text-white shadow-[0_10px_24px_-4px_rgba(37,99,235,.6)] ring-2 ring-sky-200/30">
             <span className="cph-sheen pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/45 to-transparent" />
             <span className="relative">Commander</span><Arrow />
           </button>
