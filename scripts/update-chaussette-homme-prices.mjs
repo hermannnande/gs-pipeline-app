@@ -8,9 +8,9 @@
  *   - qty 3 (15 paires) -> prix3Unites
  *
  * Nouveaux prix demandes :
- *   5 paires  = 11 900 F
- *   10 paires = 20 900 F
- *   15 paires = 28 900 F
+ *   5 paires  = 9 900 F
+ *   10 paires = 16 900 F
+ *   15 paires = 24 900 F
  *
  * Usage : node scripts/update-chaussette-homme-prices.mjs
  */
@@ -20,7 +20,7 @@ const EMAIL = process.env.ADMIN_EMAIL || 'admin@gs-pipeline.com';
 const PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 const PRODUCT_CODE = 'CHAUSSETTE_HOMME';
-const NEW_PRICES = { prixUnitaire: 11900, prix2Unites: 20900, prix3Unites: 28900 };
+const NEW_PRICES = { prixUnitaire: 9900, prix2Unites: 16900, prix3Unites: 24900 };
 
 async function login() {
   const res = await fetch(`${API_URL}/auth/login`, {
