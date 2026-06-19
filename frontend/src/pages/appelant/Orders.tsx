@@ -34,6 +34,8 @@ export default function Orders() {
   // Vérifier si l'utilisateur peut modifier la quantité (Admin ou Gestionnaire)
   const canEditQuantite = user?.role === 'ADMIN' || user?.role === 'GESTIONNAIRE';
   const isAdmin = user?.role === 'ADMIN';
+  const canTogglePriorite =
+    user?.role === 'ADMIN' || user?.role === 'GESTIONNAIRE' || user?.role === 'APPELANT';
 
   const { data: ordersData, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['appelant-orders', currentPage],
@@ -156,9 +158,9 @@ export default function Orders() {
 
   const togglePrioriteMutation = useMutation({
     mutationFn: (orderId: number) => ordersApi.togglePriorite(orderId),
-    onSuccess: () => {
+    onSuccess: (data: { message?: string }) => {
       queryClient.invalidateQueries({ queryKey: ['appelant-orders'] });
-      toast.success('✅ Priorité mise à jour');
+      toast.success(data?.message || '✅ Priorité mise à jour');
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.error || 'Erreur lors de la mise à jour');
@@ -262,8 +264,12 @@ export default function Orders() {
   // dans leur ordre naturel par recence, sans promotion.)
   const MAX_AGE_FOR_PROMOTION_DAYS = 7;
 
+  /** Score de base pour les commandes épinglées manuellement (toujours au-dessus des "oubliées"). */
+  const MANUAL_PRIORITY_BASE = -1e9;
+
   /**
    * Score de tri "intelligent" pour la liste "A appeler" :
+   *   - Priorité manuelle (bouton ↑) : score très bas, dernière épinglée en tête
    *   - Commandes OUBLIEES RECENTES (1-7 jours, 0 appel) : score NEGATIF
    *     => remontent en TETE, plus vieux d'abord
    *   - Commandes RECENTES (< 24h) : score positif = age en heures
@@ -283,6 +289,13 @@ export default function Orders() {
    *   [PIED] Cmd 152j historique      (score = 3648)  = en bas
    */
   function getPriorityScore(order: Order): number {
+    if (order.priorite) {
+      const pinAgeMs = order.prioriteAt
+        ? Date.now() - new Date(order.prioriteAt).getTime()
+        : 0;
+      return MANUAL_PRIORITY_BASE - pinAgeMs;
+    }
+
     const ageHours = (Date.now() - new Date(order.createdAt).getTime()) / 3600000;
     const ageDays = ageHours / 24;
     const nombreAppels = (order as any).nombreAppels ?? 0;
@@ -318,19 +331,8 @@ export default function Orders() {
 
   const filteredOrders = ordersData?.orders
     ?.filter((order: Order) => {
-      // IMPORTANT : Afficher UNIQUEMENT les commandes NOUVELLE et A_APPELER
-      // SAUF celles avec RDV programmé (qui apparaissent dans la page RDV)
-      // Une fois validée, annulée ou marquée injoignable, la commande disparaît de cette liste
-      const isToCall = [
-        'NOUVELLE',      // Nouvelle commande reçue
-        'A_APPELER'      // Marquée pour appel
-      ].includes(order.status);
-
-      // Exclure les commandes avec RDV programmé
-      const hasRdv = (order as any).rdvProgramme;
-
-      if (!isToCall || hasRdv) return false; // Masquer toutes les autres commandes et les RDV
-
+      // Afficher TOUTES les commandes : aucune exclusion par statut ni RDV.
+      // Seuls les filtres explicites (recherche + statut choisi) s'appliquent.
       const matchesSearch = order.clientNom.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.clientTelephone.includes(searchTerm);
       const matchesStatus = !statusFilter || order.status === statusFilter;
@@ -340,6 +342,7 @@ export default function Orders() {
 
   // Compte des commandes "oubliees recentes" (dans la fenetre 7j) pour le badge
   const staleCount = (filteredOrders || []).filter(isStaleOrder).length;
+  const prioriteCount = (filteredOrders || []).filter((o) => o.priorite).length;
 
   const totalFilteredCount = filteredOrders?.length || 0;
   const totalPages = ordersData?.pagination?.totalPages || 1;
@@ -361,9 +364,15 @@ export default function Orders() {
       <PageHeader
         title="Commandes à appeler"
         subtitle={
-          staleCount > 0
-            ? `${filteredOrders?.length || 0} commande(s) · 🔥 ${staleCount} récente(s) oubliée(s) (>24h sans appel, dans les 7 derniers jours) — remontées en tête`
-            : `${filteredOrders?.length || 0} commande(s) en attente de traitement`
+          [
+            `${filteredOrders?.length || 0} commande(s) en attente`,
+            prioriteCount > 0 ? `↑ ${prioriteCount} en priorité manuelle` : null,
+            staleCount > 0
+              ? `🔥 ${staleCount} oubliée(s) (>24h sans appel, <7j) — remontées automatiquement`
+              : null,
+          ]
+            .filter(Boolean)
+            .join(' · ')
         }
         icon={PhoneCall}
         actions={
@@ -438,7 +447,7 @@ export default function Orders() {
             <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
               className="input pl-10 sm:w-48"
             >
               <option value="">Tous les statuts</option>
@@ -472,8 +481,8 @@ export default function Orders() {
                 onEditQuantity={canEditQuantite ? handleEditQuantite : undefined}
                 canEditQuantity={canEditQuantite}
                 showActions="toCall"
-                onTogglePriorite={isAdmin ? handleTogglePriorite : undefined}
-                canTogglePriorite={isAdmin}
+                onTogglePriorite={canTogglePriorite ? handleTogglePriorite : undefined}
+                canTogglePriorite={canTogglePriorite}
                 isStale={isStaleOrder(order)}
               />
             ))}
