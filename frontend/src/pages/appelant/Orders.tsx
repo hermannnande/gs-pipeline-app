@@ -38,8 +38,17 @@ export default function Orders() {
     user?.role === 'ADMIN' || user?.role === 'GESTIONNAIRE' || user?.role === 'APPELANT';
 
   const { data: ordersData, isLoading, isFetching, refetch } = useQuery({
-    queryKey: ['appelant-orders', currentPage],
-    queryFn: () => ordersApi.getAll({ page: currentPage, limit: ITEMS_PER_PAGE }),
+    queryKey: ['appelant-orders', currentPage, statusFilter],
+    queryFn: () =>
+      ordersApi.getAll({
+        page: currentPage,
+        limit: ITEMS_PER_PAGE,
+        // Filtre cote serveur : on ne ramene que les commandes "a appeler"
+        // (NOUVELLE / A_APPELER) hors RDV, pour vraiment remplir la page de 200.
+        // Une commande validee/annulee/RDV change de statut et disparait d'ici.
+        status: statusFilter || 'NOUVELLE,A_APPELER',
+        excludeRdv: true,
+      }),
     refetchInterval: 60000,
   });
 
@@ -331,8 +340,19 @@ export default function Orders() {
 
   const filteredOrders = ordersData?.orders
     ?.filter((order: Order) => {
-      // Afficher TOUTES les commandes : aucune exclusion par statut ni RDV.
-      // Seuls les filtres explicites (recherche + statut choisi) s'appliquent.
+      // IMPORTANT : Afficher UNIQUEMENT les commandes NOUVELLE et A_APPELER
+      // SAUF celles avec RDV programmé (qui apparaissent dans la page RDV)
+      // Une fois validée, annulée ou marquée injoignable, la commande disparaît de cette liste
+      const isToCall = [
+        'NOUVELLE',      // Nouvelle commande reçue
+        'A_APPELER'      // Marquée pour appel
+      ].includes(order.status);
+
+      // Exclure les commandes avec RDV programmé
+      const hasRdv = (order as any).rdvProgramme;
+
+      if (!isToCall || hasRdv) return false; // Masquer toutes les autres commandes et les RDV
+
       const matchesSearch = order.clientNom.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.clientTelephone.includes(searchTerm);
       const matchesStatus = !statusFilter || order.status === statusFilter;

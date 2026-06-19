@@ -99,7 +99,23 @@ router.get('/', async (req, res) => {
     }
 
     // Filtres supplémentaires
-    if (status) where.status = status;
+    if (status) {
+      // Supporte plusieurs statuts separes par virgule (ex: "NOUVELLE,A_APPELER")
+      const statusList = String(status)
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      where.status = statusList.length > 1 ? { in: statusList } : statusList[0];
+    }
+    // Exclure les commandes avec RDV programme (page "A appeler" : les RDV
+    // basculent vers la page RDV des qu'ils sont programmes)
+    if (
+      req.query.excludeRdv === '1' ||
+      req.query.excludeRdv === 'true' ||
+      req.query.excludeRdv === true
+    ) {
+      where.rdvProgramme = false;
+    }
     if (ville) where.clientVille = { contains: ville, mode: 'insensitive' };
     if (produit) where.produitNom = { contains: produit, mode: 'insensitive' };
     if (callerId) where.callerId = parseInt(callerId);
