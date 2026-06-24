@@ -1,6 +1,6 @@
 import express from 'express';
 import { prisma } from '../utils/prisma.js';
-import { computeTotalAmount } from '../utils/pricing.js';
+import { computePublicOrderTotal } from '../utils/pricing.js';
 import { notifyNewOrder } from '../utils/notifications.js';
 import { sendPurchaseEvent } from '../utils/metaCapi.js';
 import { randomUUID } from 'crypto';
@@ -83,7 +83,7 @@ router.post('/order', async (req, res) => {
     }
 
     const orderQuantity = Math.min(Math.max(parseInt(quantity) || 1, 1), 10);
-    const totalAmount = computeTotalAmount(product, orderQuantity);
+    const totalAmount = computePublicOrderTotal(product, orderQuantity);
 
     const resolvedCity = String(customerCity || '').trim() || 'Non precisee';
 
@@ -132,9 +132,10 @@ router.post('/order', async (req, res) => {
       const fbc = req.body.fbc || null;
       const fbp = req.body.fbp || null;
       const sourceUrl = req.body.sourceUrl || null;
-      const metaPixelId = req.body.metaPixelId || null;
-
-      await sendPurchaseEvent({
+      const capiPixels = [...new Set(
+        [req.body.metaPixelId, req.body.secondaryMetaPixelId].filter(Boolean).map(String),
+      )];
+      const capiBase = {
         orderId: order.id,
         orderRef: order.orderReference,
         amount: totalAmount,
@@ -149,8 +150,10 @@ router.post('/order', async (req, res) => {
         fbc,
         fbp,
         sourceUrl,
-        pixelId: metaPixelId,
-      });
+      };
+      for (const pixelId of capiPixels) {
+        await sendPurchaseEvent({ ...capiBase, pixelId });
+      }
     } catch (metaErr) {
       console.error('Erreur Meta CAPI (non bloquante):', metaErr);
     }
@@ -336,7 +339,7 @@ router.get('/realtime/:slug', async (req, res) => {
 router.post('/track-purchase', async (req, res) => {
   try {
     const companyId = await resolveCompanyId(req);
-    const { ref, slug, sourceUrl, fbc, fbp } = req.body;
+    const { ref, slug, sourceUrl, fbc, fbp, pixelId: bodyPixelId, pixelIds: bodyPixelIds } = req.body;
 
     if (!ref) {
       return res.json({ success: false, reason: 'missing_ref' });
@@ -351,8 +354,14 @@ router.post('/track-purchase', async (req, res) => {
       return res.json({ success: false, reason: 'order_not_found' });
     }
 
-    let pixelId = null;
-    if (slug) {
+    const capiPixels = [...new Set(
+      [
+        ...(Array.isArray(bodyPixelIds) ? bodyPixelIds : []),
+        bodyPixelId,
+      ].filter(Boolean).map(String),
+    )];
+
+    if (!capiPixels.length && slug) {
       try {
         const tpl = await prisma.landingTemplate.findFirst({
           where: { slug: String(slug), companyId },
@@ -360,7 +369,8 @@ router.post('/track-purchase', async (req, res) => {
         });
         if (tpl) {
           const cfg = JSON.parse(tpl.config);
-          pixelId = cfg.metaPixelId || null;
+          if (cfg.metaPixelId) capiPixels.push(String(cfg.metaPixelId));
+          if (cfg.secondaryMetaPixelId) capiPixels.push(String(cfg.secondaryMetaPixelId));
         }
       } catch {}
     }
@@ -368,7 +378,7 @@ router.post('/track-purchase', async (req, res) => {
     const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip;
     const userAgent = req.headers['user-agent'] || '';
 
-    const result = await sendPurchaseEvent({
+    const capiBase = {
       orderId: order.id,
       orderRef: order.orderReference,
       amount: order.montant,
@@ -383,10 +393,14 @@ router.post('/track-purchase', async (req, res) => {
       fbc: fbc || null,
       fbp: fbp || null,
       sourceUrl: sourceUrl || null,
-      pixelId,
-    });
+    };
 
-    res.json({ success: true, sent: !!result, pixelId });
+    const results = [];
+    for (const pixelId of capiPixels) {
+      results.push(await sendPurchaseEvent({ ...capiBase, pixelId }));
+    }
+
+    res.json({ success: true, sent: results.some(Boolean), pixelIds: capiPixels });
   } catch (error) {
     console.error('Erreur track-purchase (non bloquante):', error);
     res.json({ success: false, error: error.message });

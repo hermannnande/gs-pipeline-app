@@ -15,6 +15,9 @@ const PACK_PRICING_BY_UNIT_PRICE = {
   },
 };
 
+/** Frais de livraison web (CI). 0 = montant commande = prix palier produit uniquement. */
+export const DELIVERY_FEE_CI = 0;
+
 /**
  * Calcule le montant total selon la quantité et les paliers de prix du produit
  * @param {number|object} prixUnitaireOrProduct - Prix unitaire OU objet produit complet
@@ -60,6 +63,11 @@ export function computeTotalAmount(prixUnitaireOrProduct, quantite) {
   if (typeof pack === 'number') return pack;
 
   return unit * qty;
+}
+
+/** Total commande publique (= prix palier, sans supplément livraison). */
+export function computePublicOrderTotal(product, quantite) {
+  return computeTotalAmount(product, quantite) + DELIVERY_FEE_CI;
 }
 
 export function getPackPricingByUnitPrice() {
