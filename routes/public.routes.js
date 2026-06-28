@@ -67,9 +67,11 @@ router.get('/products', async (req, res) => {
 // d'autres produits par cet endpoint.
 const PUBLIC_ORDER_PRODUCT_CODES = ['BOUILLOIRE_INTELLIGENTE'];
 
-// GET /api/public/product-orders?code=BOUILLOIRE_INTELLIGENTE
-// Liste lecture seule des commandes d'un produit isolé (nom, tél, ville,
-// quantité, montant, statut, date). Accessible sans authentification.
+// Statuts modifiables depuis la page-liste publique (lien sans compte).
+const PUBLIC_ORDER_STATUSES = ['VALIDEE', 'ANNULEE', 'ASSIGNEE', 'LIVREE'];
+
+// GET /api/public/product-orders?code=BOUILLOIRE_INTELLIGENTE&page=1&limit=100
+// Liste paginée des commandes d'un produit isolé. Accessible sans authentification.
 router.get('/product-orders', async (req, res) => {
   try {
     const code = String(req.query.code || '').trim().toUpperCase();
@@ -77,31 +79,78 @@ router.get('/product-orders', async (req, res) => {
       return res.status(404).json({ error: 'Produit non disponible.' });
     }
     const companyId = await resolveCompanyId(req);
-    const orders = await prisma.order.findMany({
-      where: {
-        companyId,
-        product: { code: { equals: code, mode: 'insensitive' } },
-      },
-      select: {
-        id: true,
-        orderReference: true,
-        clientNom: true,
-        clientTelephone: true,
-        clientVille: true,
-        clientCommune: true,
-        clientAdresse: true,
-        quantite: true,
-        montant: true,
-        status: true,
-        createdAt: true,
-        produitNom: true,
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 2000,
+    const where = {
+      companyId,
+      product: { code: { equals: code, mode: 'insensitive' } },
+    };
+
+    const pageNum = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limitNum = Math.min(200, Math.max(1, parseInt(req.query.limit, 10) || 100));
+    const skip = (pageNum - 1) * limitNum;
+
+    const select = {
+      id: true, orderReference: true, clientNom: true, clientTelephone: true,
+      clientVille: true, clientCommune: true, clientAdresse: true,
+      quantite: true, montant: true, status: true, createdAt: true, produitNom: true,
+    };
+
+    const [orders, total, counts] = await Promise.all([
+      prisma.order.findMany({ where, select, orderBy: { createdAt: 'desc' }, skip, take: limitNum }),
+      prisma.order.count({ where }),
+      prisma.order.groupBy({ by: ['status'], where, _count: { _all: true } }),
+    ]);
+
+    const byStatus = {};
+    for (const c of counts) byStatus[c.status] = c._count._all;
+
+    res.json({
+      code,
+      orders,
+      byStatus,
+      pagination: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) || 1 },
     });
-    res.json({ code, count: orders.length, orders });
   } catch (error) {
     console.error('Erreur product-orders public:', error);
+    res.status(500).json({ error: 'Erreur serveur.' });
+  }
+});
+
+// POST /api/public/product-orders/:id/status  { code, status }
+// Change le statut d'une commande d'un produit whitelisté, SANS authentification
+// (page-liste accessible par lien). Restreint aux produits + statuts autorisés,
+// et l'ID doit appartenir à une commande de ce produit (sécurité).
+router.post('/product-orders/:id/status', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const code = String(req.body?.code || '').trim().toUpperCase();
+    const status = String(req.body?.status || '').trim().toUpperCase();
+
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'ID invalide.' });
+    if (!PUBLIC_ORDER_PRODUCT_CODES.includes(code)) return res.status(404).json({ error: 'Produit non disponible.' });
+    if (!PUBLIC_ORDER_STATUSES.includes(status)) return res.status(400).json({ error: 'Statut non autorisé.' });
+
+    const companyId = await resolveCompanyId(req);
+    const order = await prisma.order.findFirst({ where: { id, companyId }, include: { product: true } });
+    if (!order || (order.product?.code || '').toUpperCase() !== code) {
+      return res.status(404).json({ error: 'Commande introuvable.' });
+    }
+
+    const data = { status };
+    if (status === 'VALIDEE') data.validatedAt = new Date();
+    if (status === 'LIVREE') data.deliveredAt = new Date();
+
+    await prisma.order.update({ where: { id }, data });
+
+    // Historique (audit) — non bloquant. changedBy=0 = via lien public.
+    try {
+      await prisma.statusHistory.create({
+        data: { orderId: id, oldStatus: order.status, newStatus: status, changedBy: 0, comment: 'Lien public bouilloire' },
+      });
+    } catch { /* noop */ }
+
+    res.json({ success: true, id, status });
+  } catch (error) {
+    console.error('Erreur changement statut public:', error);
     res.status(500).json({ error: 'Erreur serveur.' });
   }
 });
