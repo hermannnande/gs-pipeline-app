@@ -39,6 +39,7 @@ import axios from 'axios';
 import { trackPageView } from '../../utils/pageTracking';
 import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
 import { orderTotal, packAmount, packLabel, DELIVERY_FEE_CI } from '../../utils/pricingHelpers';
+import { optimImg } from '../../utils/img';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'serum-cerne';
@@ -61,14 +62,14 @@ const QTY_OPTS = [
 
 // 12 medias UNIQUES (dossier /serum-yeux/ pour eviter le conflit avec le slug /serum-cerne)
 const MEDIA = {
-  hero:       'https://obrille.com/wp-content/uploads/2026/06/ChatGPT-Image-8-juin-2026-15_41_35.png',
+  hero:       optimImg('https://obrille.com/wp-content/uploads/2026/06/ChatGPT-Image-8-juin-2026-15_41_35.png', 1000),
   problem:    'https://obrille.com/wp-content/uploads/2026/06/Ma-video-12.mp4',
-  solution:   'https://obrille.com/wp-content/uploads/2026/06/ChatGPT-Image-8-juin-2026-23_30_57.png',
+  solution:   optimImg('https://obrille.com/wp-content/uploads/2026/06/ChatGPT-Image-8-juin-2026-23_30_57.png', 1000),
   video1:     '/serum-yeux/video-1.mp4',
   formula:    '/serum-yeux/img-4.webp',
   glow:       '/serum-yeux/img-5.webp',
   video2:     '/serum-yeux/video-2.mp4',
-  avant:      'https://obrille.com/wp-content/uploads/2026/06/ChatGPT-Image-8-juin-2026-23_22_44-1.png',
+  avant:      optimImg('https://obrille.com/wp-content/uploads/2026/06/ChatGPT-Image-8-juin-2026-23_22_44-1.png', 1000),
   apres:      '/serum-yeux/img-7.webp',
   routine:    '/serum-yeux/img-8.webp',
   video3:     '/serum-yeux/video-3.mp4',

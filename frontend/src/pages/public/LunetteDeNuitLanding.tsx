@@ -8,6 +8,7 @@ import axios from 'axios';
 import { trackPageView } from '../../utils/pageTracking';
 import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
 import { orderTotal, packAmount, DELIVERY_FEE_CI, packLabel } from '../../utils/pricingHelpers';
+import { optimImg } from '../../utils/img';
 
 
 
@@ -29,7 +30,7 @@ const QTY_OPTS = [
 ];
 
 const MEDIA = {
-  heroPoster: '/lunette-de-nuit/hero.jpg',
+  heroPoster: optimImg('https://obrille.com/lunette-de-nuit/hero.jpg', 800),
   heroVideo: '/lunette-de-nuit/hero.mp4',
   v2: '/lunette-de-nuit/v2.mp4',
   v3: '/lunette-de-nuit/v3.mp4',
@@ -37,7 +38,7 @@ const MEDIA = {
   m1: '/lunette-de-nuit/m1.webp',
   m2: '/lunette-de-nuit/m2.webp',
   m3: '/lunette-de-nuit/m3.webp',
-  product: '/lunette-de-nuit/hero.jpg',
+  product: optimImg('https://obrille.com/lunette-de-nuit/hero.jpg', 800),
 };
 
 interface Product { id: number; code: string; nom: string; prixUnitaire: number }

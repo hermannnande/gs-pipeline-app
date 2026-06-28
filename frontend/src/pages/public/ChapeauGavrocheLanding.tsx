@@ -21,6 +21,7 @@ import { trackPageView } from '../../utils/pageTracking';
 import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
 import type { OrderProduct } from '../../hooks/useOrderSubmit';
 import { orderTotal, packAmount, packLabel, DELIVERY_FEE_CI } from '../../utils/pricingHelpers';
+import { optimImg } from '../../utils/img';
 
 const SLUG = 'chapeau-gavroche';
 const PRODUCT_CODE = 'CHAPEAU_GAVROCHE';
@@ -36,7 +37,7 @@ const QTY_OPTS = [
   { v: 3, label: '3 chapeaux', sub: packLabel(PRICES, 3, 'F'), tag: 'Meilleure valeur', save: 'Économisez 5 800 F + livraison express' },
 ];
 
-const WP = (n: string) => `https://obrille.com/wp-content/uploads/2026/05/${n}`;
+const WP = (n: string) => optimImg(`https://obrille.com/wp-content/uploads/2026/05/${n}`, 1000);
 const MEDIA = {
   m01: WP('ChatGPT-Image-23-mai-2026-22_27_26.png'),
   m02: WP('ChatGPT-Image-23-mai-2026-22_27_11.png'),

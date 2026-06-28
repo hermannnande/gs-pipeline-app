@@ -24,6 +24,7 @@ import { trackPageView } from '../../utils/pageTracking';
 import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
 import type { OrderProduct } from '../../hooks/useOrderSubmit';
 import { orderTotal, packAmount, packLabel, DELIVERY_FEE_CI } from '../../utils/pricingHelpers';
+import { optimImg } from '../../utils/img';
 
 const SLUG = 'spray-vitiligo';
 const PRODUCT_CODE = 'CREME_VITILIGO';
@@ -44,7 +45,7 @@ const QTY_OPTS = [
 // Total bundle : ~1.1 MB (vs 22 MB en PNG WordPress = -95%)
 // Script de regeneration : node scripts/compress-spray-vitiligo.mjs
 const M = (n: string) => `/spray-vitiligo/${n}.webp`;
-const WP = (n: string) => `https://obrille.com/wp-content/uploads/2026/05/${n}`;
+const WP = (n: string) => optimImg(`https://obrille.com/wp-content/uploads/2026/05/${n}`, 1000);
 const MEDIA = {
   hero:    M('hero'),     // NEW image hero (ChatGPT-Image-24-mai-2026-15_15_38)
   affiche: M('affiche'),  // ancien hero Affiche-Spray-Vitiligo, reutilise en fiche

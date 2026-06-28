@@ -13,6 +13,7 @@
 import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { trackPageView } from '../../utils/pageTracking';
+import { optimImg } from '../../utils/img';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'boutique';
@@ -166,7 +167,7 @@ const PRODUCTS: Product[] = [
     href: '/chaussette-compression',
     name: 'Chaussettes de Compression Anti-Douleur',
     tagline: 'Compression medicale 20-30 mmHg',
-    hero: 'https://obrille.com/wp-content/uploads/2026/04/Chaussettes-de-compression-pour-soulager-les-douleurs-1.png',
+    hero: optimImg('https://obrille.com/wp-content/uploads/2026/04/Chaussettes-de-compression-pour-soulager-les-douleurs-1.png', 700),
     badge: 'Bestseller',
     badgeColor: 'emerald',
     price: '9 900 F',
@@ -178,7 +179,7 @@ const PRODUCTS: Product[] = [
     href: '/creme-ongle-incarne',
     name: 'Creme Anti-Ongle Incarne',
     tagline: 'Soulagement en 7 jours, sans chirurgie',
-    hero: 'https://obrille.com/wp-content/uploads/2026/04/Traitement-efficace-des-ongles-incarnes.png',
+    hero: optimImg('https://obrille.com/wp-content/uploads/2026/04/Traitement-efficace-des-ongles-incarnes.png', 700),
     badge: 'N°1 CI',
     badgeColor: 'violet',
     price: '9 900 F',
