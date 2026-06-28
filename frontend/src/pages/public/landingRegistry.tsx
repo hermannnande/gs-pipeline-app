@@ -16,6 +16,7 @@ type LazyLanding = LazyExoticComponent<ComponentType>;
 export const LANDING_COMPONENTS: Record<string, LazyLanding> = {
   'coffret-boxer-homme': lazy(() => import('./CoffretBoxerLanding')),
   'creme-anti-verrue': lazy(() => import('./CremeAntiVerrueLanding')),
+  'creme-anti-verrue-bleu': lazy(() => import('./CremeAntiVerrueBleuLanding')),
   patchdouleurtk: lazy(() => import('./PatchDouleurTkLanding')),
   patchdouleurfb: lazy(() => import('./PatchDouleurFbLanding')),
   'creme-verrue-tk': lazy(() => import('./CremeVerrueTkLanding')),

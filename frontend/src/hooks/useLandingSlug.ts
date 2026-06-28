@@ -5,6 +5,7 @@ import { useParams, useLocation } from 'react-router-dom';
 // Ajouter ici fait apparaitre le slug partout automatiquement.
 export const LANDING_SLUGS = [
   'creme-anti-verrue',
+  'creme-anti-verrue-bleu',
   'creme-verrue-tk',
   'creme-verrue-tk2',
   'spraydouleurtk',

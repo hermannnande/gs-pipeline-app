@@ -42,6 +42,7 @@ const CUSTOM_SLUGS = [
   'creme-verrue-tk',
   'creme-verrue-tk2',
   'creme-anti-verrue',
+  'creme-anti-verrue-bleu',
   'spraydouleurtk',
   'creme-ongle-incarne',
   'creme-ongle-incarne-v2',
@@ -111,6 +112,7 @@ function renderModal(slug: string, rest: Omit<Props, 'slug'>) {
     case 'creme-verrue-tk2':
       return <OrderModalVerrueTk {...rest} />;
     case 'creme-anti-verrue':
+    case 'creme-anti-verrue-bleu':
       return <OrderModalAntiVerrue {...rest} />;
     case 'spraydouleurtk':
       return <OrderModalSprayDouleur {...rest} />;
