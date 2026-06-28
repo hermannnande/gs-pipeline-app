@@ -2,7 +2,7 @@
  * Crée (ou met à jour) le produit BOUILLOIRE_INTELLIGENTE + mapping slug
  * bouilloire-intelligente dans landing_templates (gestion produit obgestion).
  *
- * Prix promo : 7 000 / 12 000 / 15 000 FCFA (qty 1/2/3).
+ * Prix promo : 8 500 / 16 000 / 21 000 FCFA (qty 1/2/3).
  * Usage : node scripts/seed-bouilloire-intelligente.mjs
  */
 const API_URL = process.env.API_URL || 'https://gs-pipeline-app-2.vercel.app/api';
@@ -12,7 +12,7 @@ const PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const SLUG = 'bouilloire-intelligente';
 const CODE = 'BOUILLOIRE_INTELLIGENTE';
 const NOM = 'Bouilloire Électrique Intelligente';
-const PRICES = { prixUnitaire: 7000, prix2Unites: 12000, prix3Unites: 15000 };
+const PRICES = { prixUnitaire: 8500, prix2Unites: 16000, prix3Unites: 21000 };
 
 const CONFIG = {
   productCode: CODE,
@@ -21,7 +21,7 @@ const CONFIG = {
   subtitle: 'Température réglable 40°C – 100°C',
   thankYouUrl: `/${SLUG}/merci`,
   metaPixelId: '1333239138939400',
-  prices: { 1: 7000, 2: 12000, 3: 15000 },
+  prices: { 1: 8500, 2: 16000, 3: 21000 },
   badge: 'NOUVEAU',
   images: {
     hero: 'https://obrille.com/wp-content/uploads/2026/06/ChatGPT-Image-26-juin-2026-17_52_46.png',

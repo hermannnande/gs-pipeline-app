@@ -16,13 +16,13 @@ const CONTENT_NAME = 'Bouilloire Électrique Intelligente';
 const THANK_YOU_URL = '/bouilloire-intelligente/merci';
 const META_PIXEL_ID = '1333239138939400';
 
-const PRICES: Record<number, number> = { 1: 7000, 2: 12000, 3: 15000 };
+const PRICES: Record<number, number> = { 1: 8500, 2: 16000, 3: 21000 };
 const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 const fmtPack = (v: number) => packLabel(PRICES, v, 'F').replace(' F', '');
 const QTY_OPTS = [
   { v: 1, label: '1 bouilloire', sub: packLabel(PRICES, 1, 'F'), save: '' },
-  { v: 2, label: '2 bouilloires', sub: packLabel(PRICES, 2, 'F'), tag: 'Le + choisi', save: 'Économisez 2 000 F' },
-  { v: 3, label: '3 bouilloires', sub: packLabel(PRICES, 3, 'F'), tag: 'Meilleure offre', save: 'Économisez 6 000 F' },
+  { v: 2, label: '2 bouilloires', sub: packLabel(PRICES, 2, 'F'), tag: 'Le + choisi', save: 'Économisez 1 000 F' },
+  { v: 3, label: '3 bouilloires', sub: packLabel(PRICES, 3, 'F'), tag: 'Meilleure offre', save: 'Économisez 4 500 F' },
 ];
 
 const CACHE = '20260626perf';

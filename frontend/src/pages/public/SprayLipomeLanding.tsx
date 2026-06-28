@@ -36,7 +36,8 @@ import { orderTotal, packAmount, packLabel, DELIVERY_FEE_CI } from '../../utils/
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'spraylipome';
 const PRODUCT_CODE = 'SRAY_LIPOME';
-const META_PIXEL_ID = '952340034030644';
+const META_PIXEL_ID = '902265788982876';
+const META_PIXEL_ID_SECONDARY = '952340034030644';
 const THANK_YOU_URL = '/spraylipome/merci';
 
 const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
@@ -67,15 +68,16 @@ const MEDIA = {
 
 declare global { interface Window { fbq: any; _fbq: any; } }
 
-function initMetaPixel(pixelId: string) {
-  if (!pixelId || window.fbq) return;
+function initMetaPixel(pixelIds: string | string[]) {
+  const ids = (Array.isArray(pixelIds) ? pixelIds : [pixelIds]).filter(Boolean);
+  if (!ids.length || window.fbq) return;
   const f: any = window.fbq = function (...args: any[]) { f.callMethod ? f.callMethod(...args) : f.queue.push(args); };
   if (!window._fbq) window._fbq = f;
   f.push = f; f.loaded = true; f.version = '2.0'; f.queue = [];
   const s = document.createElement('script');
   s.async = true; s.src = 'https://connect.facebook.net/en_US/fbevents.js';
   document.head.appendChild(s);
-  window.fbq('init', pixelId);
+  for (const id of ids) window.fbq('init', id);
   window.fbq('track', 'PageView');
 }
 
@@ -292,7 +294,7 @@ export default function SprayLipomeLanding() {
     pixelFired.current = true;
     trackPageView(SLUG, company);
     if (META_PIXEL_ID) {
-      initMetaPixel(META_PIXEL_ID);
+      initMetaPixel([META_PIXEL_ID, META_PIXEL_ID_SECONDARY]);
       window.fbq?.('track', 'ViewContent', {
         content_name: 'Spray Anti-Lipome',
         content_ids: [PRODUCT_CODE],
@@ -1374,6 +1376,7 @@ export default function SprayLipomeLanding() {
           prices: PRICES,
           thankYouUrl: THANK_YOU_URL,
           metaPixelId: META_PIXEL_ID,
+          secondaryMetaPixelId: META_PIXEL_ID_SECONDARY,
           slug: SLUG,
           company,
           navigate,

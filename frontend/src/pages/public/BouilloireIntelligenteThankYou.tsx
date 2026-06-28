@@ -9,7 +9,7 @@ import { orderTotal } from '../../utils/pricingHelpers';
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const TEMPLATE_SLUG = 'bouilloire-intelligente';
 const PRODUCT_CODE = 'BOUILLOIRE_INTELLIGENTE';
-const PRICES: Record<number, number> = { 1: 7000, 2: 12000, 3: 15000 };
+const PRICES: Record<number, number> = { 1: 8500, 2: 16000, 3: 21000 };
 const META_PIXEL_ID = '1333239138939400';
 const PRODUCT_NAME = 'Bouilloire \u00c9lectrique Intelligente';
 const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
