@@ -90,6 +90,7 @@ export default function Layout({ children }: LayoutProps) {
           { icon: MessageSquare, label: 'Supervision Chat', path: '/admin/chat-supervision' },
           { icon: Eye, label: 'Audit & Sécurité', path: '/admin/audit' },
           { icon: MessageCircle, label: 'WhatsApp Agent', path: '/admin/whatsapp' },
+          { icon: MessageCircle, label: 'Confirmation WhatsApp', path: '/admin/whatsapp-confirmation' },
           { icon: FileText, label: 'Pages de vente', path: '/admin/templates' },
           { icon: TrendingUp, label: 'Analytics Landing', path: '/admin/landing-analytics' },
         ];

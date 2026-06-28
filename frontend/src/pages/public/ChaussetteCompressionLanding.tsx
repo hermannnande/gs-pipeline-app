@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { trackPageView } from '../../utils/pageTracking';
 import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
+import { orderTotal, packAmount, packLabel, DELIVERY_FEE_CI } from '../../utils/pricingHelpers';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'chaussette-compression';
@@ -18,12 +19,13 @@ const PRODUCT_CODE = 'CHAUSSETTE_COMPRESSION_LONG';
 const META_PIXEL_ID = '952340034030644';
 const THANK_YOU_URL = '/landing/chaussette-compression/merci';
 
-const PRICES: Record<number, number> = { 1: 9900, 2: 14900, 3: 19900 };
+const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 const OLD_PRICE = 15000;
 const QTY_OPTS = [
-  { v: 1, label: '1 paire', sub: '9 900 FCFA' },
-  { v: 2, label: '2 paires', sub: '14 900 FCFA', tag: 'Populaire', save: 'Economisez 4 900 F' },
-  { v: 3, label: '3 paires', sub: '19 900 FCFA', tag: 'Meilleure offre', save: 'Economisez 9 800 F' },
+  { v: 1, label: '1 paire', sub: packLabel(PRICES, 1, 'FCFA') },
+  { v: 2, label: '2 paires', sub: packLabel(PRICES, 2, 'FCFA'), tag: 'Populaire', save: 'Economisez 4 900 F' },
+  { v: 3, label: '3 paires', sub: packLabel(PRICES, 3, 'FCFA'), tag: 'Meilleure offre', save: 'Economisez 9 800 F' },
 ];
 
 const M = (n: string) => `/chaussette-compression/${n}`;
@@ -447,7 +449,7 @@ export default function ChaussetteCompressionLanding() {
         content_name: 'Chaussettes Compression Premium',
         content_ids: [PRODUCT_CODE],
         content_type: 'product',
-        value: PRICES[1],
+        value: orderTotal(PRICES, 1),
         currency: 'XOF',
       });
     }
@@ -642,12 +644,12 @@ export default function ChaussetteCompressionLanding() {
 
           <div className="ccc-fade-up mt-8" style={{ animationDelay: '.2s' }}>
             <div className="flex items-baseline justify-center gap-2">
-              <span className="bg-gradient-to-r from-emerald-600 via-teal-500 to-violet-600 bg-clip-text text-4xl font-black text-transparent sm:text-5xl">9 900</span>
+              <span className="bg-gradient-to-r from-emerald-600 via-teal-500 to-violet-600 bg-clip-text text-4xl font-black text-transparent sm:text-5xl">{fmtTotal(1)}</span>
               <span className="text-lg font-bold text-indigo-800">FCFA</span>
               <span className="text-sm text-indigo-400 line-through">{fmt(OLD_PRICE).replace(' FCFA', '')}</span>
               <span className="rounded-md bg-rose-500 px-2 py-0.5 text-[10px] font-black text-white">−34 %</span>
             </div>
-            <p className="mt-1 text-[12px] font-bold text-emerald-700">🚚 Livraison gratuite · Paiement à la réception</p>
+            <p className="mt-1 text-[12px] font-bold text-emerald-700">🚚 Paiement à la réception</p>
             <div className="mx-auto mt-5 max-w-sm">
               <FluidCTA onClick={() => openModal(1)}>Commander maintenant <Arrow /></FluidCTA>
             </div>
@@ -805,7 +807,7 @@ export default function ChaussetteCompressionLanding() {
       <MediaBlock
         kicker="Best-seller"
         hook={<>La paire que nos clientes <Grad variant="violet">commandent en double</Grad>.</>}
-        cta="Pack 2 paires — 14 900 F"
+        cta={`Pack 2 paires — ${fmtTotal(2)} F`}
         qty={2}
         onOrder={openModal}
         variant="mist"
@@ -855,9 +857,9 @@ export default function ChaussetteCompressionLanding() {
           </div>
           <div className="mt-7 grid gap-3 sm:grid-cols-3">
             {[
-              { v: 1, n: '1 paire', p: 9900, old: 15000, sub: 'Essai', save: null },
-              { v: 2, n: '2 paires', p: 14900, old: 30000, sub: '★ Populaire', save: '−4 900 F', hot: true },
-              { v: 3, n: '3 paires', p: 19900, old: 45000, sub: 'Meilleure offre', save: '−9 800 F' },
+              { v: 1, n: '1 paire', p: orderTotal(PRICES, 1), old: 15000, sub: packLabel(PRICES, 1, 'F'), save: null },
+              { v: 2, n: '2 paires', p: orderTotal(PRICES, 2), old: 30000, sub: packLabel(PRICES, 2, 'F'), save: '−4 900 F', hot: true },
+              { v: 3, n: '3 paires', p: orderTotal(PRICES, 3), old: 45000, sub: packLabel(PRICES, 3, 'F'), save: '−9 800 F' },
             ].map((b) => (
               <button
                 key={b.v}
@@ -937,7 +939,7 @@ export default function ChaussetteCompressionLanding() {
             <span className="text-[10px] font-bold text-rose-300">· Stock {stock}</span>
           </div>
           <div className="mx-auto mt-7 max-w-sm">
-            <FluidCTA onClick={() => openModal(2)} variant="emerald">COMMANDER — 14 900 F <Arrow /></FluidCTA>
+            <FluidCTA onClick={() => openModal(2)} variant="emerald">COMMANDER — {fmtTotal(2)} F <Arrow /></FluidCTA>
           </div>
         </div>
       </section>
@@ -971,7 +973,7 @@ export default function ChaussetteCompressionLanding() {
             <p className="text-[10px] font-black uppercase tracking-wider text-emerald-300">
               {pad(countdown.h)}:{pad(countdown.m)}:{pad(countdown.s)} · Stock {stock}
             </p>
-            <p className="text-[11px] font-bold text-white">9 900 F · livraison gratuite</p>
+            <p className="text-[11px] font-bold text-white">{fmtTotal(1)} F</p>
           </div>
           <div className="w-[148px] shrink-0">
             <FluidCTA onClick={() => openModal(1)} variant="emerald" size="sm">

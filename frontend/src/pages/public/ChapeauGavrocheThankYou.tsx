@@ -19,7 +19,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 const META_PIXEL_ID = '1613380123108753';
-const PRICES: Record<number, number> = { 1: 11900, 2: 21900, 3: 29900 };
+const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
 const PRODUCT_CODE = 'CHAPEAU_GAVROCHE';
 const CONTENT_NAME = 'Chapeau Gavroche Premium';
 

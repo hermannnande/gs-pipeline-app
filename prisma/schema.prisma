@@ -970,3 +970,34 @@ model StoreConfig {
 
   @@map("store_config")
 }
+
+// ── Confirmation WhatsApp des commandes (WaSenderAPI) ──────────────────────
+// Config éditable depuis l'admin (clé API = session/numéro expéditeur).
+model WhatsappConfig {
+  id           Int      @id @default(autoincrement())
+  apiKey       String?  @map("api_key")
+  senderNumber String?  @map("sender_number")
+  enabled      Boolean  @default(true)
+  template     String?
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("whatsapp_config")
+}
+
+// File d'attente d'envoi (respect du débit WaSender : ~1 msg / 6 s via cron).
+model WhatsappOutbox {
+  id        Int       @id @default(autoincrement())
+  toNumber  String    @map("to_number")
+  text      String
+  status    String    @default("PENDING") // PENDING | SENT | FAILED
+  attempts  Int       @default(0)
+  lastError String?   @map("last_error")
+  msgId     String?   @map("msg_id")
+  orderId   Int?      @map("order_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  sentAt    DateTime? @map("sent_at")
+
+  @@index([status, createdAt])
+  @@map("whatsapp_outbox")
+}

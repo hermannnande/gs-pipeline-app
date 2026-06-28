@@ -22,9 +22,15 @@ RewriteBase /landings-app/
 </IfModule>
 
 # ─── SPA React : tout chemin non existant retombe sur index.html ────────────
+# Si la cible existe (fichier ou dossier), on la sert telle quelle.
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
+# Garde-fou anti-boucle : ne jamais reecrire index.html vers lui-meme.
+# (Si index.html venait a manquer pendant un deploy, sans ce garde la regle
+#  bouclerait index.html -> index.html jusqu'a "10 internal redirects" -> 500.
+#  Avec le garde, on obtient un 404 propre au lieu d'un 500 en boucle.)
+RewriteCond %{REQUEST_URI} !/index\.html$
 RewriteRule . /landings-app/index.html [L]
 
 # ─── Cache long pour les assets statiques (hash dans le nom) ────────────────

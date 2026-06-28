@@ -17,7 +17,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 
 // Pixel Meta dedie a la campagne Spray Vitiligo (meme pixel que la landing pour dedup CAPI)
 const META_PIXEL_ID = '1800280300964462';
-const PRICES: Record<number, number> = { 1: 11900, 2: 19900, 3: 27900 };
+const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
 const PRODUCT_CODE = 'CREME_VITILIGO';
 const CONTENT_NAME = 'Spray Vitiligo';
 const WHATSAPP_NUMBER = '2250707070707';

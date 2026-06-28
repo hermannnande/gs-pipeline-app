@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { trackPageView } from '../../utils/pageTracking';
+import { orderTotal, packAmount, packLabel, DELIVERY_FEE_CI } from '../../utils/pricingHelpers';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const TARGET_CODE = 'VERRUE_TK';
@@ -23,10 +24,11 @@ function initMetaPixel(pixelId: string) {
   window.fbq('track', 'PageView');
 }
 const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 const QTY_OPTS = [
-  { v: 1, label: '1 boite', sub: '9 900 FCFA', save: '' },
-  { v: 2, label: '2 boites', sub: '16 900 FCFA', tag: 'Populaire', save: 'Economisez 2 900 F' },
-  { v: 3, label: '3 boites', sub: '24 900 FCFA', tag: 'Meilleure offre', save: 'Economisez 4 800 F' },
+  { v: 1, label: '1 boite', sub: packLabel(PRICES, 1, 'FCFA'), save: '' },
+  { v: 2, label: '2 boites', sub: packLabel(PRICES, 2, 'FCFA'), tag: 'Populaire', save: 'Economisez 2 900 F' },
+  { v: 3, label: '3 boites', sub: packLabel(PRICES, 3, 'FCFA'), tag: 'Meilleure offre', save: 'Economisez 4 800 F' },
 ];
 
 interface Product { id: number; code: string; nom: string; prixUnitaire: number; imageUrl: string | null }
@@ -241,7 +243,7 @@ export default function VerrueTkLanding() {
     initMetaPixel(META_PIXEL_ID);
     window.fbq?.('track', 'ViewContent', {
       content_name: 'Creme Anti-Verrue VERRUE TK', content_ids: [TARGET_CODE],
-      content_type: 'product', value: PRICES[1], currency: 'XOF',
+      content_type: 'product', value: orderTotal(PRICES, 1), currency: 'XOF',
     });
   }, [company]);
 
@@ -260,7 +262,7 @@ export default function VerrueTkLanding() {
     const selectedQty = q || 1;
     window.fbq?.('track', 'AddToCart', {
       content_name: 'Creme Anti-Verrue VERRUE TK', content_ids: [TARGET_CODE],
-      content_type: 'product', value: PRICES[selectedQty] || PRICES[1], currency: 'XOF', num_items: selectedQty,
+      content_type: 'product', value: orderTotal(PRICES, selectedQty) || PRICES[1], currency: 'XOF', num_items: selectedQty,
     });
   }, []);
 
@@ -272,7 +274,7 @@ export default function VerrueTkLanding() {
     setSending(true);
     window.fbq?.('track', 'InitiateCheckout', {
       content_name: 'Creme Anti-Verrue VERRUE TK', content_ids: [TARGET_CODE],
-      content_type: 'product', value: PRICES[qty] || PRICES[1], currency: 'XOF', num_items: qty,
+      content_type: 'product', value: orderTotal(PRICES, qty) || PRICES[1], currency: 'XOF', num_items: qty,
     });
     try {
       let prod = product;
@@ -376,7 +378,7 @@ export default function VerrueTkLanding() {
               <span className="text-xs text-neutral-400">(1 247 avis)</span>
             </div>
             <div className="flex items-baseline gap-2.5">
-              <span className="text-2xl font-black sm:text-3xl">{fmt(PRICES[1])}</span>
+              <span className="text-2xl font-black sm:text-3xl">{fmt(orderTotal(PRICES, 1))}</span>
               <span className="text-sm text-neutral-400 line-through">15 000 FCFA</span>
               <span className="rounded-md bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-600">-34%</span>
             </div>
@@ -396,7 +398,7 @@ export default function VerrueTkLanding() {
               <GlowBtn onClick={() => open()} variant="gold">
                 <span className="relative z-10 flex items-center gap-2">
                   <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-900 opacity-40"/><span className="relative inline-flex h-2 w-2 rounded-full bg-neutral-900"/></span>
-                  Commander maintenant — {fmt(PRICES[1])}
+                  Commander maintenant — {fmt(orderTotal(PRICES, 1))}
                 </span>
               </GlowBtn>
               <p className="mt-2 text-center text-[11px] text-neutral-400">Aucun compte requis. Formulaire rapide en 30 secondes.</p>
@@ -450,7 +452,7 @@ export default function VerrueTkLanding() {
             <GlowBtn onClick={() => open()} variant="gold">
               <span className="relative z-10 flex items-center gap-2">
                 <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-900 opacity-40"/><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-neutral-900"/></span>
-                Commander maintenant — {fmt(PRICES[1])}
+                Commander maintenant — {fmt(orderTotal(PRICES, 1))}
               </span>
             </GlowBtn>
           </div>
@@ -643,7 +645,7 @@ export default function VerrueTkLanding() {
               { q: 'Quand je vois les resultats ?', a: 'La plupart des clients voient une amelioration en quelques jours.' },
               { q: 'Comment suis-je contacte ?', a: 'Notre equipe vous appelle dans les heures qui suivent.' },
               { q: 'Convient a tous types de peau ?', a: 'Oui, formule concue pour tous les types de peau.' },
-              { q: 'Plusieurs boites ?', a: '2 boites a 16 900 F ou 3 boites a 24 900 F. Offres groupees populaires.' },
+              { q: 'Plusieurs boites ?', a: `2 boites a ${fmtTotal(2)} F ou 3 boites a ${fmtTotal(3)} F. Offres groupees populaires.` },
             ].map((f, i) => (
               <details key={i} className="group rounded-xl border border-neutral-200 bg-white shadow-sm">
                 <summary className="flex cursor-pointer items-center justify-between px-4 py-3.5 text-[13px] font-bold sm:text-sm">{f.q}<svg className="chevron h-4 w-4 shrink-0 text-neutral-300 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg></summary>
@@ -670,7 +672,7 @@ export default function VerrueTkLanding() {
           <GlowBtn onClick={() => open()} variant="gold">
             <span className="relative z-10 flex items-center gap-2">
               <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-900 opacity-40"/><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-neutral-900"/></span>
-              Commander ici — {fmt(PRICES[1])}
+              Commander ici — {fmt(orderTotal(PRICES, 1))}
             </span>
           </GlowBtn>
           <p className="mt-3 text-[11px] text-neutral-500">Aucun compte requis · Formulaire en 30 secondes</p>
@@ -695,7 +697,7 @@ export default function VerrueTkLanding() {
           <img src={I.hero} alt="" className="h-11 w-11 shrink-0 rounded-lg border border-neutral-100 object-cover sm:h-12 sm:w-12"/>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-bold sm:text-sm">Creme Anti-Verrue TK</p>
-            <p className="text-[11px] text-neutral-400">{fmt(PRICES[1])} · Paiement a la livraison</p>
+            <p className="text-[11px] text-neutral-400">{fmt(orderTotal(PRICES, 1))} · Paiement a la livraison</p>
           </div>
           <button onClick={() => open()} className="shrink-0 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-300 px-4 py-2.5 text-[13px] font-extrabold text-neutral-900 shadow-[0_4px_16px_rgba(251,191,36,.35)] transition hover:shadow-[0_6px_24px_rgba(251,191,36,.5)] active:scale-[.97] sm:px-6 sm:text-sm">Commander</button>
         </div>
@@ -786,8 +788,8 @@ export default function VerrueTkLanding() {
                 </div>
               </div>
               <div className="flex items-center justify-between rounded-lg bg-neutral-900 px-3 py-2 text-white sm:rounded-xl sm:px-4 sm:py-3">
-                <span className="text-[11px] font-semibold sm:text-[13px]">Total <span className="text-emerald-400">(livraison gratuite)</span></span>
-                <span className="text-[14px] font-black sm:text-base">{fmt(PRICES[qty] || PRICES[1])}</span>
+                <span className="text-[11px] font-semibold sm:text-[13px]">Total</span>
+                <span className="text-[14px] font-black sm:text-base">{fmt(orderTotal(PRICES, qty || 1))}</span>
               </div>
               {formErr && <p className="rounded-lg bg-red-50 px-3 py-1.5 text-[10px] font-semibold text-red-600 sm:py-2 sm:text-[12px]">{formErr}</p>}
               <button type="submit" disabled={sending} className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 text-[13px] font-extrabold text-white shadow-[0_12px_30px_rgba(16,185,129,.3)] transition hover:bg-emerald-500 active:scale-[.98] disabled:cursor-wait disabled:opacity-70 sm:h-12 sm:rounded-xl sm:text-[14px]">

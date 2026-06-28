@@ -130,11 +130,8 @@ foreach (FORWARD_REQUEST_HEADERS as $h) {
 $forwardHeaders[] = 'X-Forwarded-For: ' . ($_SERVER['REMOTE_ADDR'] ?? '');
 $forwardHeaders[] = 'X-Forwarded-Host: ' . ($_SERVER['HTTP_HOST'] ?? '');
 $forwardHeaders[] = 'X-Forwarded-Proto: https';
-if (empty($_SERVER['HTTP_ORIGIN'])) {
-    $forwardHeaders[] = 'Origin: https://' . ($_SERVER['HTTP_HOST'] ?? 'obrille.com');
-} else {
-    $forwardHeaders[] = 'Origin: ' . $_SERVER['HTTP_ORIGIN'];
-}
+// Origin whitelisté côté Vercel (voir app.js CORS). Le client reste same-origin via le proxy.
+$forwardHeaders[] = 'Origin: https://obrille.com';
 $forwardHeaders[] = 'Connection: keep-alive';
 
 curl_setopt($ch, CURLOPT_HTTPHEADER, $forwardHeaders);

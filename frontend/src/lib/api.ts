@@ -455,3 +455,23 @@ export const rdvApi = {
   },
 };
 
+
+// ── Confirmation WhatsApp (WaSenderAPI) ──
+export const wasenderApi = {
+  getConfig: async () => {
+    const { data } = await api.get('/wasender/config');
+    return data;
+  },
+  updateConfig: async (payload: { apiKey?: string; senderNumber?: string; enabled?: boolean; template?: string }) => {
+    const { data } = await api.put('/wasender/config', payload);
+    return data;
+  },
+  test: async (to: string, text?: string) => {
+    const { data } = await api.post('/wasender/test', { to, text });
+    return data;
+  },
+  outbox: async (params?: { status?: string; search?: string; page?: number; limit?: number }) => {
+    const { data } = await api.get('/wasender/outbox', { params });
+    return data;
+  },
+};

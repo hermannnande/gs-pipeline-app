@@ -8,6 +8,8 @@
  */
 import PatchDouleurLandingPremium from './PatchDouleurLandingPremium';
 
+const META_PIXEL_ID = '1313100454309806';
+
 export default function PatchDouleurTkLanding() {
   return (
     <PatchDouleurLandingPremium
@@ -15,6 +17,7 @@ export default function PatchDouleurTkLanding() {
       productCode="PATCH_DOULEUR_TK"
       thankYouUrl="/patchdouleurtk/merci"
       contentName="Patch Anti-Douleur Chauffant TK"
+      metaPixelId={META_PIXEL_ID}
     />
   );
 }

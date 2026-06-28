@@ -11,7 +11,7 @@
  * Config conservee :
  *   - PRODUCT_CODE : CREME_ANTI_VERRUES
  *   - META_PIXEL_ID : 1417398840151713
- *   - Prix : 9 900 / 16 900 / 24 900 FCFA
+ *   - Prix : {fmtTotal(1)} / 12 900 / 14 900 FCFA
  *
  * Pour modifier les medias : voir scripts/compress-creme-verrue-tk.mjs
  */
@@ -19,6 +19,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { trackPageView } from '../../utils/pageTracking';
 import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
 import type { OrderProduct } from '../../hooks/useOrderSubmit';
+import { orderTotal, packAmount, packLabel, DELIVERY_FEE_CI } from '../../utils/pricingHelpers';
 
 const SLUG = 'creme-verrue-tk';
 const PRODUCT_CODE = 'CREME_ANTI_VERRUES';
@@ -27,10 +28,11 @@ const THANK_YOU_URL = '/creme-verrue-tk/merci';
 
 // Prix faciles a modifier
 const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 const QTY_OPTS = [
-  { v: 1, label: '1 boîte',  sub: '9 900 F' },
-  { v: 2, label: '2 boîtes', sub: '16 900 F', tag: 'Le + choisi',     save: 'Économisez 2 900 F' },
-  { v: 3, label: '3 boîtes', sub: '24 900 F', tag: 'Meilleure offre', save: 'Économisez 4 800 F + guide offert' },
+  { v: 1, label: '1 boîte',  sub: packLabel(PRICES, 1, 'F') },
+  { v: 2, label: '2 boîtes', sub: packLabel(PRICES, 2, 'F'), tag: 'Le + choisi',     save: 'Économisez 1 100 F' },
+  { v: 3, label: '3 boîtes', sub: packLabel(PRICES, 3, 'F'), tag: 'Meilleure offre', save: 'Économisez 6 100 F + guide offert' },
 ];
 
 // Images compressees en WebP local (creme-verrue-tk-v2) + video existante
@@ -185,7 +187,7 @@ function BounceCTA({ onClick, children, variant = 'rose', large, className = '' 
 function ScrollingBar({ variant = 'brown' }: { variant?: 'brown' | 'rose' | 'cream' }) {
   const messages = {
     brown: '✦ Paiement à la livraison ✦ Livraison rapide CI ✦ Soin ciblé peau ✦ Édition 2026 ✦ Stock limité ✦ Service client réactif',
-    rose:  '⚡ OFFRE DU JOUR — 1 boîte 9 900 F ⚡ Pack 2 = -2 900 F ⚡ Pack 3 = -4 800 F + guide ⚡ Profitez avant fin ⚡',
+    rose:  `⚡ OFFRE DU JOUR — 1 boîte ${fmtTotal(1)} F ⚡ Pack 2 = -1 100 F ⚡ Pack 3 = -6 100 F + guide ⚡ Profitez avant fin ⚡`,
     cream: '★ Crème dermatologique premium ★ Aide à atténuer les verrues ★ Application simple ★ +500 clients satisfaits ★',
   };
   const text = messages[variant];
@@ -341,7 +343,7 @@ export default function CremeVerrueTkLanding() {
       window.fbq?.('track', 'ViewContent', {
         content_name: 'Crème Anti-Verrues TK',
         content_ids: [PRODUCT_CODE], content_type: 'product',
-        value: PRICES[1], currency: 'XOF',
+        value: orderTotal(PRICES, 1), currency: 'XOF',
       });
     }
     return () => { document.title = prev; };
@@ -380,7 +382,7 @@ export default function CremeVerrueTkLanding() {
                 </span>
                 <span className="absolute -left-2 bottom-4 rotate-2 rounded-xl bg-[#3d2317] px-3 py-1.5 text-amber-200 shadow-xl">
                   <span className="block text-[8px] font-bold uppercase tracking-[0.3em] text-amber-300/80">À partir de</span>
-                  <span className="block text-lg font-black leading-none">9 900 <span className="text-pink-300">F</span></span>
+                  <span className="block text-lg font-black leading-none">{fmtTotal(1)} <span className="text-pink-300">F</span></span>
                 </span>
               </div>
             </div>
@@ -400,7 +402,7 @@ export default function CremeVerrueTkLanding() {
                 <span className="cv-grad-brown italic">TK Premium</span>
               </h1>
               <p className="mt-4 max-w-md mx-auto lg:mx-0 text-base text-[#5a3a20] sm:text-lg">
-                Un soin ciblé pour <span className="font-bold text-[#3d2317]">accompagner votre peau</span> et aider à atténuer l'apparence des verrues.
+                Un soin ciblé pour <span className="font-bold text-[#3d2317]">accompagner votre peau</span> et aider à atténuer l`apparence des verrues.
               </p>
 
               {/* Note étoilée */}
@@ -417,7 +419,7 @@ export default function CremeVerrueTkLanding() {
 
               <div className="mt-6 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
                 <BounceCTA onClick={() => openModal(1)} variant="rose" large>
-                  Commander — 9 900 F
+                  Commander — {fmtTotal(1)} F
                 </BounceCTA>
               </div>
 
@@ -483,7 +485,7 @@ export default function CremeVerrueTkLanding() {
         alt="Soin ciblé peau"
         phrase="Aide à atténuer l'apparence des verrues."
         highlight={['atténuer l\'apparence']}
-        ctaLabel="Acheter à 9 900 F"
+        ctaLabel={`Acheter à ${fmtTotal(1)} F`}
         ctaVariant="gold"
         onOrder={() => openModal(1)}
       />
@@ -572,7 +574,7 @@ export default function CremeVerrueTkLanding() {
         alt="Crème en boîte premium"
         phrase="Texture légère, application douce."
         highlight={['Texture légère']}
-        ctaLabel="Je commande à 9 900 F"
+        ctaLabel={`Je commande à ${fmtTotal(1)} F`}
         ctaVariant="gold"
         onOrder={() => openModal(1)}
       />
@@ -710,7 +712,7 @@ export default function CremeVerrueTkLanding() {
                   )}
                   <div className="text-center">
                     <div className="text-xs font-extrabold uppercase tracking-widest text-[#8b5a2b]">{o.label}</div>
-                    <div className="mt-2 text-4xl font-black text-[#3d2317] tabular-nums">{fmt(PRICES[o.v])}</div>
+                    <div className="mt-2 text-4xl font-black text-[#3d2317] tabular-nums">{fmt(orderTotal(PRICES, o.v))}</div>
                     {o.save && <div className="mt-1 text-xs font-bold text-emerald-600">{o.save}</div>}
                   </div>
                   <ul className="mt-5 space-y-2 text-sm text-[#5a3a20]">
@@ -784,7 +786,7 @@ export default function CremeVerrueTkLanding() {
         <div className="flex items-center justify-between gap-3">
           <div className="leading-tight">
             <div className="text-[10px] font-bold uppercase tracking-wider text-amber-300/70">À partir de</div>
-            <div className="text-base font-black text-pink-200">{fmt(PRICES[1])} <span className="text-[10px] font-normal text-amber-300/60">/ boîte</span></div>
+            <div className="text-base font-black text-pink-200">{fmt(orderTotal(PRICES, 1))} <span className="text-[10px] font-normal text-amber-300/60">/ boîte</span></div>
           </div>
           <button
             type="button"

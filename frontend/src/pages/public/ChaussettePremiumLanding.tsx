@@ -14,17 +14,23 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { trackPageView } from '../../utils/pageTracking';
 import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
+import { orderTotal, packAmount, packLabel, DELIVERY_FEE_CI } from '../../utils/pricingHelpers';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'chaussette-premium-homme';
 const PRODUCT_CODE = 'CHAUSSETTE_HOMME_MODLE2';
+const META_PIXEL_ID = '1345698424286879';
+const META_PIXEL_ID_2 = '1613380123108753';
+const META_PIXEL_IDS = [META_PIXEL_ID, META_PIXEL_ID_2];
+const CONTENT_NAME = 'Chaussettes Premium Homme';
 const THANK_YOU_URL = '/chaussette-premium-homme/merci';
 
-const PRICES: Record<number, number> = { 1: 11900, 2: 20900, 3: 28900 };
+const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 const QTY_OPTS = [
-  { v: 1, label: '5 paires', sub: '11 900 FCFA' },
-  { v: 2, label: '10 paires', sub: '20 900 FCFA', tag: 'Populaire', save: 'Économisez 2 900 F' },
-  { v: 3, label: '15 paires', sub: '28 900 FCFA', tag: 'Stock pro', save: 'Économisez 6 800 F' },
+  { v: 1, label: '5 paires', sub: packLabel(PRICES, 1, 'FCFA') },
+  { v: 2, label: '10 paires', sub: packLabel(PRICES, 2, 'FCFA'), tag: 'Populaire', save: 'Économisez 2 900 F' },
+  { v: 3, label: '15 paires', sub: packLabel(PRICES, 3, 'FCFA'), tag: 'Stock pro', save: 'Économisez 4 800 F' },
 ];
 
 const M = (n: string) => `/chaussette-premium-homme/${n}`;
@@ -33,19 +39,53 @@ const pad = (n: number) => String(n).padStart(2, '0');
 const fmt = (n: number) => n.toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 
 interface Product { id: number; code: string; nom: string; prixUnitaire: number }
-declare global { interface Window { fbq?: any; ttq?: any; dataLayer?: any[] } }
+declare global { interface Window { fbq?: any; _fbq?: any; ttq?: any; dataLayer?: any[] } }
 
-// Tracking neutre : pousse dans dataLayer + relaie a fbq/ttq SI deja installes
-// (aucun pixel initialise ici car aucun ID fourni pour cette page).
+const initedMetaPixels = new Set<string>();
+
+function ensureFbqBase() {
+  if (window.fbq) return;
+  const f: any = (window.fbq = function (...args: any[]) {
+    f.callMethod ? f.callMethod.apply(f, args) : f.queue.push(args);
+  });
+  if (!window._fbq) window._fbq = f;
+  f.push = f; f.loaded = true; f.version = '2.0'; f.queue = [];
+  const s = document.createElement('script');
+  s.async = true; s.src = 'https://connect.facebook.net/en_US/fbevents.js';
+  document.head.appendChild(s);
+}
+
+function initMetaPixels(pixelIds: string[]) {
+  const ids = [...new Set(pixelIds.filter(Boolean))];
+  if (!ids.length) return;
+  ensureFbqBase();
+  let added = false;
+  for (const id of ids) {
+    if (initedMetaPixels.has(id)) continue;
+    window.fbq('init', id);
+    initedMetaPixels.add(id);
+    added = true;
+  }
+  if (added) window.fbq('track', 'PageView');
+}
+
 function track(event: string, data: Record<string, unknown> = {}) {
   try {
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({ event, ...data });
     if (typeof window.fbq === 'function') {
-      const fbMap: Record<string, string> = {
-        ViewContent: 'ViewContent', OpenForm: 'InitiateCheckout', Lead: 'Lead', SelectPack: 'AddToCart',
+      const payload = {
+        content_name: (data.content_name as string) || CONTENT_NAME,
+        content_ids: [PRODUCT_CODE],
+        content_type: 'product',
+        value: data.value as number | undefined,
+        currency: (data.currency as string) || 'XOF',
       };
-      if (fbMap[event]) window.fbq('trackCustom', event, data);
+      if (event === 'ViewContent') window.fbq('track', 'ViewContent', payload);
+      else if (event === 'OpenForm') window.fbq('track', 'InitiateCheckout', payload);
+      else if (event === 'SelectPack') window.fbq('track', 'AddToCart', payload);
+      else if (event === 'Lead') window.fbq('track', 'Lead', payload);
+      else window.fbq('trackCustom', event, data);
     }
     if (typeof window.ttq?.track === 'function') window.ttq.track(event, data);
   } catch { /* noop */ }
@@ -186,12 +226,12 @@ export default function ChaussettePremiumLanding() {
     const pack = q || selectedPack || 1;
     setQty(pack);
     setModal(true);
-    track('OpenForm', { product: PRODUCT_CODE, pack, value: PRICES[pack] });
+    track('OpenForm', { product: PRODUCT_CODE, pack, value: orderTotal(PRICES, pack) });
   }, [selectedPack]);
 
   const choosePack = useCallback((p: number) => {
     setSelectedPack(p);
-    track('SelectPack', { product: PRODUCT_CODE, pack: p, value: PRICES[p] });
+    track('SelectPack', { product: PRODUCT_CODE, pack: p, value: orderTotal(PRICES, p) });
   }, []);
 
   // Tracking + preload hero
@@ -199,7 +239,8 @@ export default function ChaussettePremiumLanding() {
     if (pixelFired.current) return;
     pixelFired.current = true;
     trackPageView(SLUG, company);
-    track('ViewContent', { product: PRODUCT_CODE, content_name: 'Chaussettes Premium Homme', value: PRICES[1], currency: 'XOF' });
+    initMetaPixels(META_PIXEL_IDS);
+    track('ViewContent', { product: PRODUCT_CODE, content_name: CONTENT_NAME, value: orderTotal(PRICES, 1), currency: 'XOF' });
     const l = document.createElement('link');
     l.rel = 'preload'; l.as = 'image'; l.href = M('hero.webp');
     document.head.appendChild(l);
@@ -277,9 +318,9 @@ export default function ChaussettePremiumLanding() {
   ];
 
   const PACKS = [
-    { v: 1, n: 'Pack Découverte', paires: '5 paires', p: 11900, sub: 'Idéal pour découvrir la collection.', save: null as string | null, badge: null as string | null },
-    { v: 2, n: 'Pack Élégance', paires: '10 paires', p: 20900, sub: 'Le meilleur choix pour varier votre style toute la semaine.', save: 'Vous économisez vs 2 packs de 5', badge: 'Le plus populaire' },
-    { v: 3, n: 'Pack Premium', paires: '15 paires', p: 28900, sub: 'Le pack le plus rentable pour profiter de tous les modèles.', save: 'Meilleure valeur', badge: 'Meilleure économie' },
+    { v: 1, n: 'Pack Découverte', paires: '5 paires', p: orderTotal(PRICES, 1), sub: packLabel(PRICES, 1, 'F'), save: null as string | null, badge: null as string | null },
+    { v: 2, n: 'Pack Élégance', paires: '10 paires', p: orderTotal(PRICES, 2), sub: packLabel(PRICES, 2, 'F'), save: 'Vous économisez vs 2 packs de 5', badge: 'Le plus populaire' },
+    { v: 3, n: 'Pack Premium', paires: '15 paires', p: orderTotal(PRICES, 3), sub: packLabel(PRICES, 3, 'F'), save: 'Meilleure valeur', badge: 'Meilleure économie' },
   ];
 
   const FAQ = [
@@ -320,7 +361,7 @@ export default function ChaussettePremiumLanding() {
 
       {/* 1. BARRE SCROLLANTE STICKY HAUT */}
       <div className="sticky top-0 z-50 shadow-lg">
-        <Marquee tone="navy" items={['Offre spéciale aujourd\'hui', '5 paires à 11 900 Fr', '10 paires à 20 900 Fr', '15 paires à 28 900 Fr', 'Paiement à la livraison', 'Livraison rapide', 'Collection 5 modèles premium', 'Style • Confort • Élégance']} />
+        <Marquee tone="navy" items={['Offre spéciale aujourd\'hui', `5 paires à ${fmtTotal(1)} Fr`, `10 paires à ${fmtTotal(2)} Fr`, `15 paires à ${fmtTotal(3)} Fr`, 'Paiement à la livraison', 'Livraison rapide', 'Collection 5 modèles premium', 'Style • Confort • Élégance']} />
         <div className="h-[3px] w-full bg-[#060b16]"><div className="h-full bg-gradient-to-r from-sky-400 via-blue-500 to-blue-700 transition-all duration-700" style={{ width: `${stockPct}%` }} /></div>
       </div>
 
@@ -350,7 +391,7 @@ export default function ChaussettePremiumLanding() {
           </p>
           <div className="mt-5 flex items-baseline justify-center gap-2">
             <span className="text-[13px] font-bold uppercase tracking-wider text-slate-400">Dès</span>
-            <span className="cph-gold text-4xl font-black sm:text-5xl">11 900</span>
+            <span className="cph-gold text-4xl font-black sm:text-5xl">{fmtTotal(1)}</span>
             <span className="text-lg font-bold text-slate-200">FCFA</span>
           </div>
           <div className="mx-auto mt-5 max-w-sm"><CTA onClick={() => openModal(selectedPack)}>Commander maintenant <Arrow /></CTA></div>
@@ -366,7 +407,7 @@ export default function ChaussettePremiumLanding() {
       <Marquee tone="silver" items={['Style', 'Confort', 'Élégance', '5 modèles premium', 'Livraison rapide']} />
 
       {/* Barre 2 avant offres / blocs */}
-      <Marquee tone="navy" items={['5 paires 11 900 Fr', '10 paires 20 900 Fr', '15 paires 28 900 Fr']} />
+      <Marquee tone="navy" items={[`5 paires ${fmtTotal(1)} Fr`, `10 paires ${fmtTotal(2)} Fr`, `15 paires ${fmtTotal(3)} Fr`]} />
 
       {/* 6. BLOCS IMAGE (haut) + TEXTE (dessous) + CTA colore — toutes les images, fonds varies */}
       <FeatureBlock img={M('m6.webp')} qty={selectedPack} onOrder={openModal}
@@ -398,7 +439,7 @@ export default function ChaussettePremiumLanding() {
         kicker="Bleu marine" title={<>Le <span className="cph-gold">bleu marine</span> qui va avec tout.</>}
         text="Élégant et masculin, il s'accorde avec vos costumes comme avec vos tenues décontractées." cta="Je commande" />
 
-      <Marquee tone="silver" items={['5 paires 11 900 F', '10 paires 20 900 F', '15 paires 28 900 F']} />
+      <Marquee tone="silver" items={[`5 paires ${fmtTotal(1)} F`, `10 paires ${fmtTotal(2)} F`, `15 paires ${fmtTotal(3)} F`]} />
 
       <FeatureBlock img={M('m11.webp')} qty={selectedPack} onOrder={openModal}
         bg="bg-gradient-to-b from-white to-slate-200" textClass="text-slate-900" kickerClass="text-[#0b2350]" ctaTone="navy"
@@ -480,7 +521,7 @@ export default function ChaussettePremiumLanding() {
                 <div className="mt-5 text-center">
                   <p className="text-[13px] text-slate-300">Notre recommandation :</p>
                   <p className="mt-1 cph-gold text-2xl font-black">{PACKS[rec - 1].n} — {QTY_OPTS[rec - 1].label}</p>
-                  <p className="mt-1 text-[14px] font-bold text-white">{fmt(PRICES[rec])} F</p>
+                  <p className="mt-1 text-[14px] font-bold text-white">{fmt(orderTotal(PRICES, rec))} F</p>
                   <div className="mx-auto mt-4 max-w-xs"><CTA onClick={() => { choosePack(rec); openModal(rec); }}>Commander le pack recommandé <Arrow /></CTA></div>
                   <button type="button" onClick={() => { setQuizStep(0); setQuizAns({}); }} className="mt-3 text-[11px] text-slate-400 underline">Refaire le quiz</button>
                 </div>
@@ -649,7 +690,7 @@ export default function ChaussettePremiumLanding() {
         <div className="mx-auto max-w-xl px-4 text-center">
           <h2 className="text-balance text-2xl font-black text-white sm:text-3xl">Prêt à passer au <span className="cph-gold">style premium</span> ?</h2>
           <p className="mt-2 text-[13px] text-slate-300">Choisissez votre pack et payez à la livraison.</p>
-          <div className="mx-auto mt-5 max-w-sm"><CTA onClick={() => openModal(selectedPack)}>Commander maintenant — dès 11 900 F <Arrow /></CTA></div>
+          <div className="mx-auto mt-5 max-w-sm"><CTA onClick={() => openModal(selectedPack)}>Commander maintenant — dès {fmtTotal(1)} F <Arrow /></CTA></div>
         </div>
       </section>
 
@@ -707,7 +748,7 @@ export default function ChaussettePremiumLanding() {
       </section>
 
       <footer className="bg-[#060b16] py-8 pb-24 text-center text-[10px] font-semibold text-amber-300/70 sm:pb-8">
-        © {new Date().getFullYear()} · Chaussettes Premium Homme · Collection 5 modèles · Côte d'Ivoire
+        © {new Date().getFullYear()} · Chaussettes Premium Homme · Collection 5 modèles · Côte d`Ivoire
       </footer>
 
       {/* 13. NOTIFICATIONS ACHAT */}
@@ -729,7 +770,7 @@ export default function ChaussettePremiumLanding() {
         <div className="mx-auto flex max-w-2xl items-center gap-3">
           <div className="flex-1">
             <p className="text-[10px] font-black uppercase tracking-wider text-amber-300">Offre · {pad(countdown.h)}:{pad(countdown.m)}:{pad(countdown.s)}</p>
-            <p className="text-[11px] font-bold text-white">Dès 11 900 F · paiement à la livraison</p>
+            <p className="text-[11px] font-bold text-white">Dès {fmtTotal(1)} F · paiement à la livraison</p>
           </div>
           <button type="button" onClick={() => openModal(selectedPack)} className="cph-pulse relative inline-flex items-center gap-1.5 overflow-hidden rounded-full bg-gradient-to-r from-sky-400 via-blue-600 to-blue-900 px-5 py-2.5 text-[13px] font-black uppercase tracking-[0.16em] text-white shadow-[0_10px_24px_-4px_rgba(37,99,235,.6)] ring-2 ring-sky-200/30">
             <span className="cph-sheen pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/45 to-transparent" />
@@ -745,9 +786,11 @@ export default function ChaussettePremiumLanding() {
         onClose={() => setModal(false)}
         cfg={{
           productCode: PRODUCT_CODE,
-          title: 'Chaussettes Premium Homme',
+          title: CONTENT_NAME,
           prices: PRICES,
           thankYouUrl: THANK_YOU_URL,
+          metaPixelId: META_PIXEL_ID,
+          secondaryMetaPixelId: META_PIXEL_ID_2,
           slug: SLUG,
           company,
           navigate,

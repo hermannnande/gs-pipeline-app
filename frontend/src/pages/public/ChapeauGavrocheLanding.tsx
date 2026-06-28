@@ -20,6 +20,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { trackPageView } from '../../utils/pageTracking';
 import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
 import type { OrderProduct } from '../../hooks/useOrderSubmit';
+import { orderTotal, packAmount, packLabel, DELIVERY_FEE_CI } from '../../utils/pricingHelpers';
 
 const SLUG = 'chapeau-gavroche';
 const PRODUCT_CODE = 'CHAPEAU_GAVROCHE';
@@ -27,11 +28,12 @@ const PRODUCT_CODE = 'CHAPEAU_GAVROCHE';
 const META_PIXEL_ID = '1613380123108753';
 const THANK_YOU_URL = '/chapeau-gavroche/merci';
 
-const PRICES: Record<number, number> = { 1: 11900, 2: 21900, 3: 29900 };
+const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 const QTY_OPTS = [
-  { v: 1, label: '1 chapeau',  sub: '11 900 F' },
-  { v: 2, label: '2 chapeaux', sub: '21 900 F', tag: 'Le + choisi',     save: 'Économisez 1 900 F' },
-  { v: 3, label: '3 chapeaux', sub: '29 900 F', tag: 'Meilleure valeur', save: 'Économisez 5 800 F + livraison express' },
+  { v: 1, label: '1 chapeau',  sub: packLabel(PRICES, 1, 'F') },
+  { v: 2, label: '2 chapeaux', sub: packLabel(PRICES, 2, 'F'), tag: 'Le + choisi',     save: 'Économisez 1 900 F' },
+  { v: 3, label: '3 chapeaux', sub: packLabel(PRICES, 3, 'F'), tag: 'Meilleure valeur', save: 'Économisez 5 800 F + livraison express' },
 ];
 
 const WP = (n: string) => `https://obrille.com/wp-content/uploads/2026/05/${n}`;
@@ -331,7 +333,7 @@ export default function ChapeauGavrocheLanding() {
 
   useEffect(() => {
     const prev = document.title;
-    document.title = 'CHAPEAU GAVROCHE — 11 900 F · Le détail chic';
+    document.title = `CHAPEAU GAVROCHE — ${fmtTotal(1)} F · Le détail chic`;
     trackPageView(SLUG);
     if (!pixelFired.current && META_PIXEL_ID) {
       pixelFired.current = true;
@@ -340,7 +342,7 @@ export default function ChapeauGavrocheLanding() {
         content_name: 'CHAPEAU GAVROCHE',
         content_ids: [PRODUCT_CODE],
         content_type: 'product',
-        value: PRICES[1],
+        value: orderTotal(PRICES, 1),
         currency: 'XOF',
       });
     }
@@ -377,12 +379,12 @@ export default function ChapeauGavrocheLanding() {
               {/* Étiquette prix collée en bas */}
               <span className="absolute bottom-3 left-3 rotate-1 rounded-xl bg-stone-900 px-3 py-1.5 text-amber-300 shadow-xl">
                 <span className="block text-[8px] font-bold uppercase tracking-[0.3em] text-stone-400">À partir de</span>
-                <span className="block text-lg font-black leading-none">11 900 <span className="text-amber-400">F</span></span>
+                <span className="block text-lg font-black leading-none">{fmtTotal(1)} <span className="text-amber-400">F</span></span>
               </span>
             </div>
           </div>
 
-          {/* TEXTE EN BAS — sous l'image */}
+          {/* TEXTE EN BAS — sous l`image */}
           <div className="mt-7 text-center">
             <span className="inline-flex items-center gap-2 rounded-full bg-stone-900/5 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.32em] text-stone-700 ring-1 ring-stone-900/10 backdrop-blur">
               <span className="h-1.5 w-1.5 rounded-full bg-amber-500 cg-pulse" />
@@ -398,7 +400,7 @@ export default function ChapeauGavrocheLanding() {
             </p>
             <div className="mt-6 flex justify-center">
               <LuminousCTA onClick={() => openModal(1)} variant="dark" large>
-                Commander — 11 900 F
+                Commander — {fmtTotal(1)} F
               </LuminousCTA>
             </div>
             {/* Badges confiance */}
@@ -448,7 +450,7 @@ export default function ChapeauGavrocheLanding() {
         alt="Chapeau Gavroche style femme"
         phrase="Un style chic en quelques secondes."
         highlight={['chic']}
-        ctaLabel="Acheter à 11 900 F"
+        ctaLabel={`Acheter à ${fmtTotal(1)} F`}
         ctaVariant="gold"
         onOrder={() => openModal(1)}
       />
@@ -527,7 +529,7 @@ export default function ChapeauGavrocheLanding() {
         alt="Chapeau Gavroche lookbook 3"
         phrase="Le détail qui fait toute la classe."
         highlight={['toute la classe']}
-        ctaLabel="Je commande à 11 900 F"
+        ctaLabel={`Je commande à ${fmtTotal(1)} F`}
         ctaVariant="gold"
         onOrder={() => openModal(1)}
       />
@@ -548,7 +550,7 @@ export default function ChapeauGavrocheLanding() {
         variant="gold"
         messages={[
           '⚡ OFFRE DU JOUR',
-          '⚡ 11 900 F seulement',
+          `⚡ ${fmtTotal(1)} F seulement`,
           '⚡ Pack 2 chapeaux = -1 900 F',
           '⚡ Pack 3 = livraison express',
           '⚡ Stock très limité',
@@ -559,8 +561,8 @@ export default function ChapeauGavrocheLanding() {
       <ImageFiche
         src={MEDIA.m11}
         alt="Chapeau Gavroche édition finale"
-        phrase="Commande aujourd'hui à 11 900 FCFA."
-        highlight={['aujourd\'hui', '11 900 FCFA']}
+        phrase={`Commande aujourd'hui à ${fmtTotal(1)} FCFA.`}
+        highlight={['aujourd\'hui', `${fmtTotal(1)} FCFA`]}
         ctaLabel="Finaliser ma commande"
         ctaVariant="gold"
         dark
@@ -646,7 +648,7 @@ export default function ChapeauGavrocheLanding() {
                   )}
                   <div className="text-center">
                     <div className="text-xs font-extrabold uppercase tracking-widest text-stone-500">{o.label}</div>
-                    <div className="mt-2 text-4xl font-black text-stone-900 tabular-nums">{fmt(PRICES[o.v])}</div>
+                    <div className="mt-2 text-4xl font-black text-stone-900 tabular-nums">{fmt(orderTotal(PRICES, o.v))}</div>
                     {o.save && <div className="mt-1 text-xs font-bold text-emerald-700">{o.save}</div>}
                   </div>
                   <ul className="mt-5 space-y-2 text-sm text-stone-600">
@@ -691,7 +693,7 @@ export default function ChapeauGavrocheLanding() {
         <div className="flex items-center justify-between gap-3">
           <div className="leading-tight">
             <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400">À partir de</div>
-            <div className="text-base font-black text-amber-300">{fmt(PRICES[1])}</div>
+            <div className="text-base font-black text-amber-300">{fmt(orderTotal(PRICES, 1))}</div>
           </div>
           <button
             type="button"

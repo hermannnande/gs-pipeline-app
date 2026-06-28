@@ -8,7 +8,7 @@
  *
  * Logique metier 100% inchangee :
  *   - Form : OrderModalPatchDouleur (palette indigo/violet/cyan, identique TK/FB)
- *   - Prix : { 1: 9900, 2: 16900, 3: 24900 } (oldPrice 15000)
+ *   - Prix : { 1: 7000, 2: 12000, 3: 15000 } (oldPrice 15000)
  *   - Submit : useOrderSubmit -> /api/public/order
  *   - Redirect post-commande : /<slug>/merci
  *   - Tracking : trackPageView + Meta Pixel (ViewContent / AddToCart / InitiateCheckout)
@@ -25,6 +25,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import { trackPageView } from '../../utils/pageTracking';
 import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
+import { orderTotal, DELIVERY_FEE_CI, packLabel } from '../../utils/pricingHelpers';
 
 // =========================================================
 // CONFIG
@@ -45,19 +46,23 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 const DEFAULT_META_PIXEL_ID = '26809431761984777';
 
 const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 const OLD_PRICE_UNIT = 15000;
+const DISCOUNT_PCT = Math.round((1 - PRICES[1] / OLD_PRICE_UNIT) * 100);
+const fmtTot = (v: number) => orderTotal(PRICES, v).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 
 const QTY_OPTS = [
-  { v: 1, label: '1 boite',  sub: '9 900 FCFA',  save: '' },
-  { v: 2, label: '2 boites', sub: '16 900 FCFA', tag: 'Populaire',     save: 'Economisez 2 900 F' },
-  { v: 3, label: '3 boites', sub: '24 900 FCFA', tag: 'Meilleure offre', save: 'Economisez 4 800 F' },
+  { v: 1, label: '1 boite',  sub: `${fmtTot(1)} FCFA`,  save: '' },
+  { v: 2, label: '2 boites', sub: `${fmtTot(2)} FCFA`, tag: 'Populaire',     save: 'Economisez 2 000 F' },
+  { v: 3, label: '3 boites', sub: `${fmtTot(3)} FCFA`, tag: 'Meilleure offre', save: 'Economisez 6 000 F' },
 ];
 
 // 13 medias UNIQUES — chaque slot est utilise UNE fois
 // Note : ?v=2 sur hero pour forcer le contournement du cache navigateur/CDN
 // apres remplacement du fichier (28/04/2026).
 const MEDIA = {
-  hero:        '/patch-douleur-tk/hero.webp?v=2',      // bloc 0 hero
+  hero:        '/patch-douleur-tk/hero.webp?v=2',      // bloc 0 hero (poster video TK)
+  heroVideo:   '/patch-douleur-tk/hero.mp4',          // hero video patchdouleurtk
   avant:       '/patch-douleur-tk/avant.webp',         // bloc 1 slider before
   apres:       '/patch-douleur-tk/apres.webp',         // bloc 1 slider after
   video1:      '/patch-douleur-tk/video-1.mp4',        // bloc 2
@@ -89,7 +94,9 @@ function initMetaPixel(pixelId: string) {
 interface Product { id: number; code: string; nom: string; prixUnitaire: number }
 
 const co = () => new URLSearchParams(window.location.search).get('company') || 'ci';
-const fmt = (v: number) => v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
+const fmtNum = (v: number) => v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+const fmtF = (v: number) => `${fmtNum(v)} F`;
+const fmt = (v: number) => fmtNum(v) + ' FCFA';
 const pad = (n: number) => String(n).padStart(2, '0');
 
 // =========================================================
@@ -136,8 +143,40 @@ function LazyImg({ src, alt, className = '', aspect, eager = false }: { src: str
   );
 }
 
-function LazyVideo({ src, aspect = '9/16', className = '' }: { src: string; aspect?: string; className?: string }) {
+function LazyVideo({
+  src,
+  aspect = '9/16',
+  className = '',
+  priority = false,
+  poster,
+}: {
+  src: string;
+  aspect?: string;
+  className?: string;
+  priority?: boolean;
+  poster?: string;
+}) {
   const { ref, visible } = useOnScreen('400px');
+  if (priority) {
+    return (
+      <div
+        className={`relative w-full overflow-hidden bg-gradient-to-br from-[#0a1628] via-[#0c1e2e] to-[#1a2540] ${className}`}
+        style={{ aspectRatio: aspect }}
+      >
+        <video
+          src={src}
+          poster={poster}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          className="h-full w-full object-cover"
+        />
+        <span className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#0a1628]/60 to-transparent"/>
+      </div>
+    );
+  }
   return (
     <div
       ref={ref}
@@ -294,6 +333,7 @@ export default function PatchDouleurLandingPremium({
   metaPixelId = DEFAULT_META_PIXEL_ID,
 }: PatchDouleurLandingProps) {
   const company = co();
+  const isTk = slug === 'patchdouleurtk';
 
   const [product, setProduct] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
@@ -320,7 +360,7 @@ export default function PatchDouleurLandingPremium({
         content_name: contentName,
         content_ids: [productCode],
         content_type: 'product',
-        value: PRICES[1],
+        value: orderTotal(PRICES, 1),
         currency: 'XOF',
       });
     }
@@ -410,7 +450,7 @@ export default function PatchDouleurLandingPremium({
         content_name: contentName,
         content_ids: [productCode],
         content_type: 'product',
-        value: PRICES[quantity],
+        value: orderTotal(PRICES, quantity),
         currency: 'XOF',
         contents: [{ id: productCode, quantity }],
       });
@@ -436,11 +476,18 @@ export default function PatchDouleurLandingPremium({
   // ============= PRELOAD HERO =============
   useEffect(() => {
     const l = document.createElement('link');
-    l.rel = 'preload'; l.as = 'image'; l.href = MEDIA.hero;
+    l.rel = 'preload';
+    if (isTk) {
+      l.as = 'video';
+      l.href = MEDIA.heroVideo;
+    } else {
+      l.as = 'image';
+      l.href = MEDIA.hero;
+    }
     (l as any).fetchPriority = 'high';
     document.head.appendChild(l);
     return () => { try { document.head.removeChild(l); } catch {} };
-  }, []);
+  }, [isTk]);
 
   const stockPct = Math.max(15, Math.min(100, Math.round((stock / 35) * 100)));
 
@@ -465,114 +512,156 @@ export default function PatchDouleurLandingPremium({
       </div>
 
       {/* ============================================== */}
-      {/* HEADER (NON sticky, sans CTA)                  */}
-      {/* Le seul bouton flottant "Commander" est la     */}
-      {/* sticky CTA bar fixee en BAS de l'ecran.        */}
+      {/* HEADER — masque sur TK (video en premier)        */}
       {/* ============================================== */}
-      <header className="relative z-10 border-b border-neutral-200/70 bg-white/85 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-[1100px] items-center justify-between px-4 py-3 sm:px-5">
-          <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-sky-500 to-cyan-500 text-white shadow-[0_8px_18px_-4px_rgba(6,182,212,0.55)]">
-              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path d="M3.5 5a2 2 0 012-2h9a2 2 0 012 2v10a2 2 0 01-2 2h-9a2 2 0 01-2-2V5z" opacity=".25"/><path fillRule="evenodd" d="M5 4a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2H5zm2 6a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zm0 3a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1z" clipRule="evenodd"/></svg>
-            </span>
-            <span className="pd-display text-[16px] font-extrabold tracking-tight text-[#0a1628] sm:text-[18px]">Patch Anti-Douleur</span>
+      {!isTk && (
+        <header className="relative z-10 border-b border-neutral-200/70 bg-white/85 backdrop-blur-md">
+          <div className="mx-auto flex w-full max-w-[1100px] items-center justify-between px-4 py-3 sm:px-5">
+            <div className="flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-sky-500 to-cyan-500 text-white shadow-[0_8px_18px_-4px_rgba(6,182,212,0.55)]">
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path d="M3.5 5a2 2 0 012-2h9a2 2 0 012 2v10a2 2 0 01-2 2h-9a2 2 0 01-2-2V5z" opacity=".25"/><path fillRule="evenodd" d="M5 4a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2H5zm2 6a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zm0 3a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1z" clipRule="evenodd"/></svg>
+              </span>
+              <span className="pd-display text-[16px] font-extrabold tracking-tight text-[#0a1628] sm:text-[18px]">Patch Anti-Douleur</span>
+            </div>
+            <div className="flex items-center gap-1.5 rounded-full bg-cyan-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-cyan-700 ring-1 ring-cyan-200 sm:px-3 sm:py-1.5 sm:text-[10px]">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-rose-500"/>
+              <span className="hidden xs:inline">En direct · </span>{watchers} regardent
+            </div>
           </div>
-          <div className="flex items-center gap-1.5 rounded-full bg-cyan-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-cyan-700 ring-1 ring-cyan-200 sm:px-3 sm:py-1.5 sm:text-[10px]">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-rose-500"/>
-            <span className="hidden xs:inline">En direct · </span>{watchers} regardent
-          </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       {/* ============================================== */}
-      {/* HERO STACKE — titre + image + CTA              */}
+      {/* HERO — TK : video en haut, texte + CTA en bas    */}
       {/* ============================================== */}
-      <section className="relative overflow-hidden px-4 pt-8 pb-10 sm:px-6 sm:pt-12 sm:pb-16">
-        {/* Halos lumineux fond */}
-        <div className="pointer-events-none absolute -top-32 -right-32 h-[500px] w-[500px] rounded-full bg-cyan-300/30 blur-[120px]"/>
-        <div className="pointer-events-none absolute -bottom-32 -left-32 h-[500px] w-[500px] rounded-full bg-orange-200/30 blur-[120px]"/>
-
-        <div className="relative mx-auto w-full max-w-[1100px]">
-          {/* Mini-bandeau au-dessus du titre */}
-          <div className="mb-5 flex flex-wrap items-center justify-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#0a1628] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.32em] text-cyan-300 ring-1 ring-cyan-400/30">
-              <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.9)]"/>
-              N°1 anti-douleur
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.32em] text-rose-600 ring-1 ring-rose-300">
-              -34% aujourd'hui
-            </span>
-          </div>
-
-          {/* Titre principal */}
-          <h1 className="pd-display mx-auto max-w-[860px] text-center text-[42px] font-black leading-[1] tracking-[-0.02em] text-[#0a1628] sm:text-[64px] lg:text-[80px]">
-            Stop aux <span className="pd-grad-cyan">douleurs</span>.<br/>
-            En <span className="pd-grad-coral">3 secondes</span>.
-          </h1>
-
-          <p className="pd-body mx-auto mt-5 max-w-[640px] text-center text-[14px] leading-relaxed text-neutral-700 sm:text-[16px]">
-            Patch chauffant nouvelle generation. Diffusion therapeutique <strong className="font-bold text-[#0a1628]">jusqu'a 12h</strong> sur la zone douloureuse. Mal de dos, sciatique, arthrose, rhumatismes — le soulagement est instantane.
-          </p>
-
-          {/* Stars + count */}
-          <div className="mt-5 flex items-center justify-center gap-3">
-            <div className="flex gap-0.5 text-amber-400">{[...Array(5)].map((_, k) => <Star key={k} className="h-4 w-4"/>)}</div>
-            <span className="text-[12px] font-bold text-neutral-700">4.7 / 5 · <span className="underline decoration-dotted underline-offset-2">800+ avis verifies</span></span>
-          </div>
-
-          {/* HERO IMAGE */}
-          <div className="relative mx-auto mt-8 max-w-[680px]">
-            <div className="absolute -inset-2 hidden rounded-[40px] bg-gradient-to-br from-cyan-200/40 via-sky-200/40 to-orange-200/40 blur-2xl sm:block"/>
-            <div className="relative overflow-hidden rounded-[36px] ring-1 ring-cyan-300/30 shadow-[0_40px_100px_-20px_rgba(6,182,212,0.4)]">
-              <LazyImg src={MEDIA.hero} alt="Patch Anti-Douleur — vue produit" eager aspect="1/1" className="bg-neutral-100"/>
-              {/* Sticker -34% */}
-              <div className="absolute -bottom-5 -right-3 flex h-24 w-24 rotate-[-10deg] flex-col items-center justify-center rounded-full bg-gradient-to-br from-rose-500 via-orange-500 to-amber-500 text-white shadow-[0_20px_45px_-12px_rgba(249,115,22,0.7)] ring-4 ring-white sm:-right-6 sm:h-32 sm:w-32">
-                <span className="pd-display text-[28px] font-black leading-none sm:text-[36px]">-34%</span>
-                <span className="text-[8px] font-black uppercase tracking-[0.3em] sm:text-[9px]">aujourd'hui</span>
-              </div>
-              {/* Badge top */}
-              <div className="absolute -top-3 left-3 rotate-[-3deg] rounded-md bg-cyan-500 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.3em] text-white shadow-md sm:-top-4 sm:left-6">
-                Sans effets secondaires
-              </div>
+      {isTk ? (
+        <section className="relative overflow-hidden bg-[#fafaf9]">
+          <div className="relative w-full bg-[#0a1628]">
+            <LazyVideo
+              src={MEDIA.heroVideo}
+              poster="/patch-douleur-tk/hero.webp"
+              aspect="9/16"
+              priority
+              className="mx-auto max-h-[78vh] max-w-[720px] rounded-none shadow-[0_30px_80px_-20px_rgba(6,182,212,0.45)]"
+            />
+            <div className="absolute right-3 top-3 rounded-full bg-gradient-to-br from-rose-500 via-orange-500 to-amber-500 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.28em] text-white shadow-lg ring-2 ring-white/80">
+              -{DISCOUNT_PCT}%
             </div>
           </div>
 
-          {/* PRIX + CTA principal */}
-          <div className="mx-auto mt-10 flex max-w-[640px] flex-col items-center gap-5 rounded-3xl border border-cyan-200/70 bg-white/90 p-6 shadow-[0_25px_60px_-15px_rgba(6,182,212,0.25)] backdrop-blur sm:flex-row sm:justify-between">
-            <div className="flex items-end gap-3">
-              <div>
-                <span className="block text-[9px] font-black uppercase tracking-[0.4em] text-neutral-500">Prix d'introduction</span>
-                <div className="mt-1 flex items-baseline gap-2.5">
-                  <span className="pd-display text-[40px] font-black leading-none text-[#0a1628] sm:text-[48px]">9 900 <span className="text-[18px] font-bold tracking-tight text-neutral-500">F</span></span>
-                  <span className="text-[14px] font-bold text-neutral-400 line-through">15 000 F</span>
+          <div className="relative mx-auto w-full max-w-[640px] px-4 pb-10 pt-6 text-center sm:px-6 sm:pb-12">
+            <div className="pointer-events-none absolute -top-20 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full bg-cyan-300/25 blur-[80px]"/>
+
+            <p className="text-[9px] font-black uppercase tracking-[0.38em] text-cyan-600">Patch Anti-Douleur · N°1</p>
+
+            <h1 className="pd-display relative mt-3 text-[38px] font-black leading-[0.95] tracking-tight text-[#0a1628] sm:text-[52px]">
+              Stop aux <span className="pd-grad-cyan">douleurs</span>
+              <br/>
+              en <span className="pd-grad-coral">3 secondes</span>
+            </h1>
+
+            <p className="pd-body relative mt-3 text-[14px] font-semibold leading-snug text-neutral-600 sm:text-[15px]">
+              Chaleur therapeutique <span className="pd-grad-cyan">jusqu&apos;a 12h</span> · dos, genoux, sciatique
+            </p>
+
+            <div className="relative mt-4 flex items-center justify-center gap-2">
+              <div className="flex gap-0.5 text-amber-400">{[...Array(5)].map((_, k) => <Star key={k} className="h-3.5 w-3.5"/>)}</div>
+              <span className="text-[11px] font-bold text-neutral-600">4.7/5 · 800+ avis</span>
+            </div>
+
+            <div className="relative mt-6 rounded-3xl border border-cyan-200/60 bg-white/95 p-5 shadow-[0_25px_60px_-15px_rgba(6,182,212,0.3)]">
+              <div className="flex items-baseline justify-center gap-2">
+                <span className="pd-display text-[36px] font-black leading-none text-[#0a1628] sm:text-[42px]">{fmtNum(orderTotal(PRICES, 1))} <span className="text-[16px] font-bold text-neutral-500">F</span></span>
+                <span className="text-[13px] font-bold text-neutral-400 line-through">{fmtF(OLD_PRICE_UNIT)}</span>
+              </div>
+              <CTA onClick={() => openOrder(1)} variant="primary" size="lg" fullWidth>
+                Commander maintenant
+                <ArrowR/>
+              </CTA>
+              <p className="mt-3 text-[9px] font-black uppercase tracking-[0.32em] text-neutral-500">
+                Paiement a la livraison · {stock} restantes
+              </p>
+            </div>
+          </div>
+        </section>
+      ) : (
+        <section className="relative overflow-hidden px-4 pt-8 pb-10 sm:px-6 sm:pt-12 sm:pb-16">
+          <div className="pointer-events-none absolute -top-32 -right-32 h-[500px] w-[500px] rounded-full bg-cyan-300/30 blur-[120px]"/>
+          <div className="pointer-events-none absolute -bottom-32 -left-32 h-[500px] w-[500px] rounded-full bg-orange-200/30 blur-[120px]"/>
+
+          <div className="relative mx-auto w-full max-w-[1100px]">
+            <div className="mb-5 flex flex-wrap items-center justify-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#0a1628] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.32em] text-cyan-300 ring-1 ring-cyan-400/30">
+                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.9)]"/>
+                N°1 anti-douleur
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.32em] text-rose-600 ring-1 ring-rose-300">
+                -{DISCOUNT_PCT}% aujourd'hui
+              </span>
+            </div>
+
+            <h1 className="pd-display mx-auto max-w-[860px] text-center text-[42px] font-black leading-[1] tracking-[-0.02em] text-[#0a1628] sm:text-[64px] lg:text-[80px]">
+              Stop aux <span className="pd-grad-cyan">douleurs</span>.<br/>
+              En <span className="pd-grad-coral">3 secondes</span>.
+            </h1>
+
+            <p className="pd-body mx-auto mt-5 max-w-[640px] text-center text-[14px] leading-relaxed text-neutral-700 sm:text-[16px]">
+              Patch chauffant nouvelle generation. Diffusion therapeutique <strong className="font-bold text-[#0a1628]">jusqu'a 12h</strong> sur la zone douloureuse. Mal de dos, sciatique, arthrose, rhumatismes — le soulagement est instantane.
+            </p>
+
+            <div className="mt-5 flex items-center justify-center gap-3">
+              <div className="flex gap-0.5 text-amber-400">{[...Array(5)].map((_, k) => <Star key={k} className="h-4 w-4"/>)}</div>
+              <span className="text-[12px] font-bold text-neutral-700">4.7 / 5 · <span className="underline decoration-dotted underline-offset-2">800+ avis verifies</span></span>
+            </div>
+
+            <div className="relative mx-auto mt-8 max-w-[680px]">
+              <div className="absolute -inset-2 hidden rounded-[40px] bg-gradient-to-br from-cyan-200/40 via-sky-200/40 to-orange-200/40 blur-2xl sm:block"/>
+              <div className="relative overflow-hidden rounded-[36px] ring-1 ring-cyan-300/30 shadow-[0_40px_100px_-20px_rgba(6,182,212,0.4)]">
+                <LazyImg src={MEDIA.hero} alt="Patch Anti-Douleur — vue produit" eager aspect="1/1" className="bg-neutral-100"/>
+                <div className="absolute -bottom-5 -right-3 flex h-24 w-24 rotate-[-10deg] flex-col items-center justify-center rounded-full bg-gradient-to-br from-rose-500 via-orange-500 to-amber-500 text-white shadow-[0_20px_45px_-12px_rgba(249,115,22,0.7)] ring-4 ring-white sm:-right-6 sm:h-32 sm:w-32">
+                  <span className="pd-display text-[28px] font-black leading-none sm:text-[36px]">-{DISCOUNT_PCT}%</span>
+                  <span className="text-[8px] font-black uppercase tracking-[0.3em] sm:text-[9px]">aujourd'hui</span>
                 </div>
-                <span className="mt-1.5 inline-block rounded-md bg-amber-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-amber-700 ring-1 ring-amber-200">Livraison 24h offerte</span>
+                <div className="absolute -top-3 left-3 rotate-[-3deg] rounded-md bg-cyan-500 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.3em] text-white shadow-md sm:-top-4 sm:left-6">
+                  Sans effets secondaires
+                </div>
               </div>
             </div>
-            <CTA onClick={() => openOrder(1)} variant="primary" size="lg">
-              Commander maintenant
-              <ArrowR/>
-            </CTA>
-          </div>
 
-          {/* Stock pulse */}
-          <div className="mx-auto mt-6 flex max-w-[640px] items-center gap-3 rounded-2xl bg-[#0a1628] px-5 py-3 text-cyan-100 ring-1 ring-cyan-400/20">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inset-0 animate-ping rounded-full bg-cyan-400 opacity-75"/>
-              <span className="relative h-2.5 w-2.5 rounded-full bg-cyan-400"/>
-            </span>
-            <div className="flex-1">
-              <div className="flex items-baseline justify-between gap-2 text-[11px] font-bold">
-                <span className="uppercase tracking-[0.18em] text-cyan-300">Stock disponible</span>
-                <span className="tabular-nums text-white">{stock} restantes</span>
+            <div className="mx-auto mt-10 flex max-w-[640px] flex-col items-center gap-5 rounded-3xl border border-cyan-200/70 bg-white/90 p-6 shadow-[0_25px_60px_-15px_rgba(6,182,212,0.25)] backdrop-blur sm:flex-row sm:justify-between">
+              <div className="flex items-end gap-3">
+                <div>
+                  <span className="block text-[9px] font-black uppercase tracking-[0.4em] text-neutral-500">Prix d'introduction</span>
+                  <div className="mt-1 flex items-baseline gap-2.5">
+                    <span className="pd-display text-[40px] font-black leading-none text-[#0a1628] sm:text-[48px]">{fmtNum(orderTotal(PRICES, 1))} <span className="text-[18px] font-bold tracking-tight text-neutral-500">F</span></span>
+                    <span className="text-[14px] font-bold text-neutral-400 line-through">{fmtF(OLD_PRICE_UNIT)}</span>
+                  </div>
+                </div>
               </div>
-              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/15">
-                <div className="h-full bg-gradient-to-r from-cyan-300 via-cyan-400 to-sky-400 transition-all" style={{ width: `${stockPct}%` }}/>
+              <CTA onClick={() => openOrder(1)} variant="primary" size="lg">
+                Commander maintenant
+                <ArrowR/>
+              </CTA>
+            </div>
+
+            <div className="mx-auto mt-6 flex max-w-[640px] items-center gap-3 rounded-2xl bg-[#0a1628] px-5 py-3 text-cyan-100 ring-1 ring-cyan-400/20">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="absolute inset-0 animate-ping rounded-full bg-cyan-400 opacity-75"/>
+                <span className="relative h-2.5 w-2.5 rounded-full bg-cyan-400"/>
+              </span>
+              <div className="flex-1">
+                <div className="flex items-baseline justify-between gap-2 text-[11px] font-bold">
+                  <span className="uppercase tracking-[0.18em] text-cyan-300">Stock disponible</span>
+                  <span className="tabular-nums text-white">{stock} restantes</span>
+                </div>
+                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/15">
+                  <div className="h-full bg-gradient-to-r from-cyan-300 via-cyan-400 to-sky-400 transition-all" style={{ width: `${stockPct}%` }}/>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <Marquee items={[
         'Soulagement en 3 secondes',
@@ -588,11 +677,11 @@ export default function PatchDouleurLandingPremium({
       {/* ============================================== */}
       <section className="relative px-4 py-14 sm:px-6 sm:py-20" ref={r1}>
         <div className="mx-auto w-full max-w-[860px] text-center">
-          <span className="text-[10px] font-black uppercase tracking-[0.45em] text-cyan-600">Bloc 01 · Avant / Apres</span>
-          <h2 className="pd-display mt-3 text-[34px] font-black leading-[1.05] tracking-tight text-[#0a1628] sm:text-[48px]">
-            Le <span className="pd-grad-cyan">resultat</span> qui parle de lui-meme.
+          {!isTk && <span className="text-[10px] font-black uppercase tracking-[0.45em] text-cyan-600">Bloc 01 · Avant / Apres</span>}
+          <h2 className={`pd-display ${isTk ? 'mt-0' : 'mt-3'} text-[34px] font-black leading-[1.05] tracking-tight text-[#0a1628] sm:text-[48px]'}`}>
+            Le <span className="pd-grad-cyan">resultat</span> {isTk ? 'visible' : 'qui parle de lui-meme'}.
           </h2>
-          <p className="pd-body mx-auto mt-3 max-w-[520px] text-[14px] text-neutral-600 sm:text-[15px]">Glissez le curseur pour voir la transformation en quelques secondes seulement.</p>
+          {!isTk && <p className="pd-body mx-auto mt-3 max-w-[520px] text-[14px] text-neutral-600 sm:text-[15px]">Glissez le curseur pour voir la transformation en quelques secondes seulement.</p>}
 
           <div className="mx-auto mt-8 max-w-[520px]">
             <BeforeAfter before={MEDIA.avant} after={MEDIA.apres}/>
@@ -616,11 +705,11 @@ export default function PatchDouleurLandingPremium({
           <div className="absolute -bottom-40 left-10 h-[400px] w-[400px] rounded-full bg-sky-500 blur-[140px]"/>
         </div>
         <div className="relative mx-auto w-full max-w-[860px] text-center">
-          <span className="text-[10px] font-black uppercase tracking-[0.45em] text-cyan-300">Bloc 02 · En action</span>
-          <h2 className="pd-display mt-3 text-[34px] font-black leading-[1.05] tracking-tight text-white sm:text-[48px]">
+          {!isTk && <span className="text-[10px] font-black uppercase tracking-[0.45em] text-cyan-300">Bloc 02 · En action</span>}
+          <h2 className={`pd-display ${isTk ? 'mt-0' : 'mt-3'} text-[34px] font-black leading-[1.05] tracking-tight text-white sm:text-[48px]'}`}>
             Vous le sentez en <span className="pd-grad-cyan">3 secondes</span>.
           </h2>
-          <p className="pd-body mx-auto mt-3 max-w-[520px] text-[14px] text-cyan-100/85 sm:text-[15px]">Une chaleur progressive, profonde, qui detend le muscle et apaise le nerf.</p>
+          {!isTk && <p className="pd-body mx-auto mt-3 max-w-[520px] text-[14px] text-cyan-100/85 sm:text-[15px]">Une chaleur progressive, profonde, qui detend le muscle et apaise le nerf.</p>}
 
           <div className="mx-auto mt-8 max-w-[420px]">
             <LazyVideo src={MEDIA.video1} aspect="9/16"/>
@@ -641,17 +730,19 @@ export default function PatchDouleurLandingPremium({
       <section className="relative px-4 py-14 sm:px-6 sm:py-20" ref={r3}>
         <div className="mx-auto w-full max-w-[1100px] grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-center">
           <div className="lg:col-span-5">
-            <span className="text-[10px] font-black uppercase tracking-[0.45em] text-cyan-600">Bloc 03 · Effet chauffant</span>
-            <h2 className="pd-display mt-3 text-[32px] font-black leading-[1.05] tracking-tight text-[#0a1628] sm:text-[44px]">
-              Une <span className="pd-grad-cyan">chaleur therapeutique</span> qui agit en profondeur.
+            {!isTk && <span className="text-[10px] font-black uppercase tracking-[0.45em] text-cyan-600">Bloc 03 · Effet chauffant</span>}
+            <h2 className={`pd-display ${isTk ? 'mt-0' : 'mt-3'} text-[32px] font-black leading-[1.05] tracking-tight text-[#0a1628] sm:text-[44px]'}`}>
+              <span className="pd-grad-cyan">Chaleur therapeutique</span> {isTk ? '12h' : 'qui agit en profondeur.'}
             </h2>
-            <p className="pd-body mt-4 text-[14px] text-neutral-600 sm:text-[15px]">Le patch chauffe en quelques secondes et libere une chaleur douce pendant 8 a 12 heures. Aucun risque, aucun effet secondaire.</p>
-            <ul className="mt-5 space-y-2.5 text-[13px] text-neutral-700 sm:text-[14px]">
-              <li className="flex items-start gap-2.5"><Check/>Activation en 3 secondes apres pose</li>
-              <li className="flex items-start gap-2.5"><Check/>Chaleur diffuse jusqu'a 12 heures</li>
-              <li className="flex items-start gap-2.5"><Check/>Discret sous les vetements</li>
-              <li className="flex items-start gap-2.5"><Check/>100% naturel, sans medicament</li>
-            </ul>
+            {!isTk && <p className="pd-body mt-4 text-[14px] text-neutral-600 sm:text-[15px]">Le patch chauffe en quelques secondes et libere une chaleur douce pendant 8 a 12 heures. Aucun risque, aucun effet secondaire.</p>}
+            {!isTk && (
+              <ul className="mt-5 space-y-2.5 text-[13px] text-neutral-700 sm:text-[14px]">
+                <li className="flex items-start gap-2.5"><Check/>Activation en 3 secondes apres pose</li>
+                <li className="flex items-start gap-2.5"><Check/>Chaleur diffuse jusqu'a 12 heures</li>
+                <li className="flex items-start gap-2.5"><Check/>Discret sous les vetements</li>
+                <li className="flex items-start gap-2.5"><Check/>100% naturel, sans medicament</li>
+              </ul>
+            )}
             <div className="mt-6">
               <CTA onClick={() => openOrder(1)} variant="primary" size="lg">
                 Profiter de l'offre aujourd'hui
@@ -688,17 +779,17 @@ export default function PatchDouleurLandingPremium({
             </div>
           </div>
           <div className="lg:col-span-5 lg:order-2">
-            <span className="text-[10px] font-black uppercase tracking-[0.45em] text-orange-600">Bloc 04 · Mal de dos</span>
-            <h2 className="pd-display mt-3 text-[32px] font-black leading-[1.05] tracking-tight text-[#0a1628] sm:text-[44px]">
-              Marre des douleurs qui <span className="pd-grad-coral">reviennent chaque jour</span> ?
+            {!isTk && <span className="text-[10px] font-black uppercase tracking-[0.45em] text-orange-600">Bloc 04 · Mal de dos</span>}
+            <h2 className={`pd-display ${isTk ? 'mt-0' : 'mt-3'} text-[32px] font-black leading-[1.05] tracking-tight text-[#0a1628] sm:text-[44px]'}`}>
+              Douleurs qui <span className="pd-grad-coral">reviennent</span> ?
             </h2>
-            <p className="pd-body mt-4 text-[14px] text-neutral-600 sm:text-[15px]">Lombalgie, sciatique, tensions, raideurs... Un patch suffit. Posez, sentez la chaleur, vivez sans douleur.</p>
+            {!isTk && <p className="pd-body mt-4 text-[14px] text-neutral-600 sm:text-[15px]">Lombalgie, sciatique, tensions, raideurs... Un patch suffit. Posez, sentez la chaleur, vivez sans douleur.</p>}
             <div className="mt-6">
               <CTA onClick={() => openOrder(2)} variant="urgent" size="lg">
                 Commander maintenant
                 <ArrowR/>
               </CTA>
-              <p className="mt-3 text-[10px] font-black uppercase tracking-[0.3em] text-neutral-500">2 boites · economisez 2 900 F</p>
+              {!isTk && <p className="mt-3 text-[10px] font-black uppercase tracking-[0.3em] text-neutral-500">2 boites · economisez {fmtNum(PRICES[1] * 2 - PRICES[2])} F</p>}
             </div>
           </div>
         </div>
@@ -710,17 +801,19 @@ export default function PatchDouleurLandingPremium({
       <section className="relative bg-gradient-to-br from-[#fafaf9] via-cyan-50/40 to-orange-50/40 px-4 py-14 sm:px-6 sm:py-20" ref={r5}>
         <div className="mx-auto w-full max-w-[1100px] grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-center">
           <div className="lg:col-span-5">
-            <span className="text-[10px] font-black uppercase tracking-[0.45em] text-cyan-600">Bloc 05 · Pour homme</span>
-            <h2 className="pd-display mt-3 text-[32px] font-black leading-[1.05] tracking-tight text-[#0a1628] sm:text-[44px]">
-              Pour le dos qui <span className="pd-grad-coral">souffre</span> depuis trop longtemps.
+            {!isTk && <span className="text-[10px] font-black uppercase tracking-[0.45em] text-cyan-600">Bloc 05 · Pour homme</span>}
+            <h2 className={`pd-display ${isTk ? 'mt-0' : 'mt-3'} text-[32px] font-black leading-[1.05] tracking-tight text-[#0a1628] sm:text-[44px]'}`}>
+              Dos qui <span className="pd-grad-coral">souffre</span> ?
             </h2>
-            <p className="pd-body mt-4 text-[14px] text-neutral-600 sm:text-[15px]">Travail penible, posture, age, sport... Quelle que soit la cause, ce patch redonne mobilite et confort.</p>
-            <ul className="mt-5 grid grid-cols-2 gap-2.5 text-[13px] text-neutral-700">
-              <li className="flex items-start gap-2"><Check/>Bureau prolonge</li>
-              <li className="flex items-start gap-2"><Check/>Sport intensif</li>
-              <li className="flex items-start gap-2"><Check/>Travaux physiques</li>
-              <li className="flex items-start gap-2"><Check/>Stress chronique</li>
-            </ul>
+            {!isTk && <p className="pd-body mt-4 text-[14px] text-neutral-600 sm:text-[15px]">Travail penible, posture, age, sport... Quelle que soit la cause, ce patch redonne mobilite et confort.</p>}
+            {!isTk && (
+              <ul className="mt-5 grid grid-cols-2 gap-2.5 text-[13px] text-neutral-700">
+                <li className="flex items-start gap-2"><Check/>Bureau prolonge</li>
+                <li className="flex items-start gap-2"><Check/>Sport intensif</li>
+                <li className="flex items-start gap-2"><Check/>Travaux physiques</li>
+                <li className="flex items-start gap-2"><Check/>Stress chronique</li>
+              </ul>
+            )}
             <div className="mt-6">
               <CTA onClick={() => openOrder(1)} variant="primary" size="lg">
                 Je passe ma commande
@@ -748,9 +841,9 @@ export default function PatchDouleurLandingPremium({
       <section className="relative px-4 py-14 sm:px-6 sm:py-20" ref={r6}>
         <div className="mx-auto w-full max-w-[1100px]">
           <div className="text-center">
-            <span className="text-[10px] font-black uppercase tracking-[0.45em] text-cyan-600">Bloc 06 · 3 gestes</span>
-            <h2 className="pd-display mt-3 text-[34px] font-black leading-[1.05] tracking-tight text-[#0a1628] sm:text-[48px]">
-              <span className="pd-grad-cyan">3 gestes simples</span>. <span className="pd-grad-coral">3 secondes</span>.
+            {!isTk && <span className="text-[10px] font-black uppercase tracking-[0.45em] text-cyan-600">Bloc 06 · 3 gestes</span>}
+            <h2 className={`pd-display ${isTk ? 'mt-0' : 'mt-3'} text-[34px] font-black leading-[1.05] tracking-tight text-[#0a1628] sm:text-[48px]'}`}>
+              <span className="pd-grad-cyan">3 gestes</span>. <span className="pd-grad-coral">3 sec</span>.
             </h2>
           </div>
 
@@ -772,7 +865,7 @@ export default function PatchDouleurLandingPremium({
                     <span className="pd-display flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-sky-500 to-cyan-500 text-[18px] font-black text-white shadow-[0_8px_20px_-4px_rgba(6,182,212,0.65)]">{s.n}</span>
                     <div>
                       <p className="pd-display text-[18px] font-extrabold tracking-tight text-[#0a1628]">{s.t}</p>
-                      <p className="pd-body mt-1 text-[13px] text-neutral-600">{s.d}</p>
+                      {!isTk && <p className="pd-body mt-1 text-[13px] text-neutral-600">{s.d}</p>}
                     </div>
                   </li>
                 ))}
@@ -796,11 +889,11 @@ export default function PatchDouleurLandingPremium({
           <div className="absolute top-1/2 left-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-500 blur-[160px]"/>
         </div>
         <div className="relative mx-auto w-full max-w-[860px] text-center">
-          <span className="text-[10px] font-black uppercase tracking-[0.45em] text-orange-300">Bloc 07 · Douleurs chroniques</span>
-          <h2 className="pd-display mt-3 text-[34px] font-black leading-[1.05] tracking-tight text-white sm:text-[48px]">
-            Adieu <span className="pd-grad-cyan">sciatique</span>, <span className="pd-grad-coral">rhumatisme</span> et arthrose.
+          {!isTk && <span className="text-[10px] font-black uppercase tracking-[0.45em] text-orange-300">Bloc 07 · Douleurs chroniques</span>}
+          <h2 className={`pd-display ${isTk ? 'mt-0' : 'mt-3'} text-[34px] font-black leading-[1.05] tracking-tight text-white sm:text-[48px]'}`}>
+            <span className="pd-grad-cyan">Sciatique</span> · <span className="pd-grad-coral">arthrose</span>
           </h2>
-          <p className="pd-body mx-auto mt-4 max-w-[560px] text-[14px] text-cyan-100/85 sm:text-[15px]">Solution naturelle plebiscitee pour les douleurs chroniques de l'age. Action profonde, soulagement durable, mobilite retrouvee.</p>
+          {!isTk && <p className="pd-body mx-auto mt-4 max-w-[560px] text-[14px] text-cyan-100/85 sm:text-[15px]">Solution naturelle plebiscitee pour les douleurs chroniques de l'age. Action profonde, soulagement durable, mobilite retrouvee.</p>}
 
           <div className="mx-auto mt-8 max-w-[420px]">
             <LazyVideo src={MEDIA.video3} aspect="9/16"/>
@@ -811,7 +904,7 @@ export default function PatchDouleurLandingPremium({
               Commander avec paiement a la livraison
               <ArrowR/>
             </CTA>
-            <p className="mt-3 text-[10px] font-black uppercase tracking-[0.3em] text-cyan-300/60">aucun risque · paiement uniquement a la reception</p>
+            {!isTk && <p className="mt-3 text-[10px] font-black uppercase tracking-[0.3em] text-cyan-300/60">aucun risque · paiement uniquement a la reception</p>}
           </div>
         </div>
       </section>
@@ -832,11 +925,11 @@ export default function PatchDouleurLandingPremium({
             </div>
           </div>
           <div className="lg:col-span-5 lg:order-2">
-            <span className="text-[10px] font-black uppercase tracking-[0.45em] text-amber-600">Bloc 08 · Preuve</span>
-            <h2 className="pd-display mt-3 text-[32px] font-black leading-[1.05] tracking-tight text-[#0a1628] sm:text-[44px]">
-              Pourquoi tant de clients <span className="pd-grad-cyan">recommandent</span> ?
+            {!isTk && <span className="text-[10px] font-black uppercase tracking-[0.45em] text-amber-600">Bloc 08 · Preuve</span>}
+            <h2 className={`pd-display ${isTk ? 'mt-0' : 'mt-3'} text-[32px] font-black leading-[1.05] tracking-tight text-[#0a1628] sm:text-[44px]'}`}>
+              Ils <span className="pd-grad-cyan">recommandent</span>
             </h2>
-            <p className="pd-body mt-4 text-[14px] text-neutral-600 sm:text-[15px]">Parce qu'apres une seule pose, ils sentent la difference. La douleur s'estompe, le muscle se detend, le confort revient.</p>
+            {!isTk && <p className="pd-body mt-4 text-[14px] text-neutral-600 sm:text-[15px]">Parce qu'apres une seule pose, ils sentent la difference. La douleur s'estompe, le muscle se detend, le confort revient.</p>}
             <div className="mt-5 flex items-center gap-3">
               <div className="flex gap-0.5 text-amber-400">{[...Array(5)].map((_, k) => <Star key={k}/>)}</div>
               <span className="text-[12px] font-bold text-neutral-700">4.7 / 5 sur 800+ avis</span>
@@ -857,17 +950,19 @@ export default function PatchDouleurLandingPremium({
       <section className="relative bg-gradient-to-br from-orange-50/40 via-white to-cyan-50/40 px-4 py-14 sm:px-6 sm:py-20" ref={r9}>
         <div className="mx-auto w-full max-w-[1100px] grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-center">
           <div className="lg:col-span-5">
-            <span className="text-[10px] font-black uppercase tracking-[0.45em] text-orange-600">Bloc 09 · Pour tous</span>
-            <h2 className="pd-display mt-3 text-[32px] font-black leading-[1.05] tracking-tight text-[#0a1628] sm:text-[44px]">
-              <span className="pd-grad-coral">Ideal</span> pour homme & femme.
+            {!isTk && <span className="text-[10px] font-black uppercase tracking-[0.45em] text-orange-600">Bloc 09 · Pour tous</span>}
+            <h2 className={`pd-display ${isTk ? 'mt-0' : 'mt-3'} text-[32px] font-black leading-[1.05] tracking-tight text-[#0a1628] sm:text-[44px]'}`}>
+              <span className="pd-grad-coral">Homme</span> & <span className="pd-grad-cyan">femme</span>
             </h2>
-            <p className="pd-body mt-4 text-[14px] text-neutral-600 sm:text-[15px]">Articulations, dos, epaules, genoux, cervicales — adapte a toutes les zones et a tous les ages.</p>
-            <ul className="mt-5 grid grid-cols-2 gap-2.5 text-[13px] text-neutral-700">
-              <li className="flex items-start gap-2"><Check/>Adultes & seniors</li>
-              <li className="flex items-start gap-2"><Check/>Homme & femme</li>
-              <li className="flex items-start gap-2"><Check/>Sportifs & sedentaires</li>
-              <li className="flex items-start gap-2"><Check/>Sans contre-indication</li>
-            </ul>
+            {!isTk && <p className="pd-body mt-4 text-[14px] text-neutral-600 sm:text-[15px]">Articulations, dos, epaules, genoux, cervicales — adapte a toutes les zones et a tous les ages.</p>}
+            {!isTk && (
+              <ul className="mt-5 grid grid-cols-2 gap-2.5 text-[13px] text-neutral-700">
+                <li className="flex items-start gap-2"><Check/>Adultes & seniors</li>
+                <li className="flex items-start gap-2"><Check/>Homme & femme</li>
+                <li className="flex items-start gap-2"><Check/>Sportifs & sedentaires</li>
+                <li className="flex items-start gap-2"><Check/>Sans contre-indication</li>
+              </ul>
+            )}
             <div className="mt-6">
               <CTA onClick={() => openOrder(2)} variant="urgent" size="lg">
                 Profiter de l'offre
@@ -889,11 +984,11 @@ export default function PatchDouleurLandingPremium({
       {/* ============================================== */}
       <section className="relative px-4 py-14 sm:px-6 sm:py-20" ref={r10}>
         <div className="mx-auto w-full max-w-[1100px] text-center">
-          <span className="text-[10px] font-black uppercase tracking-[0.45em] text-cyan-600">Bloc 10 · Adopte partout</span>
-          <h2 className="pd-display mt-3 text-[34px] font-black leading-[1.05] tracking-tight text-[#0a1628] sm:text-[48px]">
-            Clients verifies a <span className="pd-grad-cyan">Abidjan</span>, <span className="pd-grad-coral">Bouake</span>, Daloa et plus.
+          {!isTk && <span className="text-[10px] font-black uppercase tracking-[0.45em] text-cyan-600">Bloc 10 · Adopte partout</span>}
+          <h2 className={`pd-display ${isTk ? 'mt-0' : 'mt-3'} text-[34px] font-black leading-[1.05] tracking-tight text-[#0a1628] sm:text-[48px]'}`}>
+            <span className="pd-grad-cyan">Abidjan</span> · <span className="pd-grad-coral">partout en CI</span>
           </h2>
-          <p className="pd-body mx-auto mt-3 max-w-[560px] text-[14px] text-neutral-600 sm:text-[15px]">Adopte par des centaines de clients en Cote d'Ivoire pour ses resultats rapides.</p>
+          {!isTk && <p className="pd-body mx-auto mt-3 max-w-[560px] text-[14px] text-neutral-600 sm:text-[15px]">Adopte par des centaines de clients en Cote d'Ivoire pour ses resultats rapides.</p>}
 
           <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div className="relative overflow-hidden rounded-[28px] ring-1 ring-cyan-300/30 shadow-[0_25px_60px_-15px_rgba(6,182,212,0.3)]">
@@ -950,11 +1045,11 @@ export default function PatchDouleurLandingPremium({
         </div>
         <div className="relative mx-auto w-full max-w-[1100px]">
           <div className="text-center">
-            <span className="text-[10px] font-black uppercase tracking-[0.45em] text-cyan-300">Temoignages clients</span>
-            <h2 className="pd-display mt-3 text-[34px] font-black leading-[1.05] tracking-tight text-white sm:text-[48px]">
-              Ils ont retrouve <span className="pd-grad-cyan">leur confort</span>.
+            {!isTk && <span className="text-[10px] font-black uppercase tracking-[0.45em] text-cyan-300">Temoignages clients</span>}
+            <h2 className={`pd-display ${isTk ? 'mt-0' : 'mt-3'} text-[34px] font-black leading-[1.05] tracking-tight text-white sm:text-[48px]'}`}>
+              <span className="pd-grad-cyan">Confort</span> retrouve
             </h2>
-            <p className="pd-body mx-auto mt-3 max-w-[520px] text-[14px] text-cyan-100/80 sm:text-[15px]">Avis recents, messages WhatsApp, SMS — tous verifies.</p>
+            {!isTk && <p className="pd-body mx-auto mt-3 max-w-[520px] text-[14px] text-cyan-100/80 sm:text-[15px]">Avis recents, messages WhatsApp, SMS — tous verifies.</p>}
           </div>
 
           {/* Chat WhatsApp 1 */}
@@ -1066,7 +1161,7 @@ export default function PatchDouleurLandingPremium({
           <div className="text-center">
             <span className="text-[10px] font-black uppercase tracking-[0.45em] text-orange-600">Choisissez votre cure</span>
             <h2 className="pd-display mt-3 text-[34px] font-black leading-[1.05] tracking-tight text-[#0a1628] sm:text-[48px]">
-              <span className="pd-grad-coral">Offre speciale</span> aujourd'hui.
+              <span className="pd-grad-coral">Offre speciale</span> aujourd`hui.
             </h2>
             <p className="pd-body mx-auto mt-3 max-w-[520px] text-[14px] text-neutral-600 sm:text-[15px]">Plus vous prenez, plus vous economisez. Stock limite a {stock} unites.</p>
           </div>
@@ -1076,7 +1171,7 @@ export default function PatchDouleurLandingPremium({
               const isBest = o.v === 3;
               const isPopular = o.v === 2;
               const oldVal = o.v * OLD_PRICE_UNIT;
-              const realVal = PRICES[o.v];
+              const realVal = orderTotal(PRICES, o.v);
               return (
                 <div
                   key={o.v}
@@ -1100,7 +1195,7 @@ export default function PatchDouleurLandingPremium({
                   </div>
 
                   <div className="mt-3 flex items-baseline gap-2">
-                    <span className={`pd-display text-[28px] font-black tabular-nums ${isBest ? 'text-white' : 'text-[#0a1628]'} sm:text-[34px]`}>{fmt(realVal).split(' ').slice(0, -1).join(' ')}</span>
+                    <span className={`pd-display text-[28px] font-black tabular-nums ${isBest ? 'text-white' : 'text-[#0a1628]'} sm:text-[34px]'}`}>{fmt(realVal).split(' ').slice(0, -1).join(' ')}</span>
                     <span className={`text-[14px] font-bold ${isBest ? 'text-cyan-200' : 'text-neutral-500'}`}>F</span>
                   </div>
 
@@ -1120,7 +1215,6 @@ export default function PatchDouleurLandingPremium({
                     <li className="flex items-start gap-2"><Check className={isBest ? 'text-cyan-300' : ''}/>{o.v} boite{o.v > 1 ? 's' : ''} de patchs</li>
                     <li className="flex items-start gap-2"><Check className={isBest ? 'text-cyan-300' : ''}/>Livraison 24-48h</li>
                     <li className="flex items-start gap-2"><Check className={isBest ? 'text-cyan-300' : ''}/>Paiement a la livraison</li>
-                    {o.v >= 2 && <li className="flex items-start gap-2"><Check className={isBest ? 'text-cyan-300' : ''}/>Livraison offerte</li>}
                     {isBest && <li className="flex items-start gap-2"><Check className="text-amber-400"/>Garantie satisfait ou rembourse</li>}
                   </ul>
 
@@ -1244,10 +1338,10 @@ export default function PatchDouleurLandingPremium({
       </footer>
 
       {/* ============================================== */}
-      {/* STICKY BUY BAR — fixe en BAS de l'ecran        */}
+      {/* STICKY BUY BAR — fixe en BAS de l`ecran        */}
       {/* ============================================== */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-40 transform transition-transform duration-500 ${showSticky ? 'translate-y-0' : 'translate-y-full'}`}
+        className={`pointer-events-none fixed inset-x-0 bottom-0 z-40 transform transition-transform duration-500 ${showSticky ? 'translate-y-0' : 'translate-y-full'}`}
         aria-hidden={!showSticky}
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
@@ -1257,10 +1351,10 @@ export default function PatchDouleurLandingPremium({
           </div>
           <div className="relative mx-auto flex w-full max-w-[1100px] items-center gap-3 px-3 py-2.5 sm:px-5 sm:py-3">
             {/* Prix + countdown (gauche) */}
-            <div className="flex flex-1 flex-col gap-0.5 leading-tight">
+            <div className="pointer-events-none flex flex-1 flex-col gap-0.5 leading-tight">
               <div className="flex items-baseline gap-2">
-                <span className="pd-display text-[19px] font-black tabular-nums text-cyan-300 sm:text-[22px]">9 900 F</span>
-                <span className="text-[11px] font-bold text-neutral-400 line-through">15 000 F</span>
+                <span className="pd-display text-[19px] font-black tabular-nums text-cyan-300 sm:text-[22px]">{fmtF(orderTotal(PRICES, 1))}</span>
+                <span className="text-[11px] font-bold text-neutral-400 line-through">{fmtF(OLD_PRICE_UNIT)}</span>
               </div>
               <span className="font-mono text-[10px] tabular-nums text-cyan-200/85 sm:text-[11px]">
                 <span className="hidden sm:inline">offre fin dans </span>
@@ -1277,7 +1371,7 @@ export default function PatchDouleurLandingPremium({
             {/* CTA primary (droite) */}
             <button
               onClick={() => openOrder(1)}
-              className="pd-cta group relative flex shrink-0 items-center gap-1.5 overflow-hidden rounded-full bg-gradient-to-r from-cyan-400 via-cyan-500 to-sky-500 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.16em] text-white shadow-[0_12px_30px_-4px_rgba(6,182,212,0.7)] transition hover:-translate-y-0.5 sm:px-5 sm:py-3 sm:text-[12.5px] pd-glow-cyan"
+              className="pointer-events-auto pd-cta group relative flex shrink-0 items-center gap-1.5 overflow-hidden rounded-full bg-gradient-to-r from-cyan-400 via-cyan-500 to-sky-500 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.16em] text-white shadow-[0_12px_30px_-4px_rgba(6,182,212,0.7)] transition hover:-translate-y-0.5 sm:px-5 sm:py-3 sm:text-[12.5px] pd-glow-cyan"
             >
               <span className="pd-cta-sheen pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/55 to-transparent"/>
               <span className="relative">Commander</span>
@@ -1318,7 +1412,7 @@ export default function PatchDouleurLandingPremium({
             <h4 className="pd-display mt-3 text-[28px] font-black leading-[1.05] tracking-tight text-[#0a1628]">
               <span className="pd-grad-coral">Offre speciale</span> avant de partir.
             </h4>
-            <p className="pd-body mt-3 text-[13.5px] text-neutral-600">Profitez de l'offre <strong className="text-[#0a1628]">2 boites a 16 900 F</strong> avant la rupture de stock.</p>
+            <p className="pd-body mt-3 text-[13.5px] text-neutral-600">Profitez de l'offre <strong className="text-[#0a1628]">2 boites a {fmtF(orderTotal(PRICES, 2))}</strong> avant la rupture de stock.</p>
             <div className="mt-5">
               <CTA onClick={() => { setExitPopup(false); openOrder(2); }} variant="urgent" size="lg" fullWidth>
                 Je profite de l'offre

@@ -12,8 +12,8 @@
  *
  * 12 medias UNIQUES utilises (aucune repetition) :
  *   - hero.webp     : Hero stacke
- *   - img-2.webp    : Bloc probleme (cernes)
- *   - img-3.webp    : Bloc solution
+ *   - Ma-video-12.mp4 : Bloc probleme (cernes) — loop
+ *   - ChatGPT-Image-8-juin-2026-23_30_57.png : Bloc solution
  *   - video-1.mp4   : Demo application (loop)
  *   - img-4.webp    : Bloc formule
  *   - img-5.webp    : Bloc eclat
@@ -22,7 +22,7 @@
  *   - img-7.webp    : Apres (peau radieuse)
  *   - img-8.webp    : Bloc routine
  *   - video-3.mp4   : Temoignage video (loop)
- *   - img-9.webp    : Bloc engagement / fond banniere finale
+ *   - jj-1.mp4      : Bloc engagement / fond banniere finale — loop
  *
  * Signature visuelle :
  *   - Typographie SERIF pour les titres hero (elegance beauty)
@@ -38,55 +38,77 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { trackPageView } from '../../utils/pageTracking';
 import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
+import { orderTotal, packAmount, packLabel, DELIVERY_FEE_CI } from '../../utils/pricingHelpers';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'serum-cerne';
 const PRODUCT_CODE = 'SERUM_CERNE';
 const META_PIXEL_ID = '26809431761984777';
+/** Pixel campagne FB (meme que patchdouleurtk / crememinceurfb). */
+const META_PIXEL_ID_CAMPAIGN = '1313100454309806';
+const META_PIXEL_IDS = [META_PIXEL_ID_CAMPAIGN, META_PIXEL_ID];
 const THANK_YOU_URL = '/serum-cerne/merci';
 
 const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 const OLD_PRICE_UNIT = 15000;
+const DISCOUNT_PCT = Math.round((1 - PRICES[1] / OLD_PRICE_UNIT) * 100);
 const QTY_OPTS = [
-  { v: 1, label: '1 flacon', sub: '9 900 FCFA' },
-  { v: 2, label: '2 flacons', sub: '16 900 FCFA', tag: 'Populaire', save: 'Economisez 2 900 F' },
-  { v: 3, label: '3 flacons', sub: '24 900 FCFA', tag: 'Meilleure offre', save: 'Economisez 4 800 F' },
+  { v: 1, label: '1 flacon', sub: packLabel(PRICES, 1, 'FCFA') },
+  { v: 2, label: '2 flacons', sub: packLabel(PRICES, 2, 'FCFA'), tag: 'Populaire', save: 'Economisez 2 900 F' },
+  { v: 3, label: '3 flacons', sub: packLabel(PRICES, 3, 'FCFA'), tag: 'Meilleure offre', save: 'Economisez 4 800 F' },
 ];
 
 // 12 medias UNIQUES (dossier /serum-yeux/ pour eviter le conflit avec le slug /serum-cerne)
 const MEDIA = {
-  hero:       '/serum-yeux/hero.webp',
-  problem:    '/serum-yeux/img-2.webp',
-  solution:   '/serum-yeux/img-3.webp',
+  hero:       'https://obrille.com/wp-content/uploads/2026/06/ChatGPT-Image-8-juin-2026-15_41_35.png',
+  problem:    'https://obrille.com/wp-content/uploads/2026/06/Ma-video-12.mp4',
+  solution:   'https://obrille.com/wp-content/uploads/2026/06/ChatGPT-Image-8-juin-2026-23_30_57.png',
   video1:     '/serum-yeux/video-1.mp4',
   formula:    '/serum-yeux/img-4.webp',
   glow:       '/serum-yeux/img-5.webp',
   video2:     '/serum-yeux/video-2.mp4',
-  avant:      '/serum-yeux/img-6.webp',
+  avant:      'https://obrille.com/wp-content/uploads/2026/06/ChatGPT-Image-8-juin-2026-23_22_44-1.png',
   apres:      '/serum-yeux/img-7.webp',
   routine:    '/serum-yeux/img-8.webp',
   video3:     '/serum-yeux/video-3.mp4',
-  engagement: '/serum-yeux/img-9.webp',
+  engagement: 'https://obrille.com/wp-content/uploads/2026/06/jj-1.mp4',
 };
 
 declare global { interface Window { fbq: any; _fbq: any; } }
 
-function initMetaPixel(pixelId: string) {
-  if (!pixelId || window.fbq) return;
-  const f: any = window.fbq = function (...args: any[]) { f.callMethod ? f.callMethod(...args) : f.queue.push(args); };
+const initedMetaPixels = new Set<string>();
+
+function ensureFbqBase(): void {
+  if (window.fbq) return;
+  const f: any = window.fbq = function (...args: any[]) { f.callMethod ? f.callMethod.apply(f, arguments) : f.queue.push(args); };
   if (!window._fbq) window._fbq = f;
   f.push = f; f.loaded = true; f.version = '2.0'; f.queue = [];
   const s = document.createElement('script');
   s.async = true; s.src = 'https://connect.facebook.net/en_US/fbevents.js';
   document.head.appendChild(s);
-  window.fbq('init', pixelId);
-  window.fbq('track', 'PageView');
+}
+
+function initMetaPixels(pixelIds: string[]): void {
+  const ids = [...new Set(pixelIds.filter(Boolean))];
+  if (!ids.length) return;
+  ensureFbqBase();
+  let added = false;
+  for (const id of ids) {
+    if (initedMetaPixels.has(id)) continue;
+    window.fbq('init', id);
+    initedMetaPixels.add(id);
+    added = true;
+  }
+  if (added) window.fbq('track', 'PageView');
 }
 
 interface Product { id: number; code: string; nom: string; prixUnitaire: number }
 
 const co = () => new URLSearchParams(window.location.search).get('company') || 'ci';
-const fmt = (v: number) => v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
+const fmtNum = (v: number) => v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+const fmt = (v: number) => fmtNum(v) + ' FCFA';
+const fmtSave = (v: number) => `Economisez ${fmtNum(v)} F`;
 const pad = (n: number) => String(n).padStart(2, '0');
 
 // =========================================================
@@ -291,16 +313,14 @@ export default function SerumCerneLanding() {
     if (pixelFired.current) return;
     pixelFired.current = true;
     trackPageView(SLUG, company);
-    if (META_PIXEL_ID) {
-      initMetaPixel(META_PIXEL_ID);
-      window.fbq?.('track', 'ViewContent', {
+    initMetaPixels(META_PIXEL_IDS);
+    window.fbq?.('track', 'ViewContent', {
         content_name: 'Serum Anti-Cernes Premium',
         content_ids: [PRODUCT_CODE],
         content_type: 'product',
-        value: PRICES[1],
+        value: orderTotal(PRICES, 1),
         currency: 'XOF',
       });
-    }
   }, [company]);
 
   useEffect(() => {
@@ -499,16 +519,15 @@ export default function SerumCerneLanding() {
           {/* Prix + CTA */}
           <div className="mt-10 sc-fade-up" style={{ animationDelay: '.2s' }}>
             <div className="flex items-baseline justify-center gap-3">
-              <span className="sc-shimmer-gold text-4xl font-black sm:text-5xl">9 900</span>
+              <span className="sc-shimmer-gold text-4xl font-black sm:text-5xl">{fmtNum(orderTotal(PRICES, 1))}</span>
               <span className="text-lg font-bold text-slate-800 sm:text-xl">FCFA</span>
-              <span className="text-sm text-slate-400 line-through sm:text-base">15 000 FCFA</span>
-              <span className="rounded-sm bg-slate-950 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">-34%</span>
+              <span className="text-sm text-slate-400 line-through sm:text-base">{fmt(OLD_PRICE_UNIT)}</span>
+              <span className="rounded-sm bg-slate-950 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">-{DISCOUNT_PCT}%</span>
             </div>
-            <p className="mt-1 text-[12px] font-semibold text-amber-700">Livraison gratuite a Abidjan</p>
 
             <div className="mx-auto mt-6 max-w-sm">
               <CTA onClick={() => openModal(1)} variant="navy" size="lg">
-                Je commande · 9 900 FCFA <Arrow/>
+                Je commande · {fmt(orderTotal(PRICES, 1))} <Arrow/>
               </CTA>
             </div>
             <p className="mt-3 text-[11px] text-slate-500">
@@ -572,7 +591,7 @@ export default function SerumCerneLanding() {
               <div className="relative">
                 <div className="pointer-events-none absolute -inset-3 rounded-[2rem] bg-gradient-to-br from-rose-300/30 to-orange-300/30 blur-3xl"/>
                 <div className="relative overflow-hidden rounded-[2rem] shadow-xl ring-1 ring-rose-100">
-                  <LazyImg src={MEDIA.problem} alt="Cernes visibles" aspect="1/1"/>
+                  <LazyVideo src={MEDIA.problem} aspect="1/1"/>
                 </div>
               </div>
             </div>
@@ -929,7 +948,7 @@ export default function SerumCerneLanding() {
             {[
               {
                 qty: 1, label: '1 flacon', desc: 'Decouvrir',
-                price: PRICES[1], oldPrice: OLD_PRICE_UNIT,
+                price: orderTotal(PRICES, 1), oldPrice: OLD_PRICE_UNIT,
                 tag: '', saveLabel: 'Pour tester',
                 accent: 'from-stone-300 to-stone-500',
                 bg: 'from-stone-800 to-stone-900',
@@ -937,16 +956,16 @@ export default function SerumCerneLanding() {
               },
               {
                 qty: 2, label: '2 flacons', desc: 'Cure complete',
-                price: PRICES[2], oldPrice: OLD_PRICE_UNIT * 2,
-                tag: 'POPULAIRE', saveLabel: 'Economisez 13 100 F',
+                price: orderTotal(PRICES, 2), oldPrice: OLD_PRICE_UNIT * 2,
+                tag: 'POPULAIRE', saveLabel: fmtSave(OLD_PRICE_UNIT * 2 - PRICES[2]),
                 accent: 'from-amber-300 via-yellow-300 to-amber-400',
                 bg: 'from-amber-950 to-yellow-950',
                 ring: 'ring-2 ring-amber-400',
               },
               {
                 qty: 3, label: '3 flacons', desc: 'Coffret premium',
-                price: PRICES[3], oldPrice: OLD_PRICE_UNIT * 3,
-                tag: 'MEILLEURE OFFRE', saveLabel: 'Economisez 20 100 F',
+                price: orderTotal(PRICES, 3), oldPrice: OLD_PRICE_UNIT * 3,
+                tag: 'MEILLEURE OFFRE', saveLabel: fmtSave(OLD_PRICE_UNIT * 3 - PRICES[3]),
                 accent: 'from-rose-300 via-pink-300 to-amber-300',
                 bg: 'from-rose-950 to-amber-950',
                 ring: 'ring-2 ring-rose-300',
@@ -1015,7 +1034,7 @@ export default function SerumCerneLanding() {
           </div>
 
           <p className="mt-6 text-center text-[12px] text-stone-400">
-            Livraison <span className="font-black text-amber-300">gratuite</span> · Paiement a la livraison
+            Paiement a la livraison
           </p>
         </div>
       </section>
@@ -1043,7 +1062,7 @@ export default function SerumCerneLanding() {
             </CTA>
           </div>
           <p className="mt-3 text-center text-[11px] text-slate-500">
-            Livraison <span className="font-bold text-amber-700">gratuite</span> · Paiement <span className="font-bold">a la livraison</span>
+            Paiement <span className="font-bold">a la livraison</span>
           </p>
         </div>
       </section>
@@ -1213,7 +1232,7 @@ export default function SerumCerneLanding() {
               <div className="relative">
                 <div className="pointer-events-none absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-amber-300/40 to-rose-300/30 blur-3xl"/>
                 <div className="relative overflow-hidden rounded-[2rem] shadow-xl ring-1 ring-amber-100">
-                  <LazyImg src={MEDIA.engagement} alt="Qualite premium" aspect="1/1"/>
+                  <LazyVideo src={MEDIA.engagement} aspect="1/1"/>
                 </div>
               </div>
             </div>
@@ -1256,10 +1275,10 @@ export default function SerumCerneLanding() {
       </section>
 
       {/* ===================================================== */}
-      {/* BANNIERE FINALE avec fond img-9 opacifie               */}
+      {/* BANNIERE FINALE avec fond video opacifie               */}
       {/* ===================================================== */}
       <section className="sc-cv relative overflow-hidden py-16 sm:py-24">
-        <img src={MEDIA.engagement} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-20"/>
+        <video src={MEDIA.engagement} autoPlay loop muted playsInline aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-20"/>
         <div className="pointer-events-none absolute inset-0 bg-slate-950/85"/>
         <div className="pointer-events-none absolute left-10 top-10 h-32 w-32 rounded-full bg-amber-400/30 blur-2xl sc-float-slow"/>
         <div className="pointer-events-none absolute right-10 bottom-10 h-40 w-40 rounded-full bg-rose-400/25 blur-3xl sc-float-slow" style={{ animationDelay: '2s' }}/>
@@ -1271,7 +1290,7 @@ export default function SerumCerneLanding() {
             <span className="sc-shimmer-gold block">maintenant.</span>
           </h2>
           <p className="mt-4 text-[14px] text-stone-300 sm:text-[16px]">
-            Serum Anti-Cernes Premium · 9 900 FCFA · Paiement a la livraison
+            Serum Anti-Cernes Premium · {fmt(orderTotal(PRICES, 1))} · Paiement a la livraison
           </p>
 
           <div className="mx-auto mt-8 max-w-sm">
@@ -1280,14 +1299,14 @@ export default function SerumCerneLanding() {
             </CTA>
           </div>
           <p className="mt-3 text-[12px] text-stone-400">
-            🔒 Paiement a la livraison · Sans risque · Livraison gratuite
+            🔒 Paiement a la livraison · Sans risque
           </p>
         </div>
       </section>
 
       {/* ===== FOOTER ===== */}
       <footer className="bg-slate-950 py-8 text-center text-[11px] text-amber-200/60">
-        <p>© 2026 · Cote d'Ivoire · GS Pipeline · Tous droits reserves</p>
+        <p>© 2026 · Cote d`Ivoire · GS Pipeline · Tous droits reserves</p>
         <p className="mt-1">Service client 7j/7 · Livraison Abidjan 24h · Paiement a la livraison</p>
       </footer>
 
@@ -1299,7 +1318,7 @@ export default function SerumCerneLanding() {
             <div className="min-w-0">
               <p className="truncate text-[12px] font-black text-slate-900 sm:text-[13px]">Serum Anti-Cernes</p>
               <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px]">
-                <span className="font-bold text-amber-700">9 900 FCFA</span>
+                <span className="font-bold text-amber-700">{fmt(orderTotal(PRICES, 1))}</span>
                 <span className="text-slate-400">·</span>
                 <span className="inline-flex items-center gap-0.5 font-mono font-bold text-rose-500">
                   <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-rose-500"/>
@@ -1353,7 +1372,7 @@ export default function SerumCerneLanding() {
                 <span className="sc-shimmer-gold">ce serum premium</span>.
               </h3>
               <p className="mt-2 text-[13px] text-stone-300">
-                Livraison 100% gratuite · Paiement a la livraison.
+                Paiement a la livraison.
               </p>
             </div>
 
@@ -1382,7 +1401,8 @@ export default function SerumCerneLanding() {
           title: 'Serum Anti-Cernes Premium',
           prices: PRICES,
           thankYouUrl: THANK_YOU_URL,
-          metaPixelId: META_PIXEL_ID,
+          metaPixelId: META_PIXEL_ID_CAMPAIGN,
+          secondaryMetaPixelId: META_PIXEL_ID,
           slug: SLUG,
           company,
           navigate,

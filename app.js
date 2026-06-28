@@ -24,6 +24,8 @@ import whatsappRoutes from './routes/whatsapp.routes.js';
 import templateRoutes from './routes/template.routes.js';
 import chariowRoutes from './routes/chariow.routes.js';
 import paystackRoutes from './routes/paystack.routes.js';
+import wasenderRoutes from './routes/wasender.routes.js';
+import cronRoutes from './routes/cron.routes.js';
 import { prisma, prismaInitError } from './utils/prisma.js';
 
 if (process.env.NODE_ENV !== 'production') {
@@ -46,6 +48,13 @@ export function createApp() {
     'https://obgestion.com',
     'https://www.obgestion.com',
     'https://bf.obgestion.com',
+    // Domaines landings VPS (proxy PHP same-origin)
+    'https://obrille.com',
+    'https://www.obrille.com',
+    'https://coachingexpertci.com',
+    'https://www.coachingexpertci.com',
+    'https://soindemoi.net',
+    'https://www.soindemoi.net',
     ...extraOrigins,
   ]);
 
@@ -96,6 +105,8 @@ export function createApp() {
   app.use('/api/templates', templateRoutes);
   app.use('/api/chariow', chariowRoutes);
   app.use('/api/paystack', paystackRoutes);
+  app.use('/api/wasender', wasenderRoutes);
+  app.use('/api/cron', cronRoutes);
 
   // Routes de test
   app.get('/', (req, res) => {

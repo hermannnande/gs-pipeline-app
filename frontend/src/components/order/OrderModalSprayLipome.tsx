@@ -35,7 +35,7 @@ interface QtyOption {
 interface Props {
   open: boolean;
   onClose: () => void;
-  cfg: OrderSubmitConfig & { images: { hero: string; avant?: string; apres?: string; comparison?: { before: string; after: string } } };
+  cfg: OrderSubmitConfig & { promoCountdownMinutes?: number; images: { hero: string; avant?: string; apres?: string; comparison?: { before: string; after: string } } };
   product: OrderProduct | null;
   setProduct?: (p: OrderProduct | null) => void;
   qtyOptions: QtyOption[];
@@ -57,8 +57,9 @@ export default function OrderModalSprayLipome({ open, onClose, cfg, product, set
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
   const [phone, setPhone] = useState('');
+  const promoMinutes = cfg.promoCountdownMinutes ?? 15;
   const [stock, setStock] = useState(13);
-  const [countdown, setCountdown] = useState({ m: 14, s: 59 });
+  const [countdown, setCountdown] = useState({ m: promoMinutes - 1, s: 59 });
 
   const wasOpenRef = useRef(false);
   const trackRef = useRef(trackOpen);
@@ -69,7 +70,7 @@ export default function OrderModalSprayLipome({ open, onClose, cfg, product, set
       wasOpenRef.current = true;
       setName(''); setCity(''); setPhone('');
       setQty(initialQty);
-      setCountdown({ m: 14, s: 59 });
+      setCountdown({ m: promoMinutes - 1, s: 59 });
       setStock(9 + Math.floor(Math.random() * 6));
       trackRef.current(initialQty);
     }

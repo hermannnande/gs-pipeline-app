@@ -33,6 +33,17 @@ Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains
 </IfModule>
 # === END HTTPS Force coachingexpertci.com ===
 
+# === BEGIN HTTPS Force soindemoi.net (custom) ===
+# Force HTTPS pour le 3e domaine soindemoi.net (meme docroot que les autres).
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteCond %{HTTP:X-Forwarded-Proto} !https
+RewriteCond %{HTTPS} !on
+RewriteCond %{HTTP_HOST} ^(?:www\.)?soindemoi\.net(?:.*)$ [nc]
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+</IfModule>
+# === END HTTPS Force soindemoi.net ===
+
 # === BEGIN React Landings ===
 # Sert le SPA React pour les 7 produits, prioritaire sur WordPress.
 # IMPORTANT : Ne PAS toucher manuellement (manipule par script de deploiement).
@@ -40,7 +51,7 @@ Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains
 RewriteEngine On
 # Si le fichier existe physiquement (ex: /poudre-pousse-cheveux/hero.webp), on le sert direct.
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^(boutique|creme-anti-verrue|creme-verrue-tk|creme-verrue-tk2|spraydouleurtk|spraylipome|spraylipometk|creme-anti-lipome|creme-anti-lipome-tk|chaussette-homme|creme-anti-cerne|serum-cerne|serum-cerne-tk|serum-cerne-paye|creme-ongle-incarne|chaussette-compression|patchdouleurtk|patchdouleurfb|crememinceurfb|coffret-boxer-homme|poudre-pousse-cheveux)(/.*)?$ /landings-app/index.html [L]
+RewriteRule ^(boutique|creme-anti-verrue|creme-verrue-tk|creme-verrue-tk2|spraydouleurtk|spraylipome|spraylipometk|spraylipome-promo|creme-anti-lipome|creme-anti-lipome-tk|chaussette-homme|creme-anti-lipome-tk|chaussette-homme|chaussette-premium-homme|creme-anti-cerne|serum-cerne|serum-cerne-tk|serum-cerne-paye|anti-age|creme-ongle-incarne|creme-ongle-incarne-v2|chaussette-compression|chaussette-compression-v2|chaussette|detoxminceur|bande-sport-minceur|patch-minceur-glp|lunette-de-nuit|bouilloire-intelligente|bouilloire-commandes|patchdouleurtk|patchdouleurfb|crememinceurfb|coffret-boxer-homme|coffret-boxer-luxe-v3|chapeau-dame|poudre-pousse-cheveux|spray-vitiligo|chapeau-gavroche)(/.*)?$ /landings-app/index.html [L]
 </IfModule>
 # === END React Landings ===
 

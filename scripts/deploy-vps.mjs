@@ -171,14 +171,20 @@ function packageBuild() {
   if (!existsSync(distDir)) die(`dist/ introuvable : ${distDir}`);
 
   const candidates = ['index.html', 'robots.txt', '.htaccess', 'assets'];
+  // Landings récentes : médias servis same-origin (perf PageSpeed).
+  for (const d of ['bouilloire-intelligente']) {
+    if (existsSync(join(distDir, d))) candidates.push(d);
+  }
   if (FLAGS.withImages) {
-    candidates.push('verrue-tk', 'creme-anti-verrue', 'spray-douleur', 'spray-lipome', 'lipome', 'serum-yeux', 'creme-minceur', 'patch-douleur-tk', 'poudre-pousse-cheveux', 'chaussettes-homme', 'chaussette-premium-homme', 'chaussette-compression', 'creme-anti-cerne', 'coffret-boxer-homme', 'spray-vitiligo', 'creme-verrue-tk-v2');
+    candidates.push('verrue-tk', 'creme-anti-verrue', 'spray-douleur', 'spray-lipome', 'lipome', 'serum-yeux', 'creme-minceur', 'creme-minceur-fb', 'patch-douleur-tk', 'poudre-pousse-cheveux', 'chaussettes-homme', 'chaussette-premium-homme', 'chaussette-compression', 'chaussette-compression-v2', 'chaussette', 'detoxminceur', 'bande-sport-minceur', 'patch-minceur-glp', 'lunette-de-nuit', 'creme-anti-cerne', 'coffret-boxer-homme', 'coffret-boxer-luxe-v3', 'chapeau-dame', 'spray-vitiligo', 'creme-verrue-tk-v2', 'ongle-incarne-v2', 'bouilloire-intelligente');
   }
 
   // Note : on n'utilise NI -C NI shell:true (les deux explosent avec les
   // espaces dans les paths Windows). cwd: distDir + chemins relatifs.
+  // --exclude : on ne deploie jamais les dossiers _raw/ (sources lourdes,
+  // mp4/png masters non references par les pages) ni les fichiers _raw*.
   const archiveRel = join('..', 'dist-deploy.tar.gz');
-  const tarArgs = ['-czf', archiveRel];
+  const tarArgs = ['--exclude=_raw', '--exclude=*/_raw', '--exclude=*/_raw/*', '--exclude=_raw*', '-czf', archiveRel];
   for (const f of candidates) {
     if (existsSync(join(distDir, f))) tarArgs.push(f);
   }
@@ -226,7 +232,7 @@ if [ -d assets ]; then
 fi
 
 WEB_ROOT=$(dirname "$APP_DIR")
-for img_dir in verrue-tk creme-anti-verrue spray-douleur spray-lipome lipome serum-yeux creme-minceur patch-douleur-tk poudre-pousse-cheveux chaussettes-homme chaussette-premium-homme chaussette-compression creme-anti-cerne coffret-boxer-homme spray-vitiligo creme-verrue-tk-v2; do
+for img_dir in bouilloire-intelligente verrue-tk creme-anti-verrue spray-douleur spray-lipome lipome serum-yeux creme-minceur creme-minceur-fb patch-douleur-tk poudre-pousse-cheveux chaussettes-homme chaussette-premium-homme chaussette-compression chaussette-compression-v2 chaussette detoxminceur bande-sport-minceur patch-minceur-glp lunette-de-nuit creme-anti-cerne coffret-boxer-homme coffret-boxer-luxe-v3 chapeau-dame spray-vitiligo creme-verrue-tk-v2 ongle-incarne-v2; do
   if [ -d "$img_dir" ]; then
     rm -rf "$WEB_ROOT/$img_dir"
     mv "$img_dir" "$WEB_ROOT/$img_dir"

@@ -93,7 +93,7 @@ $recent[] = ['ip' => $ip, 't' => $now];
 @chmod($rlFile, 0600);
 
 // ─── Préparer la commande ────────────────────────────────────────────
-$UNIT_PRICE = 10000;
+$UNIT_PRICE = 7000;
 $order = [
     'id'         => bin2hex(random_bytes(4)),
     'timestamp'  => date('Y-m-d H:i:s'),
@@ -130,15 +130,18 @@ $all[] = $order;
 @file_put_contents($jsonFile, json_encode($all, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 @chmod($jsonFile, 0600);
 
-// ─── Intégrations externes (Telegram + Google Sheet) ─────────────────
+// ─── Intégrations externes (Telegram + Google Sheet + Meta CAPI) ─────
 $configFile = __DIR__ . '/config.php';
 $TELEGRAM_BOT_TOKEN = '';
 $TELEGRAM_CHAT_ID   = '';
 $GOOGLE_SHEET_URL   = '';
 $ADMIN_PASSWORD     = '';
+$META_PIXEL_ID      = '1674022793901764';
+$META_CAPI_TOKEN    = '';
 if (is_file($configFile)) {
     include $configFile;
 }
+require_once __DIR__ . '/meta-capi.php';
 
 // Helper curl non-bloquant (best effort)
 $curlPost = function (string $url, $payload, array $headers = []): void {
@@ -185,6 +188,34 @@ if (!empty($GOOGLE_SHEET_URL)) {
         json_encode($order, JSON_UNESCAPED_UNICODE),
         ['Content-Type: application/json']
     );
+}
+
+// 3) Meta Conversions API — Purchase (dedup event_id = purchase_<orderId>)
+$productLabel = trim((string)($input['product'] ?? 'Boxers Homme de Luxe'));
+$productCode  = trim((string)($input['product_code'] ?? 'COFFRET_BOXER_LUXE_V3'));
+$customerName = trim((string)($input['customer_name'] ?? ''));
+if ($customerName === '' && str_contains($name, ' — ')) {
+    $customerName = trim(explode(' — ', $name, 2)[0]);
+}
+if (!empty($META_PIXEL_ID) && !empty($META_CAPI_TOKEN)) {
+    meta_capi_send_purchase([
+        'pixelId'     => $META_PIXEL_ID,
+        'accessToken' => $META_CAPI_TOKEN,
+        'eventId'     => 'purchase_' . $order['id'],
+        'sourceUrl'   => trim((string)($input['sourceUrl'] ?? $input['source_url'] ?? $order['referer'] ?? '')),
+        'phone'       => $phone,
+        'city'        => $city,
+        'clientIp'    => $ip,
+        'userAgent'   => $order['user_agent'],
+        'fbc'         => trim((string)($input['fbc'] ?? '')),
+        'fbp'         => trim((string)($input['fbp'] ?? '')),
+        'amount'      => $order['total'],
+        'currency'    => 'XOF',
+        'productName' => $productLabel,
+        'productCode' => $productCode,
+        'quantity'    => $qty,
+        'orderId'     => $order['id'],
+    ]);
 }
 
 // ─── Réponse client ──────────────────────────────────────────────────

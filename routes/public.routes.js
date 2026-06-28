@@ -2,6 +2,7 @@ import express from 'express';
 import { prisma } from '../utils/prisma.js';
 import { computePublicOrderTotal } from '../utils/pricing.js';
 import { notifyNewOrder } from '../utils/notifications.js';
+import { enqueueOrderConfirmation } from '../utils/wasender.js';
 import { sendPurchaseEvent } from '../utils/metaCapi.js';
 import { randomUUID } from 'crypto';
 
@@ -57,6 +58,50 @@ router.get('/products', async (req, res) => {
     res.json({ products });
   } catch (error) {
     console.error('Erreur récupération produits publics:', error);
+    res.status(500).json({ error: 'Erreur serveur.' });
+  }
+});
+
+// Produits dont les commandes sont consultables via une page-liste autonome
+// (lien public, hors back-office). Whitelist stricte : on n'expose JAMAIS
+// d'autres produits par cet endpoint.
+const PUBLIC_ORDER_PRODUCT_CODES = ['BOUILLOIRE_INTELLIGENTE'];
+
+// GET /api/public/product-orders?code=BOUILLOIRE_INTELLIGENTE
+// Liste lecture seule des commandes d'un produit isolé (nom, tél, ville,
+// quantité, montant, statut, date). Accessible sans authentification.
+router.get('/product-orders', async (req, res) => {
+  try {
+    const code = String(req.query.code || '').trim().toUpperCase();
+    if (!PUBLIC_ORDER_PRODUCT_CODES.includes(code)) {
+      return res.status(404).json({ error: 'Produit non disponible.' });
+    }
+    const companyId = await resolveCompanyId(req);
+    const orders = await prisma.order.findMany({
+      where: {
+        companyId,
+        product: { code: { equals: code, mode: 'insensitive' } },
+      },
+      select: {
+        id: true,
+        orderReference: true,
+        clientNom: true,
+        clientTelephone: true,
+        clientVille: true,
+        clientCommune: true,
+        clientAdresse: true,
+        quantite: true,
+        montant: true,
+        status: true,
+        createdAt: true,
+        produitNom: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 2000,
+    });
+    res.json({ code, count: orders.length, orders });
+  } catch (error) {
+    console.error('Erreur product-orders public:', error);
     res.status(500).json({ error: 'Erreur serveur.' });
   }
 });
@@ -124,6 +169,13 @@ router.post('/order', async (req, res) => {
       await notifyNewOrder(order);
     } catch (notifError) {
       console.error('Erreur notification (non bloquante):', notifError);
+    }
+
+    // Confirmation WhatsApp au client (mise en file, envoi throttlé par le cron).
+    try {
+      await enqueueOrderConfirmation(order);
+    } catch (waError) {
+      console.error('Erreur file WhatsApp (non bloquante):', waError);
     }
 
     try {

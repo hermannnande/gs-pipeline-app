@@ -30,6 +30,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { trackPageView } from '../../utils/pageTracking';
 import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
+import { orderTotal, packAmount, packLabel, DELIVERY_FEE_CI } from '../../utils/pricingHelpers';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'spraydouleurtk';
@@ -38,11 +39,12 @@ const META_PIXEL_ID = '26809431761984777';
 const THANK_YOU_URL = '/spraydouleurtk/merci';
 
 const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 const OLD_PRICE_UNIT = 15000;
 const QTY_OPTS = [
-  { v: 1, label: '1 spray', sub: '9 900 FCFA' },
-  { v: 2, label: '2 sprays', sub: '16 900 FCFA', tag: 'Populaire', save: 'Economisez 2 900 F' },
-  { v: 3, label: '3 sprays', sub: '24 900 FCFA', tag: 'Meilleure offre', save: 'Economisez 4 800 F' },
+  { v: 1, label: '1 spray', sub: packLabel(PRICES, 1, 'FCFA') },
+  { v: 2, label: '2 sprays', sub: packLabel(PRICES, 2, 'FCFA'), tag: 'Populaire', save: 'Economisez 2 900 F' },
+  { v: 3, label: '3 sprays', sub: packLabel(PRICES, 3, 'FCFA'), tag: 'Meilleure offre', save: 'Economisez 4 800 F' },
 ];
 
 // 8 medias UNIQUES
@@ -257,7 +259,7 @@ export default function SprayDouleurTkLanding() {
         content_name: 'Spray Anti-Douleur TK',
         content_ids: [PRODUCT_CODE],
         content_type: 'product',
-        value: PRICES[1],
+        value: orderTotal(PRICES, 1),
         currency: 'XOF',
       });
     }
@@ -466,17 +468,16 @@ export default function SprayDouleurTkLanding() {
           {/* Prix + CTA juste sous l'image */}
           <div className="mt-8 sp-fade-up" style={{ animationDelay: '.2s' }}>
             <div className="flex items-baseline justify-center gap-3">
-              <span className="sp-shimmer-text text-4xl font-black sm:text-5xl">9 900</span>
+              <span className="sp-shimmer-text text-4xl font-black sm:text-5xl">{fmtTotal(1)}</span>
               <span className="text-lg font-bold text-white sm:text-xl">FCFA</span>
               <span className="text-sm text-neutral-500 line-through sm:text-base">15 000 FCFA</span>
               <span className="rounded-full bg-yellow-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-neutral-900">-34%</span>
             </div>
-            <p className="mt-1 text-[12px] font-semibold text-lime-400">Livraison gratuite a Abidjan</p>
 
             {/* CTA JAUNE fluo - contraste maximal sur fond noir */}
             <div className="mx-auto mt-5 max-w-sm">
               <CTA onClick={() => openModal(1)} variant="yellow" size="lg">
-                Je commande - 9 900 FCFA <Arrow/>
+                Je commande - {fmtTotal(1)} FCFA <Arrow/>
               </CTA>
             </div>
             <p className="mt-3 text-[11px] text-neutral-400">
@@ -805,7 +806,7 @@ export default function SprayDouleurTkLanding() {
                 qty: 1,
                 label: '1 spray',
                 desc: 'Pour tester',
-                price: PRICES[1],
+                price: orderTotal(PRICES, 1),
                 oldPrice: OLD_PRICE_UNIT,
                 tag: '',
                 saveLabel: 'Pour essayer',
@@ -817,7 +818,7 @@ export default function SprayDouleurTkLanding() {
                 qty: 2,
                 label: '2 sprays',
                 desc: 'Maison + bureau',
-                price: PRICES[2],
+                price: orderTotal(PRICES, 2),
                 oldPrice: OLD_PRICE_UNIT * 2,
                 tag: 'POPULAIRE',
                 saveLabel: 'Economisez 13 100 F',
@@ -829,7 +830,7 @@ export default function SprayDouleurTkLanding() {
                 qty: 3,
                 label: '3 sprays',
                 desc: 'Toute la famille',
-                price: PRICES[3],
+                price: orderTotal(PRICES, 3),
                 oldPrice: OLD_PRICE_UNIT * 3,
                 tag: 'MEILLEURE OFFRE',
                 saveLabel: 'Economisez 20 100 F',
@@ -901,7 +902,7 @@ export default function SprayDouleurTkLanding() {
           </div>
 
           <p className="mt-6 text-center text-[12px] text-neutral-400">
-            Livraison <span className="font-black text-lime-400">gratuite</span> · Paiement a la livraison
+            Paiement a la livraison
           </p>
         </div>
       </section>
@@ -929,7 +930,7 @@ export default function SprayDouleurTkLanding() {
             </CTA>
           </div>
           <p className="mt-3 text-center text-[11px] text-neutral-500">
-            Livraison <span className="font-bold text-lime-600">gratuite</span> · Paiement <span className="font-bold">a la livraison</span>
+            Paiement <span className="font-bold">a la livraison</span>
           </p>
         </div>
       </section>
@@ -1118,7 +1119,7 @@ export default function SprayDouleurTkLanding() {
             vous attend.
           </h2>
           <p className="mt-4 text-[14px] text-neutral-300 sm:text-[16px]">
-            Spray Anti-Douleur TK · 9 900 FCFA seulement · Paiement a la livraison
+            Spray Anti-Douleur TK · {fmtTotal(1)} FCFA seulement · Paiement a la livraison
           </p>
 
           <div className="mx-auto mt-8 max-w-sm">
@@ -1127,7 +1128,7 @@ export default function SprayDouleurTkLanding() {
             </CTA>
           </div>
           <p className="mt-3 text-[12px] text-neutral-400">
-            🔒 Paiement a la livraison · Sans risque · Livraison gratuite
+            🔒 Paiement a la livraison · Sans risque
           </p>
         </div>
       </section>
@@ -1136,7 +1137,7 @@ export default function SprayDouleurTkLanding() {
       {/* FOOTER                                                 */}
       {/* ===================================================== */}
       <footer className="bg-neutral-950 border-t border-lime-400/20 py-8 text-center text-[11px] text-lime-200/70">
-        <p>© 2026 · Cote d'Ivoire · GS Pipeline · Tous droits reserves</p>
+        <p>© 2026 · Cote d`Ivoire · GS Pipeline · Tous droits reserves</p>
         <p className="mt-1">Service client 7j/7 · Livraison Abidjan 24h · Paiement a la livraison</p>
       </footer>
 
@@ -1150,7 +1151,7 @@ export default function SprayDouleurTkLanding() {
             <div className="min-w-0">
               <p className="truncate text-[12px] font-black text-white sm:text-[13px]">Spray Anti-Douleur TK</p>
               <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px]">
-                <span className="font-bold text-lime-400">9 900 FCFA</span>
+                <span className="font-bold text-lime-400">{fmtTotal(1)} FCFA</span>
                 <span className="text-neutral-500">·</span>
                 <span className="inline-flex items-center gap-0.5 font-mono font-bold text-yellow-400">
                   <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-yellow-400"/>
@@ -1209,7 +1210,7 @@ export default function SprayDouleurTkLanding() {
                 Attendez ! <br/>Soulagez-vous aujourd'hui.
               </h3>
               <p className="mt-2 text-[13px] text-neutral-300">
-                Livraison 100% gratuite + paiement a la livraison.
+                Paiement a la livraison.
               </p>
             </div>
 

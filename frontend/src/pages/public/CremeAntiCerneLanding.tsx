@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { trackPageView } from '../../utils/pageTracking';
 import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
+import { orderTotal, packAmount, packLabel, DELIVERY_FEE_CI } from '../../utils/pricingHelpers';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'creme-anti-cerne';
@@ -19,13 +20,15 @@ const META_PIXEL_ID = '950944984510412';
 const THANK_YOU_URL = '/creme-anti-cerne/merci';
 
 const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 const QTY_OPTS = [
-  { v: 1, label: '1 crème', sub: '9 900 FCFA' },
-  { v: 2, label: '2 crèmes', sub: '16 900 FCFA', tag: 'Le + choisi', save: 'Économisez 2 900 F' },
-  { v: 3, label: '3 crèmes', sub: '24 900 FCFA', tag: 'Meilleure offre', save: 'Économisez 4 800 F' },
+  { v: 1, label: '1 crème', sub: packLabel(PRICES, 1, 'FCFA') },
+  { v: 2, label: '2 crèmes', sub: packLabel(PRICES, 2, 'FCFA'), tag: 'Le + choisi', save: 'Économisez 2 900 F' },
+  { v: 3, label: '3 crèmes', sub: packLabel(PRICES, 3, 'FCFA'), tag: 'Meilleure offre', save: 'Économisez 4 800 F' },
 ];
 
-const M = (n: string) => `/creme-anti-cerne/${n}`;
+const IMG_CACHE_VERSION = '20260619b';
+const M = (n: string) => `/creme-anti-cerne/${n}?v=${IMG_CACHE_VERSION}`;
 
 interface Product { id: number; code: string; nom: string; prixUnitaire: number }
 
@@ -76,7 +79,7 @@ function LazyImg({ src, alt, aspect, priority, className = '', cover = false }: 
   const { ref, visible } = useOnScreen('320px');
   const hasAspect = !!aspect;
 
-  // Sans aspect : l'image trouve sa hauteur naturelle (block + h-auto + w-full).
+  // Sans aspect : l`image trouve sa hauteur naturelle (block + h-auto + w-full).
   if (!hasAspect) {
     if (priority) {
       return (
@@ -291,7 +294,7 @@ export default function CremeAntiCerneLanding() {
         content_name: 'Crème Anti-Cernes Contour des Yeux',
         content_ids: [PRODUCT_CODE],
         content_type: 'product',
-        value: PRICES[1],
+        value: orderTotal(PRICES, 1),
         currency: 'XOF',
       });
     }
@@ -475,12 +478,11 @@ export default function CremeAntiCerneLanding() {
 
           <div className="mt-5 cac-fade-up" style={{ animationDelay: '.2s' }}>
             <div className="flex items-baseline justify-center gap-3">
-              <span className="cac-shimmer-red text-4xl font-black sm:text-5xl">9 900</span>
+              <span className="cac-shimmer-red text-4xl font-black sm:text-5xl">{fmtTotal(1)}</span>
               <span className="text-lg font-bold text-neutral-800 sm:text-xl">FCFA</span>
               <span className="text-sm text-neutral-400 line-through sm:text-base">15 000 FCFA</span>
               <span className="rounded-md bg-red-700 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-white">-34 %</span>
             </div>
-            <p className="mt-1 text-[12px] font-bold text-red-700">🚚 Livraison gratuite Abidjan</p>
 
             <div className="mx-auto mt-4 max-w-sm">
               <FluidCTA onClick={() => openModal(1)}>Commander maintenant <Arrow /></FluidCTA>
@@ -819,9 +821,9 @@ export default function CremeAntiCerneLanding() {
 
           <div className="mt-7 grid gap-3 sm:grid-cols-3">
             {[
-              { v: 1, n: '1 crème', p: 9900, old: 15000, sub: 'Idéal pour tester', save: null },
-              { v: 2, n: '2 crèmes', p: 16900, old: 30000, sub: '🔥 Le plus choisi', save: '-2 900 F', hot: true },
-              { v: 3, n: '3 crèmes', p: 24900, old: 45000, sub: '⭐ Meilleure offre', save: '-4 800 F' },
+              { v: 1, n: '1 crème', p: orderTotal(PRICES, 1), old: 15000, sub: packLabel(PRICES, 1, 'F'), save: null },
+              { v: 2, n: '2 crèmes', p: orderTotal(PRICES, 2), old: 30000, sub: packLabel(PRICES, 2, 'F'), save: '-13 100 F', hot: true },
+              { v: 3, n: '3 crèmes', p: orderTotal(PRICES, 3), old: 45000, sub: packLabel(PRICES, 3, 'F'), save: '-20 100 F' },
             ].map((b) => (
               <button
                 key={b.v}
@@ -993,7 +995,7 @@ export default function CremeAntiCerneLanding() {
           </div>
 
           <div className="mx-auto mt-7 max-w-sm">
-            <FluidCTA onClick={() => openModal(2)}>COMMANDE EXPRESS — 16 900 F <Arrow/></FluidCTA>
+            <FluidCTA onClick={() => openModal(2)}>COMMANDE EXPRESS — {fmtTotal(2)} F <Arrow/></FluidCTA>
             <p className="mt-3 text-[11px] text-rose-200">Sans engagement · paiement à la réception</p>
           </div>
         </div>
@@ -1103,7 +1105,7 @@ export default function CremeAntiCerneLanding() {
             <p className="text-[10px] font-black uppercase tracking-wider text-red-700">
               Promo · {pad(countdown.h)}:{pad(countdown.m)}:{pad(countdown.s)}
             </p>
-            <p className="text-[11px] font-bold text-neutral-800">9 900 F · livraison gratuite</p>
+            <p className="text-[11px] font-bold text-neutral-800">{fmtTotal(1)} F</p>
           </div>
           <button
             type="button"

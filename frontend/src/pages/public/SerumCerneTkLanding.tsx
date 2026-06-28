@@ -38,6 +38,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { trackPageView } from '../../utils/pageTracking';
 import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
+import { orderTotal, packAmount, packLabel, DELIVERY_FEE_CI } from '../../utils/pricingHelpers';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'serum-cerne-tk';
@@ -46,11 +47,12 @@ const META_PIXEL_ID = '26809431761984777';
 const THANK_YOU_URL = '/serum-cerne-tk/merci';
 
 const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 const OLD_PRICE_UNIT = 15000;
 const QTY_OPTS = [
-  { v: 1, label: '1 flacon', sub: '9 900 FCFA' },
-  { v: 2, label: '2 flacons', sub: '16 900 FCFA', tag: 'Populaire', save: 'Economisez 2 900 F' },
-  { v: 3, label: '3 flacons', sub: '24 900 FCFA', tag: 'Meilleure offre', save: 'Economisez 4 800 F' },
+  { v: 1, label: '1 flacon', sub: packLabel(PRICES, 1, 'FCFA') },
+  { v: 2, label: '2 flacons', sub: packLabel(PRICES, 2, 'FCFA'), tag: 'Populaire', save: 'Economisez 2 900 F' },
+  { v: 3, label: '3 flacons', sub: packLabel(PRICES, 3, 'FCFA'), tag: 'Meilleure offre', save: 'Economisez 4 800 F' },
 ];
 
 // 12 medias UNIQUES (dossier /serum-yeux/ pour eviter le conflit avec le slug /serum-cerne)
@@ -297,7 +299,7 @@ export default function SerumCerneTkLanding() {
         content_name: 'Serum Anti-Cernes TK Premium',
         content_ids: [PRODUCT_CODE],
         content_type: 'product',
-        value: PRICES[1],
+        value: orderTotal(PRICES, 1),
         currency: 'XOF',
       });
     }
@@ -499,16 +501,15 @@ export default function SerumCerneTkLanding() {
           {/* Prix + CTA */}
           <div className="mt-10 sc-fade-up" style={{ animationDelay: '.2s' }}>
             <div className="flex items-baseline justify-center gap-3">
-              <span className="sc-shimmer-gold text-4xl font-black sm:text-5xl">9 900</span>
+              <span className="sc-shimmer-gold text-4xl font-black sm:text-5xl">{fmtTotal(1)}</span>
               <span className="text-lg font-bold text-slate-800 sm:text-xl">FCFA</span>
               <span className="text-sm text-slate-400 line-through sm:text-base">15 000 FCFA</span>
               <span className="rounded-sm bg-slate-950 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">-34%</span>
             </div>
-            <p className="mt-1 text-[12px] font-semibold text-amber-700">Livraison gratuite a Abidjan</p>
 
             <div className="mx-auto mt-6 max-w-sm">
               <CTA onClick={() => openModal(1)} variant="navy" size="lg">
-                Je commande · 9 900 FCFA <Arrow/>
+                Je commande · {fmtTotal(1)} FCFA <Arrow/>
               </CTA>
             </div>
             <p className="mt-3 text-[11px] text-slate-500">
@@ -929,7 +930,7 @@ export default function SerumCerneTkLanding() {
             {[
               {
                 qty: 1, label: '1 flacon', desc: 'Decouvrir',
-                price: PRICES[1], oldPrice: OLD_PRICE_UNIT,
+                price: orderTotal(PRICES, 1), oldPrice: OLD_PRICE_UNIT,
                 tag: '', saveLabel: 'Pour tester',
                 accent: 'from-stone-300 to-stone-500',
                 bg: 'from-stone-800 to-stone-900',
@@ -937,7 +938,7 @@ export default function SerumCerneTkLanding() {
               },
               {
                 qty: 2, label: '2 flacons', desc: 'Cure complete',
-                price: PRICES[2], oldPrice: OLD_PRICE_UNIT * 2,
+                price: orderTotal(PRICES, 2), oldPrice: OLD_PRICE_UNIT * 2,
                 tag: 'POPULAIRE', saveLabel: 'Economisez 13 100 F',
                 accent: 'from-amber-300 via-yellow-300 to-amber-400',
                 bg: 'from-amber-950 to-yellow-950',
@@ -945,7 +946,7 @@ export default function SerumCerneTkLanding() {
               },
               {
                 qty: 3, label: '3 flacons', desc: 'Coffret premium',
-                price: PRICES[3], oldPrice: OLD_PRICE_UNIT * 3,
+                price: orderTotal(PRICES, 3), oldPrice: OLD_PRICE_UNIT * 3,
                 tag: 'MEILLEURE OFFRE', saveLabel: 'Economisez 20 100 F',
                 accent: 'from-rose-300 via-pink-300 to-amber-300',
                 bg: 'from-rose-950 to-amber-950',
@@ -1015,7 +1016,7 @@ export default function SerumCerneTkLanding() {
           </div>
 
           <p className="mt-6 text-center text-[12px] text-stone-400">
-            Livraison <span className="font-black text-amber-300">gratuite</span> · Paiement a la livraison
+            Paiement a la livraison
           </p>
         </div>
       </section>
@@ -1043,7 +1044,7 @@ export default function SerumCerneTkLanding() {
             </CTA>
           </div>
           <p className="mt-3 text-center text-[11px] text-slate-500">
-            Livraison <span className="font-bold text-amber-700">gratuite</span> · Paiement <span className="font-bold">a la livraison</span>
+            Paiement <span className="font-bold">a la livraison</span>
           </p>
         </div>
       </section>
@@ -1271,7 +1272,7 @@ export default function SerumCerneTkLanding() {
             <span className="sc-shimmer-gold block">maintenant.</span>
           </h2>
           <p className="mt-4 text-[14px] text-stone-300 sm:text-[16px]">
-            Serum Anti-Cernes TK Premium · 9 900 FCFA · Paiement a la livraison
+            Serum Anti-Cernes TK Premium · {fmtTotal(1)} FCFA · Paiement a la livraison
           </p>
 
           <div className="mx-auto mt-8 max-w-sm">
@@ -1280,14 +1281,14 @@ export default function SerumCerneTkLanding() {
             </CTA>
           </div>
           <p className="mt-3 text-[12px] text-stone-400">
-            🔒 Paiement a la livraison · Sans risque · Livraison gratuite
+            🔒 Paiement a la livraison · Sans risque
           </p>
         </div>
       </section>
 
       {/* ===== FOOTER ===== */}
       <footer className="bg-slate-950 py-8 text-center text-[11px] text-amber-200/60">
-        <p>© 2026 · Cote d'Ivoire · GS Pipeline · Tous droits reserves</p>
+        <p>© 2026 · Cote d`Ivoire · GS Pipeline · Tous droits reserves</p>
         <p className="mt-1">Service client 7j/7 · Livraison Abidjan 24h · Paiement a la livraison</p>
       </footer>
 
@@ -1299,7 +1300,7 @@ export default function SerumCerneTkLanding() {
             <div className="min-w-0">
               <p className="truncate text-[12px] font-black text-slate-900 sm:text-[13px]">Serum Anti-Cernes TK</p>
               <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px]">
-                <span className="font-bold text-amber-700">9 900 FCFA</span>
+                <span className="font-bold text-amber-700">{fmtTotal(1)} FCFA</span>
                 <span className="text-slate-400">·</span>
                 <span className="inline-flex items-center gap-0.5 font-mono font-bold text-rose-500">
                   <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-rose-500"/>
@@ -1353,7 +1354,7 @@ export default function SerumCerneTkLanding() {
                 <span className="sc-shimmer-gold">ce serum premium</span>.
               </h3>
               <p className="mt-2 text-[13px] text-stone-300">
-                Livraison 100% gratuite · Paiement a la livraison.
+                Paiement a la livraison.
               </p>
             </div>
 

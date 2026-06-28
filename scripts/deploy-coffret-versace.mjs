@@ -63,7 +63,7 @@ function packageBundle() {
 
   // On place l'archive a la racine du bundle, puis on tar les fichiers
   // (sans inclure le dossier parent)
-  const files = ['index.html', 'order.php', 'view.php', 'merci.html', '.htaccess', 'config.sample.php'];
+  const files = ['index.html', 'order.php', 'meta-capi.php', 'view.php', 'merci.html', '.htaccess', 'config.sample.php'];
   const missing = files.filter(f => !existsSync(join(BUNDLE_DIR, f)));
   if (missing.length) die(`Fichiers manquants : ${missing.join(', ')}`);
 
@@ -114,7 +114,7 @@ tar -xzf /tmp/cv-bundle-$$.tar.gz
 [ -f "$WORK/config.php.keep" ]   && mv "$WORK/config.php.keep"  "$REMOTE/config.php"
 
 # Permissions correctes
-chmod 644 "$REMOTE/index.html" "$REMOTE/merci.html" "$REMOTE/order.php" "$REMOTE/view.php" "$REMOTE/.htaccess" 2>&1 | grep -v 'No such' || true
+chmod 644 "$REMOTE/index.html" "$REMOTE/merci.html" "$REMOTE/order.php" "$REMOTE/meta-capi.php" "$REMOTE/view.php" "$REMOTE/.htaccess" 2>&1 | grep -v 'No such' || true
 [ -f "$REMOTE/config.php" ]  && chmod 600 "$REMOTE/config.php"
 [ -f "$REMOTE/orders.csv" ]  && chmod 600 "$REMOTE/orders.csv"
 [ -f "$REMOTE/orders.json" ] && chmod 600 "$REMOTE/orders.json"

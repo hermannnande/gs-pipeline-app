@@ -12,7 +12,22 @@ import { useAuthStore } from '@/store/authStore';
 import { PageHeader, LoadingState, EmptyState, SearchInput } from '@/components/UIComponents';
 import { OrderCard } from '@/components/OrderCard';
 
-export default function Orders() {
+/**
+ * Produits "isoles" : leurs commandes ne remontent PLUS dans la liste "A appeler"
+ * standard. Elles sont traitees sur une page dediee accessible par lien
+ * (ex. /admin/bouilloire). Ajouter un productCode ici l'exclut automatiquement
+ * de toutes les listes to-call (admin / gestionnaire / appelant).
+ */
+const SEPARATE_PRODUCT_CODES = ['BOUILLOIRE_INTELLIGENTE'];
+
+interface OrdersProps {
+  /** Si defini, la page n'affiche QUE les commandes de ce produit (page dediee). */
+  onlyProductCode?: string;
+  /** Titre personnalise de la page (page dediee produit). */
+  pageTitle?: string;
+}
+
+export default function Orders({ onlyProductCode, pageTitle }: OrdersProps = {}) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -38,7 +53,7 @@ export default function Orders() {
     user?.role === 'ADMIN' || user?.role === 'GESTIONNAIRE' || user?.role === 'APPELANT';
 
   const { data: ordersData, isLoading, isFetching, refetch } = useQuery({
-    queryKey: ['appelant-orders', currentPage, statusFilter],
+    queryKey: ['appelant-orders', currentPage, statusFilter, onlyProductCode],
     queryFn: () =>
       ordersApi.getAll({
         page: currentPage,
@@ -48,6 +63,13 @@ export default function Orders() {
         // Une commande validee/annulee/RDV change de statut et disparait d'ici.
         status: statusFilter || 'NOUVELLE,A_APPELER',
         excludeRdv: true,
+        // Page dediee : uniquement ce produit. Sinon : on exclut les produits
+        // "isoles" (ils ont leur propre page) de la liste "A appeler" standard.
+        ...(onlyProductCode
+          ? { productCode: onlyProductCode }
+          : SEPARATE_PRODUCT_CODES.length
+            ? { excludeProductCode: SEPARATE_PRODUCT_CODES.join(',') }
+            : {}),
       }),
     refetchInterval: 60000,
   });
@@ -382,7 +404,7 @@ export default function Orders() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Commandes à appeler"
+        title={pageTitle || 'Commandes à appeler'}
         subtitle={
           [
             `${filteredOrders?.length || 0} commande(s) en attente`,

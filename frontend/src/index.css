@@ -1,5 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap');
-
+/* Les polices sont chargees via <link> dans index.html (parallele, non
+   bloquant). Un @import ici bloquerait le parsing de toute la CSS critique. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

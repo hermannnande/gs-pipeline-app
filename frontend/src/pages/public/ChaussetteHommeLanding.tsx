@@ -4,13 +4,14 @@
  *
  * Disposition unique : magazine GQ, sections offset, hero fullscreen, fiches stack
  * 1 media + 1 hook + 1 CTA fluide. Palette MASCULINE LUXE : noir charcoal + or
- * champagne + ivoire. Pack de 5 paires assorties a 11 900 F.
+ * champagne + ivoire. Pack de 5 paires assorties a {fmtTotal(1)} F.
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { trackPageView } from '../../utils/pageTracking';
 import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
+import { orderTotal, packAmount, packLabel, DELIVERY_FEE_CI } from '../../utils/pricingHelpers';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'chaussette-homme';
@@ -18,11 +19,12 @@ const PRODUCT_CODE = 'CHAUSSETTE_HOMME';
 const META_PIXEL_ID = '1613380123108753';
 const THANK_YOU_URL = '/chaussette-homme/merci';
 
-const PRICES: Record<number, number> = { 1: 11900, 2: 20900, 3: 28900 };
+const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 const QTY_OPTS = [
-  { v: 1, label: '5 paires', sub: '11 900 FCFA' },
-  { v: 2, label: '10 paires', sub: '20 900 FCFA', tag: 'Populaire', save: 'Economisez 2 900 F' },
-  { v: 3, label: '15 paires', sub: '28 900 FCFA', tag: 'Stock pro', save: 'Economisez 6 800 F' },
+  { v: 1, label: '5 paires', sub: packLabel(PRICES, 1, 'FCFA') },
+  { v: 2, label: '10 paires', sub: packLabel(PRICES, 2, 'FCFA'), tag: 'Populaire', save: 'Economisez 2 900 F' },
+  { v: 3, label: '15 paires', sub: packLabel(PRICES, 3, 'FCFA'), tag: 'Stock pro', save: 'Economisez 4 800 F' },
 ];
 
 const M = (n: string) => `/chaussettes-homme/${n}`;
@@ -246,7 +248,7 @@ export default function ChaussetteHommeLanding() {
         content_name: 'Chaussettes Homme Luxe',
         content_ids: [PRODUCT_CODE],
         content_type: 'product',
-        value: PRICES[1],
+        value: orderTotal(PRICES, 1),
         currency: 'XOF',
       });
     }
@@ -429,15 +431,15 @@ export default function ChaussetteHommeLanding() {
 
           <div className="mt-5 chh-fade-up" style={{ animationDelay: '.2s' }}>
             <div className="flex items-baseline justify-center gap-3">
-              <span className="chh-shimmer-gold text-4xl font-black sm:text-5xl">11 900</span>
+              <span className="chh-shimmer-gold text-4xl font-black sm:text-5xl">{fmtTotal(1)}</span>
               <span className="text-lg font-bold text-neutral-800 sm:text-xl">FCFA</span>
               <span className="text-sm text-neutral-400 line-through sm:text-base">15 000 FCFA</span>
-              <span className="rounded-md bg-neutral-950 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">-21 %</span>
+              <span className="rounded-md bg-neutral-950 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">-34 %</span>
             </div>
-            <p className="mt-1 text-[12px] font-bold text-amber-700">🚚 Livraison gratuite Abidjan</p>
+            <p className="mt-1 text-[12px] font-bold text-amber-700">💵 Paiement à la livraison · Côte d`Ivoire</p>
 
             <div className="mx-auto mt-4 max-w-sm">
-              <FluidCTA onClick={() => openModal(1)}>Je commande — 11 900 F <Arrow /></FluidCTA>
+              <FluidCTA onClick={() => openModal(1)}>Je commande — {fmtTotal(1)} F <Arrow /></FluidCTA>
             </div>
             <p className="mt-2 text-[11px] text-neutral-500">🔒 Paiement à la livraison · Sans risque</p>
           </div>
@@ -538,7 +540,7 @@ export default function ChaussetteHommeLanding() {
           <div className="text-center">
             <span className="rounded-full bg-amber-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-amber-800">Avis hommes</span>
             <h2 className="mt-3 text-2xl font-black text-neutral-900 sm:text-3xl">
-              Ce qu'<Gold>ils disent</Gold>.
+              Ce qu`<Gold>ils disent</Gold>.
             </h2>
           </div>
 
@@ -690,9 +692,9 @@ export default function ChaussetteHommeLanding() {
 
           <div className="mt-7 grid gap-3 sm:grid-cols-3">
             {[
-              { v: 1, n: '5 paires', p: 11900, old: 15000, sub: 'Decouverte', save: null },
-              { v: 2, n: '10 paires', p: 20900, old: 30000, sub: 'Le + choisi', save: '-2 900 F', hot: true },
-              { v: 3, n: '15 paires', p: 28900, old: 45000, sub: 'Stock pro', save: '-6 800 F' },
+              { v: 1, n: '5 paires', p: orderTotal(PRICES, 1), old: 15000, sub: packLabel(PRICES, 1, 'F'), save: null },
+              { v: 2, n: '10 paires', p: orderTotal(PRICES, 2), old: 30000, sub: packLabel(PRICES, 2, 'F'), save: '-2 900 F', hot: true },
+              { v: 3, n: '15 paires', p: orderTotal(PRICES, 3), old: 45000, sub: packLabel(PRICES, 3, 'F'), save: '-4 800 F' },
             ].map((b) => (
               <button
                 key={b.v}
@@ -836,7 +838,7 @@ export default function ChaussetteHommeLanding() {
               { q: 'Comment laver ?', a: 'Machine à 30°C, séchage à l\'air libre. Le coton peigne tient parfaitement après 50+ lavages.' },
               { q: 'Combien de temps ça dure ?', a: 'Avec un usage quotidien, comptez 18 à 24 mois sans usure visible. Largement plus que les chaussettes classiques.' },
               { q: 'Comment je paie ?', a: 'Vous payez en CASH au livreur, après réception du colis. Zéro avance.' },
-              { q: 'Livraison partout en CI ?', a: 'Oui. 24h Abidjan, 48h en régions. Livraison gratuite.' },
+              { q: 'Livraison partout en CI ?', a: 'Oui. 24h Abidjan, 48h en régions. Paiement à la réception.' },
             ].map((f, i) => (
               <details key={i} className="group overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-amber-200 transition-all open:ring-amber-300">
                 <summary className="flex cursor-pointer items-center justify-between px-5 py-4 text-[14px] font-black text-neutral-900 sm:text-[15px]">
@@ -874,7 +876,7 @@ export default function ChaussetteHommeLanding() {
           </div>
 
           <div className="mx-auto mt-7 max-w-sm">
-            <FluidCTA onClick={() => openModal(2)} dark>COMMANDE EXPRESS — 20 900 F <Arrow/></FluidCTA>
+            <FluidCTA onClick={() => openModal(2)} dark>COMMANDE EXPRESS — {fmtTotal(2)} F <Arrow/></FluidCTA>
             <p className="mt-3 text-[11px] text-stone-300">Sans engagement · paiement à la réception</p>
           </div>
         </div>
@@ -883,7 +885,7 @@ export default function ChaussetteHommeLanding() {
       {/* FICHE 11-13 finales pour utiliser les images restantes */}
       <Fiche
         kicker="Geste signature"
-        hook={<>Le <Gold>geste pro</Gold> qui se voit jusqu'à la cheville.</>}
+        hook={<>Le <Gold>geste pro</Gold> qui se voit jusqu`à la cheville.</>}
         cta="Sécuriser mon pack"
         qty={1}
         onOrder={openModal}
@@ -923,7 +925,7 @@ export default function ChaussetteHommeLanding() {
       />
 
       <footer className="bg-neutral-950 py-7 pb-24 text-center text-[10px] font-semibold text-amber-300/80 sm:pb-7">
-        © {new Date().getFullYear()} · Chaussettes homme luxe · Coton peigne premium · Côte d'Ivoire
+        © {new Date().getFullYear()} · Chaussettes homme luxe · Coton peigne premium · Côte d`Ivoire
       </footer>
 
       {/* TOAST SOCIAL PROOF (bas gauche, mobile + desktop, sauf si modal ouvert) */}
@@ -963,7 +965,7 @@ export default function ChaussetteHommeLanding() {
             <p className="text-[10px] font-black uppercase tracking-wider text-amber-300">
               Promo · {pad(countdown.h)}:{pad(countdown.m)}:{pad(countdown.s)}
             </p>
-            <p className="text-[11px] font-bold text-white">11 900 F · livraison gratuite</p>
+            <p className="text-[11px] font-bold text-white">{fmtTotal(1)} F · paiement à la livraison</p>
           </div>
           <button
             type="button"

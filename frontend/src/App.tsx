@@ -17,6 +17,7 @@ const StockDashboard = lazy(() => import('./pages/stock/Dashboard'));
 const AppelantDashboard = lazy(() => import('./pages/appelant/Dashboard'));
 const LivreurDashboard = lazy(() => import('./pages/livreur/Dashboard'));
 const OrderForm = lazy(() => import('./pages/public/OrderForm'));
+const BouilloireOrdersList = lazy(() => import('./pages/public/BouilloireOrdersList'));
 const VerrueTkLanding = lazy(() => import('./pages/public/VerrueTkLanding'));
 const VerrueTkThankYou = lazy(() => import('./pages/public/VerrueTkThankYou'));
 
@@ -91,6 +92,9 @@ function App() {
         <Routes>
           {/* Pages publiques - accessibles a TOUS sans authentification */}
           <Route path="/commander" element={<OrderForm />} />
+          {/* Liste autonome (lecture seule) des commandes Bouilloire, servie sur
+              obrille.com via .htaccess. Hors back-office obgestion. */}
+          <Route path="/bouilloire-commandes" element={<BouilloireOrdersList />} />
           <Route path="/anti-verrue" element={<VerrueTkLanding />} />
           <Route path="/anti-verrue/merci" element={<VerrueTkThankYou />} />
           <Route path="/landing/:slug" element={<LandingRouter />} />

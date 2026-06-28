@@ -37,3 +37,9 @@ $TELEGRAM_CHAT_ID   = '';   // ex: '123456789'
 // 3. Deploy → New deployment → Web app → Access: "Anyone"
 // 4. Collez l'URL ici (type https://script.google.com/macros/s/.../exec)
 $GOOGLE_SHEET_URL = '';
+
+// ─── Meta Conversions API (CAPI) — coffret-boxer-luxe-v3 ───────────────
+// Token : Meta Business → Paramètres → Conversions API → Générer un token
+// d'accès pour le pixel 1674022793901764.
+$META_PIXEL_ID   = '1674022793901764';
+$META_CAPI_TOKEN = '';   // ex: 'EAA...'

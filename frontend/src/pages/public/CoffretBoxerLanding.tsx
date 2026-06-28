@@ -2,8 +2,8 @@
  * Tunnel de vente — Coffrets Boxers Homme Premium (slug : coffret-boxer-homme)
  *
  * Particularites :
- *  - 2 offres en parallele : Coffret Tommy Hilfiger (3 boxers, 9 900 F) et
- *    Coffret Luxe Homme (3 boxers, 9 900 F).
+ *  - 2 offres en parallele : Coffret Tommy Hilfiger (3 boxers, {fmtP(PACK + DELIVERY_FEE_CI)} F) et
+ *    Coffret Luxe Homme (3 boxers, {fmtP(PACK + DELIVERY_FEE_CI)} F).
  *  - Le wording "Louis Vuitton" est volontairement evite (risque de marque non
  *    certifiee) ; les visuels sont conserves mais le texte parle de "luxe",
  *    "prestige" et "design premium" uniquement.
@@ -19,6 +19,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { trackPageView } from '../../utils/pageTracking';
+import { DELIVERY_FEE_CI } from '../../utils/pricingHelpers';
 
 /**
  * Endpoint PHP qui recoit les commandes (meme backend que la page Versace).
@@ -33,10 +34,13 @@ const M = (n: string) => `/coffret-boxer-homme/${n}`;
 
 type ProductKey = 'tommy' | 'luxe' | 'both';
 
+const fmtP = (n: number) => n.toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
+const PACK = 9900;
+const DUO = 16900;
 const PRODUCTS: Record<ProductKey, { label: string; price: number; sub: string }> = {
-  tommy: { label: 'Coffret de 3 boxers Tommy Hilfiger - 9 900 F', price: 9900, sub: '3 boxers Tommy Hilfiger' },
-  luxe: { label: 'Coffret de 3 boxers Louis Vuitton - 9 900 F', price: 9900, sub: '3 boxers Louis Vuitton' },
-  both: { label: 'Les deux coffrets (6 boxers) - 19 800 F', price: 19800, sub: '6 boxers (Tommy + Louis Vuitton)' },
+  tommy: { label: `Coffret de 3 boxers Tommy Hilfiger - ${fmtP(PACK + DELIVERY_FEE_CI)} F`, price: PACK + DELIVERY_FEE_CI, sub: '3 boxers Tommy Hilfiger' },
+  luxe: { label: `Coffret de 3 boxers Louis Vuitton - ${fmtP(PACK + DELIVERY_FEE_CI)} F`, price: PACK + DELIVERY_FEE_CI, sub: '3 boxers Louis Vuitton' },
+  both: { label: `Les deux coffrets (6 boxers) - ${fmtP(DUO + DELIVERY_FEE_CI)} F`, price: DUO + DELIVERY_FEE_CI, sub: '6 boxers (Tommy + Louis Vuitton)' },
 };
 
 const TOMMY_IMAGES = Array.from({ length: 9 }, (_, i) => M(`tommy-${i + 1}.webp`));
@@ -57,7 +61,7 @@ const TOPBAR_DARK_MSGS = [
 
 const TOPBAR_GOLD_MSGS = [
   '⚡ OFFRE FLASH AUJOURD\'HUI',
-  '🎁 Coffret 3 boxers à 9 900 F',
+  '🎁 Coffret 3 boxers à 11 400 F',
   '🔥 Stock limité — quelques coffrets restants',
   '💎 Édition Tommy & Luxe',
   '🚚 Livraison rapide partout en CI',
@@ -305,7 +309,7 @@ function ProductCard({
           <div>
             <div className="text-xs font-semibold uppercase tracking-widest text-slate-500">Prix</div>
             <div className="text-3xl font-black text-slate-900">
-              9 900 <span className="text-base font-bold text-amber-600">FCFA</span>
+              {fmtP(PACK + DELIVERY_FEE_CI)} <span className="text-base font-bold text-amber-600">FCFA</span>
             </div>
             <div className="text-[11px] font-semibold text-slate-500">Paiement à la livraison</div>
           </div>
@@ -414,7 +418,7 @@ function Gallery({
           {images.map((img, i) => (
             <figure
               key={img}
-              className={`cbh-photo group relative overflow-hidden rounded-3xl bg-white ring-1 ${accentMap.ring} shadow-[0_20px_50px_-24px_rgba(15,23,42,0.15)]`}
+              className={`cbh-photo group relative overflow-hidden rounded-3xl bg-white ring-1 ${accentMap.ring} shadow-[0_20px_50px_-24px_rgba(15,23,42,0.15)]'}`}
             >
               <div className="overflow-hidden">
                 <img
@@ -430,7 +434,7 @@ function Gallery({
               />
               <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-2 px-4 pb-4 text-white opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-bold drop-shadow">3 boxers · 9 900 F</span>
+                  <span className="text-sm font-bold drop-shadow">3 boxers · {fmtP(PACK + DELIVERY_FEE_CI)} F</span>
                   <span className="rounded-full bg-white/20 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider backdrop-blur">
                     Stock limité
                   </span>
@@ -583,7 +587,7 @@ function OrderModal({
     setSubmitting(true);
     setErrorMsg('');
 
-    // L'endpoint PHP attend name/city/phone/quantity. On suffixe le nom avec
+    // L`endpoint PHP attend name/city/phone/quantity. On suffixe le nom avec
     // le produit choisi pour que ca apparaisse dans Telegram + CSV sans
     // toucher au PHP existant.
     const payload = {
@@ -940,7 +944,7 @@ export default function CoffretBoxerLanding() {
   /* Document title + tracking analytics + Meta Pixel */
   useEffect(() => {
     const prev = document.title;
-    document.title = 'Coffrets Boxers Homme Premium — 9 900 F | Tommy & Luxe';
+    document.title = `Coffrets Boxers Homme Premium — ${fmtP(PACK + DELIVERY_FEE_CI)} F | Tommy & Luxe`;
     trackPageView(SLUG);
     if (!pixelFired.current && META_PIXEL_ID) {
       pixelFired.current = true;
@@ -1204,7 +1208,7 @@ export default function CoffretBoxerLanding() {
             Offre spéciale aujourd'hui
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-base text-rose-50/90">
-            Profitez du <strong>coffret 3 boxers à seulement 9 900 F</strong> avant la fin de la promo.
+            Profitez du <strong>coffret 3 boxers à seulement {fmtP(PACK + DELIVERY_FEE_CI)} F</strong> avant la fin de la promo.
           </p>
           <div className="mx-auto mt-6 flex max-w-md items-center justify-center gap-2">
             {[
@@ -1243,7 +1247,7 @@ export default function CoffretBoxerLanding() {
               },
               {
                 q: 'Le prix est combien ?',
-                a: 'Le coffret est à 9 900 F. Le pack 2 coffrets est à 19 800 F.',
+                a: `Le coffret est à ${fmtP(PACK + DELIVERY_FEE_CI)} F. Le pack 2 coffrets est à ${fmtP(DUO + DELIVERY_FEE_CI)} F.`,
               },
               {
                 q: 'Comment commander ?',
@@ -1293,7 +1297,7 @@ export default function CoffretBoxerLanding() {
           <div className="leading-tight">
             <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Aujourd'hui</div>
             <div className="text-base font-black text-slate-900">
-              <span className="cbh-grad-text">9 900 F</span>{' '}
+              <span className="cbh-grad-text">{fmtP(PACK + DELIVERY_FEE_CI)} F</span>{' '}
               <span className="text-xs text-slate-500">le coffret</span>
             </div>
           </div>

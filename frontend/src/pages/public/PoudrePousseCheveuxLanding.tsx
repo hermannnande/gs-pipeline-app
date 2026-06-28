@@ -37,23 +37,26 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { trackPageView } from '../../utils/pageTracking';
 import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
+import { orderTotal, packAmount, packLabel, DELIVERY_FEE_CI } from '../../utils/pricingHelpers';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'poudre-pousse-cheveux';
 const PRODUCT_CODE = 'POUDRE_CHEVEUX';
 // Pixel Meta dedie a la campagne Poudre Pousse Cheveux (Purchase + CAPI dedup via eventID = orderReference)
-const META_PIXEL_ID = '1629520061493542';
+const META_PIXEL_ID = '1985154128771811';
 const THANK_YOU_URL = '/poudre-pousse-cheveux/merci';
 
 const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 const QTY_OPTS = [
-  { v: 1, label: '1 boite',  sub: '9 900 FCFA',  tag: '',                save: '' },
-  { v: 2, label: '2 boites', sub: '16 900 FCFA', tag: 'Populaire',       save: 'Economisez 2 900 F' },
-  { v: 3, label: '3 boites', sub: '24 900 FCFA', tag: 'Cure complete',   save: 'Economisez 4 800 F' },
+  { v: 1, label: '1 boite',  sub: packLabel(PRICES, 1, 'FCFA'),  tag: '',                save: '' },
+  { v: 2, label: '2 boites', sub: packLabel(PRICES, 2, 'FCFA'), tag: 'Populaire',       save: 'Economisez 2 900 F' },
+  { v: 3, label: '3 boites', sub: packLabel(PRICES, 3, 'FCFA'), tag: 'Cure complete',   save: 'Economisez 4 800 F' },
 ];
 
 const MEDIA = {
-  hero:    '/poudre-pousse-cheveux/hero.webp',
+  hero:       '/poudre-pousse-cheveux/hero.webp',
+  heroVideo:  '/poudre-pousse-cheveux/hero.mp4',
   block1:  '/poudre-pousse-cheveux/block-1.webp',
   block2:  '/poudre-pousse-cheveux/block-2.webp',
   block3:  '/poudre-pousse-cheveux/block-3.webp',
@@ -117,8 +120,25 @@ function useReveal() {
   return { ref, visible };
 }
 
-function LazyVideo({ src, aspect = '9/16', className = '' }: { src: string; aspect?: string; className?: string }) {
+function LazyVideo({ src, aspect = '9/16', className = '', priority = false, poster }: { src: string; aspect?: string; className?: string; priority?: boolean; poster?: string }) {
   const { ref, visible } = useOnScreen('300px');
+  // Mode priority : charge et joue immediatement (utilise pour la video hero).
+  if (priority) {
+    return (
+      <div className={`relative w-full overflow-hidden bg-neutral-200 ${className}`} style={{ aspectRatio: aspect }}>
+        <video
+          src={src}
+          poster={poster}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          className="h-full w-full object-cover"
+        />
+      </div>
+    );
+  }
   return (
     <div ref={ref} className={`relative w-full overflow-hidden bg-neutral-200 ${className}`} style={{ aspectRatio: aspect }}>
       {visible ? (
@@ -356,10 +376,10 @@ export default function PoudrePousseCheveuxLanding() {
     { n: 'Konan P.',     v: 'Abobo',       t: '34 min' },
   ], []);
 
-  // Preload hero
+  // Preload hero (video au-dessus du fold)
   useEffect(() => {
     const l = document.createElement('link');
-    l.rel = 'preload'; l.as = 'image'; l.href = MEDIA.hero;
+    l.rel = 'preload'; l.as = 'video'; l.href = MEDIA.heroVideo;
     // @ts-ignore
     l.fetchPriority = 'high';
     document.head.appendChild(l);
@@ -376,7 +396,7 @@ export default function PoudrePousseCheveuxLanding() {
         content_name: 'Poudre Ultra Pousse Cheveux',
         content_ids: [PRODUCT_CODE],
         content_type: 'product',
-        value: PRICES[1],
+        value: orderTotal(PRICES, 1),
         currency: 'XOF',
       });
     }
@@ -471,50 +491,66 @@ export default function PoudrePousseCheveuxLanding() {
           'Hommes & Femmes',
           'Sans effet secondaire',
           'Resultats en quelques jours',
-          '100% naturel',
+          `100% naturel`,
         ]}
       />
 
       {/* ============================================== */}
-      {/* HERO MAGAZINE — split asymetrique */}
+      {/* HERO ALLEGE — VIDEO en avant, texte minimal */}
       {/* ============================================== */}
-      <section className="relative overflow-hidden bg-[#f5f5f7] px-5 pt-8 pb-10 sm:pt-14 sm:pb-20">
-        <div className="mx-auto grid w-full max-w-[1100px] grid-cols-1 gap-8 lg:grid-cols-12 lg:items-center lg:gap-10">
-          {/* Colonne typographique */}
-          <div className="relative z-10 lg:col-span-6">
-            <div className="flex items-center gap-3 text-neutral-600">
-              <span className="ppc-display text-[60px] leading-[0.8] text-[#00d4ff] sm:text-[80px]">N°1</span>
-              <div className="border-l border-neutral-300 pl-3">
+      <section className="relative overflow-hidden bg-[#f5f5f7] px-4 pt-5 pb-8 sm:pt-8 sm:pb-12">
+        <div className="mx-auto grid w-full max-w-[1100px] grid-cols-1 gap-6 lg:grid-cols-12 lg:items-center lg:gap-10">
+
+          {/* Colonne VIDEO en hero (au-dessus sur mobile, a droite sur desktop) */}
+          <div className="relative z-0 order-1 lg:order-2 lg:col-span-7">
+            <div className="relative">
+              <div className="absolute -inset-2 hidden bg-[#00d4ff]/10 sm:block"/>
+              <div className="absolute -inset-1 hidden border border-[#00d4ff]/30 sm:block"/>
+              <div className="relative">
+                <LazyVideo
+                  src={MEDIA.heroVideo}
+                  poster={MEDIA.hero}
+                  aspect="4/5"
+                  className="w-full"
+                  priority
+                />
+                <span className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-neutral-900/5"/>
+              </div>
+              {/* Sticker rond "edition limitee" */}
+              <div className="absolute -bottom-5 -right-2 flex h-24 w-24 rotate-[-10deg] flex-col items-center justify-center rounded-full bg-neutral-900 text-cyan-200 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.4)] sm:-bottom-8 sm:-right-5 sm:h-32 sm:w-32">
+                <span className="text-[8px] font-black uppercase tracking-[0.4em]">Edition</span>
+                <span className="ppc-display text-[22px] leading-none sm:text-[28px]">04</span>
+                <span className="text-[8px] font-black uppercase tracking-[0.4em]">Limitee</span>
+              </div>
+              {/* Sticker stock */}
+              <div className="absolute -top-2 left-2 rotate-[-3deg] bg-cyan-200 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-[0.3em] text-neutral-900 shadow-md sm:-top-4 sm:left-6 sm:py-2.5">
+                Stock : {stock} boites
+              </div>
+            </div>
+          </div>
+
+          {/* Colonne TYPO ultra-courte */}
+          <div className="relative z-10 order-2 lg:order-1 lg:col-span-5">
+            <div className="flex items-center gap-2.5 text-neutral-600">
+              <span className="ppc-display text-[44px] leading-[0.8] text-[#00d4ff] sm:text-[60px]">N°1</span>
+              <div className="border-l border-neutral-300 pl-2.5">
                 <p className="text-[9px] font-black uppercase tracking-[0.42em] text-neutral-500">Beaute capillaire</p>
-                <p className="ppc-serif mt-0.5 text-[14px] italic text-neutral-700 sm:text-[16px]">la formule signature</p>
+                <p className="ppc-serif mt-0.5 text-[13px] italic text-neutral-700 sm:text-[15px]">la formule signature</p>
               </div>
             </div>
 
-            <h1 className="ppc-display mt-7 text-[58px] font-bold leading-[0.92] tracking-tight text-neutral-900 sm:text-[80px] lg:text-[92px]">
-              Reveiller<br/>
-              <span className="italic text-[#00d4ff]">vos cheveux</span><br/>
-              en <span className="ppc-underline">quelques jours.</span>
+            <h1 className="ppc-display mt-5 text-[44px] font-bold leading-[0.92] tracking-tight text-neutral-900 sm:text-[58px] lg:text-[68px]">
+              Reveiller <span className="italic text-[#00d4ff]">vos cheveux</span>.
             </h1>
 
-            <p className="ppc-serif mt-6 max-w-[420px] text-[16px] italic leading-relaxed text-neutral-700 sm:text-[18px]">
-              <span className="ppc-dropcap">L</span>a poudre exclusive nouvelle generation contre la chute, la calvitie naissante et les tempes degarnies. Pour <em>elles</em> et pour <em>eux</em>.
-            </p>
-
-            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[10px] font-black uppercase tracking-[0.28em] text-neutral-700">
-              <span className="inline-flex items-center gap-1.5"><span className="ppc-bullet"/>100% naturel</span>
-              <span className="inline-flex items-center gap-1.5"><span className="ppc-bullet"/>Sans rincage</span>
-              <span className="inline-flex items-center gap-1.5"><span className="ppc-bullet"/>Sans effet secondaire</span>
-            </div>
-
             {/* Prix + CTA inline */}
-            <div className="mt-8 flex flex-wrap items-end gap-5">
+            <div className="mt-6 flex flex-wrap items-end gap-4">
               <div>
-                <span className="block text-[9px] font-black uppercase tracking-[0.4em] text-neutral-500">Prix d'introduction</span>
-                <div className="mt-1 flex items-baseline gap-3">
-                  <span className="ppc-display text-[44px] leading-none text-neutral-900 sm:text-[52px]">9 900 <span className="text-[20px] font-bold tracking-tight text-neutral-500">F</span></span>
-                  <span className="text-[14px] font-bold text-neutral-400 line-through">15 000 F</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="ppc-display text-[38px] leading-none text-neutral-900 sm:text-[48px]">{fmtTotal(1)} <span className="text-[18px] font-bold tracking-tight text-neutral-500">F</span></span>
+                  <span className="text-[12px] font-bold text-neutral-400 line-through">15 000 F</span>
                 </div>
-                <span className="mt-1 inline-block rounded-sm bg-neutral-900 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-cyan-200">-34% aujourd'hui</span>
+                <span className="mt-1 inline-block rounded-sm bg-neutral-900 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-cyan-200">-34% aujourd`hui</span>
               </div>
               <CTA onClick={() => openOrder(1)} variant="gold" size="lg">
                 Commander
@@ -522,59 +558,20 @@ export default function PoudrePousseCheveuxLanding() {
               </CTA>
             </div>
 
-            {/* Etoiles + count */}
-            <div className="mt-7 flex items-center gap-3 text-neutral-700">
-              <div className="flex gap-0.5 text-[#00d4ff]">
-                {[...Array(5)].map((_, k) => <Star key={k} className="h-4 w-4"/>)}
+            {/* Etoiles + countdown discret */}
+            <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-neutral-700">
+              <div className="flex items-center gap-1.5">
+                <div className="flex gap-0.5 text-[#00d4ff]">
+                  {[...Array(5)].map((_, k) => <Star key={k} className="h-3.5 w-3.5"/>)}
+                </div>
+                <span className="text-[11px] font-bold tracking-wide">4.9 · 1 247 avis</span>
               </div>
-              <span className="text-[11px] font-bold tracking-wide text-neutral-700">4.9 / 5 · <span className="underline decoration-dotted underline-offset-2">1 247 avis verifies</span></span>
-            </div>
-
-            {/* Live watchers + countdown */}
-            <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-[10px] font-bold uppercase tracking-[0.28em] text-neutral-600">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inset-0 animate-ping rounded-full bg-[#00d4ff] opacity-70"/>
-                  <span className="relative h-2 w-2 rounded-full bg-[#00d4ff]"/>
-                </span>
-                {watchers} regardent
-              </span>
-              <span className="inline-flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.24em] text-neutral-600">
                 Offre dans
-                <span className="ppc-display ml-1 text-[15px] tabular-nums text-neutral-900">{pad(countdown.h)}:{pad(countdown.m)}:{pad(countdown.s)}</span>
+                <span className="ppc-display ml-1 text-[14px] tabular-nums text-neutral-900">{pad(countdown.h)}:{pad(countdown.m)}:{pad(countdown.s)}</span>
               </span>
             </div>
           </div>
-
-          {/* Colonne image hero plein-bleed */}
-          <div className="relative z-0 lg:col-span-6">
-            <div className="relative">
-              {/* Cadre or rose */}
-              <div className="absolute -inset-2 hidden bg-[#00d4ff]/10 sm:block"/>
-              <div className="absolute -inset-1 hidden border border-[#00d4ff]/30 sm:block"/>
-              <div className="relative">
-                <LazyImg src={MEDIA.hero} alt="Powder Power Hair" className="w-full" aspect="4/5" priority/>
-                <span className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-neutral-900/5"/>
-              </div>
-              {/* Sticker rond facon "edition limitee" */}
-              <div className="absolute -bottom-7 -right-3 flex h-28 w-28 rotate-[-10deg] flex-col items-center justify-center rounded-full bg-neutral-900 text-cyan-200 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.4)] sm:-bottom-10 sm:-right-6 sm:h-32 sm:w-32">
-                <span className="text-[8px] font-black uppercase tracking-[0.4em]">Edition</span>
-                <span className="ppc-display text-[24px] leading-none sm:text-[28px]">04</span>
-                <span className="text-[8px] font-black uppercase tracking-[0.4em]">Limitee</span>
-              </div>
-              {/* Sticker rectangulaire stock */}
-              <div className="absolute -top-3 left-3 rotate-[-3deg] bg-cyan-200 px-3 py-2 text-[9px] font-black uppercase tracking-[0.3em] text-neutral-900 shadow-md sm:-top-4 sm:left-6 sm:py-2.5">
-                Stock : {stock} boites
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Filet decoratif bas */}
-        <div className="mt-14 flex items-center justify-center gap-4">
-          <span className="h-px flex-1 max-w-[160px] bg-neutral-400/50"/>
-          <span className="ppc-display text-[28px] tracking-[0.5em] text-neutral-400">·  ·  ·</span>
-          <span className="h-px flex-1 max-w-[160px] bg-neutral-400/50"/>
         </div>
       </section>
 
@@ -607,7 +604,7 @@ export default function PoudrePousseCheveuxLanding() {
               <LazyImg src={MEDIA.block1} alt="Probleme chute" className="w-full" aspect="3/4"/>
               <div className="absolute -bottom-3 left-3 max-w-[230px] bg-neutral-900 px-4 py-3 text-cyan-200 sm:-bottom-5 sm:left-5">
                 <p className="text-[9px] font-black uppercase tracking-[0.35em] opacity-70">Statistique</p>
-                <p className="ppc-display mt-1 text-[18px] leading-tight sm:text-[20px]">8 personnes sur 10 verront leurs cheveux s'eclaircir avant 35 ans.</p>
+                <p className="ppc-display mt-1 text-[18px] leading-tight sm:text-[20px]">8 personnes sur 10 verront leurs cheveux s`eclaircir avant 35 ans.</p>
               </div>
             </div>
           </div>
@@ -839,7 +836,7 @@ export default function PoudrePousseCheveuxLanding() {
       <section className="bg-[#fafafa] px-5 py-12 sm:py-16">
         <div className="mx-auto w-full max-w-[1100px]">
           <PullQuote source="Yao A. — Yopougon">
-            "Je portais la casquette tout le temps. Apres un mois, je l'ai laissee a la maison. <span className="text-[#00d4ff] not-italic font-bold">Mes baby hair poussent.</span>"
+            "Je portais la casquette tout le temps. Apres un mois, je l`ai laissee a la maison. <span className="text-[#00d4ff] not-italic font-bold">Mes baby hair poussent.</span>"
           </PullQuote>
         </div>
       </section>
@@ -1212,7 +1209,7 @@ export default function PoudrePousseCheveuxLanding() {
                   </div>
 
                   <div className="flex flex-col items-end gap-2">
-                    <span className={`ppc-display text-[28px] leading-none tabular-nums sm:text-[36px] ${isBest ? 'text-cyan-50' : 'text-neutral-900'}`}>{o.sub.split(' ')[0]} F</span>
+                    <span className={`ppc-display text-[28px] leading-none tabular-nums sm:text-[36px] ${isBest ? 'text-cyan-50' : 'text-neutral-900'}`}>{fmtTotal(o.v)} F</span>
                     <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.3em] ${
                       isBest ? 'bg-cyan-200 text-neutral-900' : 'bg-neutral-900 text-cyan-200'
                     }`}>
@@ -1225,7 +1222,7 @@ export default function PoudrePousseCheveuxLanding() {
           </div>
 
           <p className="mt-8 text-center text-[10px] font-black uppercase tracking-[0.32em] text-neutral-600">
-            Livraison offerte · Paiement a la livraison · Sans engagement
+            Paiement a la livraison · Sans engagement
           </p>
         </div>
       </section>
@@ -1302,7 +1299,7 @@ export default function PoudrePousseCheveuxLanding() {
       {/* ============================================== */}
       <footer className="bg-neutral-900 px-5 py-7 text-center">
         <p className="ppc-display text-[14px] text-cyan-100 sm:text-[16px]">Powder Power Hair</p>
-        <p className="mt-1 text-[10px] uppercase tracking-[0.3em] text-cyan-300/40">© Edition 04 · Distribution Cote d'Ivoire</p>
+        <p className="mt-1 text-[10px] uppercase tracking-[0.3em] text-cyan-300/40">© Edition 04 · Distribution Cote d`Ivoire</p>
         <p className="mt-1 text-[10px] uppercase tracking-[0.3em] text-cyan-300/30">Service client : +225 05 01 25 92 44</p>
       </footer>
 
@@ -1419,7 +1416,7 @@ export default function PoudrePousseCheveuxLanding() {
               <span className="italic text-[#00d4ff]">Attendez.</span>
             </h4>
             <p className="ppc-serif mt-3 text-[14px] italic leading-relaxed text-neutral-700">
-              <span className="ppc-dropcap">P</span>rofitez de l'offre <strong className="not-italic font-bold text-neutral-900">2 boites a 16 900 F</strong> avant la rupture.
+              <span className="ppc-dropcap">P</span>rofitez de l'offre <strong className="not-italic font-bold text-neutral-900">2 boites a {fmtTotal(2)} F</strong> avant la rupture.
             </p>
             <div className="mt-5">
               <CTA onClick={() => { setExitPopup(false); openOrder(2); }} variant="gold" size="lg" fullWidth>

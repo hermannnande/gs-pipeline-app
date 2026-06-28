@@ -23,6 +23,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { trackPageView } from '../../utils/pageTracking';
 import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
 import type { OrderProduct } from '../../hooks/useOrderSubmit';
+import { orderTotal, packAmount, packLabel, DELIVERY_FEE_CI } from '../../utils/pricingHelpers';
 
 const SLUG = 'spray-vitiligo';
 const PRODUCT_CODE = 'CREME_VITILIGO';
@@ -31,11 +32,12 @@ const META_PIXEL_ID = '1800280300964462';
 const THANK_YOU_URL = '/spray-vitiligo/merci';
 
 // Prix faciles a modifier
-const PRICES: Record<number, number> = { 1: 11900, 2: 19900, 3: 27900 };
+const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 const QTY_OPTS = [
-  { v: 1, label: '1 flacon',  sub: '11 900 F' },
-  { v: 2, label: '2 flacons', sub: '19 900 F', tag: 'Le + choisi',     save: 'Économisez 3 900 F' },
-  { v: 3, label: '3 flacons', sub: '27 900 F', tag: 'Meilleure offre', save: 'Économisez 7 800 F + guide offert' },
+  { v: 1, label: '1 flacon',  sub: packLabel(PRICES, 1, 'F') },
+  { v: 2, label: '2 flacons', sub: packLabel(PRICES, 2, 'F'), tag: 'Le + choisi',     save: 'Économisez 2 900 F' },
+  { v: 3, label: '3 flacons', sub: packLabel(PRICES, 3, 'F'), tag: 'Meilleure offre', save: 'Économisez 4 800 F + guide offert' },
 ];
 
 // Images compressees en WebP, servies depuis /public/spray-vitiligo/ (bundle local)
@@ -358,7 +360,7 @@ export default function SprayVitiligoLanding() {
       window.fbq?.('track', 'ViewContent', {
         content_name: 'SPRAY VITILIGO',
         content_ids: [PRODUCT_CODE], content_type: 'product',
-        value: PRICES[1], currency: 'XOF',
+        value: orderTotal(PRICES, 1), currency: 'XOF',
       });
     }
     return () => { document.title = prev; };
@@ -703,7 +705,7 @@ export default function SprayVitiligoLanding() {
                   )}
                   <div className="text-center">
                     <div className="text-xs font-extrabold uppercase tracking-widest text-slate-500">{o.label}</div>
-                    <div className="mt-2 text-4xl font-black text-slate-900 tabular-nums">{fmt(PRICES[o.v])}</div>
+                    <div className="mt-2 text-4xl font-black text-slate-900 tabular-nums">{fmt(orderTotal(PRICES, o.v))}</div>
                     {o.save && <div className="mt-1 text-xs font-bold text-emerald-600">{o.save}</div>}
                   </div>
                   <ul className="mt-5 space-y-2 text-sm text-slate-600">
@@ -872,7 +874,7 @@ export default function SprayVitiligoLanding() {
         <div className="flex items-center justify-between gap-3">
           <div className="leading-tight">
             <div className="text-[10px] font-bold uppercase tracking-wider text-sky-200">Aujourd'hui</div>
-            <div className="text-base font-black text-white">{fmt(PRICES[1])} <span className="text-[10px] font-normal text-sky-200">/ flacon</span></div>
+            <div className="text-base font-black text-white">{fmt(orderTotal(PRICES, 1))} <span className="text-[10px] font-normal text-sky-200">/ flacon</span></div>
           </div>
           <button
             type="button"

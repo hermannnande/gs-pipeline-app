@@ -18,6 +18,8 @@ const SLUGS = [
   'patchdouleurtk',
   'patchdouleurfb',
   'crememinceurfb',
+  'bouilloire-intelligente',
+  'spraylipome-promo',
 ];
 
 const out = process.argv[2] ?? `backups/templates-config-${new Date().toISOString().replace(/[:.]/g, '-').slice(0, -1)}.json`;

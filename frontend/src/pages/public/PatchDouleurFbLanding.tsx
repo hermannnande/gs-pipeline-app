@@ -13,7 +13,7 @@ import PatchDouleurLandingPremium from './PatchDouleurLandingPremium';
 // Pour synchroniser : creer ou mettre a jour le pixel dans le Business Manager
 // Meta avec cet ID, puis verifier les events PageView / ViewContent / AddToCart
 // / InitiateCheckout / Purchase via le Test Events / Events Manager.
-export const PATCHDOULEURFB_PIXEL_ID = '952340034030644';
+export const PATCHDOULEURFB_PIXEL_ID = '1491294965321454';
 
 export default function PatchDouleurFbLanding() {
   return (

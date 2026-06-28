@@ -20,6 +20,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { trackPageView } from '../../utils/pageTracking';
 import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
+import { orderTotal, packAmount, packLabel, DELIVERY_FEE_CI } from '../../utils/pricingHelpers';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'creme-anti-lipome-tk';
@@ -28,10 +29,11 @@ const META_PIXEL_ID = '1857129471642967';
 const THANK_YOU_URL = '/creme-anti-lipome-tk/merci';
 
 const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 const QTY_OPTS = [
-  { v: 1, label: '1 tube', sub: '9 900 FCFA' },
-  { v: 2, label: '2 tubes', sub: '16 900 FCFA', tag: 'Populaire', save: 'Économisez 2 900 F' },
-  { v: 3, label: '3 tubes', sub: '24 900 FCFA', tag: 'Max économie', save: 'Économisez 4 800 F' },
+  { v: 1, label: '1 tube', sub: packLabel(PRICES, 1, 'FCFA') },
+  { v: 2, label: '2 tubes', sub: packLabel(PRICES, 2, 'FCFA'), tag: 'Populaire', save: 'Économisez 2 900 F' },
+  { v: 3, label: '3 tubes', sub: packLabel(PRICES, 3, 'FCFA'), tag: 'Max économie', save: 'Économisez 4 800 F' },
 ];
 
 const M = (n: string) => `/lipome/${n}`;
@@ -299,7 +301,7 @@ export default function CremeAntiLipomeTkLanding() {
         content_name: 'Crème Anti-Lipome TK',
         content_ids: [PRODUCT_CODE],
         content_type: 'product',
-        value: PRICES[1],
+        value: orderTotal(PRICES, 1),
         currency: 'XOF',
       });
     }
@@ -468,15 +470,14 @@ export default function CremeAntiLipomeTkLanding() {
 
           <div className="mt-8 cal-fade-up" style={{ animationDelay: '.2s' }}>
             <div className="flex items-baseline justify-center gap-3">
-              <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-lime-600 bg-clip-text text-4xl font-black text-transparent sm:text-5xl">9 900</span>
+              <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-lime-600 bg-clip-text text-4xl font-black text-transparent sm:text-5xl">{fmtTotal(1)}</span>
               <span className="text-lg font-bold text-emerald-800 sm:text-xl">FCFA</span>
               <span className="text-sm text-emerald-400 line-through sm:text-base">15 000 FCFA</span>
               <span className="rounded-md bg-emerald-950 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-lime-300">-34 %</span>
             </div>
-            <p className="mt-1 text-[12px] font-bold text-emerald-700">🚚 Livraison gratuite Abidjan</p>
 
             <div className="mx-auto mt-6 max-w-sm">
-              <FluidCTA onClick={() => openModal(1)}>Je commande — 9 900 FCFA <Arrow /></FluidCTA>
+              <FluidCTA onClick={() => openModal(1)}>Je commande — {fmtTotal(1)} FCFA <Arrow /></FluidCTA>
             </div>
             <p className="mt-3 text-[11px] text-emerald-600">🔒 Paiement à la livraison · Sans risque</p>
           </div>
@@ -782,9 +783,9 @@ export default function CremeAntiLipomeTkLanding() {
 
           <div className="mt-7 grid gap-3 sm:grid-cols-3">
             {[
-              { v: 1, n: '1 tube', p: 9900, old: 15000, sub: 'Découverte', save: null },
-              { v: 2, n: '2 tubes', p: 16900, old: 30000, sub: 'Le + choisi', save: '-2 900 F', hot: true },
-              { v: 3, n: '3 tubes', p: 24900, old: 45000, sub: 'Stock famille', save: '-4 800 F' },
+              { v: 1, n: '1 tube', p: orderTotal(PRICES, 1), old: 15000, sub: packLabel(PRICES, 1, 'F'), save: null },
+              { v: 2, n: '2 tubes', p: orderTotal(PRICES, 2), old: 30000, sub: packLabel(PRICES, 2, 'F'), save: '-2 900 F', hot: true },
+              { v: 3, n: '3 tubes', p: orderTotal(PRICES, 3), old: 45000, sub: packLabel(PRICES, 3, 'F'), save: '-4 800 F' },
             ].map((b) => (
               <button
                 key={b.v}
@@ -1022,7 +1023,7 @@ export default function CremeAntiLipomeTkLanding() {
           </div>
 
           <div className="mx-auto mt-7 max-w-sm">
-            <FluidCTA onClick={() => openModal(2)}>COMMANDE EXPRESS — 16 900 F <Arrow/></FluidCTA>
+            <FluidCTA onClick={() => openModal(2)}>COMMANDE EXPRESS — {fmtTotal(2)} F <Arrow/></FluidCTA>
             <p className="mt-3 text-[11px] text-emerald-200">Sans engagement · paiement à la réception</p>
           </div>
         </div>
@@ -1044,7 +1045,7 @@ export default function CremeAntiLipomeTkLanding() {
         <div className="flex items-center gap-3">
           <div className="flex-1">
             <p className="text-[10px] font-black uppercase tracking-wider text-lime-300">Promo · {pad(countdown.h)}:{pad(countdown.m)}:{pad(countdown.s)}</p>
-            <p className="text-[11px] font-bold text-white">9 900 F · livraison gratuite</p>
+            <p className="text-[11px] font-bold text-white">{fmtTotal(1)} F</p>
           </div>
           <button
             type="button"

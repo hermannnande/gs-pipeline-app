@@ -107,13 +107,9 @@ foreach (FORWARD_REQUEST_HEADERS as $h) {
 $forwardHeaders[] = 'X-Forwarded-For: ' . ($_SERVER['REMOTE_ADDR'] ?? '');
 $forwardHeaders[] = 'X-Forwarded-Host: ' . ($_SERVER['HTTP_HOST'] ?? '');
 $forwardHeaders[] = 'X-Forwarded-Proto: https';
-// Origin force a obgestion.com car le backend whitelist obrille.com et obgestion.com
-// On laisse l'Origin client si present, sinon on ajoute un default.
-if (empty($_SERVER['HTTP_ORIGIN'])) {
-    $forwardHeaders[] = 'Origin: https://' . ($_SERVER['HTTP_HOST'] ?? 'obrille.com');
-} else {
-    $forwardHeaders[] = 'Origin: ' . $_SERVER['HTTP_ORIGIN'];
-}
+// Origin whitelisté côté Vercel : le navigateur voit same-origin via ce proxy,
+// mais Express rejette les Origin inconnus (ex. soindemoi.net) avant la route.
+$forwardHeaders[] = 'Origin: https://obrille.com';
 
 curl_setopt($ch, CURLOPT_HTTPHEADER, $forwardHeaders);
 

@@ -12,6 +12,7 @@
  * totalement custom, sans dupliquer la logique metier.
  */
 import { useCallback, useState } from 'react';
+import { orderTotal } from '../utils/pricingHelpers';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -77,6 +78,8 @@ export interface OrderSubmitConfig {
   title: string;
   prices: Record<number, number>;
   metaPixelId?: string;
+  /** Pixel Meta additionnel (browser + CAPI) — ne remplace pas metaPixelId. */
+  secondaryMetaPixelId?: string;
   thankYouUrl?: string;
 }
 
@@ -110,7 +113,7 @@ export function useOrderSubmit({ cfg, product, setProduct, company: companyParam
       content_name: cfg.title,
       content_ids: [cfg.productCode],
       content_type: 'product',
-      value: cfg.prices?.[qty] || cfg.prices?.[1] || 0,
+      value: orderTotal(cfg.prices || {}, qty),
       currency: 'XOF',
       num_items: qty,
     });
@@ -133,7 +136,7 @@ export function useOrderSubmit({ cfg, product, setProduct, company: companyParam
           content_name: cfg.title,
           content_ids: [cfg.productCode],
           content_type: 'product',
-          value: cfg.prices?.[data.qty] || cfg.prices?.[1] || 0,
+          value: orderTotal(cfg.prices || {}, data.qty),
           currency: 'XOF',
           num_items: data.qty,
         });
@@ -179,6 +182,7 @@ export function useOrderSubmit({ cfg, product, setProduct, company: companyParam
       fbp: getCookie('_fbp') || undefined,
       sourceUrl: window.location.href,
       metaPixelId: cfg.metaPixelId || undefined,
+      secondaryMetaPixelId: cfg.secondaryMetaPixelId || undefined,
     };
 
     try {

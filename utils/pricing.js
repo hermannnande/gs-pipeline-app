@@ -8,6 +8,16 @@
  */
 
 const PACK_PRICING_BY_UNIT_PRICE = {
+  // Offre SMS soindemoi.net/anti-age
+  6500: {
+    2: 12000,
+    3: 15000,
+  },
+  // Produits à 7.000 FCFA (bande-sport, chaussette, lunette-de-nuit, etc.)
+  7000: {
+    2: 12000,
+    3: 15000,
+  },
   // Produits à 9.900 FCFA (pour rétrocompatibilité)
   9900: {
     2: 16900,
@@ -37,14 +47,17 @@ export function computeTotalAmount(prixUnitaireOrProduct, quantite) {
       return unit;
     }
     
-    // Quantité = 2 : utiliser prix2Unites si défini
+    // Quantité = 2 : utiliser prix2Unites si défini et cohérent (> prix unitaire)
     if (qty === 2 && product.prix2Unites != null) {
-      return Number(product.prix2Unites);
+      const p2 = Number(product.prix2Unites);
+      if (p2 > unit) return p2;
     }
-    
-    // Quantité >= 3 : utiliser prix3Unites si défini
+
+    // Quantité >= 3 : utiliser prix3Unites si défini et cohérent (> prix 2 ou unitaire)
     if (qty >= 3 && product.prix3Unites != null) {
-      return Number(product.prix3Unites);
+      const p3 = Number(product.prix3Unites);
+      const p2 = product.prix2Unites != null ? Number(product.prix2Unites) : 0;
+      if (p3 > Math.max(unit, p2)) return p3;
     }
     
     // Fallback sur les packs par défaut

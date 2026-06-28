@@ -2,7 +2,7 @@
  * Cree (ou met a jour) le produit CHAUSSETTE_HOMME_MODLE2 pour la landing
  * "Chaussettes Premium Homme" (slug chaussette-premium-homme).
  *
- * Prix : 5 paires 11900 / 10 paires 20900 / 15 paires 28900 (qty 1/2/3).
+ * Prix : 5 paires 9900 / 10 paires 16900 / 15 paires 24900 (qty 1/2/3).
  * Usage : node scripts/create-chaussette-premium-product.mjs
  */
 const API_URL = process.env.API_URL || 'https://gs-pipeline-app-2.vercel.app/api';
@@ -11,7 +11,7 @@ const PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 const CODE = 'CHAUSSETTE_HOMME_MODLE2';
 const NOM = 'Chaussettes Premium Homme';
-const PRICES = { prixUnitaire: 11900, prix2Unites: 20900, prix3Unites: 28900 };
+const PRICES = { prixUnitaire: 9900, prix2Unites: 16900, prix3Unites: 24900 };
 
 let TOKEN = '';
 async function api(path, opts = {}) {

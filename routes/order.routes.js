@@ -63,6 +63,8 @@ router.get('/', async (req, res) => {
       limit = 1000,
       search,
       clientDatabase,
+      productCode,
+      excludeProductCode,
     } = req.query;
     const user = req.user;
 
@@ -144,6 +146,30 @@ router.get('/', async (req, res) => {
           { clientTelephone: { contains: q, mode: 'insensitive' } },
         ],
       });
+    }
+    // Filtre "produit unique" : limite la liste a un seul productCode
+    // (utilise par les pages dediees, ex. /admin/bouilloire).
+    if (productCode && String(productCode).trim()) {
+      extras.push({
+        product: { code: { equals: String(productCode).trim(), mode: 'insensitive' } },
+      });
+    }
+    // Exclusion de produits (comma-separes) : ces commandes ne remontent plus
+    // dans la liste "a appeler" (elles ont leur propre page dediee).
+    // On garde les commandes sans produit lie (productId null).
+    if (excludeProductCode && String(excludeProductCode).trim()) {
+      const excludedCodes = String(excludeProductCode)
+        .split(',')
+        .map((c) => c.trim())
+        .filter(Boolean);
+      if (excludedCodes.length) {
+        extras.push({
+          OR: [
+            { productId: null },
+            { product: { code: { notIn: excludedCodes } } },
+          ],
+        });
+      }
     }
     if (extras.length) {
       where = mergeOrderWhereExtras(where, extras);
@@ -955,8 +981,8 @@ router.post('/:id/marquer-appel', authorize('ADMIN', 'GESTIONNAIRE', 'APPELANT')
   }
 });
 
-// POST /api/orders/:id/toggle-priorite - Basculer la priorité d'une commande (ADMIN uniquement)
-router.post('/:id/toggle-priorite', authorize('ADMIN'), async (req, res) => {
+// POST /api/orders/:id/toggle-priorite - Basculer la priorité d'une commande (liste À appeler)
+router.post('/:id/toggle-priorite', authorize('ADMIN', 'GESTIONNAIRE', 'APPELANT'), async (req, res) => {
   try {
     const { id } = req.params;
     const user = req.user;
