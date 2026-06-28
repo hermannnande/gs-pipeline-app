@@ -2,6 +2,7 @@ import express from 'express';
 import { prisma } from '../utils/prisma.js';
 import { authenticate, authorize } from '../middlewares/auth.middleware.js';
 import { notifyOrderAssigned, notifyDeliveryListCreated } from '../utils/notifications.js';
+import { excludeIsolatedProductsFilter } from '../utils/isolatedProducts.js';
 
 const router = express.Router();
 
@@ -252,7 +253,8 @@ router.get('/validated-orders', authorize('ADMIN', 'GESTIONNAIRE'), async (req, 
     const where = {
       companyId: req.user.companyId,
       status: 'VALIDEE',
-      delivererId: null
+      delivererId: null,
+      AND: [excludeIsolatedProductsFilter],
     };
 
     if (ville) {

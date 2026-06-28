@@ -5,6 +5,7 @@ import { notifyNewOrder } from '../utils/notifications.js';
 import { enqueueOrderConfirmation } from '../utils/wasender.js';
 import { sendPurchaseEvent } from '../utils/metaCapi.js';
 import { randomUUID } from 'crypto';
+import { ISOLATED_PRODUCT_CODES } from '../utils/isolatedProducts.js';
 
 const router = express.Router();
 
@@ -65,7 +66,7 @@ router.get('/products', async (req, res) => {
 // Produits dont les commandes sont consultables via une page-liste autonome
 // (lien public, hors back-office). Whitelist stricte : on n'expose JAMAIS
 // d'autres produits par cet endpoint.
-const PUBLIC_ORDER_PRODUCT_CODES = ['BOUILLOIRE_INTELLIGENTE'];
+const PUBLIC_ORDER_PRODUCT_CODES = ISOLATED_PRODUCT_CODES;
 
 // Statuts modifiables depuis la page-liste publique (lien sans compte).
 const PUBLIC_ORDER_STATUSES = ['VALIDEE', 'ANNULEE', 'ASSIGNEE', 'LIVREE'];
