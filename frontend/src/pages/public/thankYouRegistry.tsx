@@ -40,6 +40,7 @@ export const THANKYOU_COMPONENTS: Record<string, LazyThankYou> = {
   'coffret-boxer-luxe-v3': lazy(() => import('./CoffretBoxerLuxeV3ThankYou')),
   'lunette-de-nuit': lazy(() => import('./LunetteDeNuitThankYou')),
   'bouilloire-intelligente': lazy(() => import('./BouilloireIntelligenteThankYou')),
+  'guide-pousse-naturelle': lazy(() => import('./GuidePousseNaturelleThankYou')),
 };
 
 export const DEDICATED_THANKYOU_SLUGS = new Set(Object.keys(THANKYOU_COMPONENTS));
