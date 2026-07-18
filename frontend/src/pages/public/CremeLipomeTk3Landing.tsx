@@ -1,6 +1,6 @@
 /**
- * Tunnel de vente — Crème Anti-Lipome (CREME_ANTI_LIPOME)
- * Slug: creme-anti-lipome
+ * Tunnel de vente — Crème Anti-Lipome TK3 (CREME_LIPOME_TK3)
+ * Slug: creme-lipome-tk3 — duplication campagne TikTok (clone creme-anti-lipome).
  *
  * Médias compressés : n1..n9.webp + w1/w2.mp4 + posters w1p/w2p.webp
  * Palette : émeraude profond · or · corail (urgence)
@@ -13,12 +13,12 @@ import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
 import { orderTotal, packLabel } from '../../utils/pricingHelpers';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
-const SLUG = 'creme-anti-lipome';
-const PRODUCT_CODE = 'CREME_ANTI_LIPOME';
+const SLUG = 'creme-lipome-tk3';
+const PRODUCT_CODE = 'CREME_LIPOME_TK3';
 const META_PIXEL_ID = '1857129471642967';
-const THANK_YOU_URL = '/creme-anti-lipome/merci';
+const THANK_YOU_URL = '/creme-lipome-tk3/merci';
 
-const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const PRICES: Record<number, number> = { 1: 8500, 2: 14100, 3: 20700 };
 const OLD_UNIT = 15000;
 const DISCOUNT = Math.round((1 - PRICES[1] / OLD_UNIT) * 100);
 const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
@@ -220,7 +220,7 @@ function Fiche({ kicker, hook, cta, qty, onOrder, media, variant = 'light', shap
   );
 }
 
-export default function CremeAntiLipomeLanding() {
+export default function CremeLipomeTk3Landing() {
   const navigate = useNavigate();
   const company = useMemo(co, []);
 
