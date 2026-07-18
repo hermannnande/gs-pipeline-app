@@ -1,6 +1,7 @@
 /**
  * Modal commande — Crème Anti-Lipome (CREME_ANTI_LIPOME + clone CREME_LIPOME_TK3).
- * Palette : émeraude profond · or · corail (urgence).
+ * Palette : bleu profond · blanc · rouge corail (accent urgence).
+ * Accordée à l'identité LipoSoin des visuels de la landing.
  */
 import { useEffect, useRef, useState } from 'react';
 import { useOrderSubmit, type OrderSubmitConfig, type OrderProduct } from '../../hooks/useOrderSubmit';
@@ -30,16 +31,16 @@ interface Props {
 const fmt = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' F';
 const pad = (n: number) => String(n).padStart(2, '0');
 
-/** Champ de saisie : icône à gauche, focus émeraude, hauteur confortable au pouce. */
+/** Champ de saisie : icône à gauche, focus bleu, hauteur confortable au pouce. */
 function Field({ icon, ...input }: { icon: React.ReactNode } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <div className="group relative">
-      <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8] transition-colors group-focus-within:text-[#059669]">
+      <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8] transition-colors group-focus-within:text-[#2563eb]">
         {icon}
       </span>
       <input
         {...input}
-        className="block h-[52px] w-full rounded-2xl border-2 border-[#059669]/15 bg-[#f8fafc] pl-11 pr-3 text-[15px] font-semibold text-[#03211a] outline-none transition-all placeholder:font-medium placeholder:text-[#94a3b8] focus:border-[#059669] focus:bg-white focus:shadow-[0_0_0_4px_rgba(5,150,105,.12)]"
+        className="block h-[52px] w-full rounded-2xl border-2 border-[#2563eb]/15 bg-[#f8fafc] pl-11 pr-3 text-[15px] font-semibold text-[#0a1e3d] outline-none transition-all placeholder:font-medium placeholder:text-[#94a3b8] focus:border-[#2563eb] focus:bg-white focus:shadow-[0_0_0_4px_rgba(37,99,235,.12)]"
       />
     </div>
   );
@@ -106,44 +107,44 @@ export default function OrderModalCremeAntiLipome({ open, onClose, cfg, product,
 
   return (
     <div className="fixed inset-0 z-[60] flex items-stretch justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="cal-title">
-      <div onClick={() => !sending && onClose()} className="absolute inset-0 bg-[#03211a]/80 backdrop-blur-md animate-[calfade_.2s_ease-out]" />
+      <div onClick={() => !sending && onClose()} className="absolute inset-0 bg-[#0a1e3d]/80 backdrop-blur-md animate-[calfade_.2s_ease-out]" />
 
       <div className="cal-shell relative z-10 flex h-[100svh] w-full flex-col overflow-hidden bg-white shadow-2xl animate-[calslide_.3s_cubic-bezier(.22,.8,.4,1)] sm:h-auto sm:max-h-[94vh] sm:max-w-[440px] sm:rounded-[26px]">
-        <div className="h-1.5 w-full flex-none bg-gradient-to-r from-[#047857] via-[#10b981] to-[#f59e0b]" />
+        <div className="h-1.5 w-full flex-none bg-gradient-to-r from-[#1d4ed8] via-[#2563eb] to-[#0ea5e9]" />
 
         {/* Header produit + urgence */}
-        <div className="relative flex-none overflow-hidden bg-gradient-to-b from-[#ecfdf5] to-white">
+        <div className="relative flex-none overflow-hidden bg-gradient-to-b from-[#eff6ff] to-white">
           <div className="flex items-center gap-3 px-4 pb-2 pt-3">
             {cfg.images?.hero && (
-              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl ring-2 ring-[#059669]/20 shadow-md">
+              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl ring-2 ring-[#2563eb]/20 shadow-md">
                 <img src={cfg.images.hero} alt="" className="h-full w-full object-cover" />
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <h3 id="cal-title" className="truncate text-[15px] font-black text-[#03211a]">
-                Crème <span className="text-[#059669]">anti-lipome</span>
+              <h3 id="cal-title" className="truncate text-[15px] font-black text-[#0a1e3d]">
+                Crème <span className="text-[#2563eb]">anti-lipome</span>
               </h3>
               <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#059669]/12 px-2 py-0.5 text-[10px] font-black text-[#047857]">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#2563eb]/12 px-2 py-0.5 text-[10px] font-black text-[#1d4ed8]">
                   <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <span className="font-mono tabular-nums">{pad(countdown.m)}:{pad(countdown.s)}</span>
                 </span>
-                <span className="rounded-full bg-[#fbbf24]/25 px-2 py-0.5 text-[9px] font-black uppercase text-[#b45309]">Promo</span>
+                <span className="rounded-full bg-[#dc2626]/25 px-2 py-0.5 text-[9px] font-black uppercase text-[#b91c1c]">Promo</span>
                 <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[9px] font-black text-rose-600">{stock} restants</span>
               </div>
             </div>
             <button type="button" onClick={() => !sending && onClose()} aria-label="Fermer" disabled={sending}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#059669]/10 text-[#047857] transition hover:bg-[#059669]/20">
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#2563eb]/10 text-[#1d4ed8] transition hover:bg-[#2563eb]/20">
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
 
-          <div className="mx-4 mb-2 h-1 overflow-hidden rounded-full bg-[#059669]/12">
-            <div className="h-full bg-gradient-to-r from-[#10b981] to-[#f59e0b] transition-all"
+          <div className="mx-4 mb-2 h-1 overflow-hidden rounded-full bg-[#2563eb]/12">
+            <div className="h-full bg-gradient-to-r from-[#2563eb] to-[#dc2626] transition-all"
               style={{ width: `${Math.max(18, Math.min(100, Math.round((stock / 22) * 100)))}%` }} />
           </div>
         </div>
@@ -158,8 +159,8 @@ export default function OrderModalCremeAntiLipome({ open, onClose, cfg, product,
           {/* Sélecteur de pack */}
           <div>
             <label className="mb-1.5 flex items-baseline justify-between">
-              <span className="text-[10px] font-black uppercase tracking-wider text-[#047857]">Votre pack</span>
-              {saving > 0 && <span className="rounded-full bg-[#fbbf24]/30 px-2 py-0.5 text-[10px] font-black text-[#b45309]">-{fmt(saving)}</span>}
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#1d4ed8]">Votre pack</span>
+              {saving > 0 && <span className="rounded-full bg-[#dc2626]/30 px-2 py-0.5 text-[10px] font-black text-[#b91c1c]">-{fmt(saving)}</span>}
             </label>
             <div className="grid grid-cols-3 gap-2">
               {qtyOptions.map((o) => {
@@ -169,20 +170,20 @@ export default function OrderModalCremeAntiLipome({ open, onClose, cfg, product,
                   <button key={o.v} type="button" onClick={() => setQty(o.v)}
                     className={`relative flex flex-col items-center rounded-2xl border-2 px-2 py-3 transition-all ${
                       active
-                        ? 'border-[#059669] bg-gradient-to-b from-[#ecfdf5] to-white shadow-md ring-2 ring-[#10b981]/25'
-                        : 'border-[#059669]/12 bg-[#f8fafc] hover:border-[#059669]/35'
+                        ? 'border-[#2563eb] bg-gradient-to-b from-[#eff6ff] to-white shadow-md ring-2 ring-[#3b82f6]/25'
+                        : 'border-[#2563eb]/12 bg-[#f8fafc] hover:border-[#2563eb]/35'
                     }`}>
                     {o.tag && active && (
-                      <span className="absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#f59e0b] px-1.5 py-0.5 text-[7px] font-black uppercase text-[#03211a]">{o.tag}</span>
+                      <span className="absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#dc2626] px-1.5 py-0.5 text-[7px] font-black uppercase text-[#0a1e3d]">{o.tag}</span>
                     )}
                     {active && (
-                      <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#059669] text-white">
+                      <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#2563eb] text-white">
                         <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                       </span>
                     )}
-                    <span className={`text-[22px] font-black leading-none ${active ? 'text-[#059669]' : 'text-[#475569]'}`}>{o.v}</span>
-                    <span className={`mt-0.5 text-[8px] font-bold uppercase ${active ? 'text-[#047857]' : 'text-[#94a3b8]'}`}>{o.label}</span>
-                    <span className={`mt-1 text-[11px] font-black tabular-nums ${active ? 'text-[#03211a]' : 'text-[#64748b]'}`}>
+                    <span className={`text-[22px] font-black leading-none ${active ? 'text-[#2563eb]' : 'text-[#475569]'}`}>{o.v}</span>
+                    <span className={`mt-0.5 text-[8px] font-bold uppercase ${active ? 'text-[#1d4ed8]' : 'text-[#94a3b8]'}`}>{o.label}</span>
+                    <span className={`mt-1 text-[11px] font-black tabular-nums ${active ? 'text-[#0a1e3d]' : 'text-[#64748b]'}`}>
                       {price.toLocaleString('fr-FR').replace(/,/g, ' ')} F
                     </span>
                   </button>
@@ -193,7 +194,7 @@ export default function OrderModalCremeAntiLipome({ open, onClose, cfg, product,
 
           {/* Coordonnées */}
           <div className="flex flex-col gap-2.5">
-            <p className="text-[10px] font-black uppercase tracking-wider text-[#047857]">Vos coordonnées</p>
+            <p className="text-[10px] font-black uppercase tracking-wider text-[#1d4ed8]">Vos coordonnées</p>
 
             <Field
               type="text" id="cal-name" value={name} onChange={(e) => setName(e.target.value)}
@@ -228,37 +229,37 @@ export default function OrderModalCremeAntiLipome({ open, onClose, cfg, product,
         <div className="pointer-events-none -mt-2 h-3 w-full bg-gradient-to-t from-white to-transparent" />
 
         {/* Récap + validation */}
-        <div className="flex-none border-t border-[#10b981]/12 bg-white px-4 pt-2 shadow-[0_-8px_24px_-8px_rgba(5,150,105,.15)]"
+        <div className="flex-none border-t border-[#3b82f6]/12 bg-white px-4 pt-2 shadow-[0_-8px_24px_-8px_rgba(37,99,235,.15)]"
           style={{ paddingBottom: 'calc(0.65rem + env(safe-area-inset-bottom, 0px))' }}>
-          <div className="mb-2 rounded-2xl bg-gradient-to-br from-[#ecfdf5] via-white to-[#fffbeb] p-2.5 ring-1 ring-[#10b981]/20">
+          <div className="mb-2 rounded-2xl bg-gradient-to-br from-[#eff6ff] via-white to-[#f1f5f9] p-2.5 ring-1 ring-[#3b82f6]/20">
             <div className="space-y-0.5 text-[11px]">
               <div className="flex justify-between text-[#475569]">
                 <span>Sous-total · {qty} tube{qty > 1 ? 's' : ''}</span>
                 <span className="font-bold tabular-nums">{fmt(fullPrice)}</span>
               </div>
               {saving > 0 && (
-                <div className="flex justify-between text-[#047857]">
+                <div className="flex justify-between text-[#1d4ed8]">
                   <span>Remise pack</span>
                   <span className="font-bold tabular-nums">-{fmt(saving)}</span>
                 </div>
               )}
               <div className="flex justify-between text-[#475569]">
                 <span>Livraison</span>
-                <span className="font-black text-[#059669]">GRATUIT ✓</span>
+                <span className="font-black text-[#2563eb]">GRATUIT ✓</span>
               </div>
             </div>
-            <div className="my-1.5 border-t border-dashed border-[#059669]/20" />
+            <div className="my-1.5 border-t border-dashed border-[#2563eb]/20" />
             <div className="flex items-baseline justify-between">
-              <span className="text-[10px] font-black uppercase tracking-wider text-[#047857]">Total à payer</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#1d4ed8]">Total à payer</span>
               <div className="flex items-baseline gap-2">
                 {qty > 1 && <span className="text-[10px] text-[#94a3b8] line-through">{fmt(oldTotal)}</span>}
-                <span className="text-[24px] font-black tabular-nums text-[#059669]">{fmt(total)}</span>
+                <span className="text-[24px] font-black tabular-nums text-[#2563eb]">{fmt(total)}</span>
               </div>
             </div>
           </div>
 
           <button type="submit" form="cal-form" disabled={sending}
-            className="cal-submit group relative flex h-[56px] w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-[#047857] via-[#10b981] to-[#f59e0b] text-[15px] font-black text-white shadow-[0_12px_28px_-6px_rgba(16,185,129,.55)] ring-2 ring-white/30 transition hover:shadow-[0_16px_32px_-6px_rgba(245,158,11,.5)] active:translate-y-px disabled:opacity-60">
+            className="cal-submit group relative flex h-[56px] w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-[#1d4ed8] via-[#2563eb] to-[#0ea5e9] text-[15px] font-black text-white shadow-[0_12px_28px_-6px_rgba(37,99,235,.55)] ring-2 ring-white/30 transition hover:shadow-[0_16px_32px_-6px_rgba(14,165,233,.5)] active:translate-y-px disabled:opacity-60">
             <span className="cal-cta-sheen pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/45 to-transparent" />
             {sending ? (
               <>
@@ -277,7 +278,7 @@ export default function OrderModalCremeAntiLipome({ open, onClose, cfg, product,
 
           <div className="mt-1.5 flex items-center justify-center gap-3 text-[9px] font-semibold text-[#64748b]">
             <span>🔒 Sans paiement anticipé</span>
-            <span className="h-3 w-px bg-[#059669]/20" />
+            <span className="h-3 w-px bg-[#2563eb]/20" />
             <span>📦 Express CI</span>
           </div>
         </div>
