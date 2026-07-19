@@ -571,7 +571,7 @@ export default function BoutiqueLanding() {
   const [revealed, setRevealed] = useState<Set<number>>(() => new Set());
 
   useEffect(() => {
-    document.title = 'Boutique Ob\'rille — Solutions premium pour le bien-etre';
+    document.title = 'Boutique Soin de moi — Solutions premium pour le bien-etre';
     const desc = 'Decouvrez la collection complete : patchs anti-douleur, sprays, cremes, serums et soins premium. Paiement a la livraison.';
     let m = document.querySelector('meta[name="description"]');
     if (!m) { m = document.createElement('meta'); (m as HTMLMetaElement).name = 'description'; document.head.appendChild(m); }
@@ -639,12 +639,12 @@ export default function BoutiqueLanding() {
       <header className="relative z-10 border-b border-neutral-200/70 bg-white/85 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-[1200px] items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-sky-500 to-cyan-500 text-white shadow-[0_8px_20px_-4px_rgba(6,182,212,0.55)]">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-rose-400 via-fuchsia-500 to-violet-600 text-white shadow-[0_8px_20px_-4px_rgba(217,70,239,0.55)]">
               <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9zM4 5a2 2 0 012-2h.93a4 4 0 016.14 0H14a2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5z"/></svg>
             </span>
             <div className="leading-tight">
-              <span className="bq-display block text-[16px] font-extrabold tracking-tight text-[#0a1628] sm:text-[18px]">Ob'rille</span>
-              <span className="block text-[9px] font-bold uppercase tracking-[0.22em] text-cyan-700/80 sm:text-[10px]">La Boutique</span>
+              <span className="bq-display bq-grad-brand block text-[16px] font-extrabold tracking-tight sm:text-[18px]">Soin de moi</span>
+              <span className="block text-[9px] font-bold uppercase tracking-[0.22em] text-fuchsia-700/80 sm:text-[10px]">La Boutique</span>
             </div>
           </div>
           <div className="flex items-center gap-1.5 rounded-full bg-cyan-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-cyan-700 ring-1 ring-cyan-200 sm:px-3 sm:py-1.5 sm:text-[10px]" title="Visiteurs actifs sur la boutique (5 dernières min)">
@@ -784,7 +784,7 @@ export default function BoutiqueLanding() {
         <div className="relative mx-auto w-full max-w-[1100px]">
           <div className="text-center">
             <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.32em] text-cyan-200 ring-1 ring-cyan-300/30 backdrop-blur">
-              Pourquoi Ob'rille
+              Pourquoi Soin de moi
             </span>
             <h2 className="bq-display mt-5 text-[32px] font-black leading-[1] tracking-tight text-white sm:text-[48px]">
               Une exigence <span className="bq-grad-cyan">premium</span>,<br/>
@@ -836,7 +836,7 @@ export default function BoutiqueLanding() {
       {/* ============================================== */}
       <footer className="bg-[#0a1628] px-4 py-10 text-center text-cyan-200/60 sm:px-6">
         <div className="mx-auto max-w-[1100px]">
-          <p className="bq-display text-[16px] font-extrabold tracking-tight text-cyan-200">Ob'rille · La Boutique</p>
+          <p className="bq-display bq-grad-brand-light text-[16px] font-extrabold tracking-tight">Soin de moi · La Boutique</p>
           <p className="mt-2 text-[11px] text-cyan-200/65">Solutions premium pour le bien-etre — Livraison rapide en Cote d'Ivoire</p>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[10px]">
             <span className="rounded-full bg-white/5 px-3 py-1 ring-1 ring-white/10">Paiement a la livraison</span>
@@ -853,6 +853,8 @@ export default function BoutiqueLanding() {
       <style>{`
         .bq-display { font-family: 'Bricolage Grotesque', 'Outfit', system-ui, -apple-system, sans-serif; font-feature-settings: 'ss01' on, 'ss02' on; }
         .bq-grad-cyan  { background: linear-gradient(135deg, #06b6d4 0%, #22d3ee 50%, #0ea5e9 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .bq-grad-brand { background: linear-gradient(135deg, #e11d48 0%, #d946ef 45%, #7c3aed 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .bq-grad-brand-light { background: linear-gradient(135deg, #fda4af 0%, #f0abfc 45%, #c4b5fd 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
         .bq-grad-coral { background: linear-gradient(135deg, #fb923c 0%, #ef4444 50%, #ec4899 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 
         /* Marquee — container scrollable horizontalement, auto-scroll JS */
