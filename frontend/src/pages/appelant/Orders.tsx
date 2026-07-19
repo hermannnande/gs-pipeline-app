@@ -70,7 +70,10 @@ export default function Orders({ onlyProductCode, pageTitle }: OrdersProps = {})
             ? { excludeProductCode: SEPARATE_PRODUCT_CODES.join(',') }
             : {}),
       }),
-    refetchInterval: 60000,
+    // Quasi temps reel : nouvelle commande visible en <=10s, meme onglet en
+    // arriere-plan (les appelants gardent souvent un autre onglet ouvert).
+    refetchInterval: 10000,
+    refetchIntervalInBackground: true,
   });
 
   // Compteur pour afficher le temps écoulé depuis la dernière actualisation
@@ -336,8 +339,10 @@ export default function Orders({ onlyProductCode, pageTitle }: OrdersProps = {})
       return ageHours;
     }
 
-    // Commande OUBLIEE = ancienne (>24h) ET jamais appelee, dans la fenetre 7j
-    if (ageHours > STALE_HOURS_THRESHOLD && nombreAppels === 0) {
+    // Commande OUBLIEE = ancienne (>24h) ET jamais appelee, dans la fenetre 7j.
+    // Exception : "en attente paiement" = deja traitee par un appelant (le client
+    // doit payer), elle ne remonte pas meme si nombreAppels est reste a 0.
+    if (ageHours > STALE_HOURS_THRESHOLD && nombreAppels === 0 && !order.enAttentePaiement) {
       return -ageHours; // negatif -> remonte en tete
     }
 
@@ -355,7 +360,8 @@ export default function Orders({ onlyProductCode, pageTitle }: OrdersProps = {})
     return (
       ageDays <= MAX_AGE_FOR_PROMOTION_DAYS &&
       ageHours > STALE_HOURS_THRESHOLD &&
-      nombreAppels === 0
+      nombreAppels === 0 &&
+      !order.enAttentePaiement
     );
   }
 
