@@ -1,18 +1,29 @@
 /**
- * Landing — Ebook « Faire pousser vos cheveux naturellement » (produit DIGITAL).
+ * Landing — Guide « Faire pousser vos cheveux naturellement ».
  * ============================================================================
  *
- * Produit 100% numerique paye via CHARIOW (Mobile Money / carte). Aucune
- * livraison physique : apres paiement, Chariow delivre le PDF (portail client)
- * et le webhook /api/chariow/webhook enregistre la vente dans obgestion.
+ * DEUX FORMATS au choix, chacun avec son propre circuit de vente :
  *
- * Le produit GUIDE_POUSSE_NATURELLE est ISOLE (utils/isolatedProducts.js) : ces
- * ventes n'apparaissent pas dans le pipeline "a appeler"/livraison, seulement
- * dans la page admin dediee (/admin/ventes-digitales).
+ *   1. EBOOK (8 900 F) — produit DIGITAL paye via CHARIOW (Mobile Money / carte).
+ *      Apres paiement, Chariow delivre le PDF (portail client) et le webhook
+ *      /api/chariow/webhook enregistre la vente dans obgestion.
+ *      Code produit GUIDE_POUSSE_NATURELLE, ISOLE (utils/isolatedProducts.js) :
+ *      ces ventes n'apparaissent pas dans le pipeline "a appeler"/livraison,
+ *      seulement dans la page admin dediee (/admin/ventes-digitales).
+ *
+ *   2. LIVRE IMPRIME (9 900 F) — produit PHYSIQUE, paiement A LA LIVRAISON.
+ *      Code produit GUIDE_POUSSE_NATURELLE_PHYSIQUE, volontairement ABSENT de
+ *      ISOLATED_PRODUCT_CODES (compare en egalite stricte, donc le suffixe
+ *      _PHYSIQUE suffit a l'exclure du filtre) : ses commandes suivent le
+ *      pipeline standard via POST /public/order — page "A appeler", validation,
+ *      tournee — comme n'importe quelle creme. Ecart de 1 000 F = impression.
  *
  * Flux d'achat :
- *   CTA -> modal (nom, email, telephone) -> useChariowCheckout -> redirection
- *   Chariow -> apres paiement, retour sur /guide-pousse-naturelle/merci?ref=<sale_id>.
+ *   CTA -> modal ETAPE 1 : choix du format
+ *     -> ebook    : nom, email, telephone -> useChariowCheckout -> Chariow
+ *                   -> retour /guide-pousse-naturelle/merci?ref=<sale_id>
+ *     -> imprime  : nom, ville, telephone -> useOrderSubmit -> POST /public/order
+ *                   -> /guide-pousse-naturelle/merci?format=physique&ref=<ref>
  *
  * Palette : jaune / vert / rouge / blanc (demande client).
  * Formulations responsables : "aide a", "soutient", jamais "guerit".
@@ -24,6 +35,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { trackPageView } from '../../utils/pageTracking';
 import { useChariowCheckout, type ChariowCheckoutConfig } from '../../hooks/useChariowCheckout';
+import { useOrderSubmit, type OrderSubmitConfig, type OrderProduct } from '../../hooks/useOrderSubmit';
 import { optimImg, optimImgSrcSet } from '../../utils/img';
 // Video hero self-hostee (compressee 720x720, ~5.9 Mo) + poster WebP.
 // Emises par Vite dans /landings-app/assets/ -> servies en meme origine (rapide).
@@ -31,13 +43,27 @@ import videoSrc from '../../assets/guide/video-guide.mp4';
 import videoPoster from '../../assets/guide/video-guide-poster.webp';
 
 const SLUG = 'guide-pousse-naturelle';
+// Ebook : produit isole, vendu par Chariow.
 const PRODUCT_CODE = 'GUIDE_POUSSE_NATURELLE';
+// Livre imprime : produit standard, paiement a la livraison, pipeline "A appeler".
+const PRODUCT_CODE_PHYSIQUE = 'GUIDE_POUSSE_NATURELLE_PHYSIQUE';
 const TITLE = 'Faire pousser vos cheveux naturellement';
 // Meta Pixel ID de cette page.
 const META_PIXEL_ID = '2061376097807745';
-const PRICE = 4500;
-const OLD_PRICE = 9000;
-const PRICES: Record<number, number> = { 1: PRICE };
+
+// L'ecart de 1 000 F couvre l'impression et l'acheminement du livre.
+const PRICE_EBOOK = 8900;
+const PRICE_PHYSIQUE = 9900;
+const OLD_PRICE_EBOOK = 15000;
+const OLD_PRICE_PHYSIQUE = 18000;
+// Prix d'appel affiche partout hors modal (le moins cher des deux formats).
+const PRICE = PRICE_EBOOK;
+const OLD_PRICE = OLD_PRICE_EBOOK;
+const PRICES: Record<number, number> = { 1: PRICE_EBOOK };
+const PRICES_PHYSIQUE: Record<number, number> = { 1: PRICE_PHYSIQUE };
+
+/** Remise arrondie, calculee (evite un pourcentage code en dur qui derive au 1er changement de prix). */
+const discountPct = (price: number, old: number) => Math.round((1 - price / old) * 100);
 
 // Images (hebergees sur obrille.com — meme origine que la landing).
 const BASE = 'https://obrille.com/wp-content/uploads/2026/07';
@@ -77,7 +103,8 @@ const TESTIMONIALS = [
 const FAQ = [
   { q: 'Le guide convient-il aux hommes et aux femmes ?', a: 'Oui : programmes distincts hommes (tempes, couronne), femmes (longueur, casse) et barbe.' },
   { q: 'Le guide garantit-il la guerison de la calvitie ?', a: "Non. C'est un guide educatif qui aide a construire une routine adaptee et a savoir quand consulter. Il ne remplace pas un avis medical." },
-  { q: 'Comment vais-je recevoir le guide ?', a: 'Apres paiement, vous recevez un acces securise (email / portail). PDF lisible sur telephone, tablette et ordinateur.' },
+  { q: 'Comment vais-je recevoir le guide ?', a: "Comme vous voulez : en ebook (PDF) recu immediatement apres paiement, lisible sur telephone, tablette et ordinateur ; ou en livre imprime livre chez vous, que vous payez seulement a la reception." },
+  { q: 'Quelle difference entre l\'ebook et le livre imprime ?', a: "Le contenu est identique. L'ebook (8 900 F) arrive tout de suite et ne se perd pas. Le livre imprime (9 900 F) se lit sans ecran et s'annote a la main ; l'ecart couvre l'impression et la livraison." },
   { q: 'Quels moyens de paiement puis-je utiliser ?', a: 'Le paiement affiche automatiquement les solutions de votre pays : Mobile Money (Orange, Wave, MTN, Moov…) et cartes.' },
 ];
 
@@ -212,7 +239,11 @@ function HeroVideo() {
 export default function GuidePousseNaturelleLanding() {
   const company = useMemo(() => new URLSearchParams(window.location.search).get('company') || 'ci', []);
   const [modal, setModal] = useState(false);
+  // Etape du modal : 'choix' (les 2 formats) -> 'ebook' | 'physique'.
+  const [step, setStep] = useState<'choix' | 'ebook' | 'physique'>('choix');
   const [form, setForm] = useState({ name: '', email: '', phone: '', country: 'CI' });
+  const [formPhy, setFormPhy] = useState({ name: '', city: '', phone: '' });
+  const [product, setProduct] = useState<OrderProduct | null>(null);
   const pixelFired = useRef(false);
 
   const cfg: ChariowCheckoutConfig = useMemo(
@@ -220,6 +251,27 @@ export default function GuidePousseNaturelleLanding() {
     [],
   );
   const { checkout, sending, formErr, setFormErr } = useChariowCheckout({ cfg, company });
+
+  // Circuit physique : meme pipeline que les produits classiques (POST /public/order).
+  const cfgPhy: OrderSubmitConfig = useMemo(
+    () => ({
+      slug: SLUG,
+      productCode: PRODUCT_CODE_PHYSIQUE,
+      title: `${TITLE} (livre imprime)`,
+      metaPixelId: META_PIXEL_ID || undefined,
+      prices: PRICES_PHYSIQUE,
+      // Le format distingue les deux parcours sur la page merci partagee.
+      thankYouUrl: `/${SLUG}/merci?format=physique`,
+    }),
+    [],
+  );
+  const {
+    submit: submitPhy,
+    sending: sendingPhy,
+    formErr: formErrPhy,
+    setFormErr: setFormErrPhy,
+    trackOpen: trackOpenPhy,
+  } = useOrderSubmit({ cfg: cfgPhy, product, setProduct, company });
 
   useEffect(() => {
     if (pixelFired.current) return;
@@ -231,7 +283,7 @@ export default function GuidePousseNaturelleLanding() {
         content_name: TITLE,
         content_ids: [PRODUCT_CODE],
         content_type: 'product',
-        value: PRICE,
+        value: PRICE_EBOOK,
         currency: 'XOF',
       });
     }
@@ -242,7 +294,23 @@ export default function GuidePousseNaturelleLanding() {
     return () => { document.body.style.overflow = ''; };
   }, [modal]);
 
-  const openModal = useCallback(() => { setFormErr(''); setModal(true); }, [setFormErr]);
+  const openModal = useCallback(() => {
+    setFormErr('');
+    setFormErrPhy('');
+    setStep('choix');
+    setModal(true);
+  }, [setFormErr, setFormErrPhy]);
+
+  const busy = sending || sendingPhy;
+  const closeModal = useCallback(() => { if (!busy) setModal(false); }, [busy]);
+
+  const submitPhysique = useCallback(
+    async (e: FormEvent) => {
+      e.preventDefault();
+      await submitPhy({ name: formPhy.name, city: formPhy.city, phone: formPhy.phone, qty: 1 });
+    },
+    [submitPhy, formPhy],
+  );
 
   const submit = useCallback(
     async (e: FormEvent) => {
@@ -254,7 +322,7 @@ export default function GuidePousseNaturelleLanding() {
         customerEmail: form.email,
         customerPhone: form.phone,
         customerCity: 'En ligne', // produit digital : pas d'adresse de livraison
-        displayedAmount: PRICE,
+        displayedAmount: PRICE_EBOOK,
         // Pays choisi par le client -> Chariow affiche les moyens de paiement
         // adaptés (Mobile Money du pays, cartes, etc.).
         countryCode: form.country,
@@ -278,7 +346,7 @@ export default function GuidePousseNaturelleLanding() {
       {/* VIDEO HERO (en premier) */}
       <Section className="!pb-6 !pt-8">
         <div className="mx-auto max-w-xl text-center">
-          <span className="inline-block rounded-full bg-[#F7C948] px-3 py-1 text-[11px] font-black uppercase tracking-wide text-[#A92520]">Ebook numerique</span>
+          <span className="inline-block rounded-full bg-[#F7C948] px-3 py-1 text-[11px] font-black uppercase tracking-wide text-[#A92520]">Ebook ou livre imprime</span>
           <h1 className="mt-4 text-3xl font-black leading-[1.1] text-[#126B3A] sm:text-4xl">
             VOUS AVEZ TOUT ESSAYE CONTRE LA CHUTE ?<br />
             <span className="text-[#D63C32]">FABRIQUEZ VOTRE PROPRE TRAITEMENT.</span>
@@ -295,12 +363,12 @@ export default function GuidePousseNaturelleLanding() {
           <div className="flex items-baseline justify-center gap-3">
             <span className="text-4xl font-black text-[#126B3A]">{fmt(PRICE)}</span>
             <span className="text-lg text-gray-400 line-through">{fmt(OLD_PRICE)}</span>
-            <span className="rounded bg-[#D63C32] px-2 py-0.5 text-[11px] font-black text-white">-50%</span>
+            <span className="rounded bg-[#D63C32] px-2 py-0.5 text-[11px] font-black text-white">-{discountPct(PRICE_EBOOK, OLD_PRICE_EBOOK)}%</span>
           </div>
           <div className="mt-4"><CTA onClick={openModal}>Je cree mes propres soins</CTA></div>
           <div className="mt-3 flex items-center justify-center gap-2 text-sm">
             <Stars n={5} /> <span className="font-bold text-[#126B3A]">4.9/5</span>
-            <span className="text-gray-400">· acces immediat apres paiement</span>
+            <span className="text-gray-400">· ebook immediat ou livre a la livraison</span>
           </div>
         </div>
       </Section>
@@ -366,7 +434,7 @@ export default function GuidePousseNaturelleLanding() {
               </div>
             ))}
           </div>
-          <p className="mt-4 text-center text-sm italic text-gray-500">Le tout dans un seul guide numerique, a {fmt(PRICE)} au lieu de {fmt(OLD_PRICE)}.</p>
+          <p className="mt-4 text-center text-sm italic text-gray-500">Le tout dans un seul guide, en ebook a {fmt(PRICE_EBOOK)} ou en livre imprime a {fmt(PRICE_PHYSIQUE)}.</p>
           <div className="mx-auto mt-6 max-w-sm"><CTA onClick={openModal}>Je veux le guide complet</CTA></div>
         </Section>
       </div>
@@ -434,7 +502,7 @@ export default function GuidePousseNaturelleLanding() {
       <div className="bg-gradient-to-br from-[#D63C32] to-[#A92520] text-white">
         <Section className="text-center !py-12">
           <h2 className="text-2xl font-black sm:text-3xl">Arretez d'acheter. Fabriquez enfin ce qui marche.</h2>
-          <p className="mx-auto mt-2 max-w-2xl text-white/90">Acces immediat, a vie, sur telephone, tablette et ordinateur.</p>
+          <p className="mx-auto mt-2 max-w-2xl text-white/90">En ebook des maintenant, ou en livre imprime livre chez vous.</p>
           <div className="mx-auto mt-6 max-w-sm">
             <button
               type="button"
@@ -472,20 +540,116 @@ export default function GuidePousseNaturelleLanding() {
         </div>
       )}
 
-      {/* MODAL de commande (produit digital : nom, email, telephone) */}
+      {/* MODAL de commande — etape 1 : choix du format, puis le formulaire adapte */}
       {modal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4" onClick={() => !sending && setModal(false)}>
-          <div className="w-full max-w-md rounded-t-2xl bg-white p-5 shadow-2xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4" onClick={closeModal}>
+          <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-5 shadow-2xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-lg font-black text-[#126B3A]">Finaliser mon achat</h3>
-              <button type="button" onClick={() => !sending && setModal(false)} className="text-2xl leading-none text-gray-400 hover:text-gray-600" aria-label="Fermer">×</button>
-            </div>
-            <div className="mb-4 flex items-center justify-between rounded-lg bg-[#FFF9ED] px-4 py-3">
-              <span className="text-sm font-bold text-gray-700">Guide Pousse Naturelle (PDF)</span>
-              <span className="text-lg font-black text-[#126B3A]">{fmt(PRICE)}</span>
+              <h3 className="text-lg font-black text-[#126B3A]">
+                {step === 'choix' ? 'Choisissez votre format' : 'Finaliser ma commande'}
+              </h3>
+              <button type="button" onClick={closeModal} className="text-2xl leading-none text-gray-400 hover:text-gray-600" aria-label="Fermer">×</button>
             </div>
 
-            <form onSubmit={submit} className="space-y-3">
+            {/* ETAPE 1 — les deux formats */}
+            {step === 'choix' && (
+              <div className="space-y-3">
+                <p className="text-[13px] text-gray-500">Le meme guide, dans le format qui vous convient.</p>
+
+                <button
+                  type="button"
+                  onClick={() => { setFormErr(''); setStep('ebook'); }}
+                  className="w-full rounded-2xl border-2 border-[#218C4F] bg-[#F3FAF5] p-4 text-left transition hover:brightness-[0.98]"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg" aria-hidden>📱</span>
+                        <span className="text-[15px] font-black text-[#126B3A]">Ebook (PDF)</span>
+                        <span className="rounded bg-[#218C4F] px-1.5 py-0.5 text-[10px] font-black text-white">IMMEDIAT</span>
+                      </div>
+                      <p className="mt-1 text-[12px] text-gray-500">Recu tout de suite apres paiement. Telephone, tablette, ordinateur.</p>
+                    </div>
+                    <div className="shrink-0 text-right leading-none">
+                      <div className="text-xl font-black text-[#126B3A]">{fmt(PRICE_EBOOK)}</div>
+                      <div className="text-[11px] text-gray-400 line-through">{fmt(OLD_PRICE_EBOOK)}</div>
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { setFormErrPhy(''); trackOpenPhy(1); setStep('physique'); }}
+                  className="w-full rounded-2xl border-2 border-[#E9A900] bg-[#FFF9ED] p-4 text-left transition hover:brightness-[0.98]"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg" aria-hidden>📦</span>
+                        <span className="text-[15px] font-black text-[#A92520]">Livre imprime</span>
+                        <span className="rounded bg-[#E9A900] px-1.5 py-0.5 text-[10px] font-black text-[#A92520]">LIVRE CHEZ VOUS</span>
+                      </div>
+                      <p className="mt-1 text-[12px] text-gray-500">Vous ne payez qu'a la reception, en main propre.</p>
+                    </div>
+                    <div className="shrink-0 text-right leading-none">
+                      <div className="text-xl font-black text-[#A92520]">{fmt(PRICE_PHYSIQUE)}</div>
+                      <div className="text-[11px] text-gray-400 line-through">{fmt(OLD_PRICE_PHYSIQUE)}</div>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            )}
+
+            {/* ETAPE 2b — livre imprime : paiement a la livraison */}
+            {step === 'physique' && (
+              <>
+                <button type="button" onClick={() => setStep('choix')} className="mb-3 text-[12px] font-bold text-gray-400 hover:text-gray-600">← Changer de format</button>
+                <div className="mb-4 flex items-center justify-between rounded-lg bg-[#FFF9ED] px-4 py-3">
+                  <span className="text-sm font-bold text-gray-700">📦 Livre imprime</span>
+                  <span className="text-lg font-black text-[#A92520]">{fmt(PRICE_PHYSIQUE)}</span>
+                </div>
+
+                <form onSubmit={submitPhysique} className="space-y-3">
+                  <input
+                    type="text" required placeholder="Votre nom complet" value={formPhy.name}
+                    onChange={(e) => setFormPhy((f) => ({ ...f, name: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#E9A900] focus:ring-2 focus:ring-[#E9A900]/20"
+                  />
+                  <input
+                    type="text" required placeholder="Votre ville / commune" value={formPhy.city}
+                    onChange={(e) => setFormPhy((f) => ({ ...f, city: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#E9A900] focus:ring-2 focus:ring-[#E9A900]/20"
+                  />
+                  <input
+                    type="tel" required placeholder="Votre numero de telephone" value={formPhy.phone}
+                    onChange={(e) => setFormPhy((f) => ({ ...f, phone: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#E9A900] focus:ring-2 focus:ring-[#E9A900]/20"
+                  />
+                  <p className="text-[11px] text-gray-400">Un conseiller vous appelle pour confirmer l'adresse et la date de livraison.</p>
+
+                  {formErrPhy && <p className="rounded-lg bg-red-50 px-3 py-2 text-[13px] text-red-600">{formErrPhy}</p>}
+
+                  <button
+                    type="submit" disabled={sendingPhy}
+                    className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#E9A900] to-[#D63C32] py-4 text-[15px] font-black uppercase text-white shadow-lg transition hover:brightness-105 disabled:opacity-60"
+                  >
+                    {sendingPhy ? 'Envoi…' : `Commander · ${fmt(PRICE_PHYSIQUE)}`}
+                  </button>
+                  <p className="text-center text-[11px] text-gray-400">🚚 Paiement a la livraison — vous ne payez rien maintenant.</p>
+                </form>
+              </>
+            )}
+
+            {/* ETAPE 2a — ebook : paiement en ligne Chariow */}
+            {step === 'ebook' && (
+              <>
+                <button type="button" onClick={() => setStep('choix')} className="mb-3 text-[12px] font-bold text-gray-400 hover:text-gray-600">← Changer de format</button>
+                <div className="mb-4 flex items-center justify-between rounded-lg bg-[#F3FAF5] px-4 py-3">
+                  <span className="text-sm font-bold text-gray-700">📱 Ebook (PDF)</span>
+                  <span className="text-lg font-black text-[#126B3A]">{fmt(PRICE_EBOOK)}</span>
+                </div>
+
+                <form onSubmit={submit} className="space-y-3">
               <input
                 type="text" required placeholder="Votre nom complet" value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -521,10 +685,12 @@ export default function GuidePousseNaturelleLanding() {
                 type="submit" disabled={sending}
                 className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#E9A900] to-[#D63C32] py-4 text-[15px] font-black uppercase text-white shadow-lg transition hover:brightness-105 disabled:opacity-60"
               >
-                {sending ? 'Redirection…' : `Payer ${fmt(PRICE)}`}
+                {sending ? 'Redirection…' : `Payer ${fmt(PRICE_EBOOK)}`}
               </button>
               <p className="text-center text-[11px] text-gray-400">🔒 Paiement securise par Chariow · Mobile Money & carte. Aucune donnee de carte sur ce site.</p>
-            </form>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}

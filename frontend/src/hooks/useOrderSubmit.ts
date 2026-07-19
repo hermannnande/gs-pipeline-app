@@ -189,7 +189,9 @@ export function useOrderSubmit({ cfg, product, setProduct, company: companyParam
       p.set('company', company);
       if (ref) p.set('ref', ref);
       p.set('qty', String(data.qty));
-      navigate(`${thankUrl}?${p.toString()}`);
+      // thankYouUrl peut deja porter une query (ex. ?format=physique) : on
+      // enchaine avec & sinon l'URL est invalide et les params sont perdus.
+      navigate(`${thankUrl}${thankUrl.includes('?') ? '&' : '?'}${p.toString()}`);
       return true;
     } catch (err: any) {
       console.error('[order] POST /public/order echec:', {

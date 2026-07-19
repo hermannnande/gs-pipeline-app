@@ -1,33 +1,35 @@
 /**
- * Crée (ou met à jour) le produit GUIDE_POUSSE_NATURELLE dans obgestion.
+ * Crée (ou met à jour) le produit GUIDE_POUSSE_NATURELLE_PHYSIQUE dans obgestion.
  *
- * Produit 100% DIGITAL (ebook « Faire pousser vos cheveux naturellement »).
- * Payé + livré par Chariow (le PDF reste chez Chariow). obgestion ne fait
- * qu'ENREGISTRER la transaction (webhook /api/chariow/webhook).
+ * Version IMPRIMÉE du guide « Faire pousser vos cheveux naturellement », vendue
+ * en paiement à la livraison — contrairement à l'ebook GUIDE_POUSSE_NATURELLE
+ * (digital, payé via Chariow, produit isolé hors pipeline).
  *
- * Ce produit est ISOLÉ (utils/isolatedProducts.js : GUIDE_POUSSE_NATURELLE) :
- * ses commandes n'apparaissent pas dans le pipeline "à appeler"/livraison,
- * seulement dans la page admin dédiée (/admin/ventes-digitales).
+ * Ce code n'est PAS dans utils/isolatedProducts.js (ISOLATED_PRODUCT_CODES ne
+ * contient que 'GUIDE_POUSSE_NATURELLE', comparé en égalité stricte) : ses
+ * commandes suivent donc le pipeline standard — page "À appeler", validation,
+ * tournée de livraison — exactement comme les crèmes et les chaussettes.
  *
- * Le webhook résout le produit par son code = SLUG.toUpperCase().replace(/-/g,'_')
- * → GUIDE_POUSSE_NATURELLE. Donc seul le PRODUIT est nécessaire (pas de template).
+ * Prix 9 900 F contre 8 900 F pour l'ebook : couvre l'impression et la livraison.
  *
- * Stock "infini" (999999) car digital : aucune gestion de stock ni d'alerte.
+ * ⚠️ stockActuel est initialisé à 100. Ajustez-le dans l'admin selon le nombre
+ * d'exemplaires réellement imprimés, sinon les alertes de stock seront fausses.
  *
- * Usage : node scripts/seed-guide-pousse-naturelle.mjs
+ * Usage : node scripts/seed-guide-pousse-naturelle-physique.mjs
  *   Variables d'env optionnelles : API_URL, ADMIN_EMAIL, ADMIN_PASSWORD
  */
 const API_URL = process.env.API_URL || 'https://gs-pipeline-app-2.vercel.app/api';
 const EMAIL = process.env.ADMIN_EMAIL || 'admin@gs-pipeline.com';
 const PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
-const CODE = 'GUIDE_POUSSE_NATURELLE';
-const NOM = 'Guide Pousse Naturelle (Ebook)';
+const CODE = 'GUIDE_POUSSE_NATURELLE_PHYSIQUE';
+const NOM = 'Guide Pousse Naturelle (Livre imprimé)';
 const DESCRIPTION =
-  'Ebook numérique — Faire pousser vos cheveux naturellement. Produit digital : paiement et livraison du PDF gérés par Chariow.';
-// Prix unique 8900 F. Les commandes ebook sont toujours en quantité 1.
-// (La version imprimée est à 9 900 F : scripts/seed-guide-pousse-naturelle-physique.mjs)
-const PRICES = { prixUnitaire: 8900, prix2Unites: 17800, prix3Unites: 26700 };
+  'Version imprimée du guide « Faire pousser vos cheveux naturellement ». Livrée à domicile, paiement à la livraison.';
+// Commandes toujours en quantité 1 côté landing, mais on renseigne les paliers
+// 2/3 au cas où un appelant augmenterait la quantité depuis obgestion.
+const PRICES = { prixUnitaire: 9900, prix2Unites: 16900, prix3Unites: 24900 };
+const STOCK_INITIAL = 100;
 
 let TOKEN = '';
 async function api(path, opts = {}) {
@@ -61,9 +63,10 @@ const { products = [] } = await api(`/products?search=${CODE}`);
 let product = products.find((p) => p.code?.toUpperCase() === CODE);
 
 if (product) {
-  console.log(`Produit existant id=${product.id}, mise à jour…`);
+  console.log(`Produit existant id=${product.id}, mise à jour des prix…`);
   await api(`/products/${product.id}`, {
     method: 'PUT',
+    // On ne touche PAS au stock d'un produit existant : il reflète l'inventaire réel.
     body: JSON.stringify({ ...PRICES, nom: NOM, description: DESCRIPTION, actif: true }),
   });
 } else {
@@ -75,16 +78,16 @@ if (product) {
       nom: NOM,
       description: DESCRIPTION,
       ...PRICES,
-      stockActuel: 999999,
-      stockAlerte: 0,
+      stockActuel: STOCK_INITIAL,
+      stockAlerte: 10,
       imageUrl: null,
     }),
   });
   product = created.product;
-  console.log(`Produit créé id=${product.id}`);
+  console.log(`Produit créé id=${product.id} (stock initial ${STOCK_INITIAL} — à ajuster dans l'admin)`);
 }
 
 const after = await api(`/products?search=${CODE}`);
 const final = (after.products || []).find((p) => p.code?.toUpperCase() === CODE);
 console.log('Produit final :', JSON.stringify(final, null, 2));
-console.log('\n✅ Terminé. Le webhook Chariow liera désormais les ventes ebook à ce produit (isolé).');
+console.log('\n✅ Terminé. Les commandes du livre imprimé arriveront dans la page "À appeler".');

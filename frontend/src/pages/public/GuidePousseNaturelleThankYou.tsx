@@ -1,15 +1,18 @@
 /**
- * Page « merci » — Ebook Guide Pousse Naturelle (produit DIGITAL, Chariow).
+ * Page « merci » — Guide Pousse Naturelle, DEUX formats.
  * ============================================================================
  *
- * Affichee apres le retour Chariow (redirect_url /guide-pousse-naturelle/merci?ref=<sale_id>).
+ * Sert les deux parcours de la landing, distingues par ?format= :
+ *
+ *   - (defaut) EBOOK : retour Chariow, /guide-pousse-naturelle/merci?ref=<sale_id>.
+ *     Paiement DEJA encaisse -> messaging "acces par email / portail".
+ *   - ?format=physique : livre imprime commande via POST /public/order.
+ *     RIEN n'est encaisse a ce stade -> messaging "un conseiller vous appelle,
+ *     vous payez a la reception". Ne jamais afficher "paiement reussi" ici.
  *
  * Pixel Meta : declenche `Purchase` avec eventID = `purchase_<sale_id>`, IDENTIQUE
  * a l'event_id envoye par le CAPI server-side (utils/metaCapi.js, orderRef=sale.id
  * cote chariow.routes.js). Meta deduplique donc les 2 evenements.
- *
- * Produit numerique : messaging = acces par email / portail securise (aucun
- * livreur, aucun cash a sortir).
  */
 import { useEffect, useMemo, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -17,7 +20,10 @@ import { Link, useSearchParams } from 'react-router-dom';
 // ⚠️ Doit correspondre au META_PIXEL_ID de la landing.
 const META_PIXEL_ID = '2061376097807745';
 const PRODUCT_CODE = 'GUIDE_POUSSE_NATURELLE';
-const PRICE = 4500;
+const PRODUCT_CODE_PHYSIQUE = 'GUIDE_POUSSE_NATURELLE_PHYSIQUE';
+// ⚠️ A garder aligne avec PRICE_EBOOK / PRICE_PHYSIQUE de la landing.
+const PRICE = 8900;
+const PRICE_PHYSIQUE = 9900;
 
 // Numero WhatsApp support (a personnaliser).
 const WHATSAPP_NUMBER_RAW = '2250778030075';
@@ -30,12 +36,15 @@ const fmt = (v: number) => Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d)
 export default function GuidePousseNaturelleThankYou() {
   const [searchParams] = useSearchParams();
   const reference = searchParams.get('ref') || searchParams.get('reference') || searchParams.get('sale_id') || '';
+  const isPhysique = searchParams.get('format') === 'physique';
+  const price = isPhysique ? PRICE_PHYSIQUE : PRICE;
   const pixelFired = useRef(false);
 
   const whatsappUrl = useMemo(() => {
-    const text = `Bonjour, je viens d'acheter le guide Faire pousser vos cheveux naturellement${reference ? ` (ref: ${reference})` : ''}. Je voudrais...`;
+    const verbe = isPhysique ? 'de commander' : "d'acheter";
+    const text = `Bonjour, je viens ${verbe} le guide Faire pousser vos cheveux naturellement${isPhysique ? ' (livre imprime)' : ''}${reference ? ` (ref: ${reference})` : ''}. Je voudrais...`;
     return `https://wa.me/${WHATSAPP_NUMBER_RAW}?text=${encodeURIComponent(text)}`;
-  }, [reference]);
+  }, [reference, isPhysique]);
 
   useEffect(() => {
     if (pixelFired.current) return;
@@ -57,17 +66,17 @@ export default function GuidePousseNaturelleThankYou() {
       // event_id = purchase_<sale_id> -> deduplication avec le CAPI server-side.
       const eventId = reference ? `purchase_${reference}` : undefined;
       window.fbq('track', 'Purchase', {
-        value: PRICE,
+        value: price,
         currency: 'XOF',
         content_name: 'Faire pousser vos cheveux naturellement',
-        content_ids: [PRODUCT_CODE],
+        content_ids: [isPhysique ? PRODUCT_CODE_PHYSIQUE : PRODUCT_CODE],
         content_type: 'product',
         num_items: 1,
       }, eventId ? { eventID: eventId } : undefined);
     } catch (e) {
       console.warn('[ThankYou] Meta Pixel Purchase non bloquant:', e);
     }
-  }, [reference]);
+  }, [reference, isPhysique, price]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-amber-50 px-4 py-8 sm:py-12">
@@ -80,14 +89,20 @@ export default function GuidePousseNaturelleThankYou() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <p className="mt-5 text-[10px] font-black uppercase tracking-[0.4em] text-amber-200">Paiement reussi</p>
+            <p className="mt-5 text-[10px] font-black uppercase tracking-[0.4em] text-amber-200">
+              {isPhysique ? 'Commande enregistree' : 'Paiement reussi'}
+            </p>
             <h1 className="mt-2 text-[26px] font-black leading-tight sm:text-[30px]">Merci pour votre commande</h1>
             <p className="mx-auto mt-3 max-w-xs text-[13px] leading-relaxed text-white/90">
-              Votre guide « Faire pousser vos cheveux naturellement » est en route.
+              {isPhysique
+                ? 'Votre livre « Faire pousser vos cheveux naturellement » est reserve. Un conseiller vous appelle pour organiser la livraison.'
+                : 'Votre guide « Faire pousser vos cheveux naturellement » est en route.'}
             </p>
             <div className="mx-auto mt-5 inline-flex items-center gap-3 rounded-full bg-white/15 px-4 py-2 ring-1 ring-white/20">
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-200">Montant</span>
-              <span className="text-[15px] font-black">{fmt(PRICE)}</span>
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-200">
+                {isPhysique ? 'A payer a la livraison' : 'Montant'}
+              </span>
+              <span className="text-[15px] font-black">{fmt(price)}</span>
             </div>
             {reference && (
               <p className="mt-3 text-[10px] text-white/70">Reference : <span className="font-mono font-bold text-amber-200">{reference}</span></p>
@@ -97,11 +112,19 @@ export default function GuidePousseNaturelleThankYou() {
           {/* Acces au guide */}
           <div className="border-b border-stone-100 bg-[#FFF9ED] px-6 py-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-2xl shadow-md ring-1 ring-amber-200">📩</div>
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-2xl shadow-md ring-1 ring-amber-200">{isPhysique ? '📞' : '📩'}</div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#126B3A]">Acces numerique</p>
-                <p className="text-[16px] font-bold text-slate-900">Verifiez votre email</p>
-                <p className="mt-1 text-[11px] text-slate-600">Vous recevez votre lien securise / portail client pour telecharger le guide (pensez a verifier les spams).</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#126B3A]">
+                  {isPhysique ? 'Prochaine etape' : 'Acces numerique'}
+                </p>
+                <p className="text-[16px] font-bold text-slate-900">
+                  {isPhysique ? 'Gardez votre telephone a portee' : 'Verifiez votre email'}
+                </p>
+                <p className="mt-1 text-[11px] text-slate-600">
+                  {isPhysique
+                    ? "Un conseiller vous appelle pour confirmer votre adresse et convenir du jour de livraison. Vous payez au livreur, en main propre."
+                    : 'Vous recevez votre lien securise / portail client pour telecharger le guide (pensez a verifier les spams).'}
+                </p>
               </div>
             </div>
           </div>
@@ -112,7 +135,11 @@ export default function GuidePousseNaturelleThankYou() {
             <ol className="space-y-2.5 text-[13px]">
               <li className="flex items-start gap-3">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#218C4F] text-[11px] font-black text-white">1</span>
-                <span className="text-slate-700">Ouvrez l'email de confirmation et cliquez sur votre lien securise.</span>
+                <span className="text-slate-700">
+                  {isPhysique
+                    ? "Repondez a l'appel de notre conseiller pour confirmer l'adresse."
+                    : "Ouvrez l'email de confirmation et cliquez sur votre lien securise."}
+                </span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#218C4F] text-[11px] font-black text-white">2</span>
@@ -127,7 +154,9 @@ export default function GuidePousseNaturelleThankYou() {
 
           {/* WhatsApp support */}
           <div className="border-t border-stone-100 px-6 py-5">
-            <p className="text-center text-[10px] font-black uppercase tracking-[0.3em] text-[#126B3A]">Un souci pour acceder au guide ?</p>
+            <p className="text-center text-[10px] font-black uppercase tracking-[0.3em] text-[#126B3A]">
+              {isPhysique ? 'Une question sur votre livraison ?' : 'Un souci pour acceder au guide ?'}
+            </p>
             <a
               href={whatsappUrl}
               target="_blank"
