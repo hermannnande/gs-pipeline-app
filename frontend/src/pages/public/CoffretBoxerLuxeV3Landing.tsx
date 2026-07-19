@@ -32,8 +32,8 @@ const getCookie = (n: string) => {
   return p.length === 2 ? p.pop()!.split(';').shift() || null : null;
 };
 
-const UNIT_PRICE = 9900;
-const DUO_PRICE = 16900;
+const UNIT_PRICE = 7000;
+const DUO_PRICE = 14000;
 
 const PRODUCTS: Record<ProductKey, { label: string; price: number; sub: string }> = {
   noir: { label: `Coffret Élégance Noir — 3 boxers — ${fmt(UNIT_PRICE + DELIVERY_FEE_CI)} F`, price: UNIT_PRICE + DELIVERY_FEE_CI, sub: '3 boxers premium' },

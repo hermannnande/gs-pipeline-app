@@ -14,9 +14,7 @@
 import { useCallback, useState } from 'react';
 import { orderTotal } from '../utils/pricingHelpers';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+import { getPublicProducts, postPublicOrder } from '../utils/publicApi';
 
 declare global {
   interface Window { fbq?: (...args: any[]) => void; }
@@ -50,11 +48,12 @@ function formatNetworkError(err: any, fallback: string): string {
 // staggered (800ms, 1500ms) pour eviter de retomber sur le meme cold start.
 async function postOrderWithRetry(payload: any, retries = 2): Promise<any> {
   try {
-    return await axios.post(`${API_URL}/public/order`, payload, { timeout: 30000 });
+    const { data } = await postPublicOrder(payload);
+    return { data };
   } catch (err: any) {
     const isRetriable =
       retries > 0 &&
-      (err?.code === 'ECONNABORTED' ||
+      (err?.message === 'Failed to fetch' ||
         err?.message === 'Network Error' ||
         !err?.response ||
         (err?.response?.status >= 500 && err?.response?.status < 600));
@@ -149,11 +148,8 @@ export function useOrderSubmit({ cfg, product, setProduct, company: companyParam
     let prod = product;
     if (!prod) {
       try {
-        const r = await axios.get(`${API_URL}/public/products`, {
-          params: { company },
-          timeout: 25000,
-        });
-        prod = (r.data?.products || []).find((p: OrderProduct) =>
+        const products = await getPublicProducts(company);
+        prod = products.find((p) =>
           p.code?.toUpperCase() === cfg.productCode.toUpperCase()
         ) || null;
         if (prod && setProduct) setProduct(prod);

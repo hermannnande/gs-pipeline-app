@@ -32,7 +32,7 @@ const PRODUCT_CODE = 'CREME_ANTI_VERRUES2';
 const META_PIXEL_ID = '1607715340249349';
 const THANK_YOU_URL = '/creme-verrue-tk2/merci';
 
-const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const PRICES: Record<number, number> = { 1: 8500, 2: 15900, 3: 19400 };
 const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 const OLD_PRICE_UNIT = 15000;
 const QTY_OPTS = [

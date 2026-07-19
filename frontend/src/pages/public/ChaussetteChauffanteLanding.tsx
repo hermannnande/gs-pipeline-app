@@ -3,7 +3,7 @@
  * Slug : chaussette · Pixel Meta : 1587475759254518
  *
  * Palette : orange + ambre + or + blanc chaud (minceur / bien-être).
- * Prix : 7 000 / 12 000 / 15 000 FCFA
+ * Prix : 6 500 / 11 000 / 13 500 FCFA
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import axios from 'axios';
@@ -18,7 +18,7 @@ const CONTENT_NAME = 'Chaussettes chauffantes tourmaline';
 const META_PIXEL_ID = '1587475759254518';
 const THANK_YOU_URL = '/chaussette/merci';
 
-const PRICES: Record<number, number> = { 1: 7000, 2: 12000, 3: 15000 };
+const PRICES: Record<number, number> = { 1: 6500, 2: 11000, 3: 13500 };
 const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 const QTY_OPTS = [
   { v: 1, label: '1 paire',  sub: packLabel(PRICES, 1, 'F'), save: '' },

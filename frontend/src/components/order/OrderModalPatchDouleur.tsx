@@ -260,10 +260,6 @@ export default function OrderModalPatchDouleur({ open, onClose, cfg, product, se
               onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
               className="mx-auto flex max-w-[520px] flex-col gap-4"
             >
-              <OrderFormWarning title="Avant de commander">
-                Paiement <strong>uniquement en cash</strong> à la livraison. Soyez <strong>présent(e)</strong> à l’adresse choisie sous <strong>24-48 h</strong> et préparez le montant exact.
-              </OrderFormWarning>
-
               {/* Step 1 — quantite */}
               <div>
                 <label className="mb-2 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-neutral-500">
@@ -317,16 +313,6 @@ export default function OrderModalPatchDouleur({ open, onClose, cfg, product, se
                     className="block w-full rounded-xl border-[1.5px] border-neutral-200 bg-white px-4 py-3 text-[14px] font-medium text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
                   />
 
-                  <input
-                    type="text"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    placeholder="Ville (Abidjan, Bouake, Daloa...)"
-                    autoComplete="address-level2"
-                    required
-                    className="block w-full rounded-xl border-[1.5px] border-neutral-200 bg-white px-4 py-3 text-[14px] font-medium text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
-                  />
-
                   <div className="flex overflow-hidden rounded-xl border-[1.5px] border-neutral-200 bg-white transition focus-within:border-violet-500 focus-within:ring-2 focus-within:ring-violet-500/20">
                     <span className="flex items-center gap-1 border-r border-neutral-200 bg-neutral-50 px-3 text-[13px] font-bold text-neutral-700">🇨🇮 +225</span>
                     <input
@@ -340,6 +326,16 @@ export default function OrderModalPatchDouleur({ open, onClose, cfg, product, se
                       className="h-full w-full bg-white px-3 py-3 text-[14px] font-medium text-neutral-900 outline-none placeholder:text-neutral-400"
                     />
                   </div>
+
+                  <input
+                    type="text"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="Ville (Abidjan, Bouake, Daloa...)"
+                    autoComplete="address-level2"
+                    required
+                    className="block w-full rounded-xl border-[1.5px] border-neutral-200 bg-white px-4 py-3 text-[14px] font-medium text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
+                  />
                 </div>
               </div>
 
@@ -359,6 +355,11 @@ export default function OrderModalPatchDouleur({ open, onClose, cfg, product, se
                   <span className="rounded-md bg-amber-400/15 px-2 py-0.5 font-black uppercase tracking-widest text-amber-300 ring-1 ring-amber-300/30">paiement a la livraison</span>
                 </div>
               </div>
+
+              {/* Rappel deplace juste avant le bouton (ne bloque plus l'entree du formulaire) */}
+              <OrderFormWarning title="Avant de valider">
+                Paiement <strong>uniquement en cash</strong> à la livraison. Soyez <strong>présent(e)</strong> à l’adresse choisie sous <strong>24-48 h</strong> et préparez le montant exact.
+              </OrderFormWarning>
 
               {formErr && (
                 <p className="rounded-lg bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-600 ring-1 ring-red-100">{formErr}</p>

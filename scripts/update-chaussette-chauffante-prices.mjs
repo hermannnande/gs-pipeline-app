@@ -1,8 +1,8 @@
 /**
  * Met a jour les prix du produit CHAUSSETTE_CHAUFFANTE (slug chaussette).
- *   1 paire  = 7 000 F
- *   2 paires = 12 000 F
- *   3 paires = 15 000 F
+ *   1 paire  = 6 500 F
+ *   2 paires = 11 000 F
+ *   3 paires = 13 500 F
  *
  * Usage : node scripts/update-chaussette-chauffante-prices.mjs
  */
@@ -12,7 +12,7 @@ const EMAIL = process.env.ADMIN_EMAIL || 'admin@gs-pipeline.com';
 const PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 const PRODUCT_CODE = 'CHAUSSETTE_CHAUFFANTE';
-const NEW_PRICES = { prixUnitaire: 7000, prix2Unites: 12000, prix3Unites: 15000 };
+const NEW_PRICES = { prixUnitaire: 6500, prix2Unites: 11000, prix3Unites: 13500 };
 
 async function login() {
   const res = await fetch(`${API_URL}/auth/login`, {

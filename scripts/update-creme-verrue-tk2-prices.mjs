@@ -1,6 +1,6 @@
 /**
  * Met a jour les prix CREME_ANTI_VERRUES2 (slug creme-verrue-tk2).
- *   1 boite = 7 000 F | 2 boites = 12 900 F | 3 boites = 14 900 F
+ *   1 boite = 8 500 F | 2 boites = 15 900 F | 3 boites = 19 400 F
  *
  * Usage : node scripts/update-creme-verrue-tk2-prices.mjs
  */
@@ -10,7 +10,7 @@ const EMAIL = process.env.ADMIN_EMAIL || 'admin@gs-pipeline.com';
 const PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 const PRODUCT_CODE = 'CREME_ANTI_VERRUES2';
-const NEW_PRICES = { prixUnitaire: 7000, prix2Unites: 12900, prix3Unites: 14900 };
+const NEW_PRICES = { prixUnitaire: 8500, prix2Unites: 15900, prix3Unites: 19400 };
 
 async function login() {
   const res = await fetch(`${API_URL}/auth/login`, {
@@ -51,6 +51,6 @@ if (!upd.ok) throw new Error(`PUT echoue (${upd.status}) : ${await upd.text()}`)
 
 const verif = await findProduct(token);
 console.log('Nouveaux prix :', { prixUnitaire: verif.prixUnitaire, prix2Unites: verif.prix2Unites, prix3Unites: verif.prix3Unites });
-const ok = [7000, 12900, 14900].every((v, i) => [verif.prixUnitaire, verif.prix2Unites, verif.prix3Unites][i] == v);
+const ok = [8500, 15900, 19400].every((v, i) => [verif.prixUnitaire, verif.prix2Unites, verif.prix3Unites][i] == v);
 console.log(ok ? '\nVerification : prix conformes.' : '\nVerification : ATTENTION.');
 process.exit(ok ? 0 : 1);

@@ -13,12 +13,11 @@ import { PageHeader, LoadingState, EmptyState, SearchInput } from '@/components/
 import { OrderCard } from '@/components/OrderCard';
 
 /**
- * Produits "isoles" : leurs commandes ne remontent PLUS dans la liste "A appeler"
- * standard. Elles sont traitees sur une page dediee accessible par lien
- * (ex. /admin/bouilloire). Ajouter un productCode ici l'exclut automatiquement
- * de toutes les listes to-call (admin / gestionnaire / appelant).
+ * Produits exclus de la liste "À appeler" standard (page dédiée obgestion).
+ * La bouilloire passe par le flux standard ; la page publique bouilloire-commandes
+ * reste disponible en parallèle.
  */
-const SEPARATE_PRODUCT_CODES = ['BOUILLOIRE_INTELLIGENTE'];
+const SEPARATE_PRODUCT_CODES: string[] = [];
 
 interface OrdersProps {
   /** Si defini, la page n'affiche QUE les commandes de ce produit (page dediee). */

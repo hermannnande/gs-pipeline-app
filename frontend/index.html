@@ -12,11 +12,37 @@
     <link rel="dns-prefetch" href="https://gs-pipeline-app-2.vercel.app" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Polices critiques (corps Inter + titres Poppins), au-dessus de la ligne de flottaison -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" />
+    <!-- Preload du poster hero (LCP) selon la route, injecte AVANT le bundle JS.
+         Supprime le "load delay" du LCP sur les landings avec hero video
+         (l'image se charge en parallele du JS au lieu d'attendre le mount React). -->
+    <script>
+      (function () {
+        try {
+          var P = {
+            '/patchdouleurfb': '/patch-douleur-tk/soulagement-poster.webp',
+            '/patchdouleurtiktok': '/patch-douleur-tk/soulagement-poster.webp',
+            '/patchdouleurtk': '/patch-douleur-tk/hero.webp',
+            '/serum-cerne': '/serum-cerne-media/hero.webp',
+            '/serum-cerne-tiktok': '/serum-cerne-media/hero.webp'
+          };
+          var h = P[location.pathname.replace(/\/+$/, '')];
+          if (h) {
+            var l = document.createElement('link');
+            l.rel = 'preload';
+            l.as = 'image';
+            l.href = h;
+            l.setAttribute('fetchpriority', 'high');
+            document.head.appendChild(l);
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <!-- Polices (corps Inter + titres Poppins) : chargement NON bloquant via swap media=print pour ne pas retarder le premier affichage (FCP) -->
+    <link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" />
     <!-- Polices decoratives (sections specifiques) : chargement NON bloquant via swap media=print -->
     <link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Outfit:wght@300..900&family=JetBrains+Mono:wght@400..800&family=Cormorant+Garamond:ital,wght@0,400..700;1,400..700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" />
     <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" />
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Outfit:wght@300..900&family=JetBrains+Mono:wght@400..800&family=Cormorant+Garamond:ital,wght@0,400..700;1,400..700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" />
     </noscript>
     <title>GS Pipeline</title>

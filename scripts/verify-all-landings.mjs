@@ -2,12 +2,12 @@
  * Vérifie toutes les landings : HTTP 200 + shell React + pas de redirect cassé.
  */
 const slugs = [
-  'creme-anti-verrue', 'creme-verrue-tk', 'creme-verrue-tk2', 'spraydouleurtk',
-  'creme-ongle-incarne', 'creme-ongle-incarne-v2', 'bande-sport-minceur', 'detoxminceur',
-  'patch-minceur-glp', 'chaussette', 'chaussette-compression', 'chaussette-compression-v2',
+  'creme-anti-verrue', 'creme-anti-verrue-bleu', 'creme-anti-verrue-bleu-tk', 'creme-verrue-tk', 'creme-verrue-tk2', 'spraydouleurtk',
+  'creme-ongle-incarne', 'creme-ongle-incarne-v2', 'bande-sport-minceur', 'bande-sport-tk', 'detoxminceur',
+  'patch-minceur-glp', 'patch-minceur-promo', 'chaussette', 'chaussette-compression', 'chaussette-compression-v2',
   'patchdouleurtk', 'patchdouleurfb', 'crememinceurfb', 'spraylipome', 'spraylipometk',
-  'creme-anti-lipome', 'creme-anti-lipome-tk', 'chaussette-homme', 'chaussette-premium-homme',
-  'creme-anti-cerne', 'serum-cerne', 'serum-cerne-tk', 'serum-cerne-paye', 'anti-age',
+  'creme-anti-lipome', 'creme-anti-lipome-tk', 'creme-lipome-tk3', 'creme-eczema', 'chaussette-homme', 'chaussette-premium-homme',
+  'creme-anti-cerne', 'serum-cerne', 'serum-cerne-tiktok', 'serum-cerne-tk', 'serum-cerne-paye', 'anti-age',
   'coffret-boxer-homme', 'coffret-boxer-luxe-v3', 'poudre-pousse-cheveux',
   'spray-vitiligo', 'chapeau-gavroche', 'chapeau-dame', 'lunette-de-nuit', 'boutique',
 ];

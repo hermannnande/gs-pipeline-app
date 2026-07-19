@@ -21,8 +21,10 @@ const SLUG = 'creme-anti-verrue-bleu';
 const PRODUCT_CODE = 'CREME_ANTI_VERRUE_BLEU';
 const CONTENT_NAME = 'Crème Anti-Verrues';
 const THANK_YOU_URL = '/creme-anti-verrue-bleu/merci';
+const META_PIXEL_ID = '1417398840151713';
+const META_PIXEL_ID_2 = '997153262936532';
 
-const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const PRICES: Record<number, number> = { 1: 8500, 2: 14100, 3: 20700 };
 const OLD_UNIT = 15000;
 const fmt = (n: number) => n.toLocaleString('fr-FR').replace(/ |,/g, ' ');
 const fmtPack = (v: number) => packLabel(PRICES, v, 'F').replace(' F', '');
@@ -34,10 +36,16 @@ const QTY_OPTS = [
 
 const IMG_CACHE_VERSION = '20260628a';
 const M = (n: string) => `/creme-anti-verrue-bleu/${n}?v=${IMG_CACHE_VERSION}`;
+const VK = (file: string) => `/verrue-tk/${file}`;
 
-/** Toutes les images, chacune = un bloc (image + titre court + CTA bounce). */
 type Tone = 'sky' | 'indigo' | 'cyan' | 'mix';
-const IMAGES: { src: string; title: ReactNode; tone: Tone; bg: string }[] = [
+type ImageBlock = { src: string; title: ReactNode; tone: Tone; bg: string };
+type MediaBlock =
+  | { kind: 'image'; src: string; title: ReactNode; tone: Tone; bg: string; aspect?: string }
+  | { kind: 'video'; src: string; poster?: string; title: ReactNode; tone: Tone; bg: string; aspect?: string };
+
+/** Galerie principale (WebP locaux creme-anti-verrue-bleu). */
+const IMAGES: ImageBlock[] = [
   { src: M('hero.webp'), title: 'Dites adieu aux verrues 👋', tone: 'cyan', bg: 'from-sky-100 via-cyan-50 to-sky-200/60' },
   { src: M('gallery-1.webp'), title: 'Une peau nette, sans complexe ✨', tone: 'indigo', bg: 'from-indigo-100 via-blue-50 to-cyan-100/50' },
   { src: M('gallery-2.webp'), title: 'Action ciblée, zéro douleur', tone: 'sky', bg: 'from-cyan-100 via-sky-50 to-blue-100/50' },
@@ -47,8 +55,42 @@ const IMAGES: { src: string; title: ReactNode; tone: Tone; bg: string }[] = [
   { src: M('gallery-6.webp'), title: 'Rejoignez des milliers de satisfaits ❤️', tone: 'indigo', bg: 'from-indigo-100 via-sky-50 to-cyan-100/60' },
 ];
 
+/** Suite en bas de page — médias verrue-tk (ajout, sans remplacer la galerie ci-dessus). */
+const EXTRA_BLOCKS: MediaBlock[] = [
+  { kind: 'image', src: VK('new-6.webp'), title: 'Résultat visible, peau nette 📸', tone: 'cyan', bg: 'from-sky-100 via-cyan-50 to-indigo-100/50' },
+  { kind: 'video', src: VK('video-1.mp4'), poster: VK('promo-video.webp'), title: 'La crème en action, résultat réel 🎬', tone: 'indigo', bg: 'from-indigo-100 via-blue-50 to-cyan-100/50', aspect: '9/16' },
+  { kind: 'image', src: VK('new-6.webp'), title: 'Éliminez vos verrues sans stress', tone: 'sky', bg: 'from-cyan-100 via-sky-50 to-blue-100/50' },
+  { kind: 'image', src: VK('new-6.webp'), title: 'Formule douce, action puissante 💪', tone: 'mix', bg: 'from-blue-100 via-white to-sky-100/60' },
+  { kind: 'video', src: VK('video-2.mp4'), poster: VK('new-4.webp'), title: 'Simple à appliquer, efficace vite ⚡', tone: 'cyan', bg: 'from-blue-100 via-indigo-50 to-sky-100/50', aspect: '9/16' },
+  { kind: 'image', src: VK('new-6.webp'), title: 'Mains, pieds, corps — partout ✓', tone: 'indigo', bg: 'from-indigo-100 via-sky-50 to-cyan-100/60' },
+  { kind: 'image', src: VK('new-6.webp'), title: 'Des clients conquis chaque jour ❤️', tone: 'sky', bg: 'from-cyan-100 via-sky-50 to-indigo-100/50' },
+  { kind: 'video', src: VK('video-3.mp4'), poster: VK('new-5.webp'), title: 'Voyez la différence par vous-même 🎥', tone: 'cyan', bg: 'from-sky-100 via-cyan-50 to-sky-200/60', aspect: '9/16' },
+  { kind: 'image', src: VK('new-6.webp'), title: 'Commandez maintenant, payez à la livraison 🚚', tone: 'mix', bg: 'from-indigo-100 via-blue-50 to-cyan-100/50' },
+  { kind: 'image', src: VK('new-6.webp'), title: 'Offre promo — stock limité 🔥', tone: 'indigo', bg: 'from-indigo-100 via-sky-50 to-cyan-100/60' },
+];
+
 interface Product { id: number; code: string; nom: string; prixUnitaire: number }
-declare global { interface Window { fbq?: any; dataLayer?: any[] } }
+declare global { interface Window { fbq?: any; _fbq?: any; dataLayer?: any[] } }
+
+function initMetaPixel(pixelId: string) {
+  if (!pixelId) return;
+  if (!window.fbq) {
+    const f: any = window.fbq = function (...args: any[]) { f.callMethod ? f.callMethod(...args) : f.queue.push(args); };
+    if (!window._fbq) window._fbq = f;
+    f.push = f; f.loaded = true; f.version = '2.0'; f.queue = [];
+    const s = document.createElement('script');
+    s.async = true; s.src = 'https://connect.facebook.net/en_US/fbevents.js';
+    document.head.appendChild(s);
+  }
+  window.fbq('init', pixelId);
+  window.fbq('track', 'PageView');
+}
+
+function initSecondaryMetaPixel(pixelId: string) {
+  if (!pixelId || !window.fbq) return;
+  window.fbq('init', pixelId);
+  window.fbq('trackSingle', pixelId, 'PageView');
+}
 
 const co = () => new URLSearchParams(window.location.search).get('company') || 'ci';
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -73,6 +115,31 @@ function Reveal({ children, delay = 0, className = '' }: { children: ReactNode; 
     obs.observe(el); return () => obs.disconnect();
   }, []);
   return <div ref={ref} className={`av-reveal ${shown ? 'av-reveal-in' : ''} ${className}`} style={{ transitionDelay: `${delay}ms` }}>{children}</div>;
+}
+
+function LazyVideo({ src, poster, aspect = '9/16', className = '' }: { src: string; poster?: string; aspect?: string; className?: string }) {
+  const { ref, visible } = useOnScreen('280px');
+  const frame = { aspectRatio: aspect };
+  return (
+    <div ref={ref} className={`relative overflow-hidden ${className}`} style={frame}>
+      {visible ? (
+        <video src={src} poster={poster} autoPlay loop muted playsInline preload="none" className="h-full w-full object-cover" />
+      ) : (
+        <div className="flex h-full min-h-[280px] w-full items-center justify-center bg-gradient-to-br from-sky-200/80 via-indigo-100/70 to-cyan-200/80" style={frame} aria-hidden>
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-300/40 border-t-cyan-500" />
+        </div>
+      )}
+      <span className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-indigo-950/40 to-transparent" />
+    </div>
+  );
+}
+
+function BlockMedia({ block, alt, priority }: { block: MediaBlock; alt: string; priority?: boolean }) {
+  const aspect = block.aspect || '4/5';
+  if (block.kind === 'video') {
+    return <LazyVideo src={block.src} poster={block.poster} aspect={aspect} />;
+  }
+  return <LazyImg src={block.src} alt={alt} priority={priority} aspect={aspect} />;
 }
 
 function LazyImg({ src, alt, priority, aspect = '4/5', className = '' }: { src: string; alt: string; priority?: boolean; aspect?: string; className?: string }) {
@@ -186,6 +253,15 @@ export default function CremeAntiVerrueBleuLanding() {
   useEffect(() => {
     document.title = 'Crème Anti-Verrues — Élimine vos verrues · Promo';
     trackPageView(SLUG, company);
+    initMetaPixel(META_PIXEL_ID);
+    initSecondaryMetaPixel(META_PIXEL_ID_2);
+    window.fbq?.('track', 'ViewContent', {
+      content_name: CONTENT_NAME,
+      content_ids: [PRODUCT_CODE],
+      content_type: 'product',
+      value: orderTotal(PRICES, 1),
+      currency: 'XOF',
+    });
     track('ViewContent', orderTotal(PRICES, 1));
     const link = document.createElement('link');
     link.rel = 'preload'; link.as = 'image'; link.href = IMAGES[0].src;
@@ -277,9 +353,9 @@ export default function CremeAntiVerrueBleuLanding() {
         </div>
       </section>
 
-      {/* GALERIE : chaque image = un bloc (image + titre court + CTA bounce) */}
+      {/* GALERIE principale (images locales) */}
       {IMAGES.slice(1).map((img, i) => (
-        <section key={i} className={`av-cv relative overflow-hidden px-4 py-12 sm:py-14 bg-gradient-to-br ${img.bg}`}>
+        <section key={`main-${i}`} className={`av-cv relative overflow-hidden px-4 py-12 sm:py-14 bg-gradient-to-br ${img.bg}`}>
           <div className="pointer-events-none absolute inset-0 av-animated-bg bg-[radial-gradient(ellipse_at_20%_10%,rgba(56,189,248,.22),transparent_55%),radial-gradient(ellipse_at_90%_90%,rgba(99,102,241,.22),transparent_50%)]" />
           <Reveal className="relative z-10 mx-auto max-w-[560px]">
             <div className="overflow-hidden rounded-[28px] shadow-2xl ring-2 ring-white/50">
@@ -295,6 +371,22 @@ export default function CremeAntiVerrueBleuLanding() {
               <Marquee items={['✓ Résultats visibles', '✓ Sans cicatrice', '✓ 100% botanique', '✓ Paiement à la livraison']} />
             </div>
           )}
+        </section>
+      ))}
+
+      {/* Suite verrue-tk (ajout en bas — new-6.webp + vidéos) */}
+      {EXTRA_BLOCKS.map((block, i) => (
+        <section key={`extra-${i}`} className={`av-cv relative overflow-hidden px-4 py-12 sm:py-14 bg-gradient-to-br ${block.bg}`}>
+          <div className="pointer-events-none absolute inset-0 av-animated-bg bg-[radial-gradient(ellipse_at_20%_10%,rgba(56,189,248,.22),transparent_55%),radial-gradient(ellipse_at_90%_90%,rgba(99,102,241,.22),transparent_50%)]" />
+          <Reveal className="relative z-10 mx-auto max-w-[560px]">
+            <div className="overflow-hidden rounded-[28px] shadow-2xl ring-2 ring-white/50">
+              <BlockMedia block={block} alt={`Crème anti-verrues suite ${i + 1}`} />
+            </div>
+            <p className="mt-5 text-center text-[20px] font-black leading-snug sm:text-[24px]">
+              <GradText v={block.tone}>{block.title}</GradText>
+            </p>
+            <div className="mt-5 flex justify-center"><BounceCTA tone={block.tone} onClick={() => openModal()}>Commander</BounceCTA></div>
+          </Reveal>
         </section>
       ))}
 
@@ -372,11 +464,12 @@ export default function CremeAntiVerrueBleuLanding() {
           title: CONTENT_NAME,
           prices: PRICES,
           thankYouUrl: THANK_YOU_URL,
-          metaPixelId: '',
+          metaPixelId: META_PIXEL_ID,
+          secondaryMetaPixelId: META_PIXEL_ID_2,
           slug: SLUG,
           company,
           navigate,
-          images: { hero: IMAGES[0].src, avant: IMAGES[2].src, apres: IMAGES[3].src },
+          images: { hero: M('hero.webp'), avant: M('gallery-2.webp'), apres: M('gallery-3.webp') },
         }}
         product={product} setProduct={setProduct} qtyOptions={QTY_OPTS} initialQty={qty} />
 

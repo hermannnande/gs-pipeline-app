@@ -9,11 +9,9 @@
  */
 import PatchDouleurLandingPremium from './PatchDouleurLandingPremium';
 
-// Pixel Meta dedie a la campagne Facebook ads patchdouleurfb.
-// Pour synchroniser : creer ou mettre a jour le pixel dans le Business Manager
-// Meta avec cet ID, puis verifier les events PageView / ViewContent / AddToCart
-// / InitiateCheckout / Purchase via le Test Events / Events Manager.
-export const PATCHDOULEURFB_PIXEL_ID = '1491294965321454';
+// Pixels Meta campagne patchdouleurfb (soindemoi.net / obrille.com).
+export const PATCHDOULEURFB_PIXEL_ID = '1024740423446417';
+export const PATCHDOULEURFB_PIXEL_ID_2 = '2838942643120213';
 
 export default function PatchDouleurFbLanding() {
   return (
@@ -23,6 +21,7 @@ export default function PatchDouleurFbLanding() {
       thankYouUrl="/patchdouleurfb/merci"
       contentName="Patch Anti-Douleur Chauffant FB"
       metaPixelId={PATCHDOULEURFB_PIXEL_ID}
+      secondaryMetaPixelId={PATCHDOULEURFB_PIXEL_ID_2}
     />
   );
 }

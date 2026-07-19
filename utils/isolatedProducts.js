@@ -1,9 +1,9 @@
 /**
- * Produits isolés : leurs commandes sont gérées sur une page dédiée
- * (ex. https://obrille.com/bouilloire-commandes), pas dans le pipeline
- * standard (À appeler, Commandes validées, assignation livreurs).
+ * Produits isolés : leurs commandes sont gérées hors pipeline obgestion
+ * (page dédiée ou autre flux). La bouilloire est désormais dans le pipeline
+ * standard (À appeler, validées, livraison) tout en gardant bouilloire-commandes.
  */
-export const ISOLATED_PRODUCT_CODES = ['BOUILLOIRE_INTELLIGENTE'];
+export const ISOLATED_PRODUCT_CODES = ['GUIDE_POUSSE_NATURELLE'];
 
 /** Filtre Prisma : exclut les commandes des produits isolés (garde productId null). */
 export const excludeIsolatedProductsFilter = {

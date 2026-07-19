@@ -9,17 +9,31 @@ import { useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { orderTotal, packAmount } from '../../utils/pricingHelpers';
+import { useLandingSlug } from '../../hooks/useLandingSlug';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const META_PIXEL_ID = '26809431761984777';
 const META_PIXEL_ID_CAMPAIGN = '1313100454309806';
 /** Campagne en premier pour garantir l'optimisation Purchase sur 1313100454309806. */
 const META_PIXEL_IDS = [META_PIXEL_ID_CAMPAIGN, META_PIXEL_ID];
-const TEMPLATE_SLUG = 'serum-cerne';
 const PRODUCT_CODE = 'SERUM_CERNE';
 const PRODUCT_NAME = 'Serum Anti-Cernes Premium';
-const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
-const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
+const PRICES_BY_SLUG: Record<string, Record<number, number>> = {
+  'serum-cerne': { 1: 8500, 2: 14100, 3: 20700 },
+  'serum-cerne-tiktok': { 1: 8500, 2: 14100, 3: 20700 },
+  'serum-cerne-tk': { 1: 9900, 2: 16900, 3: 24900 },
+};
+const PRODUCT_CODE_BY_SLUG: Record<string, string> = {
+  'serum-cerne': 'SERUM_CERNE',
+  'serum-cerne-tiktok': 'SERUM_CERNE_TIKTOK',
+  'serum-cerne-tk': 'SERUM_CERNE_TK',
+};
+const META_PIXEL_IDS_BY_SLUG: Record<string, string[]> = {
+  'serum-cerne': [META_PIXEL_ID_CAMPAIGN, META_PIXEL_ID],
+  'serum-cerne-tiktok': [],
+  'serum-cerne-tk': [META_PIXEL_ID_CAMPAIGN, META_PIXEL_ID],
+};
+const DEFAULT_PRICES = PRICES_BY_SLUG['serum-cerne'];
 
 declare global { interface Window { fbq?: (...args: any[]) => void; _fbq?: any } }
 
@@ -59,6 +73,12 @@ function firePurchaseOnPixels(pixelIds: string[], payload: Record<string, unknow
 }
 
 export default function SerumCerneThankYou() {
+  const slug = useLandingSlug();
+  const PRICES = (slug && PRICES_BY_SLUG[slug]) || DEFAULT_PRICES;
+  const PRODUCT_CODE = (slug && PRODUCT_CODE_BY_SLUG[slug]) || 'SERUM_CERNE';
+  const META_PIXEL_IDS = (slug && META_PIXEL_IDS_BY_SLUG[slug]) ?? META_PIXEL_IDS_BY_SLUG['serum-cerne'];
+  const landingSlug = slug || 'serum-cerne';
+  const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
   const q = new URLSearchParams(useLocation().search);
   const ref = q.get('ref') || '';
   const company = q.get('company') || 'ci';
@@ -93,23 +113,27 @@ export default function SerumCerneThankYou() {
 
     const fire = () => {
       try {
-        initMetaPixels(META_PIXEL_IDS);
-        firePurchaseOnPixels(META_PIXEL_IDS, purchasePayload, purchaseOpts);
+        if (META_PIXEL_IDS.length) {
+          initMetaPixels(META_PIXEL_IDS);
+          firePurchaseOnPixels(META_PIXEL_IDS, purchasePayload, purchaseOpts);
+        }
         if (sessionKey) sessionStorage.setItem(sessionKey, '1');
       } catch (e) {
         console.warn('[SerumCerneThankYou] Purchase non bloquant:', e);
       }
     };
 
-    if (window.fbq) fire();
+    if (!META_PIXEL_IDS.length) {
+      if (sessionKey) sessionStorage.setItem(sessionKey, '1');
+    } else if (window.fbq) fire();
     else setTimeout(fire, 800);
 
-    if (ref) {
+    if (ref && META_PIXEL_IDS.length) {
       const fbc = document.cookie.split('; ').find(c => c.startsWith('_fbc='))?.split('=')[1] || null;
       const fbp = document.cookie.split('; ').find(c => c.startsWith('_fbp='))?.split('=')[1] || null;
       axios.post(`${API_URL}/public/track-purchase`, {
         ref,
-        slug: TEMPLATE_SLUG,
+        slug: landingSlug,
         company,
         pixelIds: META_PIXEL_IDS,
         sourceUrl: window.location.href,
@@ -117,7 +141,7 @@ export default function SerumCerneThankYou() {
         fbp,
       }).catch(() => {});
     }
-  }, [ref, company, qty, value]);
+  }, [ref, company, qty, value, META_PIXEL_IDS, PRODUCT_CODE, landingSlug]);
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#faf8f5] antialiased" style={{ fontFamily: 'system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif' }}>
@@ -193,7 +217,7 @@ export default function SerumCerneThankYou() {
             </div>
 
             <Link
-              to={`/serum-cerne?company=${company}`}
+              to={`/${landingSlug}?company=${company}`}
               className="mt-6 flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-slate-950 via-[#0f2137] to-slate-950 px-5 py-3.5 text-[13px] font-black uppercase tracking-wider text-amber-300 shadow-lg ring-1 ring-amber-300/30 transition hover:scale-[1.01]"
             >
               Retour à la page produit

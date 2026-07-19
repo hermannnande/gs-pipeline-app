@@ -8,6 +8,8 @@
  *   3. Build vite avec les bonnes variables d'environnement
  *   4. Tar.gz du shell React (+ images en option)
  *   5. Upload via SSH base64 pipe + script bash distant
+ *      (fusion des assets : les chunks de l'ancien build restent servis
+ *      7 jours pour ne pas casser les sessions ouvertes pendant le deploy)
  *   6. Backup auto + cleanup vieux backups (garde les 3 derniers)
  *   7. Test des URLs publiques apres deploiement
  *
@@ -176,7 +178,7 @@ function packageBuild() {
     if (existsSync(join(distDir, d))) candidates.push(d);
   }
   if (FLAGS.withImages) {
-    candidates.push('verrue-tk', 'creme-anti-verrue', 'creme-anti-verrue-bleu', 'spray-douleur', 'spray-lipome', 'lipome', 'serum-yeux', 'creme-minceur', 'creme-minceur-fb', 'patch-douleur-tk', 'poudre-pousse-cheveux', 'chaussettes-homme', 'chaussette-premium-homme', 'chaussette-compression', 'chaussette-compression-v2', 'chaussette', 'detoxminceur', 'bande-sport-minceur', 'patch-minceur-glp', 'lunette-de-nuit', 'creme-anti-cerne', 'coffret-boxer-homme', 'coffret-boxer-luxe-v3', 'chapeau-dame', 'spray-vitiligo', 'creme-verrue-tk-v2', 'ongle-incarne-v2', 'bouilloire-intelligente');
+    candidates.push('verrue-tk', 'creme-anti-verrue', 'creme-anti-verrue-bleu', 'spray-douleur', 'spray-lipome', 'lipome', 'creme-eczema', 'serum-yeux', 'serum-cerne-media', 'creme-minceur', 'creme-minceur-fb', 'patch-douleur-tk', 'poudre-pousse-cheveux', 'chaussettes-homme', 'chaussette-premium-homme', 'chaussette-compression', 'chaussette-compression-v2', 'chaussette', 'detoxminceur', 'bande-sport-minceur', 'patch-minceur-glp', 'lunette-de-nuit', 'creme-anti-cerne', 'coffret-boxer-homme', 'coffret-boxer-luxe-v3', 'chapeau-dame', 'spray-vitiligo', 'creme-verrue-tk-v2', 'ongle-incarne-v2', 'bouilloire-intelligente');
   }
 
   // Note : on n'utilise NI -C NI shell:true (les deux explosent avec les
@@ -227,12 +229,20 @@ echo "[VPS] Deploiement du shell React..."
 [ -f robots.txt ] && cp robots.txt "$APP_DIR/"
 [ -f .htaccess ] && cp .htaccess "$APP_DIR/"
 if [ -d assets ]; then
-  rm -rf "$APP_DIR/assets"
-  cp -r assets "$APP_DIR/"
+  # Fusion sans rm -rf : les chunks du build precedent restent servis pour
+  # les sessions ouvertes pendant le deploiement (noms hashes, aucune
+  # collision possible). cp remet le mtime a jour, donc les fichiers du
+  # build courant restent "jeunes" ; on purge ceux non redeployes depuis
+  # 7 jours (pas de xargs : Jailkit interdit /dev/null).
+  mkdir -p "$APP_DIR/assets"
+  cp -r assets/. "$APP_DIR/assets/"
+  find "$APP_DIR/assets" -type f -mtime +7 | while IFS= read -r old; do
+    rm -f "$old"
+  done
 fi
 
 WEB_ROOT=$(dirname "$APP_DIR")
-for img_dir in bouilloire-intelligente creme-anti-verrue-bleu verrue-tk creme-anti-verrue spray-douleur spray-lipome lipome serum-yeux creme-minceur creme-minceur-fb patch-douleur-tk poudre-pousse-cheveux chaussettes-homme chaussette-premium-homme chaussette-compression chaussette-compression-v2 chaussette detoxminceur bande-sport-minceur patch-minceur-glp lunette-de-nuit creme-anti-cerne coffret-boxer-homme coffret-boxer-luxe-v3 chapeau-dame spray-vitiligo creme-verrue-tk-v2 ongle-incarne-v2; do
+for img_dir in bouilloire-intelligente creme-anti-verrue-bleu verrue-tk creme-anti-verrue spray-douleur spray-lipome lipome creme-eczema serum-yeux serum-cerne-media creme-minceur creme-minceur-fb patch-douleur-tk poudre-pousse-cheveux chaussettes-homme chaussette-premium-homme chaussette-compression chaussette-compression-v2 chaussette detoxminceur bande-sport-minceur patch-minceur-glp lunette-de-nuit creme-anti-cerne coffret-boxer-homme coffret-boxer-luxe-v3 chapeau-dame spray-vitiligo creme-verrue-tk-v2 ongle-incarne-v2; do
   if [ -d "$img_dir" ]; then
     rm -rf "$WEB_ROOT/$img_dir"
     mv "$img_dir" "$WEB_ROOT/$img_dir"

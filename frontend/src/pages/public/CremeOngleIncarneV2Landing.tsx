@@ -24,12 +24,12 @@ const PRODUCT_CODE = 'CREME_ONGLE_INCARNE';
 const META_PIXEL_ID = '1491294965321454';
 const THANK_YOU_URL = '/creme-ongle-incarne-v2/merci';
 
-const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const PRICES: Record<number, number> = { 1: 7500, 2: 12900, 3: 18900 };
 const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 const QTY_OPTS = [
   { v: 1, label: '1 boite', sub: packLabel(PRICES, 1, 'F') },
-  { v: 2, label: '2 boites', sub: packLabel(PRICES, 2, 'F'), tag: 'Le + pris', save: 'Économisez 1 100 F' },
-  { v: 3, label: '3 boites', sub: packLabel(PRICES, 3, 'F'), tag: 'Top offre', save: 'Économisez 6 100 F' },
+  { v: 2, label: '2 boites', sub: packLabel(PRICES, 2, 'F'), tag: 'Le + pris', save: 'Économisez 2 100 F' },
+  { v: 3, label: '3 boites', sub: packLabel(PRICES, 3, 'F'), tag: 'Top offre', save: 'Économisez 3 600 F' },
 ];
 
 // NB : le dossier média est volontairement nommé différemment du slug
@@ -743,7 +743,7 @@ export default function CremeOngleIncarneV2Landing() {
             {[
               { v: 1, n: '1 boite', p: orderTotal(PRICES, 1), old: 15000, sub: packLabel(PRICES, 1, 'F'), save: null as string | null },
               { v: 2, n: '2 boites', p: orderTotal(PRICES, 2), old: 30000, sub: packLabel(PRICES, 2, 'F'), save: '-17 100 F', hot: true },
-              { v: 3, n: '3 boites', p: orderTotal(PRICES, 3), old: 45000, sub: packLabel(PRICES, 3, 'F'), save: '-30 100 F' },
+              { v: 3, n: '3 boites', p: orderTotal(PRICES, 3), old: 45000, sub: packLabel(PRICES, 3, 'F'), save: '-26 100 F' },
             ].map((b) => (
               <button key={b.v} type="button" onClick={() => openModal(b.v)}
                 className={`group relative overflow-hidden rounded-2xl border-2 p-5 text-left transition hover:scale-[1.02] hover:shadow-xl ${b.hot ? 'border-red-500 bg-gradient-to-br from-blue-50 via-white to-red-50 shadow-lg ring-2 ring-red-300/40' : 'border-blue-200 bg-gradient-to-br from-white to-slate-50'}`}>

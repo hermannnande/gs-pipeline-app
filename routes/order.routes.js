@@ -6,7 +6,7 @@ import { logAudit } from '../middlewares/audit.middleware.js';
 import { notifyOrderValidated, notifyOrderDelivered, notifyOrderRefused } from '../utils/notifications.js';
 import { computeTotalAmount } from '../utils/pricing.js';
 import { prisma } from '../utils/prisma.js';
-import { randomUUID } from 'crypto';
+import { excludeIsolatedProductsFilter, ISOLATED_PRODUCT_CODES } from '../utils/isolatedProducts.js';
 
 const router = express.Router();
 
@@ -170,6 +170,13 @@ router.get('/', async (req, res) => {
           ],
         });
       }
+    }
+    // Produits isolés (ex. bouilloire) : hors pipeline obgestion sauf vue dédiée productCode.
+    const viewingIsolatedOnly =
+      productCode &&
+      ISOLATED_PRODUCT_CODES.includes(String(productCode).trim().toUpperCase());
+    if (!viewingIsolatedOnly) {
+      extras.push(excludeIsolatedProductsFilter);
     }
     if (extras.length) {
       where = mergeOrderWhereExtras(where, extras);

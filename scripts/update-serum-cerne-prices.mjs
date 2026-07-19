@@ -2,9 +2,9 @@
  * Met a jour les prix du produit SERUM_CERNE en base (via l'API admin).
  *
  * Prix standard :
- *   1 flacon  = 9 900 F
- *   2 flacons = 16 900 F
- *   3 flacons = 24 900 F
+ *   1 flacon  = 8 500 F
+ *   2 flacons = 14 100 F
+ *   3 flacons = 20 700 F
  * Usage : node scripts/update-serum-cerne-prices.mjs
  */
 
@@ -13,7 +13,7 @@ const EMAIL = process.env.ADMIN_EMAIL || 'admin@gs-pipeline.com';
 const PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 const PRODUCT_CODE = 'SERUM_CERNE';
-const NEW_PRICES = { prixUnitaire: 9900, prix2Unites: 16900, prix3Unites: 24900 };
+const NEW_PRICES = { prixUnitaire: 8500, prix2Unites: 14100, prix3Unites: 20700 };
 
 async function login() {
   const res = await fetch(`${API_URL}/auth/login`, {

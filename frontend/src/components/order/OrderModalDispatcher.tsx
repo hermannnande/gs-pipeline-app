@@ -23,6 +23,7 @@ const OrderModalCremeAntiLipome = lazy(() => import('./OrderModalCremeAntiLipome
 const OrderModalCremeAntiLipomeTk = lazy(() => import('./OrderModalCremeAntiLipomeTk'));
 const OrderModalChaussetteHomme = lazy(() => import('./OrderModalChaussetteHomme'));
 const OrderModalCremeAntiCerne = lazy(() => import('./OrderModalCremeAntiCerne'));
+const OrderModalCremeEczema = lazy(() => import('./OrderModalCremeEczema'));
 const OrderModalSerumCerne = lazy(() => import('./OrderModalSerumCerne'));
 const OrderModalSerumCerneTk = lazy(() => import('./OrderModalSerumCerneTk'));
 const OrderModalSerumCernePaye = lazy(() => import('./OrderModalSerumCernePaye'));
@@ -43,6 +44,8 @@ const CUSTOM_SLUGS = [
   'creme-verrue-tk2',
   'creme-anti-verrue',
   'creme-anti-verrue-bleu',
+  'creme-anti-verrue-bleu-tk',
+  'promo-verrue',
   'spraydouleurtk',
   'creme-ongle-incarne',
   'creme-ongle-incarne-v2',
@@ -52,16 +55,21 @@ const CUSTOM_SLUGS = [
   'crememinceurfb',
   'patchdouleurtk',
   'patchdouleurfb',
+  'patchdouleurtiktok',
   'patch-minceur-glp',
+  'patch-minceur-promo',
   'spraylipome',
   'spraylipometk',
   'spraylipome-promo',
   'creme-anti-lipome',
   'creme-anti-lipome-tk',
+  'creme-lipome-tk3',
+  'creme-eczema',
   'chaussette-homme',
   'chaussette-premium-homme',
   'creme-anti-cerne',
   'serum-cerne',
+  'serum-cerne-tiktok',
   'serum-cerne-tk',
   'serum-cerne-paye',
   'anti-age',
@@ -70,6 +78,7 @@ const CUSTOM_SLUGS = [
   'chapeau-gavroche',
   'detoxminceur',
   'bande-sport-minceur',
+  'bande-sport-tk',
   'lunette-de-nuit',
   'bouilloire-intelligente',
 ] as const;
@@ -113,6 +122,8 @@ function renderModal(slug: string, rest: Omit<Props, 'slug'>) {
       return <OrderModalVerrueTk {...rest} />;
     case 'creme-anti-verrue':
     case 'creme-anti-verrue-bleu':
+    case 'creme-anti-verrue-bleu-tk':
+    case 'promo-verrue':
       return <OrderModalAntiVerrue {...rest} />;
     case 'spraydouleurtk':
       return <OrderModalSprayDouleur {...rest} />;
@@ -129,15 +140,20 @@ function renderModal(slug: string, rest: Omit<Props, 'slug'>) {
       return <OrderModalMinceur {...rest} />;
     case 'patchdouleurtk':
     case 'patchdouleurfb':
+    case 'patchdouleurtiktok':
       return <OrderModalPatchDouleur {...rest} />;
     case 'patch-minceur-glp':
+    case 'patch-minceur-promo':
       return <OrderModalPatchMinceurGlp {...rest} />;
     case 'spraylipome':
     case 'spraylipometk':
     case 'spraylipome-promo':
       return <OrderModalSprayLipome {...rest} />;
     case 'creme-anti-lipome':
+    case 'creme-lipome-tk3':
       return <OrderModalCremeAntiLipome {...rest} />;
+    case 'creme-eczema':
+      return <OrderModalCremeEczema {...rest} />;
     case 'creme-anti-lipome-tk':
       return <OrderModalCremeAntiLipomeTk {...rest} />;
     case 'chaussette-homme':
@@ -146,6 +162,7 @@ function renderModal(slug: string, rest: Omit<Props, 'slug'>) {
     case 'creme-anti-cerne':
       return <OrderModalCremeAntiCerne {...rest} />;
     case 'serum-cerne':
+    case 'serum-cerne-tiktok':
       return <OrderModalSerumCerne {...rest} />;
     case 'serum-cerne-tk':
       return <OrderModalSerumCerneTk {...rest} />;
@@ -162,6 +179,7 @@ function renderModal(slug: string, rest: Omit<Props, 'slug'>) {
     case 'detoxminceur':
       return <OrderModalDetoxMinceur {...rest} />;
     case 'bande-sport-minceur':
+    case 'bande-sport-tk':
       return <OrderModalBandeSport {...rest} />;
     case 'lunette-de-nuit':
       return <OrderModalLunetteDeNuit {...rest} />;

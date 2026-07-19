@@ -16,6 +16,7 @@ const APPLY = process.argv.includes('--apply');
 
 const PRODUCT_CODES = [
   'BANDE_SPORT_MINCEUR',
+  'BANDE_SPORT_MINCEUR_TK',
   'CHAUSSETTE_CHAUFFANTE',
   'LUNETTE_VISION_NOCTUNE',
 ];

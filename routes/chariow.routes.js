@@ -161,7 +161,16 @@ router.post('/checkout', async (req, res) => {
     const lastName = (nameParts.slice(1).join(' ') || nameParts[0] || 'Client').slice(0, 50);
 
     const company = String(req.body.company || 'ci');
-    const baseUrl = (process.env.FRONTEND_PUBLIC_URL || 'https://www.obgestion.com').replace(/\/$/, '');
+    // Base de redirection apres paiement. Par defaut FRONTEND_PUBLIC_URL, MAIS si
+    // la landing fournit explicitement son domaine (redirectBase), on l'utilise :
+    // les pages de vente hebergees sur le VPS (obrille.com) gardent ainsi tout le
+    // parcours (landing + merci) sur leur propre domaine. Les autres produits qui
+    // n'envoient pas redirectBase conservent exactement le comportement actuel.
+    const providedBase =
+      typeof req.body.redirectBase === 'string' && /^https?:\/\//i.test(req.body.redirectBase)
+        ? req.body.redirectBase.replace(/\/$/, '')
+        : null;
+    const baseUrl = providedBase || (process.env.FRONTEND_PUBLIC_URL || 'https://www.obgestion.com').replace(/\/$/, '');
     // Important : Chariow remplace {sale_id} par le vrai sale ID au moment de la
     // redirection apres paiement. On peut donc tracker la commande sur la page merci.
     const redirectUrl = `${baseUrl}/${slug}/merci?company=${encodeURIComponent(company)}&qty=${orderQty}&ref={sale_id}`;
@@ -181,6 +190,14 @@ router.post('/checkout', async (req, res) => {
       displayed_amount: String(displayedAmount || ''),
     };
 
+    // Code pays ISO alpha-2 choisi par le client (défaut CI). Détermine le
+    // country_code du téléphone (routage Mobile Money) et le pays d'expédition,
+    // ce qui permet à Chariow d'afficher les moyens de paiement du bon pays.
+    const countryCode =
+      typeof req.body.countryCode === 'string' && /^[A-Za-z]{2}$/.test(req.body.countryCode)
+        ? req.body.countryCode.toUpperCase()
+        : 'CI';
+
     const chariowPayload = {
       product_id: productId,
       email: String(customerEmail).trim().toLowerCase().slice(0, 255),
@@ -188,7 +205,7 @@ router.post('/checkout', async (req, res) => {
       last_name: lastName,
       phone: {
         number: String(customerPhone).replace(/\D/g, '').slice(0, 15),
-        country_code: 'CI',
+        country_code: countryCode,
       },
       redirect_url: redirectUrl,
       custom_metadata: customMetadata,
@@ -199,7 +216,7 @@ router.post('/checkout', async (req, res) => {
       chariowPayload.address = customerCity || 'Cote d\'Ivoire';
       chariowPayload.city = customerCity || 'Abidjan';
       chariowPayload.state = customerCity || 'Abidjan';
-      chariowPayload.country = 'CI';
+      chariowPayload.country = countryCode;
       chariowPayload.zip = '00225';
     }
 

@@ -19,6 +19,7 @@ const PRODUCTS = [
   { code: 'PATCH_DOULEUR_FB', prices: { prixUnitaire: 7000, prix2Unites: 12000, prix3Unites: 15000 } },
   { code: 'SERUM_CERNE', prices: { prixUnitaire: 7000, prix2Unites: 12000, prix3Unites: 15000 } },
   { code: 'BANDE_SPORT_MINCEUR', prices: { prixUnitaire: 7000, prix2Unites: 12000, prix3Unites: 15000 } },
+  { code: 'BANDE_SPORT_MINCEUR_TK', prices: { prixUnitaire: 7000, prix2Unites: 12000, prix3Unites: 15000 } },
   { code: 'PATCH_MINCEUR_GLP', prices: { prixUnitaire: 7000, prix2Unites: 12900, prix3Unites: 16000 } },
 ];
 

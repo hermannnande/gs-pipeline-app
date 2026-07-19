@@ -22,7 +22,7 @@ const CONTENT_NAME = 'Chaussette de compression';
 const META_PIXEL_ID = '1491294965321454';
 const THANK_YOU_URL = '/chaussette-compression-v2/merci';
 
-const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const PRICES: Record<number, number> = { 1: 7000, 2: 12000, 3: 15000 };
 const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 const QTY_OPTS = [
   { v: 1, label: '1 paire',  sub: packLabel(PRICES, 1, 'FCFA') },
@@ -380,7 +380,7 @@ export default function ChaussetteCompressionV2Landing() {
           </div>
 
           <div className="relative overflow-hidden rounded-[32px] bg-white shadow-[0_30px_80px_-20px_rgba(8,30,67,.45)] ring-1 ring-slate-200">
-            <LazyImg src={M('hero.webp')} alt="Chaussette de compression premium" priority aspect="1 / 1" />
+            <LazyImg src={M('hero')} alt="Chaussette de compression premium" priority aspect="1 / 1" />
           </div>
 
           <h1 className="mt-7 text-balance text-center text-[32px] font-black leading-[1.05] tracking-tight sm:text-[42px]">

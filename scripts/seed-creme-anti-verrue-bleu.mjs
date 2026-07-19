@@ -2,7 +2,7 @@
  * Crée (ou met à jour) le produit CREME_ANTI_VERRUE_BLEU + le template slug
  * creme-anti-verrue-bleu (nouvelle page de vente bleue, commandes -> obgestion).
  *
- * Prix : 9 900 / 16 900 / 24 900 FCFA (qty 1/2/3) — comme la creme anti-verrue.
+ * Prix : 8 500 / 14 100 / 20 700 FCFA (qty 1/2/3).
  * Usage : node scripts/seed-creme-anti-verrue-bleu.mjs
  */
 const API_URL = process.env.API_URL || 'https://gs-pipeline-app-2.vercel.app/api';
@@ -13,14 +13,16 @@ const SLUG = 'creme-anti-verrue-bleu';
 const CODE = 'CREME_ANTI_VERRUE_BLEU';
 const SOURCE_CODE = 'VERRUE_TK';
 const NOM = 'Crème Anti-Verrues (Bleu)';
-const PRICES = { prixUnitaire: 9900, prix2Unites: 16900, prix3Unites: 24900 };
+const PRICES = { prixUnitaire: 8500, prix2Unites: 14100, prix3Unites: 20700 };
 
 const CONFIG = {
   productCode: CODE,
   templateVersion: 1,
   title: 'Crème Anti-Verrues',
   thankYouUrl: `/${SLUG}/merci`,
-  prices: { 1: 9900, 2: 16900, 3: 24900 },
+  prices: { 1: 8500, 2: 14100, 3: 20700 },
+  metaPixelId: '1417398840151713',
+  secondaryMetaPixelId: '997153262936532',
 };
 
 let TOKEN = '';

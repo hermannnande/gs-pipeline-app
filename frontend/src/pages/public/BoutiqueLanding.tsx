@@ -100,8 +100,8 @@ const PRODUCTS: Product[] = [
     hero: '/spray-douleur/hero.webp',
     badge: 'Sport',
     badgeColor: 'cyan',
-    price: '9 900 F',
-    oldPrice: '15 000 F',
+    price: '7 500 F',
+    oldPrice: '11 500 F',
     category: 'Sport · Recuperation',
   },
   {

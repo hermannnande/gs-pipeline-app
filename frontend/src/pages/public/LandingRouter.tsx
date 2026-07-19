@@ -18,14 +18,32 @@ const LandingSpinner = () => (
   </div>
 );
 
-class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
-  state = { error: null as string | null };
+// Chunk JS perime : un deploiement a remplace les assets pendant que la page
+// etait ouverte (frequent dans les webviews TikTok/Facebook qui gardent la
+// page longtemps). Un simple reload recupere l'index.html a jour (no-cache).
+const STALE_CHUNK_RE = /dynamically imported module|Importing a module script failed|Loading chunk|Load failed/i;
+const RELOAD_FLAG = 'gs-chunk-reload-at';
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null; reloading: boolean }> {
+  state = { error: null as string | null, reloading: false };
 
   static getDerivedStateFromError(err: Error) { return { error: err.message + '\n' + err.stack }; }
 
-  componentDidCatch(err: Error, info: ErrorInfo) { console.error('LandingRouter crash:', err, info); }
+  componentDidCatch(err: Error, info: ErrorInfo) {
+    console.error('LandingRouter crash:', err, info);
+    if (!STALE_CHUNK_RE.test(err.message)) return;
+    // Garde-fou anti-boucle : un seul reload auto par fenetre de 2 min.
+    // sessionStorage peut jeter en navigation privee, d'ou les try/catch.
+    let lastReload = 0;
+    try { lastReload = Number(sessionStorage.getItem(RELOAD_FLAG)) || 0; } catch { /* prive */ }
+    if (Date.now() - lastReload < 120_000) return;
+    try { sessionStorage.setItem(RELOAD_FLAG, String(Date.now())); } catch { /* prive */ }
+    this.setState({ reloading: true });
+    window.location.reload();
+  }
 
   render() {
+    if (this.state.reloading) return <LandingSpinner />;
     if (this.state.error) return (
       <div className="flex min-h-screen items-center justify-center bg-red-50 p-8">
         <div className="max-w-lg rounded-2xl bg-white p-6 shadow-xl">

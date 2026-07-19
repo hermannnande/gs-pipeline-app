@@ -18,6 +18,17 @@ const UPSTREAM_BASE = 'https://gs-pipeline-app-2.vercel.app/api';
 const TIMEOUT_SECONDS = 30;
 const CONNECT_TIMEOUT_SECONDS = 10;
 
+// Secret local (VPS uniquement) pour contourner le Vercel Security Checkpoint
+// quand le proxy PHP appelle Vercel côté serveur. Fichier non versionné.
+$bypassSecret = null;
+$localConfigPath = __DIR__ . '/proxy-local.php';
+if (is_readable($localConfigPath)) {
+    $localCfg = include $localConfigPath;
+    if (is_array($localCfg) && !empty($localCfg['bypass_secret'])) {
+        $bypassSecret = (string) $localCfg['bypass_secret'];
+    }
+}
+
 // Headers que l'on transmet au backend (lowercase).
 const FORWARD_REQUEST_HEADERS = [
     'content-type',
@@ -110,6 +121,9 @@ $forwardHeaders[] = 'X-Forwarded-Proto: https';
 // Origin whitelisté côté Vercel : le navigateur voit same-origin via ce proxy,
 // mais Express rejette les Origin inconnus (ex. soindemoi.net) avant la route.
 $forwardHeaders[] = 'Origin: https://obrille.com';
+if ($bypassSecret !== null && $bypassSecret !== '') {
+    $forwardHeaders[] = 'x-vercel-protection-bypass: ' . $bypassSecret;
+}
 
 curl_setopt($ch, CURLOPT_HTTPHEADER, $forwardHeaders);
 

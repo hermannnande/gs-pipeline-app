@@ -24,6 +24,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { trackPageView } from '../../utils/pageTracking';
 import { useChariowCheckout, type ChariowCheckoutConfig } from '../../hooks/useChariowCheckout';
+import { optimImg, optimImgSrcSet } from '../../utils/img';
+// Video hero self-hostee (compressee 720x720, ~5.9 Mo) + poster WebP.
+// Emises par Vite dans /landings-app/assets/ -> servies en meme origine (rapide).
+import videoSrc from '../../assets/guide/video-guide.mp4';
+import videoPoster from '../../assets/guide/video-guide-poster.webp';
 
 const SLUG = 'guide-pousse-naturelle';
 const PRODUCT_CODE = 'GUIDE_POUSSE_NATURELLE';
@@ -33,8 +38,6 @@ const META_PIXEL_ID = '2061376097807745';
 const PRICE = 4500;
 const OLD_PRICE = 9000;
 const PRICES: Record<number, number> = { 1: PRICE };
-// Video hero — YouTube Short (https://youtube.com/shorts/ne1l8Qk_OyY).
-const VIDEO_ID = 'ne1l8Qk_OyY';
 
 // Images (hebergees sur obrille.com — meme origine que la landing).
 const BASE = 'https://obrille.com/wp-content/uploads/2026/07';
@@ -50,9 +53,7 @@ const MEDIA = {
 
 const fmt = (v: number) => v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' F';
 
-declare global {
-  interface Window { fbq?: (...args: any[]) => void; _fbq?: any; YT?: any; onYouTubeIframeAPIReady?: () => void; }
-}
+declare global { interface Window { fbq?: (...args: any[]) => void; _fbq?: any; } }
 
 function initMetaPixel(pixelId: string) {
   if (!pixelId || window.fbq) return;
@@ -120,7 +121,17 @@ function Section({ children, className = '' }: { children: ReactNode; className?
 }
 
 function Img({ src, alt }: { src: string; alt: string }) {
-  return <img src={src} alt={alt} loading="lazy" decoding="async" className="aspect-square w-full rounded-2xl object-cover shadow-lg" />;
+  return (
+    <img
+      src={optimImg(src, 800)}
+      srcSet={optimImgSrcSet(src, [400, 800])}
+      sizes="(min-width: 768px) 50vw, 100vw"
+      alt={alt}
+      loading="lazy"
+      decoding="async"
+      className="aspect-square w-full rounded-2xl object-cover shadow-lg"
+    />
+  );
 }
 
 function CTA({ onClick, children }: { onClick: () => void; children: ReactNode }) {
@@ -136,93 +147,64 @@ function CTA({ onClick, children }: { onClick: () => void; children: ReactNode }
 }
 
 /**
- * Video hero (YouTube Short) via l'IFrame Player API.
- * - Autoplay demarre EN MUET (les navigateurs interdisent l'autoplay sonore).
- * - Le son s'active au 1er geste utilisateur (scroll / clic / toucher / touche),
- *   ainsi qu'au clic sur le bouton son visible en overlay.
+ * Video hero — lecteur natif, format carre 1:1 (source 1080x1080 self-hostee).
+ * SON ACTIF EN PERMANENCE (demande client) :
+ * - On tente d'emblee l'autoplay AVEC le son.
+ * - Les navigateurs bloquent l'autoplay sonore avant toute interaction : dans ce
+ *   cas on bascule en muet juste pour lancer la lecture (video visible), puis on
+ *   force le son au tout premier micro-geste (mousemove / scroll / clic / touche).
+ * - Les ecouteurs restent actifs : si le navigateur re-coupe le son, le geste
+ *   suivant le reactive. Aucun retour volontaire au muet, aucun bouton mute.
+ * - Poster WebP affiche instantanement pendant le buffering (perf).
  */
 function HeroVideo() {
-  const holderRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<any>(null);
-  const [muted, setMuted] = useState(true);
-  const [ready, setReady] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    let cancelled = false;
+    const v = videoRef.current;
+    if (!v) return;
+    v.volume = 1;
 
-    const loadApi = () =>
-      new Promise<void>((resolve) => {
-        if (window.YT && window.YT.Player) return resolve();
-        const prev = window.onYouTubeIframeAPIReady;
-        window.onYouTubeIframeAPIReady = () => { prev?.(); resolve(); };
-        if (!document.getElementById('yt-iframe-api')) {
-          const s = document.createElement('script');
-          s.id = 'yt-iframe-api';
-          s.src = 'https://www.youtube.com/iframe_api';
-          document.head.appendChild(s);
-        }
-      });
-
-    loadApi().then(() => {
-      if (cancelled || !holderRef.current) return;
-      playerRef.current = new window.YT.Player(holderRef.current, {
-        width: '100%',
-        height: '100%',
-        videoId: VIDEO_ID,
-        playerVars: {
-          autoplay: 1, mute: 1, controls: 1, rel: 0, playsinline: 1,
-          modestbranding: 1, loop: 1, playlist: VIDEO_ID,
-        },
-        events: {
-          onReady: (e: any) => { try { e.target.mute(); e.target.playVideo(); } catch { /* noop */ } setReady(true); },
-        },
-      });
+    // 1) Tente l'autoplay avec son ; sinon fallback muet pour lancer la lecture.
+    v.muted = false;
+    v.play().catch(() => {
+      v.muted = true;
+      v.play().catch(() => { /* autoplay bloque : le poster reste affiche */ });
     });
 
-    // Son au 1er geste utilisateur (politique navigateur : impossible avant).
-    const unmute = () => {
-      const p = playerRef.current;
-      try { if (p?.unMute) { p.unMute(); p.setVolume(100); p.playVideo(); setMuted(false); } } catch { /* noop */ }
-      remove();
+    // 2) Au moindre geste, on (re)active le son et on le garde.
+    const enableSound = () => {
+      const el = videoRef.current;
+      if (el && el.muted) { el.muted = false; el.volume = 1; el.play().catch(() => { /* noop */ }); }
     };
-    const remove = () => {
-      window.removeEventListener('pointerdown', unmute);
-      window.removeEventListener('touchstart', unmute);
-      window.removeEventListener('scroll', unmute);
-      window.removeEventListener('keydown', unmute);
-    };
-    window.addEventListener('pointerdown', unmute, { passive: true });
-    window.addEventListener('touchstart', unmute, { passive: true });
-    window.addEventListener('scroll', unmute, { passive: true });
-    window.addEventListener('keydown', unmute);
+    const opts = { passive: true } as const;
+    window.addEventListener('pointerdown', enableSound, opts);
+    window.addEventListener('touchstart', enableSound, opts);
+    window.addEventListener('scroll', enableSound, opts);
+    window.addEventListener('mousemove', enableSound, opts);
+    window.addEventListener('keydown', enableSound);
 
-    return () => { cancelled = true; remove(); try { playerRef.current?.destroy?.(); } catch { /* noop */ } };
+    return () => {
+      window.removeEventListener('pointerdown', enableSound);
+      window.removeEventListener('touchstart', enableSound);
+      window.removeEventListener('scroll', enableSound);
+      window.removeEventListener('mousemove', enableSound);
+      window.removeEventListener('keydown', enableSound);
+    };
   }, []);
 
-  const toggleSound = () => {
-    const p = playerRef.current;
-    if (!p) return;
-    try {
-      if (muted) { p.unMute(); p.setVolume(100); setMuted(false); }
-      else { p.mute(); setMuted(true); }
-      p.playVideo();
-    } catch { /* noop */ }
-  };
-
   return (
-    <div className="relative mx-auto aspect-[9/16] w-full max-w-[360px] overflow-hidden rounded-[1.75rem] bg-black shadow-[0_20px_50px_-12px_rgba(0,0,0,.5)] ring-4 ring-[#F7C948]/70">
-      <div className="absolute inset-0"><div ref={holderRef} className="h-full w-full" /></div>
-      <button
-        type="button"
-        onClick={toggleSound}
-        aria-label={muted ? 'Activer le son' : 'Couper le son'}
-        className="absolute bottom-3 left-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-2 text-[12px] font-bold text-white backdrop-blur transition hover:bg-black/90"
-      >
-        {muted ? '🔇 Activer le son' : '🔊 Son actif'}
-      </button>
-      {!ready && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#126B3A] text-sm font-bold text-white/80">Chargement de la video…</div>
-      )}
+    <div className="relative mx-auto aspect-square w-full max-w-[440px] overflow-hidden rounded-[1.75rem] bg-black shadow-[0_20px_50px_-12px_rgba(0,0,0,.5)] ring-4 ring-[#F7C948]/70">
+      <video
+        ref={videoRef}
+        className="h-full w-full object-cover"
+        src={videoSrc}
+        poster={videoPoster}
+        autoPlay
+        loop
+        playsInline
+        preload="metadata"
+      />
     </div>
   );
 }
@@ -399,7 +381,7 @@ export default function GuidePousseNaturelleLanding() {
             { img: MEDIA.beard, t: 'Barbe : souplesse & entretien', d: 'Une barbe plus douce et mieux disciplinee.' },
           ].map((p) => (
             <div key={p.t} className="overflow-hidden rounded-2xl border border-[#F0E6CF] bg-white shadow-sm">
-              <img src={p.img} alt={p.t} loading="lazy" decoding="async" className="aspect-[4/3] w-full object-cover" />
+              <img src={optimImg(p.img, 600)} srcSet={optimImgSrcSet(p.img, [400, 600])} sizes="(min-width: 768px) 33vw, 100vw" alt={p.t} loading="lazy" decoding="async" className="aspect-[4/3] w-full object-cover" />
               <div className="p-5">
                 <h3 className="font-black text-[#126B3A]">{p.t}</h3>
                 <p className="mt-1 text-[13px] text-gray-600">{p.d}</p>

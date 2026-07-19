@@ -2,7 +2,7 @@
  * Landing ULTRA PREMIUM — Serum Anti-Cernes (SERUM_CERNE)
  * ==================================================================
  *
- * Palette : NAVY DEEP + OR + CORAIL + IVOIRE (style editorial beauty)
+ * Palette : NAVY PROFOND + OR CHAMPAGNE + CORAIL CHAUD + IVOIRE DORE (conversion beauty)
  *   - creme-anti-verrue : rouge/orange
  *   - patchdouleurtk    : indigo/violet
  *   - creme-verrue-tk   : bleu + orange
@@ -10,19 +10,9 @@
  *   - spraylipome       : pourpre/magenta/or rose
  *   - serum-cerne       : NAVY / OR / CORAIL / IVOIRE (beauty luxe nocturne)
  *
- * 12 medias UNIQUES utilises (aucune repetition) :
- *   - hero.webp     : Hero stacke
- *   - Ma-video-12.mp4 : Bloc probleme (cernes) — loop
- *   - ChatGPT-Image-8-juin-2026-23_30_57.png : Bloc solution
- *   - video-1.mp4   : Demo application (loop)
- *   - img-4.webp    : Bloc formule
- *   - img-5.webp    : Bloc eclat
- *   - video-2.mp4   : Demo resultats (loop)
- *   - img-6.webp    : Avant (cernes visibles)
- *   - img-7.webp    : Apres (peau radieuse)
- *   - img-8.webp    : Bloc routine
- *   - video-3.mp4   : Temoignage video (loop)
- *   - jj-1.mp4      : Bloc engagement / fond banniere finale — loop
+ * Medias juillet 2026 (wp-content/uploads/2026/07/) :
+ *   - hero + solution + formule + eclat + avant/apres (6 visuels PNG)
+ *   - Dame_applique_serum_anti_age : video application (demo, resultats, engagement)
  *
  * Signature visuelle :
  *   - Typographie SERIF pour les titres hero (elegance beauty)
@@ -37,43 +27,59 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { trackPageView } from '../../utils/pageTracking';
+import { getPublicProducts } from '../../utils/publicApi';
 import OrderModalDispatcher from '../../components/order/OrderModalDispatcher';
 import { orderTotal, packAmount, packLabel, DELIVERY_FEE_CI } from '../../utils/pricingHelpers';
-import { optimImg } from '../../utils/img';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
-const SLUG = 'serum-cerne';
-const PRODUCT_CODE = 'SERUM_CERNE';
-const META_PIXEL_ID = '26809431761984777';
-/** Pixel campagne FB (meme que patchdouleurtk / crememinceurfb). */
-const META_PIXEL_ID_CAMPAIGN = '1313100454309806';
-const META_PIXEL_IDS = [META_PIXEL_ID_CAMPAIGN, META_PIXEL_ID];
-const THANK_YOU_URL = '/serum-cerne/merci';
 
-const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
-const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
-const OLD_PRICE_UNIT = 15000;
-const DISCOUNT_PCT = Math.round((1 - PRICES[1] / OLD_PRICE_UNIT) * 100);
-const QTY_OPTS = [
-  { v: 1, label: '1 flacon', sub: packLabel(PRICES, 1, 'FCFA') },
-  { v: 2, label: '2 flacons', sub: packLabel(PRICES, 2, 'FCFA'), tag: 'Populaire', save: 'Economisez 2 900 F' },
-  { v: 3, label: '3 flacons', sub: packLabel(PRICES, 3, 'FCFA'), tag: 'Meilleure offre', save: 'Economisez 4 800 F' },
-];
+export interface SerumCerneLandingConfig {
+  slug: string;
+  productCode: string;
+  thankYouUrl: string;
+  metaPixelIdCampaign: string;
+  metaPixelId: string;
+  prices: Record<number, number>;
+  oldPriceUnit: number;
+}
 
-// 12 medias UNIQUES (dossier /serum-yeux/ pour eviter le conflit avec le slug /serum-cerne)
+export const SERUM_CERNE_FB_CONFIG: SerumCerneLandingConfig = {
+  slug: 'serum-cerne',
+  productCode: 'SERUM_CERNE',
+  thankYouUrl: '/serum-cerne/merci',
+  metaPixelIdCampaign: '1313100454309806',
+  metaPixelId: '26809431761984777',
+  prices: { 1: 8500, 2: 14100, 3: 20700 },
+  oldPriceUnit: 15000,
+};
+
+export const SERUM_CERNE_TIKTOK_CONFIG: SerumCerneLandingConfig = {
+  slug: 'serum-cerne-tiktok',
+  productCode: 'SERUM_CERNE_TIKTOK',
+  thankYouUrl: '/serum-cerne-tiktok/merci',
+  metaPixelIdCampaign: '',
+  metaPixelId: '',
+  prices: { 1: 8500, 2: 14100, 3: 20700 },
+  oldPriceUnit: 15000,
+};
+
+// Medias locaux WebP + MP4 compresses (scripts/compress-serum-cerne.mjs)
+const M = '/serum-cerne-media';
 const MEDIA = {
-  hero:       optimImg('https://obrille.com/wp-content/uploads/2026/06/ChatGPT-Image-8-juin-2026-15_41_35.png', 1000),
-  problem:    'https://obrille.com/wp-content/uploads/2026/06/Ma-video-12.mp4',
-  solution:   optimImg('https://obrille.com/wp-content/uploads/2026/06/ChatGPT-Image-8-juin-2026-23_30_57.png', 1000),
-  video1:     '/serum-yeux/video-1.mp4',
-  formula:    '/serum-yeux/img-4.webp',
-  glow:       '/serum-yeux/img-5.webp',
-  video2:     '/serum-yeux/video-2.mp4',
-  avant:      optimImg('https://obrille.com/wp-content/uploads/2026/06/ChatGPT-Image-8-juin-2026-23_22_44-1.png', 1000),
-  apres:      '/serum-yeux/img-7.webp',
-  routine:    '/serum-yeux/img-8.webp',
-  video3:     '/serum-yeux/video-3.mp4',
-  engagement: 'https://obrille.com/wp-content/uploads/2026/06/jj-1.mp4',
+  hero:       `${M}/hero.webp`,
+  problem:    `${M}/problem.webp`,
+  solution:   `${M}/solution.webp`,
+  formula:    `${M}/formula.webp`,
+  glow:       `${M}/glow.webp`,
+  avant:      `${M}/avant.webp`,
+  apres:      `${M}/apres.webp`,
+  routine:    `${M}/solution.webp`,
+  videoApp:   `${M}/video-app.mp4`,
+  videoPoster:`${M}/video-app-poster.webp`,
+  video1:     `${M}/video-app.mp4`,
+  video2:     `${M}/video-app.mp4`,
+  video3:     `${M}/video-app.mp4`,
+  engagement: `${M}/video-app.mp4`,
 };
 
 declare global { interface Window { fbq: any; _fbq: any; } }
@@ -128,16 +134,18 @@ function useOnScreen(rootMargin = '300px') {
   return { ref, visible };
 }
 
-function LazyVideo({ src, aspect = '9/16' }: { src: string; aspect?: string }) {
+function LazyVideo({ src, aspect = '9/16', poster }: { src: string; aspect?: string; poster?: string }) {
   const { ref, visible } = useOnScreen('300px');
   return (
     <div
       ref={ref}
-      className="relative w-full overflow-hidden rounded-3xl border border-amber-300/30 bg-slate-950 shadow-[0_20px_60px_-12px_rgba(212,175,55,.35)]"
+      className="relative w-full overflow-hidden rounded-3xl border border-[#E8C547]/35 bg-[#0C1829] shadow-[0_20px_60px_-12px_rgba(201,162,39,.4)]"
       style={{ aspectRatio: aspect }}
     >
       {visible ? (
-        <video src={src} autoPlay loop muted playsInline preload="none" className="h-full w-full object-cover"/>
+        <video src={src} poster={poster} autoPlay loop muted playsInline preload="none" className="h-full w-full object-cover"/>
+      ) : poster ? (
+        <img src={poster} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover"/>
       ) : (
         <div className="flex h-full w-full items-center justify-center">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-amber-400"/>
@@ -171,7 +179,7 @@ function LazyImg({ src, alt, className, aspect, priority }: { src: string; alt: 
 // UI atoms
 // =========================================================
 const Check = () => (
-  <svg className="h-4 w-4 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+  <svg className="h-4 w-4 shrink-0 text-[#C9A227]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
   </svg>
 );
@@ -192,12 +200,12 @@ const Star = ({ className = "" }: { className?: string }) => (
 function GoldDivider() {
   return (
     <div className="flex items-center justify-center py-4">
-      <span className="h-px w-16 bg-gradient-to-r from-transparent to-amber-400"/>
-      <svg className="mx-3 h-4 w-4 rotate-45 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+      <span className="h-px w-20 bg-gradient-to-r from-transparent via-[#E8C547]/60 to-[#C9A227]"/>
+      <svg className="mx-3 h-4 w-4 rotate-45 text-[#C9A227]" fill="currentColor" viewBox="0 0 20 20">
         <path d="M10 2L18 10L10 18L2 10Z" opacity="0.5"/>
         <path d="M10 5L15 10L10 15L5 10Z"/>
       </svg>
-      <span className="h-px w-16 bg-gradient-to-l from-transparent to-amber-400"/>
+      <span className="h-px w-20 bg-gradient-to-l from-transparent via-[#E8C547]/60 to-[#C9A227]"/>
     </div>
   );
 }
@@ -217,18 +225,18 @@ function CTA({
   fullWidth?: boolean;
 }) {
   const grads: Record<string, string> = {
-    gold:   'from-amber-300 via-yellow-300 to-amber-400',
-    coral:  'from-orange-300 via-rose-300 to-pink-300',
-    navy:   'from-slate-800 via-slate-900 to-slate-800',
-    cream:  'from-stone-100 via-amber-50 to-stone-100',
+    gold:   'from-[#C9A227] via-[#E8C547] to-[#D4A82A]',
+    coral:  'from-[#D94A5F] via-[#FF5C72] to-[#FF8A9B]',
+    navy:   'from-[#0C1829] via-[#152A45] to-[#1E3A5F]',
+    cream:  'from-[#FDF6EE] via-[#FBF0E4] to-[#FDF6EE]',
   };
   const glows: Record<string, string> = {
-    gold:   'shadow-[0_10px_30px_-4px_rgba(212,175,55,.55)] hover:shadow-[0_16px_40px_-4px_rgba(212,175,55,.8)]',
-    coral:  'shadow-[0_10px_30px_-4px_rgba(244,114,182,.45)] hover:shadow-[0_16px_40px_-4px_rgba(244,114,182,.65)]',
-    navy:   'shadow-[0_10px_30px_-4px_rgba(15,33,55,.55)] hover:shadow-[0_16px_40px_-4px_rgba(15,33,55,.75)] ring-1 ring-amber-400',
-    cream:  'shadow-[0_10px_30px_-4px_rgba(0,0,0,.12)] hover:shadow-[0_16px_40px_-4px_rgba(0,0,0,.2)] ring-1 ring-amber-200',
+    gold:   'shadow-[0_10px_32px_-4px_rgba(201,162,39,.65)] hover:shadow-[0_18px_44px_-4px_rgba(232,197,71,.85)]',
+    coral:  'shadow-[0_10px_32px_-4px_rgba(217,74,95,.55)] hover:shadow-[0_18px_44px_-4px_rgba(255,92,114,.75)]',
+    navy:   'shadow-[0_10px_32px_-4px_rgba(12,24,41,.6)] hover:shadow-[0_18px_44px_-4px_rgba(21,42,69,.8)] ring-1 ring-[#E8C547]/70',
+    cream:  'shadow-[0_10px_30px_-4px_rgba(0,0,0,.12)] hover:shadow-[0_16px_40px_-4px_rgba(0,0,0,.2)] ring-1 ring-[#E8C547]/40',
   };
-  const textColor = variant === 'navy' ? 'text-amber-300' : 'text-slate-900';
+  const textColor = variant === 'navy' ? 'text-[#F0D78C]' : variant === 'coral' ? 'text-white' : 'text-[#1A1208]';
   const sizes: Record<string, string> = {
     sm: 'px-5 py-2.5 text-[12px]',
     md: 'px-6 py-3.5 text-[13px]',
@@ -249,9 +257,9 @@ function CTA({
 // Marquee
 function Marquee({ items, variant = 'gold', speed = 28 }: { items: string[]; variant?: 'gold' | 'navy' | 'cream'; speed?: number; }) {
   const classes: Record<string, string> = {
-    gold:  'bg-gradient-to-r from-amber-300 via-yellow-300 to-amber-300 text-slate-900 border-y-2 border-slate-900/10',
-    navy:  'bg-slate-950 text-amber-300 border-y border-amber-400/20',
-    cream: 'bg-stone-100 text-slate-800 border-y border-amber-200',
+    gold:  'bg-gradient-to-r from-[#C9A227] via-[#E8C547] to-[#C9A227] text-[#1A1208] border-y-2 border-[#1A1208]/10',
+    navy:  'bg-gradient-to-r from-[#0C1829] via-[#152A45] to-[#0C1829] text-[#F0D78C] border-y border-[#E8C547]/25',
+    cream: 'bg-gradient-to-r from-[#FDF6EE] via-[#FBF0E4] to-[#FDF6EE] text-[#1A2B4A] border-y border-[#E8C547]/30',
   };
   return (
     <div className={`overflow-hidden py-2 ${classes[variant]}`}>
@@ -276,7 +284,23 @@ function Marquee({ items, variant = 'gold', speed = 28 }: { items: string[]; var
 // =========================================================
 // Main component
 // =========================================================
-export default function SerumCerneLanding() {
+export function SerumCerneLandingPage({ config }: { config: SerumCerneLandingConfig }) {
+  const SLUG = config.slug;
+  const PRODUCT_CODE = config.productCode;
+  const THANK_YOU_URL = config.thankYouUrl;
+  const META_PIXEL_ID_CAMPAIGN = config.metaPixelIdCampaign;
+  const META_PIXEL_ID = config.metaPixelId;
+  const META_PIXEL_IDS = [META_PIXEL_ID_CAMPAIGN, META_PIXEL_ID].filter(Boolean);
+  const PRICES = config.prices;
+  const OLD_PRICE_UNIT = config.oldPriceUnit;
+  const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
+  const DISCOUNT_PCT = Math.round((1 - PRICES[1] / OLD_PRICE_UNIT) * 100);
+  const QTY_OPTS = [
+    { v: 1, label: '1 flacon', sub: packLabel(PRICES, 1, 'FCFA') },
+    { v: 2, label: '2 flacons', sub: packLabel(PRICES, 2, 'FCFA'), tag: 'Populaire', save: 'Economisez 2 900 F' },
+    { v: 3, label: '3 flacons', sub: packLabel(PRICES, 3, 'FCFA'), tag: 'Meilleure offre', save: 'Economisez 4 800 F' },
+  ];
+
   const navigate = useNavigate();
   const company = useMemo(co, []);
 
@@ -300,7 +324,7 @@ export default function SerumCerneLanding() {
     { n: 'Awa M.',       v: 'Korhogo',   t: '25 min' },
   ], []);
 
-  // Preload hero
+  // Preload hero image uniquement (video lazy + poster)
   useEffect(() => {
     const l = document.createElement('link');
     l.rel = 'preload'; l.as = 'image'; l.href = MEDIA.hero;
@@ -314,23 +338,25 @@ export default function SerumCerneLanding() {
     if (pixelFired.current) return;
     pixelFired.current = true;
     trackPageView(SLUG, company);
-    initMetaPixels(META_PIXEL_IDS);
-    window.fbq?.('track', 'ViewContent', {
+    if (META_PIXEL_IDS.length) {
+      initMetaPixels(META_PIXEL_IDS);
+      window.fbq?.('track', 'ViewContent', {
         content_name: 'Serum Anti-Cernes Premium',
         content_ids: [PRODUCT_CODE],
         content_type: 'product',
         value: orderTotal(PRICES, 1),
         currency: 'XOF',
       });
-  }, [company]);
+    }
+  }, [company, SLUG, PRODUCT_CODE, PRICES, META_PIXEL_IDS]);
 
   useEffect(() => {
-    axios.get(`${API_URL}/public/products`, { params: { company } })
-      .then(r => {
-        const p = (r.data?.products || []).find((p: Product) => p.code?.toUpperCase() === PRODUCT_CODE);
+    getPublicProducts(company)
+      .then(products => {
+        const p = products.find((p: Product) => p.code?.toUpperCase() === PRODUCT_CODE);
         if (p) setProduct(p);
       }).catch(() => {});
-  }, [company]);
+  }, [company, PRODUCT_CODE]);
 
   useEffect(() => {
     const tick = () => {
@@ -391,7 +417,7 @@ export default function SerumCerneLanding() {
   // RENDER
   // ============================================================
   return (
-    <div className="min-h-screen bg-[#faf8f5] text-slate-900" style={{ fontFamily: "'Inter',system-ui,-apple-system,sans-serif" }}>
+    <div className="min-h-screen bg-[#FDF6EE] text-[#1A2B4A]" style={{ fontFamily: "'Inter',system-ui,-apple-system,sans-serif" }}>
       <style>{`
         @keyframes sc-marquee { 0% { transform: translateX(0) } 100% { transform: translateX(-50%) } }
         @keyframes sc-fade-up { from { opacity: 0; transform: translateY(24px) } to { opacity: 1; transform: translateY(0) } }
@@ -416,17 +442,41 @@ export default function SerumCerneLanding() {
         .sc-toast-in { animation: sc-slide-in .4s cubic-bezier(.22,1,.36,1) both }
         .sc-toast-out { animation: sc-slide-out .35s cubic-bezier(.55,.08,.68,.53) both }
         .sc-shimmer-gold {
-          background: linear-gradient(90deg, #d4af37 0%, #fde68a 25%, #fbbf24 50%, #fef3c7 75%, #d4af37 100%);
-          background-size: 200% auto;
+          background: linear-gradient(90deg, #B8922A 0%, #E8C547 20%, #F5E6A3 40%, #FFF8E7 55%, #E8C547 70%, #C9A227 85%, #B8922A 100%);
+          background-size: 220% auto;
           background-clip: text; -webkit-background-clip: text;
           color: transparent; -webkit-text-fill-color: transparent;
-          animation: sc-shimmer 3.5s linear infinite;
+          animation: sc-shimmer 3s linear infinite;
+        }
+        .sc-gradient-coral {
+          background: linear-gradient(135deg, #D94A5F 0%, #FF5C72 45%, #FF8A9B 100%);
+          background-clip: text; -webkit-background-clip: text;
+          color: transparent; -webkit-text-fill-color: transparent;
+        }
+        .sc-gradient-gold {
+          background: linear-gradient(135deg, #B8922A 0%, #E8C547 50%, #C9A227 100%);
+          background-clip: text; -webkit-background-clip: text;
+          color: transparent; -webkit-text-fill-color: transparent;
+        }
+        .sc-gradient-dual {
+          background: linear-gradient(135deg, #0C1829 0%, #D94A5F 35%, #C9A227 65%, #FF8A9B 100%);
+          background-clip: text; -webkit-background-clip: text;
+          color: transparent; -webkit-text-fill-color: transparent;
+        }
+        .sc-gradient-rose {
+          background: linear-gradient(135deg, #D94A5F 0%, #FF6B7A 50%, #FF8A9B 100%);
+          background-clip: text; -webkit-background-clip: text;
+          color: transparent; -webkit-text-fill-color: transparent;
         }
         .sc-serif { font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif; font-style: italic; font-weight: 500 }
         .sc-texture {
           background-image:
-            radial-gradient(circle at 20% 30%, rgba(212,175,55,.06) 0, transparent 40%),
-            radial-gradient(circle at 80% 70%, rgba(244,114,182,.05) 0, transparent 40%);
+            radial-gradient(ellipse 80% 60% at 15% 20%, rgba(232,197,71,.10) 0, transparent 55%),
+            radial-gradient(ellipse 70% 50% at 85% 75%, rgba(255,92,114,.08) 0, transparent 50%),
+            radial-gradient(ellipse 50% 40% at 50% 100%, rgba(201,162,39,.06) 0, transparent 45%);
+        }
+        .sc-navy-section {
+          background: linear-gradient(145deg, #0C1829 0%, #112035 40%, #1A2F4A 100%);
         }
         .sc-cv { content-visibility: auto; contain-intrinsic-size: 0 800px }
         details[open] summary .sc-chev { transform: rotate(180deg) }
@@ -436,10 +486,10 @@ export default function SerumCerneLanding() {
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap"/>
 
       {/* ===== STICKY TOP BAR - navy + or ===== */}
-      <div className="sticky top-0 z-50 border-b border-amber-400/30 bg-slate-950">
+      <div className="sticky top-0 z-50 border-b border-[#E8C547]/35 bg-gradient-to-r from-[#0C1829] via-[#152A45] to-[#0C1829]">
         <div className="mx-auto flex max-w-6xl items-center justify-center gap-2 px-3 py-2 sm:gap-3">
-          <span className="relative flex h-2 w-2 text-rose-300 sc-pulse-dot">
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-300"/>
+          <span className="relative flex h-2 w-2 text-[#FF6B7A] sc-pulse-dot">
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-[#FF6B7A]"/>
           </span>
           <span className="text-[10px] font-black uppercase tracking-[0.25em] text-stone-100 sm:text-[11px]">
             <span className="sc-shimmer-gold">Offre exclusive</span> · fin
@@ -447,8 +497,8 @@ export default function SerumCerneLanding() {
           <div className="flex items-center gap-1">
             {[pad(countdown.h), pad(countdown.m), pad(countdown.s)].map((v, i) => (
               <div key={i} className="flex items-center gap-1">
-                {i > 0 && <span className="text-[10px] font-bold text-amber-300/60">:</span>}
-                <span className="inline-flex h-6 min-w-[28px] items-center justify-center rounded-sm bg-amber-400/10 px-1.5 font-mono text-[12px] font-black tabular-nums text-amber-200 ring-1 ring-amber-400/30 sm:h-7 sm:min-w-[32px] sm:text-[13px]">
+                {i > 0 && <span className="text-[10px] font-bold text-[#E8C547]/70">:</span>}
+                <span className="inline-flex h-6 min-w-[28px] items-center justify-center rounded-sm bg-[#E8C547]/15 px-1.5 font-mono text-[12px] font-black tabular-nums text-[#F0D78C] ring-1 ring-[#E8C547]/35 sm:h-7 sm:min-w-[32px] sm:text-[13px]">
                   {v}
                 </span>
               </div>
@@ -460,60 +510,63 @@ export default function SerumCerneLanding() {
       {/* ===== Marquee 1 - or ===== */}
       <Marquee
         variant="gold"
-        items={['Serum Anti-Cernes Premium', 'Rajeunissement visible', 'Formule dermatologique', 'Sans effet secondaire', 'Livraison 24h Abidjan', 'Paiement a la livraison']}
+        items={['Serum Anti-Cernes Clinique', 'Regard rajeuni en 7 jours', 'Formule dermatologique certifiee', 'Zero paraben · Zero risque', 'Livraison express 24h', 'Paiement securise a la livraison']}
       />
 
       {/* ===================================================== */}
       {/* HERO STACKE : titre -> image -> CTA (demande user)    */}
       {/* Fond IVOIRE avec glows or/corail                       */}
       {/* ===================================================== */}
-      <section className="relative overflow-hidden bg-[#faf8f5] sc-texture">
-        <div className="pointer-events-none absolute -top-20 -left-20 h-80 w-80 rounded-full bg-amber-300/30 blur-3xl sc-float-slow"/>
-        <div className="pointer-events-none absolute -bottom-20 -right-20 h-80 w-80 rounded-full bg-rose-300/30 blur-3xl sc-float-slow" style={{ animationDelay: '2s' }}/>
-        <div className="pointer-events-none absolute top-1/3 right-10 h-48 w-48 rounded-full bg-amber-200/40 blur-3xl sc-float-slow" style={{ animationDelay: '4s' }}/>
+      <section className="relative overflow-hidden bg-[#FDF6EE] sc-texture">
+        <div className="pointer-events-none absolute -top-20 -left-20 h-80 w-80 rounded-full bg-[#E8C547]/25 blur-3xl sc-float-slow"/>
+        <div className="pointer-events-none absolute -bottom-20 -right-20 h-80 w-80 rounded-full bg-[#FF6B7A]/20 blur-3xl sc-float-slow" style={{ animationDelay: '2s' }}/>
+        <div className="pointer-events-none absolute top-1/3 right-10 h-48 w-48 rounded-full bg-[#F0D78C]/35 blur-3xl sc-float-slow" style={{ animationDelay: '4s' }}/>
 
-        <div className="relative mx-auto max-w-3xl px-4 pb-12 pt-8 text-center sm:pt-12 md:pt-16">
-          <div className="sc-fade-up">
-            <span className="inline-flex items-center gap-2 rounded-full border border-amber-400/40 bg-white/60 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.3em] text-amber-700 shadow-sm backdrop-blur-sm sm:text-[11px]">
-              <span className="h-1 w-1 rounded-full bg-amber-500"/>
-              Edition limitee 2026
-              <span className="h-1 w-1 rounded-full bg-amber-500"/>
+        <div className="relative mx-auto max-w-3xl px-4 pb-12 pt-4 text-center sm:pt-6 md:pt-8">
+          {/* IMAGE hero — premier plan a l'arrivee */}
+          <div className="relative sc-fade-up">
+            <div className="pointer-events-none absolute -inset-6 rounded-[3rem] bg-gradient-to-br from-[#E8C547]/45 via-[#FF8A9B]/25 to-[#E8C547]/45 blur-3xl"/>
+            <div className="relative mx-auto max-w-lg overflow-hidden rounded-[2rem] bg-white shadow-[0_25px_70px_-12px_rgba(12,24,41,.28)] ring-1 ring-[#E8C547]/40 sc-bob">
+              <LazyImg src={MEDIA.hero} alt="Serum Anti-Cernes Premium" aspect="4/5" priority/>
+              <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#0C1829]/25 to-transparent"/>
+            </div>
+
+            <div className="absolute -left-2 top-8 rotate-[-8deg] rounded-sm bg-gradient-to-br from-[#0C1829] to-[#1A2F4A] px-3 py-2 text-center shadow-xl sm:-left-4">
+              <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#F0D78C]">Visible des</p>
+              <p className="sc-shimmer-gold text-[16px] font-black leading-tight">J+3</p>
+            </div>
+            <div className="absolute -right-2 bottom-8 rotate-[6deg] rounded-sm bg-white px-3 py-2 shadow-xl ring-1 ring-[#E8C547]/50 sm:-right-4">
+              <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#1A2B4A]">Note clients</p>
+              <p className="flex items-center gap-0.5 text-[#C9A227]">
+                {[1,2,3,4,5].map(i => <Star key={i}/>)}
+                <span className="ml-1 text-[11px] font-black text-[#0C1829]">4.9</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 sc-fade-up" style={{ animationDelay: '.05s' }}>
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#E8C547]/50 bg-white/70 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.3em] text-[#8B6914] shadow-sm backdrop-blur-sm sm:text-[11px]">
+              <span className="h-1 w-1 rounded-full bg-[#C9A227]"/>
+              Formule anti-age 2026
+              <span className="h-1 w-1 rounded-full bg-[#C9A227]"/>
             </span>
           </div>
 
-          {/* TITRE - serif italic pour l'élégance */}
-          <h1 className="mt-6 text-[40px] leading-[1.05] tracking-tight sm:text-[56px] md:text-[68px] sc-fade-up" style={{ animationDelay: '.05s' }}>
-            <span className="sc-serif block text-slate-900">Rajeunissez</span>
-            <span className="sc-shimmer-gold block font-black">en 7 jours</span>
-            <span className="sc-serif mt-1 block text-slate-700">sans effort.</span>
+          <h1 className="mt-5 text-[40px] leading-[1.05] tracking-tight sm:text-[56px] md:text-[68px] sc-fade-up" style={{ animationDelay: '.1s' }}>
+            <span className="sc-serif block text-[#0C1829]">Un regard</span>
+            <span className="sc-gradient-dual block font-black">10 ans plus jeune</span>
+            <span className="sc-serif mt-1 block text-[#2A3F5F]">en une semaine.</span>
           </h1>
 
-          <p className="mx-auto mt-5 max-w-xl text-[14px] leading-relaxed text-slate-600 sm:text-[16px] sc-fade-up" style={{ animationDelay: '.1s' }}>
-            Serum dermatologique contre{' '}
-            <span className="font-black text-slate-900">cernes, rides et poches</span>.
-            Formule premium, eclat immediat,{' '}
-            <span className="bg-gradient-to-r from-amber-500 via-rose-400 to-amber-500 bg-clip-text font-black text-transparent">sans effet secondaire</span>.
-          </p>
-
-          {/* IMAGE centrale stackee */}
-          <div className="relative mt-8 sc-fade-up" style={{ animationDelay: '.15s' }}>
-            <div className="pointer-events-none absolute -inset-6 rounded-[3rem] bg-gradient-to-br from-amber-300/50 via-rose-300/30 to-amber-300/50 blur-3xl"/>
-            <div className="relative mx-auto max-w-md overflow-hidden rounded-[2rem] bg-white shadow-[0_25px_70px_-12px_rgba(15,33,55,.25)] ring-1 ring-amber-300/30 sc-bob">
-              <LazyImg src={MEDIA.hero} alt="Serum Anti-Cernes" aspect="4/5" priority/>
-              <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-slate-900/20 to-transparent"/>
-            </div>
-
-            {/* Badges flottants */}
-            <div className="absolute -left-2 top-8 rotate-[-8deg] rounded-sm bg-slate-950 px-3 py-2 text-center shadow-xl sm:-left-4">
-              <p className="text-[9px] font-black uppercase tracking-[0.25em] text-amber-300">Resultat</p>
-              <p className="sc-shimmer-gold text-[16px] font-black leading-tight">7 jours</p>
-            </div>
-            <div className="absolute -right-2 bottom-8 rotate-[6deg] rounded-sm bg-white px-3 py-2 shadow-xl ring-1 ring-amber-200 sm:-right-4">
-              <p className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-800">Note clients</p>
-              <p className="flex items-center gap-0.5 text-amber-400">
-                {[1,2,3,4,5].map(i => <Star key={i}/>)}
-                <span className="ml-1 text-[11px] font-black text-slate-900">4.9</span>
-              </p>
+          {/* VIDEO application — mise en avant */}
+          <div className="relative mx-auto mt-8 max-w-sm sc-fade-up" style={{ animationDelay: '.18s' }}>
+            <div className="pointer-events-none absolute -inset-4 rounded-[2.5rem] bg-gradient-to-br from-[#E8C547]/35 via-[#FF6B7A]/20 to-[#E8C547]/35 blur-2xl"/>
+            <div className="relative overflow-hidden rounded-[1.75rem] shadow-[0_20px_50px_-12px_rgba(12,24,41,.35)] ring-2 ring-[#E8C547]/40">
+              <LazyVideo src={MEDIA.videoApp} poster={MEDIA.videoPoster} aspect="9/16"/>
+              <div className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-[#0C1829]/60 to-transparent p-4 text-left">
+                <p className="text-[9px] font-black uppercase tracking-[0.3em] text-[#F0D78C]">Application reelle</p>
+                <p className="sc-serif text-[15px] text-white">30 secondes suffisent.</p>
+              </div>
             </div>
           </div>
 
@@ -521,13 +574,13 @@ export default function SerumCerneLanding() {
           <div className="mt-10 sc-fade-up" style={{ animationDelay: '.2s' }}>
             <div className="flex items-baseline justify-center gap-3">
               <span className="sc-shimmer-gold text-4xl font-black sm:text-5xl">{fmtNum(orderTotal(PRICES, 1))}</span>
-              <span className="text-lg font-bold text-slate-800 sm:text-xl">FCFA</span>
+              <span className="text-lg font-bold text-[#1A2B4A] sm:text-xl">FCFA</span>
               <span className="text-sm text-slate-400 line-through sm:text-base">{fmt(OLD_PRICE_UNIT)}</span>
-              <span className="rounded-sm bg-slate-950 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">-{DISCOUNT_PCT}%</span>
+              <span className="rounded-sm bg-gradient-to-r from-[#D94A5F] to-[#FF5C72] px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-md">-{DISCOUNT_PCT}%</span>
             </div>
 
             <div className="mx-auto mt-6 max-w-sm">
-              <CTA onClick={() => openModal(1)} variant="navy" size="lg">
+              <CTA onClick={() => openModal(1)} variant="coral" size="lg">
                 Je commande · {fmt(orderTotal(PRICES, 1))} <Arrow/>
               </CTA>
             </div>
@@ -537,11 +590,11 @@ export default function SerumCerneLanding() {
           </div>
 
           {/* Trust badges */}
-          <div className="mt-6 grid grid-cols-2 gap-2 text-[11px] font-semibold text-slate-700 sm:grid-cols-4 sm:gap-3 sm:text-[12px] sc-fade-up" style={{ animationDelay: '.25s' }}>
-            <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 ring-1 ring-amber-200 backdrop-blur-sm"><Check/>Formule douce</span>
-            <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 ring-1 ring-amber-200 backdrop-blur-sm"><Check/>Sans paraben</span>
-            <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 ring-1 ring-amber-200 backdrop-blur-sm"><Check/>Livre en 24h</span>
-            <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 ring-1 ring-amber-200 backdrop-blur-sm"><Check/>Cash livraison</span>
+          <div className="mt-6 grid grid-cols-2 gap-2 text-[11px] font-semibold text-[#2A3F5F] sm:grid-cols-4 sm:gap-3 sm:text-[12px] sc-fade-up" style={{ animationDelay: '.25s' }}>
+            <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-white/85 px-3 py-1.5 ring-1 ring-[#E8C547]/40 backdrop-blur-sm"><Check/>Formule douce</span>
+            <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-white/85 px-3 py-1.5 ring-1 ring-[#E8C547]/40 backdrop-blur-sm"><Check/>Sans paraben</span>
+            <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-white/85 px-3 py-1.5 ring-1 ring-[#E8C547]/40 backdrop-blur-sm"><Check/>Livre en 24h</span>
+            <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-white/85 px-3 py-1.5 ring-1 ring-[#E8C547]/40 backdrop-blur-sm"><Check/>Cash livraison</span>
           </div>
         </div>
       </section>
@@ -549,13 +602,13 @@ export default function SerumCerneLanding() {
       <GoldDivider/>
 
       {/* ===== STATS BAR ===== */}
-      <section className="bg-white border-y border-amber-100">
+      <section className="bg-gradient-to-r from-white via-[#FDF6EE] to-white border-y border-[#E8C547]/25">
         <div className="mx-auto grid max-w-5xl grid-cols-2 gap-3 px-4 py-6 sm:grid-cols-4 sm:gap-4 sm:py-8">
           {[
-            { n: '7 j', l: 'Premiers resultats' },
-            { n: '3 500+', l: 'Clientes ravies' },
-            { n: '100%', l: 'Dermatologique' },
-            { n: '4.9/5', l: 'Note clients' },
+            { n: '7 j', l: 'Transformation visible' },
+            { n: '3 500+', l: 'Femmes conquises' },
+            { n: '100%', l: 'Actifs certifies' },
+            { n: '4.9/5', l: 'Satisfaction client' },
           ].map((s, i) => (
             <div key={i} className="text-center">
               <p className="sc-shimmer-gold text-[26px] font-black sm:text-[32px]">{s.n}</p>
@@ -568,31 +621,31 @@ export default function SerumCerneLanding() {
       {/* ===================================================== */}
       {/* BLOC 1 : PROBLEME (img-2)                              */}
       {/* ===================================================== */}
-      <section className="sc-cv relative overflow-hidden bg-[#faf8f5] py-14 sm:py-18">
+      <section className="sc-cv relative overflow-hidden bg-[#FDF6EE] py-14 sm:py-18">
         <div className="mx-auto max-w-6xl px-4">
           <div className="grid items-center gap-8 md:grid-cols-2 md:gap-12">
             <div className="sc-fade-up order-2 md:order-1">
-              <span className="inline-block text-[10px] font-black uppercase tracking-[0.3em] text-rose-500">Le probleme</span>
+              <span className="inline-block text-[10px] font-black uppercase tracking-[0.3em] text-[#D94A5F]">Le constat</span>
               <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">
-                <span className="sc-serif block text-slate-900">Ces</span>
-                <span className="block bg-gradient-to-r from-rose-400 via-orange-400 to-rose-400 bg-clip-text text-transparent">cernes fatigues</span>
-                <span className="sc-serif block text-slate-700">vous trahissent.</span>
+                <span className="sc-serif block text-slate-900">Votre regard</span>
+                <span className="block sc-gradient-rose">trahit votre fatigue</span>
+                <span className="sc-serif block text-slate-700">chaque matin.</span>
               </h2>
               <p className="mt-4 text-[14px] leading-relaxed text-slate-600 sm:text-[15px]">
-                Regard terne, rides marquees, peau gonflee au reveil.
-                Vous paraissez plus agee que vous ne l'etes.
+                Cernes marques, teint terne, poches au reveil…
+                <span className="mt-2 block font-semibold text-[#1A2B4A]">Vous meritez un soin digne des instituts de beaute — sans quitter votre domicile.</span>
               </p>
               <div className="mt-6">
                 <CTA onClick={() => openModal(1)} variant="coral" size="lg" fullWidth={false}>
-                  Je veux en finir <Arrow/>
+                  Je reprends le controle <Arrow/>
                 </CTA>
               </div>
             </div>
             <div className="order-1 sc-fade-up md:order-2" style={{ animationDelay: '.1s' }}>
               <div className="relative">
-                <div className="pointer-events-none absolute -inset-3 rounded-[2rem] bg-gradient-to-br from-rose-300/30 to-orange-300/30 blur-3xl"/>
+                <div className="pointer-events-none absolute -inset-3 rounded-[2rem] bg-gradient-to-br from-[#FF6B7A]/30 via-[#FF8A9B]/20 to-[#E8C547]/25 blur-3xl"/>
                 <div className="relative overflow-hidden rounded-[2rem] shadow-xl ring-1 ring-rose-100">
-                  <LazyVideo src={MEDIA.problem} aspect="1/1"/>
+                  <LazyImg src={MEDIA.problem} alt="Cernes et fatigue visible" aspect="1/1"/>
                 </div>
               </div>
             </div>
@@ -603,7 +656,7 @@ export default function SerumCerneLanding() {
       {/* Marquee avis courts */}
       <Marquee
         variant="navy"
-        items={['"Mes cernes ont disparu" - Aminata', '"Ma peau illumine" - Fatou', '"Resultat spectaculaire" - Mariam', '"Je parais 5 ans plus jeune" - Rokia', '"Merci" - Clarisse']}
+        items={['"Mon regard a change" - Aminata', '"Resultat des le 3e jour" - Fatou', '"Le meilleur investissement beaute" - Mariam', '"Je me sens confiante" - Rokia', '"Livraison ultra rapide" - Clarisse']}
       />
 
       {/* ===================================================== */}
@@ -621,20 +674,19 @@ export default function SerumCerneLanding() {
               </div>
             </div>
             <div className="sc-fade-up" style={{ animationDelay: '.1s' }}>
-              <span className="inline-block text-[10px] font-black uppercase tracking-[0.3em] text-amber-600">La solution</span>
+              <span className="inline-block text-[10px] font-black uppercase tracking-[0.3em] text-[#8B6914]">La reponse scientifique</span>
               <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">
-                <span className="sc-serif block text-slate-900">Le serum</span>
-                <span className="sc-shimmer-gold block">qui efface</span>
-                <span className="sc-serif block text-slate-700">vos annees.</span>
+                <span className="sc-serif block text-slate-900">Le serum qui</span>
+                <span className="sc-shimmer-gold block">reactive</span>
+                <span className="sc-serif block text-slate-700">votre eclat naturel.</span>
               </h2>
               <p className="mt-4 text-[14px] leading-relaxed text-slate-600 sm:text-[15px]">
-                Actifs brevetes : acide hyaluronique,
-                caffeine pure, peptides anti-age.
-                <span className="mt-2 block font-black text-amber-700">Effet immediat. Resultat durable.</span>
+                Concentration optimale d&apos;acide hyaluronique, caffeine pure et peptides anti-age.
+                <span className="mt-2 block font-black sc-gradient-dual">Penetration rapide · Action ciblee · Zero residue gras.</span>
               </p>
               <div className="mt-6">
                 <CTA onClick={() => openModal(1)} variant="gold" size="lg" fullWidth={false}>
-                  J'essaye maintenant <Arrow/>
+                  Decouvrir la formule <Arrow/>
                 </CTA>
               </div>
             </div>
@@ -647,26 +699,26 @@ export default function SerumCerneLanding() {
       {/* ===================================================== */}
       {/* VIDEO 1 - DEMO                                         */}
       {/* ===================================================== */}
-      <section className="sc-cv relative overflow-hidden bg-slate-950 py-16 sm:py-20">
-        <div className="pointer-events-none absolute top-10 left-1/4 h-60 w-60 rounded-full bg-amber-400/20 blur-3xl sc-float-slow"/>
-        <div className="pointer-events-none absolute bottom-10 right-1/4 h-60 w-60 rounded-full bg-rose-400/15 blur-3xl sc-float-slow" style={{ animationDelay: '3s' }}/>
+      <section className="sc-cv relative overflow-hidden sc-navy-section py-16 sm:py-20">
+        <div className="pointer-events-none absolute top-10 left-1/4 h-60 w-60 rounded-full bg-[#E8C547]/20 blur-3xl sc-float-slow"/>
+        <div className="pointer-events-none absolute bottom-10 right-1/4 h-60 w-60 rounded-full bg-[#FF6B7A]/15 blur-3xl sc-float-slow" style={{ animationDelay: '3s' }}/>
         <div className="relative mx-auto max-w-4xl px-4 text-center">
-          <span className="inline-block text-[10px] font-black uppercase tracking-[0.3em] text-amber-400">Demonstration</span>
+          <span className="inline-block text-[10px] font-black uppercase tracking-[0.3em] text-[#E8C547]">Geste beaute</span>
           <h2 className="mt-2 text-3xl font-black leading-tight text-white sm:text-4xl">
-            <span className="sc-serif block">Une goutte</span>
-            <span className="sc-shimmer-gold block">change tout.</span>
+            <span className="sc-serif block">Regardez</span>
+            <span className="sc-gradient-dual block">comment l&apos;appliquer</span>
           </h2>
           <p className="mt-3 text-[13px] text-stone-300 sm:text-[14px]">
-            Application simple, absorption immediate.
+            Technique professionnelle en 30 secondes. Absorption instantanee, fini veloute.
           </p>
 
           <div className="mx-auto mt-8 max-w-sm sc-fade-up">
-            <LazyVideo src={MEDIA.video1} aspect="9/16"/>
+            <LazyVideo src={MEDIA.videoApp} poster={MEDIA.videoPoster} aspect="9/16"/>
           </div>
 
           <div className="mx-auto mt-6 max-w-sm">
             <CTA onClick={() => openModal(1)} variant="gold" size="lg">
-              Je veux ce resultat <Arrow/>
+              Je veux ce geste beaute <Arrow/>
             </CTA>
           </div>
         </div>
@@ -675,23 +727,23 @@ export default function SerumCerneLanding() {
       {/* ===================================================== */}
       {/* BLOC 3 : FORMULE (img-4)                               */}
       {/* ===================================================== */}
-      <section className="sc-cv relative overflow-hidden bg-[#faf8f5] py-14 sm:py-18">
+      <section className="sc-cv relative overflow-hidden bg-[#FDF6EE] py-14 sm:py-18">
         <div className="mx-auto max-w-6xl px-4">
           <div className="grid items-center gap-8 md:grid-cols-2 md:gap-12">
             <div className="sc-fade-up order-2 md:order-1">
-              <span className="inline-block text-[10px] font-black uppercase tracking-[0.3em] text-amber-600">Formule exclusive</span>
+              <span className="inline-block text-[10px] font-black uppercase tracking-[0.3em] text-[#8B6914]">Laboratoire certifie</span>
               <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">
-                <span className="sc-serif block text-slate-900">Des actifs</span>
-                <span className="block bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 bg-clip-text text-transparent">premium</span>
-                <span className="sc-serif block text-slate-700">venus du labo.</span>
+                <span className="sc-serif block text-slate-900">Une formule</span>
+                <span className="block sc-gradient-gold">clinique</span>
+                <span className="sc-serif block text-slate-700">pensee pour vos yeux.</span>
               </h2>
               <p className="mt-4 text-[14px] leading-relaxed text-slate-600 sm:text-[15px]">
-                Caffeine anti-poches. Acide hyaluronique hydrate.
-                Vitamine C illumine. Peptides redensifient.
+                Caffeine drainante · Acide hyaluronique repulpant · Vitamine C eclaircissante · Peptides restructurants.
+                <span className="mt-2 block font-semibold text-[#1A2B4A]">Testee dermatologiquement. Convient aux peaux sensibles.</span>
               </p>
               <div className="mt-6">
                 <CTA onClick={() => openModal(1)} variant="navy" size="lg" fullWidth={false}>
-                  J'achete la formule <Arrow/>
+                  Commander la formule <Arrow/>
                 </CTA>
               </div>
             </div>
@@ -710,7 +762,7 @@ export default function SerumCerneLanding() {
       {/* ===================================================== */}
       {/* BLOC 4 : ECLAT (img-5)                                 */}
       {/* ===================================================== */}
-      <section className="sc-cv relative overflow-hidden bg-gradient-to-br from-amber-50 via-white to-rose-50 py-14 sm:py-18">
+      <section className="sc-cv relative overflow-hidden bg-gradient-to-br from-[#FBF0E4] via-white to-[#FFF0F2] py-14 sm:py-18">
         <div className="mx-auto max-w-6xl px-4">
           <div className="grid items-center gap-8 md:grid-cols-2 md:gap-12">
             <div className="sc-fade-up">
@@ -722,19 +774,19 @@ export default function SerumCerneLanding() {
               </div>
             </div>
             <div className="sc-fade-up" style={{ animationDelay: '.1s' }}>
-              <span className="inline-block text-[10px] font-black uppercase tracking-[0.3em] text-rose-500">Eclat retrouve</span>
+              <span className="inline-block text-[10px] font-black uppercase tracking-[0.3em] text-[#D94A5F]">Eclat premium</span>
               <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">
-                <span className="sc-serif block text-slate-900">Une peau</span>
-                <span className="block bg-gradient-to-r from-rose-500 via-amber-500 to-rose-500 bg-clip-text text-transparent">illuminee</span>
-                <span className="sc-serif block text-slate-700">des le 1er matin.</span>
+                <span className="sc-serif block text-slate-900">Un teint</span>
+                <span className="block sc-gradient-dual">lumineux et repose</span>
+                <span className="sc-serif block text-slate-700">des le reveil.</span>
               </h2>
               <p className="mt-4 text-[14px] leading-relaxed text-slate-600 sm:text-[15px]">
-                Eclat naturel, grain de peau lisse,
-                teint uniforme. Tout le monde remarque.
+                Grain de peau affine, cernes estompes, regard frais et jeune.
+                <span className="mt-2 block font-black sc-gradient-coral">L&apos;effet « bonne nuit de sommeil » — chaque jour.</span>
               </p>
               <div className="mt-6">
                 <CTA onClick={() => openModal(1)} variant="coral" size="lg" fullWidth={false}>
-                  Je veux cet eclat <Arrow/>
+                  Reveler mon eclat <Arrow/>
                 </CTA>
               </div>
             </div>
@@ -749,25 +801,25 @@ export default function SerumCerneLanding() {
         <div className="mx-auto max-w-6xl px-4">
           <div className="grid items-center gap-8 md:grid-cols-2 md:gap-12">
             <div className="sc-fade-up order-2 md:order-1">
-              <span className="inline-block text-[10px] font-black uppercase tracking-[0.3em] text-amber-600">Resultats filmes</span>
+              <span className="inline-block text-[10px] font-black uppercase tracking-[0.3em] text-[#8B6914]">Preuve en video</span>
               <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">
-                <span className="sc-serif block text-slate-900">Les clientes</span>
-                <span className="sc-shimmer-gold block">temoignent.</span>
+                <span className="sc-serif block text-slate-900">Elles l&apos;appliquent,</span>
+                <span className="sc-shimmer-gold block">elles adorent.</span>
               </h2>
               <p className="mt-4 text-[14px] leading-relaxed text-slate-600 sm:text-[15px]">
-                Centaines de transformations partagees chaque semaine.
-                La preuve en mouvement.
+                Gestuelle simple, texture legere, resultat visible.
+                <span className="mt-2 block font-semibold text-[#1A2B4A]">Des milliers de femmes en Cote d&apos;Ivoire l&apos;ont deja adopte.</span>
               </p>
               <div className="mt-6">
                 <CTA onClick={() => openModal(1)} variant="gold" size="lg" fullWidth={false}>
-                  Je veux essayer <Arrow/>
+                  Essayer comme elles <Arrow/>
                 </CTA>
               </div>
             </div>
             <div className="order-1 sc-fade-up md:order-2" style={{ animationDelay: '.1s' }}>
               <div className="relative mx-auto max-w-sm">
                 <div className="pointer-events-none absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-amber-400/40 to-rose-300/30 blur-3xl"/>
-                <LazyVideo src={MEDIA.video2} aspect="9/16"/>
+                <LazyVideo src={MEDIA.videoApp} poster={MEDIA.videoPoster} aspect="9/16"/>
               </div>
             </div>
           </div>
@@ -779,37 +831,40 @@ export default function SerumCerneLanding() {
       {/* ===================================================== */}
       {/* AVANT / APRES (img-6 + img-7)                          */}
       {/* ===================================================== */}
-      <section className="sc-cv relative overflow-hidden bg-[#faf8f5] py-14 sm:py-18">
+      <section className="sc-cv relative overflow-hidden bg-[#FDF6EE] py-14 sm:py-18">
         <div className="mx-auto max-w-5xl px-4">
           <div className="mb-8 text-center">
-            <span className="inline-block text-[10px] font-black uppercase tracking-[0.3em] text-amber-600">Clientes reelles</span>
+            <span className="inline-block text-[10px] font-black uppercase tracking-[0.3em] text-[#8B6914]">Resultats authentiques</span>
             <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">
               <span className="sc-serif block text-slate-900">Avant</span>
               <span className="text-slate-400 mx-1">→</span>
-              <span className="sc-shimmer-gold">Apres 7 jours</span>
+              <span className="sc-gradient-dual">Apres 7 jours</span>
             </h2>
+            <p className="mx-auto mt-3 max-w-lg text-[13px] text-slate-600 sm:text-[14px]">
+              Transformation reelle, sans filtre. <span className="font-bold sc-gradient-coral">Votre tour maintenant.</span>
+            </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 md:gap-6">
             <div className="sc-fade-up group relative overflow-hidden rounded-[2rem] shadow-xl ring-1 ring-rose-100">
-              <LazyImg src={MEDIA.avant} alt="Avant" aspect="4/5"/>
+              <LazyImg src={MEDIA.avant} alt="Avant traitement" aspect="4/5"/>
               <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 to-transparent p-5">
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-300">Avant</p>
-                <p className="sc-serif text-2xl text-white">Cernes visibles.</p>
+                <p className="sc-serif text-2xl text-white">Regard fatigue.</p>
               </div>
             </div>
             <div className="sc-fade-up group relative overflow-hidden rounded-[2rem] shadow-xl ring-1 ring-amber-100" style={{ animationDelay: '.15s' }}>
-              <LazyImg src={MEDIA.apres} alt="Apres" aspect="4/5"/>
+              <LazyImg src={MEDIA.apres} alt="Apres 7 jours" aspect="4/5"/>
               <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 to-transparent p-5">
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-300">Apres 7 jours</p>
-                <p className="sc-serif text-2xl text-white">Peau illuminee.</p>
+                <p className="sc-serif text-2xl text-white">Regard rajeuni.</p>
               </div>
             </div>
           </div>
 
           <div className="mx-auto mt-8 max-w-sm">
-            <CTA onClick={() => openModal(1)} variant="navy" size="lg">
-              Je veux ce resultat <Arrow/>
+            <CTA onClick={() => openModal(1)} variant="coral" size="lg">
+              Obtenir ce resultat <Arrow/>
             </CTA>
           </div>
         </div>
@@ -828,11 +883,12 @@ export default function SerumCerneLanding() {
       <section className="sc-cv relative overflow-hidden bg-white py-14 sm:py-18">
         <div className="mx-auto max-w-5xl px-4">
           <div className="mb-8 text-center">
-            <span className="inline-block text-[10px] font-black uppercase tracking-[0.3em] text-amber-600">Routine simple</span>
+            <span className="inline-block text-[10px] font-black uppercase tracking-[0.3em] text-[#8B6914]">Rituel 3 etapes</span>
             <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">
-              <span className="sc-serif block text-slate-900">Votre nouveau</span>
-              <span className="sc-shimmer-gold">rituel beaute.</span>
+              <span className="sc-serif block text-slate-900">Votre routine</span>
+              <span className="sc-gradient-dual">anti-age express.</span>
             </h2>
+            <p className="mx-auto mt-3 max-w-md text-[13px] text-slate-600">Moins de 2 minutes, matin et soir. <span className="font-bold sc-gradient-gold">Resultats cumulatifs.</span></p>
           </div>
 
           <div className="grid gap-6 md:grid-cols-[1.1fr_1fr] md:items-center">
@@ -847,12 +903,12 @@ export default function SerumCerneLanding() {
 
             <div className="sc-fade-up space-y-3" style={{ animationDelay: '.1s' }}>
               {[
-                { n: 'I', t: 'Nettoyer', d: 'Sur peau propre et seche, matin et soir.' },
-                { n: 'II', t: 'Appliquer', d: '2-3 gouttes sur le contour de l\'oeil.' },
-                { n: 'III', t: 'Masser', d: 'Tapotements doux. Laissez penetrer 1 minute.' },
+                { n: 'I', t: 'Preparer', d: 'Nettoyez le visage. Sechez delicatement le contour des yeux.' },
+                { n: 'II', t: 'Appliquer', d: '2 a 3 gouttes sur l\'anneau. Tapotez du coin interne vers l\'externe.' },
+                { n: 'III', t: 'Activer', d: 'Laissez penetrer 60 secondes. Admirez l\'eclat immediat.' },
               ].map((x, i) => (
-                <div key={i} className="flex gap-4 rounded-[1.5rem] bg-[#faf8f5] p-4 shadow-md ring-1 ring-amber-100 transition-all hover:-translate-y-0.5 hover:shadow-xl">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-950 font-black text-amber-300 shadow">
+                <div key={i} className="flex gap-4 rounded-[1.5rem] bg-[#FDF6EE] p-4 shadow-md ring-1 ring-amber-100 transition-all hover:-translate-y-0.5 hover:shadow-xl">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#0C1829] to-[#1A2F4A] font-black text-[#F0D78C] shadow">
                     {x.n}
                   </div>
                   <div>
@@ -874,24 +930,26 @@ export default function SerumCerneLanding() {
       {/* ===================================================== */}
       {/* VIDEO 3 - TEMOIGNAGE                                   */}
       {/* ===================================================== */}
-      <section className="sc-cv relative overflow-hidden bg-slate-950 py-16 sm:py-20">
-        <div className="pointer-events-none absolute top-10 right-1/4 h-60 w-60 rounded-full bg-rose-400/15 blur-3xl sc-float-slow"/>
-        <div className="pointer-events-none absolute bottom-10 left-1/4 h-60 w-60 rounded-full bg-amber-400/20 blur-3xl sc-float-slow" style={{ animationDelay: '3s' }}/>
+      <section className="sc-cv relative overflow-hidden sc-navy-section py-16 sm:py-20">
+        <div className="pointer-events-none absolute top-10 right-1/4 h-60 w-60 rounded-full bg-[#FF6B7A]/15 blur-3xl sc-float-slow"/>
+        <div className="pointer-events-none absolute bottom-10 left-1/4 h-60 w-60 rounded-full bg-[#E8C547]/20 blur-3xl sc-float-slow" style={{ animationDelay: '3s' }}/>
         <div className="relative mx-auto max-w-4xl px-4 text-center">
-          <span className="inline-block text-[10px] font-black uppercase tracking-[0.3em] text-amber-400">Temoignage video</span>
+          <span className="inline-block text-[10px] font-black uppercase tracking-[0.3em] text-[#E8C547]">Experience client</span>
           <h2 className="mt-2 text-3xl font-black leading-tight text-white sm:text-4xl">
-            <span className="sc-serif block">Des</span>
-            <span className="sc-shimmer-gold block">transformations</span>
-            <span className="sc-serif block">qui inspirent.</span>
+            <span className="sc-serif block">Elles ont</span>
+            <span className="sc-gradient-dual block">transforme leur regard</span>
           </h2>
+          <p className="mt-3 text-[13px] text-stone-300 sm:text-[14px]">
+            Application quotidienne, resultats progressifs et durables.
+          </p>
 
           <div className="mx-auto mt-8 max-w-sm sc-fade-up">
-            <LazyVideo src={MEDIA.video3} aspect="9/16"/>
+            <LazyVideo src={MEDIA.videoApp} poster={MEDIA.videoPoster} aspect="9/16"/>
           </div>
 
           <div className="mx-auto mt-6 max-w-sm">
             <CTA onClick={() => openModal(1)} variant="gold" size="lg">
-              Je rejoins ces clientes <Arrow/>
+              Rejoindre le mouvement <Arrow/>
             </CTA>
           </div>
         </div>
@@ -900,7 +958,7 @@ export default function SerumCerneLanding() {
       {/* ===================================================== */}
       {/* VU DANS - logos presse stylises                        */}
       {/* ===================================================== */}
-      <section className="sc-cv relative overflow-hidden bg-[#faf8f5] py-14">
+      <section className="sc-cv relative overflow-hidden bg-[#FDF6EE] py-14">
         <div className="mx-auto max-w-5xl px-4">
           <div className="text-center">
             <span className="inline-block text-[10px] font-black uppercase tracking-[0.4em] text-amber-600">On en parle</span>
@@ -929,19 +987,19 @@ export default function SerumCerneLanding() {
       {/* ===================================================== */}
       {/* BUNDLES LUXE - flacons dores synthetiques              */}
       {/* ===================================================== */}
-      <section className="sc-cv relative overflow-hidden bg-slate-950 py-16 sm:py-20">
-        <div className="pointer-events-none absolute left-1/2 top-0 h-48 w-48 -translate-x-1/2 rounded-full bg-amber-400/30 blur-3xl"/>
+      <section className="sc-cv relative overflow-hidden sc-navy-section py-16 sm:py-20">
+        <div className="pointer-events-none absolute left-1/2 top-0 h-48 w-48 -translate-x-1/2 rounded-full bg-[#E8C547]/25 blur-3xl"/>
         <div className="relative mx-auto max-w-5xl px-4">
           <div className="mb-10 text-center">
-            <span className="inline-block rounded-sm bg-amber-400 px-4 py-1 text-[10px] font-black uppercase tracking-[0.3em] text-slate-900 shadow-lg">
+            <span className="inline-block rounded-sm bg-gradient-to-r from-[#C9A227] via-[#E8C547] to-[#C9A227] px-4 py-1 text-[10px] font-black uppercase tracking-[0.3em] text-[#1A1208] shadow-lg">
               Coffret exclusif
             </span>
             <h2 className="mt-3 text-3xl font-black leading-tight text-white sm:text-4xl">
-              <span className="sc-serif block">Choisissez votre</span>
-              <span className="sc-shimmer-gold block">cure beaute.</span>
+              <span className="sc-serif block">Investissez dans</span>
+              <span className="sc-shimmer-gold block">votre beaute.</span>
             </h2>
             <p className="mt-2 text-[13px] text-stone-400 sm:text-[14px]">
-              Plus de jours · <span className="font-black text-amber-400">plus d'economies</span>.
+              Plus vous commandez, <span className="font-black text-[#E8C547]">plus vous economisez</span> sur votre cure.
             </p>
           </div>
 
@@ -951,31 +1009,31 @@ export default function SerumCerneLanding() {
                 qty: 1, label: '1 flacon', desc: 'Decouvrir',
                 price: orderTotal(PRICES, 1), oldPrice: OLD_PRICE_UNIT,
                 tag: '', saveLabel: 'Pour tester',
-                accent: 'from-stone-300 to-stone-500',
-                bg: 'from-stone-800 to-stone-900',
-                ring: 'ring-1 ring-stone-700',
+                accent: 'from-[#6B7280] to-[#9CA3AF]',
+                bg: 'from-[#1F2937] to-[#111827]',
+                ring: 'ring-1 ring-stone-600',
               },
               {
                 qty: 2, label: '2 flacons', desc: 'Cure complete',
                 price: orderTotal(PRICES, 2), oldPrice: OLD_PRICE_UNIT * 2,
                 tag: 'POPULAIRE', saveLabel: fmtSave(OLD_PRICE_UNIT * 2 - PRICES[2]),
-                accent: 'from-amber-300 via-yellow-300 to-amber-400',
-                bg: 'from-amber-950 to-yellow-950',
-                ring: 'ring-2 ring-amber-400',
+                accent: 'from-[#C9A227] via-[#E8C547] to-[#D4A82A]',
+                bg: 'from-[#1A1508] to-[#2D2208]',
+                ring: 'ring-2 ring-[#E8C547]',
               },
               {
                 qty: 3, label: '3 flacons', desc: 'Coffret premium',
                 price: orderTotal(PRICES, 3), oldPrice: OLD_PRICE_UNIT * 3,
                 tag: 'MEILLEURE OFFRE', saveLabel: fmtSave(OLD_PRICE_UNIT * 3 - PRICES[3]),
-                accent: 'from-rose-300 via-pink-300 to-amber-300',
-                bg: 'from-rose-950 to-amber-950',
-                ring: 'ring-2 ring-rose-300',
+                accent: 'from-[#D94A5F] via-[#FF6B7A] to-[#E8C547]',
+                bg: 'from-[#1A0A10] to-[#2D1810]',
+                ring: 'ring-2 ring-[#FF6B7A]',
               },
             ].map((b) => (
               <button
                 key={b.qty}
                 onClick={() => openModal(b.qty)}
-                className={`group relative overflow-hidden rounded-[1.5rem] bg-slate-900/80 p-3 text-left shadow-xl backdrop-blur-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl sm:p-4 ${b.ring} ${b.qty === 2 ? 'sm:scale-[1.04]' : ''}`}
+                className={`group relative overflow-hidden rounded-[1.5rem] bg-[#0C1829]/90 p-3 text-left shadow-xl backdrop-blur-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl sm:p-4 ${b.ring} ${b.qty === 2 ? 'sm:scale-[1.04] ring-[#E8C547]/60 shadow-[0_0_40px_-8px_rgba(232,197,71,.5)]' : ''}`}
               >
                 {b.tag && (
                   <span className={`absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-sm bg-gradient-to-r ${b.accent} px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-slate-900 shadow-lg animate-pulse sm:text-[10px]`}>
@@ -1047,18 +1105,18 @@ export default function SerumCerneLanding() {
         <div className="mx-auto max-w-2xl px-4">
           <div className="mb-3 flex items-center justify-between text-[11px] font-bold sm:text-[12px]">
             <span className="text-slate-500">Disponible ce jour</span>
-            <span className="inline-flex items-center gap-1 text-rose-600">
+            <span className="inline-flex items-center gap-1 text-[#D94A5F]">
               <span>🔥</span> {stock} restants
             </span>
           </div>
-          <div className="h-1 overflow-hidden rounded-full bg-stone-100">
+          <div className="h-1 overflow-hidden rounded-full bg-[#FBF0E4]">
             <div
-              className="h-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 transition-all duration-500"
+              className="h-full bg-gradient-to-r from-[#D94A5F] via-[#E8C547] to-[#FF6B7A] transition-all duration-500"
               style={{ width: `${stockPct}%` }}
             />
           </div>
           <div className="mt-6">
-            <CTA onClick={() => openModal(1)} variant="navy" size="lg">
+            <CTA onClick={() => openModal(1)} variant="coral" size="lg">
               Commander maintenant <Arrow/>
             </CTA>
           </div>
@@ -1074,7 +1132,7 @@ export default function SerumCerneLanding() {
       <section className="sc-cv relative overflow-hidden bg-gradient-to-b from-[#e5ddd5] to-[#d9d2c4] py-14 sm:py-20">
         <div className="relative mx-auto max-w-3xl px-4">
           <div className="mb-8 text-center">
-            <span className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.25em] text-amber-300 shadow-lg">
+            <span className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#0C1829] to-[#1A2F4A] px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.25em] text-[#F0D78C] shadow-lg">
               Conversations reelles
             </span>
             <h2 className="mt-3 text-2xl font-black leading-tight sm:text-3xl md:text-4xl">
@@ -1130,7 +1188,7 @@ export default function SerumCerneLanding() {
                   <p className="mt-0.5 text-[13px] text-slate-800">bonjour jai commande le serum hier jai recu aujourdhui livraison rapide</p>
                   <p className="mt-1 text-right text-[9px] text-slate-400">09:47 · Remis</p>
                 </div>
-                <div className="ml-auto max-w-[88%] rounded-2xl rounded-tr-sm bg-gradient-to-br from-amber-300 to-yellow-300 px-3 py-2 shadow-sm sc-fade-up" style={{ animationDelay: '.12s' }}>
+                <div className="ml-auto max-w-[88%] rounded-2xl rounded-tr-sm bg-gradient-to-br from-[#C9A227] via-[#E8C547] to-[#D4A82A] px-3 py-2 shadow-sm sc-fade-up" style={{ animationDelay: '.12s' }}>
                   <p className="text-[13px] font-medium text-slate-900">Parfait Fatou ! Appliquez matin et soir pendant 7 jours. Vous verrez la difference ✨</p>
                   <p className="mt-1 text-right text-[9px] text-slate-800/70">09:48 · Remis</p>
                 </div>
@@ -1157,7 +1215,7 @@ export default function SerumCerneLanding() {
       <section className="sc-cv bg-white py-14">
         <div className="mx-auto max-w-5xl px-4">
           <div className="mb-8 text-center">
-            <span className="inline-block rounded-sm bg-amber-400 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.3em] text-slate-900 shadow">
+            <span className="inline-block rounded-sm bg-gradient-to-r from-[#C9A227] via-[#E8C547] to-[#C9A227] px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.3em] text-[#1A1208] shadow">
               3 500+ avis verifies
             </span>
             <h2 className="mt-3 text-3xl font-black leading-tight sm:text-4xl">
@@ -1174,16 +1232,16 @@ export default function SerumCerneLanding() {
               { n: 'Clarisse T.',v: 'San Pedro', s: 4, t: 'Tres bon produit. Les resultats sont la au bout d\'une semaine. Je suis satisfaite.' },
               { n: 'Awa M.',     v: 'Korhogo',   s: 5, t: 'J\'ai essaye beaucoup de serums. Celui-ci est de loin le meilleur. Illumination incroyable.' },
             ].map((r, i) => (
-              <div key={i} className="rounded-[1.2rem] bg-gradient-to-br from-amber-50/40 to-white p-4 shadow-sm ring-1 ring-amber-100 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:ring-amber-300">
+              <div key={i} className="rounded-[1.2rem] bg-gradient-to-br from-[#FBF0E4]/60 via-white to-[#FFF0F2]/40 p-4 shadow-sm ring-1 ring-[#E8C547]/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:ring-[#E8C547]/50">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 text-sm font-black text-slate-900 shadow">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#C9A227] via-[#E8C547] to-[#D4A82A] text-sm font-black text-[#1A1208] shadow">
                     {r.n.split(' ').map(w => w[0]).join('')}
                   </div>
                   <div>
                     <p className="text-[13px] font-black">{r.n}</p>
                     <p className="text-[10px] text-slate-500">{r.v}</p>
                   </div>
-                  <div className="ml-auto flex items-center gap-0.5 text-amber-400">
+                  <div className="ml-auto flex items-center gap-0.5 text-[#C9A227]">
                     {Array.from({ length: r.s }).map((_, i) => <Star key={i}/>)}
                     {Array.from({ length: 5 - r.s }).map((_, i) => <Star key={i} className="text-stone-300"/>)}
                   </div>
@@ -1198,22 +1256,22 @@ export default function SerumCerneLanding() {
       {/* ===================================================== */}
       {/* BLOC ENGAGEMENT (img-9)                                */}
       {/* ===================================================== */}
-      <section className="sc-cv relative overflow-hidden bg-gradient-to-br from-amber-50 via-white to-rose-50 py-14 sm:py-18">
+      <section className="sc-cv relative overflow-hidden bg-gradient-to-br from-[#FBF0E4] via-white to-[#FFF0F2] py-14 sm:py-18">
         <div className="mx-auto max-w-6xl px-4">
           <div className="grid items-center gap-8 md:grid-cols-2 md:gap-12">
             <div className="sc-fade-up order-2 md:order-1">
-              <span className="inline-block text-[10px] font-black uppercase tracking-[0.3em] text-amber-600">Notre engagement</span>
+              <span className="inline-block text-[10px] font-black uppercase tracking-[0.3em] text-[#8B6914]">Notre promesse</span>
               <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">
-                <span className="sc-serif block text-slate-900">Satisfaction</span>
-                <span className="sc-shimmer-gold block">garantie.</span>
+                <span className="sc-serif block text-slate-900">Qualite</span>
+                <span className="sc-gradient-dual block">sans compromis.</span>
               </h2>
               <ul className="mt-5 space-y-2.5 text-[13px] sm:text-[14px]">
                 {[
-                  'Formule dermatologique brevetee · actifs premium',
-                  'Testee et approuvee par 3 500+ clientes',
-                  'Sans paraben · sans effet secondaire',
-                  'Livraison 24h a Abidjan · 48h regions',
-                  'Paiement uniquement a la livraison',
+                  'Formule brevetee · actifs de grade cosmetique',
+                  'Validee par plus de 3 500 clientes satisfaites',
+                  'Sans paraben, sans silicone, sans parfum agressif',
+                  'Livraison express 24h Abidjan · 48h en regions',
+                  'Paiement uniquement a reception — zero avance',
                 ].map((x, i) => (
                   <li key={i} className="flex items-start gap-2 text-slate-700">
                     <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-950 text-amber-300 shadow">
@@ -1233,7 +1291,7 @@ export default function SerumCerneLanding() {
               <div className="relative">
                 <div className="pointer-events-none absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-amber-300/40 to-rose-300/30 blur-3xl"/>
                 <div className="relative overflow-hidden rounded-[2rem] shadow-xl ring-1 ring-amber-100">
-                  <LazyVideo src={MEDIA.engagement} aspect="1/1"/>
+                  <LazyVideo src={MEDIA.videoApp} poster={MEDIA.videoPoster} aspect="1/1"/>
                 </div>
               </div>
             </div>
@@ -1244,7 +1302,7 @@ export default function SerumCerneLanding() {
       {/* ===================================================== */}
       {/* FAQ                                                    */}
       {/* ===================================================== */}
-      <section className="sc-cv bg-[#faf8f5] py-14 sm:py-18">
+      <section className="sc-cv bg-[#FDF6EE] py-14 sm:py-18">
         <div className="mx-auto max-w-3xl px-4">
           <div className="mb-8 text-center">
             <h2 className="text-2xl font-black leading-tight sm:text-3xl md:text-4xl">
@@ -1279,23 +1337,23 @@ export default function SerumCerneLanding() {
       {/* BANNIERE FINALE avec fond video opacifie               */}
       {/* ===================================================== */}
       <section className="sc-cv relative overflow-hidden py-16 sm:py-24">
-        <video src={MEDIA.engagement} autoPlay loop muted playsInline aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-20"/>
-        <div className="pointer-events-none absolute inset-0 bg-slate-950/85"/>
-        <div className="pointer-events-none absolute left-10 top-10 h-32 w-32 rounded-full bg-amber-400/30 blur-2xl sc-float-slow"/>
-        <div className="pointer-events-none absolute right-10 bottom-10 h-40 w-40 rounded-full bg-rose-400/25 blur-3xl sc-float-slow" style={{ animationDelay: '2s' }}/>
+        <video src={MEDIA.videoApp} autoPlay loop muted playsInline aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-20"/>
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#0C1829]/90 via-[#0C1829]/88 to-[#152A45]/92"/>
+        <div className="pointer-events-none absolute left-10 top-10 h-32 w-32 rounded-full bg-[#E8C547]/25 blur-2xl sc-float-slow"/>
+        <div className="pointer-events-none absolute right-10 bottom-10 h-40 w-40 rounded-full bg-[#FF6B7A]/20 blur-3xl sc-float-slow" style={{ animationDelay: '2s' }}/>
 
         <div className="relative mx-auto max-w-3xl px-4 text-center text-white">
-          <span className="inline-block text-[10px] font-black uppercase tracking-[0.4em] text-amber-300">Derniere chance</span>
+          <span className="inline-block text-[10px] font-black uppercase tracking-[0.4em] text-[#E8C547]">Offre du jour</span>
           <h2 className="mt-4 text-3xl font-black leading-tight sm:text-4xl md:text-5xl">
-            <span className="sc-serif block">Rajeunissez</span>
-            <span className="sc-shimmer-gold block">maintenant.</span>
+            <span className="sc-serif block">Offrez-vous le regard</span>
+            <span className="sc-gradient-dual block">que vous meritez.</span>
           </h2>
           <p className="mt-4 text-[14px] text-stone-300 sm:text-[16px]">
-            Serum Anti-Cernes Premium · {fmt(orderTotal(PRICES, 1))} · Paiement a la livraison
+            Serum Anti-Cernes Premium · <span className="sc-shimmer-gold font-black">{fmt(orderTotal(PRICES, 1))}</span> · Livraison offerte
           </p>
 
           <div className="mx-auto mt-8 max-w-sm">
-            <CTA onClick={() => openModal(1)} variant="gold" size="lg">
+            <CTA onClick={() => openModal(1)} variant="coral" size="lg">
               Je commande maintenant
             </CTA>
           </div>
@@ -1306,23 +1364,23 @@ export default function SerumCerneLanding() {
       </section>
 
       {/* ===== FOOTER ===== */}
-      <footer className="bg-slate-950 py-8 text-center text-[11px] text-amber-200/60">
+      <footer className="bg-gradient-to-r from-[#0C1829] via-[#152A45] to-[#0C1829] py-8 text-center text-[11px] text-[#E8C547]/70">
         <p>© 2026 · Cote d`Ivoire · GS Pipeline · Tous droits reserves</p>
         <p className="mt-1">Service client 7j/7 · Livraison Abidjan 24h · Paiement a la livraison</p>
       </footer>
 
       {/* ===== STICKY BOTTOM BAR ===== */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-amber-400/30 bg-white/95 px-3 py-2.5 shadow-[0_-8px_30px_rgba(0,0,0,.1)] backdrop-blur-md sm:px-4 sm:py-3">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E8C547]/30 bg-white/95 px-3 py-2.5 shadow-[0_-8px_30px_rgba(12,24,41,.12)] backdrop-blur-md sm:px-4 sm:py-3">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 sm:gap-3">
-            <img src={MEDIA.hero} alt="" className="h-11 w-11 rounded-xl object-cover shadow-md ring-2 ring-amber-300 sm:h-12 sm:w-12"/>
+            <img src={MEDIA.hero} alt="" className="h-11 w-11 rounded-xl object-cover shadow-md ring-2 ring-[#E8C547]/50 sm:h-12 sm:w-12"/>
             <div className="min-w-0">
-              <p className="truncate text-[12px] font-black text-slate-900 sm:text-[13px]">Serum Anti-Cernes</p>
+              <p className="truncate text-[12px] font-black text-[#0C1829] sm:text-[13px]">Serum Anti-Cernes</p>
               <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px]">
-                <span className="font-bold text-amber-700">{fmt(orderTotal(PRICES, 1))}</span>
+                <span className="font-bold text-[#8B6914]">{fmt(orderTotal(PRICES, 1))}</span>
                 <span className="text-slate-400">·</span>
-                <span className="inline-flex items-center gap-0.5 font-mono font-bold text-rose-500">
-                  <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-rose-500"/>
+                <span className="inline-flex items-center gap-0.5 font-mono font-bold text-[#D94A5F]">
+                  <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#FF5C72]"/>
                   {pad(countdown.h)}:{pad(countdown.m)}:{pad(countdown.s)}
                 </span>
               </div>
@@ -1330,9 +1388,9 @@ export default function SerumCerneLanding() {
           </div>
           <button
             onClick={() => openModal(1)}
-            className="sc-cta relative inline-flex items-center gap-1.5 overflow-hidden rounded-full bg-slate-950 px-5 py-2.5 text-[13px] font-black uppercase tracking-wider text-amber-300 shadow-[0_10px_25px_-4px_rgba(15,33,55,.5)] ring-1 ring-amber-400 transition-transform hover:scale-105 sm:px-6 sm:py-3 sm:text-[14px]"
+            className="sc-cta relative inline-flex items-center gap-1.5 overflow-hidden rounded-full bg-gradient-to-r from-[#D94A5F] via-[#FF5C72] to-[#FF8A9B] px-5 py-2.5 text-[13px] font-black uppercase tracking-wider text-white shadow-[0_10px_28px_-4px_rgba(217,74,95,.55)] ring-1 ring-white/20 transition-transform hover:scale-105 sm:px-6 sm:py-3 sm:text-[14px]"
           >
-            <span className="sc-cta-sheen absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-amber-300/30 to-transparent"/>
+            <span className="sc-cta-sheen absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent"/>
             <span className="relative">Commander</span>
             <Arrow/>
           </button>
@@ -1341,10 +1399,10 @@ export default function SerumCerneLanding() {
 
       {/* ===== TOAST ===== */}
       {toast && (
-        <div className={`fixed bottom-20 left-3 z-40 flex items-center gap-2.5 rounded-[1rem] bg-white px-3.5 py-2.5 shadow-2xl ring-1 ring-amber-100 sm:bottom-24 sm:left-4 ${toast.visible ? 'sc-toast-in' : 'sc-toast-out'}`}>
-          <div className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 text-slate-900 shadow">
+        <div className={`fixed bottom-20 left-3 z-40 flex items-center gap-2.5 rounded-[1rem] bg-white px-3.5 py-2.5 shadow-2xl ring-1 ring-[#E8C547]/30 sm:bottom-24 sm:left-4 ${toast.visible ? 'sc-toast-in' : 'sc-toast-out'}`}>
+          <div className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#C9A227] via-[#E8C547] to-[#D4A82A] text-[#1A1208] shadow">
             <Check/>
-            <span className="absolute inset-0 rounded-full bg-amber-400/30 sc-pulse-dot"/>
+            <span className="absolute inset-0 rounded-full bg-[#E8C547]/30 sc-pulse-dot"/>
           </div>
           <div>
             <p className="text-[12px] font-black text-slate-900">{toast.n} vient de commander</p>
@@ -1364,21 +1422,21 @@ export default function SerumCerneLanding() {
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
 
-            <div className="relative overflow-hidden bg-slate-950 px-6 py-8 text-center text-white">
-              <div className="pointer-events-none absolute -top-6 -right-6 h-24 w-24 rounded-full bg-amber-400/30 blur-2xl"/>
-              <div className="pointer-events-none absolute -bottom-6 -left-6 h-24 w-24 rounded-full bg-rose-400/25 blur-2xl"/>
-              <span className="inline-block text-[10px] font-black uppercase tracking-[0.4em] text-amber-300">Attendez</span>
+            <div className="relative overflow-hidden bg-gradient-to-br from-[#0C1829] via-[#152A45] to-[#1A2F4A] px-6 py-8 text-center text-white">
+              <div className="pointer-events-none absolute -top-6 -right-6 h-24 w-24 rounded-full bg-[#E8C547]/30 blur-2xl"/>
+              <div className="pointer-events-none absolute -bottom-6 -left-6 h-24 w-24 rounded-full bg-[#FF6B7A]/25 blur-2xl"/>
+              <span className="inline-block text-[10px] font-black uppercase tracking-[0.4em] text-[#E8C547]">Attendez</span>
               <h3 className="sc-serif mt-3 text-2xl leading-tight">
                 Votre peau merite <br/>
-                <span className="sc-shimmer-gold">ce serum premium</span>.
+                <span className="sc-gradient-dual">un soin d&apos;exception</span>.
               </h3>
               <p className="mt-2 text-[13px] text-stone-300">
-                Paiement a la livraison.
+                Livraison rapide · Paiement a la reception · Satisfait ou rembourse.
               </p>
             </div>
 
             <div className="px-6 py-5">
-              <CTA onClick={() => openModal(1)} variant="gold" size="lg">
+              <CTA onClick={() => openModal(1)} variant="coral" size="lg">
                 Je commande maintenant
               </CTA>
               <button
@@ -1420,4 +1478,8 @@ export default function SerumCerneLanding() {
       />
     </div>
   );
+}
+
+export default function SerumCerneLanding() {
+  return <SerumCerneLandingPage config={SERUM_CERNE_FB_CONFIG} />;
 }

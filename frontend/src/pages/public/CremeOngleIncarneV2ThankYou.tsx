@@ -17,7 +17,7 @@ const META_PIXEL_ID = '1491294965321454';
 const TEMPLATE_SLUG = 'creme-ongle-incarne-v2';
 const PRODUCT_CODE = 'CREME_ONGLE_INCARNE';
 const PRODUCT_NAME = 'Crème Anti-Ongle Incarné';
-const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const PRICES: Record<number, number> = { 1: 7500, 2: 12900, 3: 18900 };
 const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 
 declare global { interface Window { fbq: any; _fbq: any } }

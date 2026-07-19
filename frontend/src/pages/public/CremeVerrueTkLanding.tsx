@@ -189,7 +189,7 @@ function BounceCTA({ onClick, children, variant = 'rose', large, className = '' 
 function ScrollingBar({ variant = 'brown' }: { variant?: 'brown' | 'rose' | 'cream' }) {
   const messages = {
     brown: '✦ Paiement à la livraison ✦ Livraison rapide CI ✦ Soin ciblé peau ✦ Édition 2026 ✦ Stock limité ✦ Service client réactif',
-    rose:  `⚡ OFFRE DU JOUR — 1 boîte ${fmtTotal(1)} F ⚡ Pack 2 = -1 100 F ⚡ Pack 3 = -6 100 F + guide ⚡ Profitez avant fin ⚡`,
+    rose:  `⚡ OFFRE DU JOUR — 1 boîte ${fmtTotal(1)} F ⚡ Pack 2 = -2 900 F ⚡ Pack 3 = -4 800 F + guide ⚡ Profitez avant fin ⚡`,
     cream: '★ Crème dermatologique premium ★ Aide à atténuer les verrues ★ Application simple ★ +500 clients satisfaits ★',
   };
   const text = messages[variant];

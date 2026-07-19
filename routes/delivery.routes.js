@@ -2,7 +2,7 @@ import express from 'express';
 import { prisma } from '../utils/prisma.js';
 import { authenticate, authorize } from '../middlewares/auth.middleware.js';
 import { notifyOrderAssigned, notifyDeliveryListCreated } from '../utils/notifications.js';
-import { excludeIsolatedProductsFilter } from '../utils/isolatedProducts.js';
+import { excludeIsolatedProductsFilter, ISOLATED_PRODUCT_CODES } from '../utils/isolatedProducts.js';
 
 const router = express.Router();
 
@@ -103,8 +103,18 @@ router.post('/assign', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
       where: {
         companyId: req.user.companyId,
         id: { in: orderIds.map(id => parseInt(id)) }
-      }
+      },
+      include: { product: { select: { code: true } } },
     });
+
+    const isolatedOrders = ordersToAssign.filter((o) =>
+      ISOLATED_PRODUCT_CODES.includes(String(o.product?.code || '').toUpperCase()),
+    );
+    if (isolatedOrders.length > 0) {
+      return res.status(400).json({
+        error: 'Ces commandes sont gérées sur bouilloire-commandes, pas dans obgestion.',
+      });
+    }
 
     const invalidOrders = ordersToAssign.filter(o => o.deliveryType === 'EXPEDITION' || o.deliveryType === 'EXPRESS');
     if (invalidOrders.length > 0) {

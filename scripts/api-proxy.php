@@ -24,6 +24,17 @@ const UPSTREAM_BASE = 'https://gs-pipeline-app-2.vercel.app/api';
 const TIMEOUT_SECONDS = 30;
 const CONNECT_TIMEOUT_SECONDS = 8;
 
+// Secret local (VPS uniquement) pour contourner le Vercel Security Checkpoint
+// quand le proxy PHP appelle Vercel côté serveur. Fichier non versionné.
+$bypassSecret = null;
+$localConfigPath = __DIR__ . '/proxy-local.php';
+if (is_readable($localConfigPath)) {
+    $localCfg = include $localConfigPath;
+    if (is_array($localCfg) && !empty($localCfg['bypass_secret'])) {
+        $bypassSecret = (string) $localCfg['bypass_secret'];
+    }
+}
+
 // Headers que l'on transmet au backend (lowercase).
 const FORWARD_REQUEST_HEADERS = [
     'content-type',
@@ -59,6 +70,10 @@ if ($apiPath === '' || $apiPath === false) {
 $upstreamUrl = UPSTREAM_BASE . $apiPath;
 if ($query !== '') {
     $upstreamUrl .= '?' . $query;
+}
+if ($bypassSecret !== null && $bypassSecret !== '') {
+    $upstreamUrl .= (strpos($upstreamUrl, '?') !== false ? '&' : '?')
+        . 'x-vercel-protection-bypass=' . rawurlencode($bypassSecret);
 }
 
 $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
@@ -132,6 +147,9 @@ $forwardHeaders[] = 'X-Forwarded-Host: ' . ($_SERVER['HTTP_HOST'] ?? '');
 $forwardHeaders[] = 'X-Forwarded-Proto: https';
 // Origin whitelisté côté Vercel (voir app.js CORS). Le client reste same-origin via le proxy.
 $forwardHeaders[] = 'Origin: https://obrille.com';
+if ($bypassSecret !== null && $bypassSecret !== '') {
+    $forwardHeaders[] = 'x-vercel-protection-bypass: ' . $bypassSecret;
+}
 $forwardHeaders[] = 'Connection: keep-alive';
 
 curl_setopt($ch, CURLOPT_HTTPHEADER, $forwardHeaders);

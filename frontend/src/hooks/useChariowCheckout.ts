@@ -34,6 +34,19 @@ export interface ChariowCheckoutData {
   customerCity: string;
   /** Optionnel : valeur affichee au client (pour le tracking InitiateCheckout) */
   displayedAmount?: number;
+  /**
+   * Optionnel : code pays ISO alpha-2 (ex. 'CI', 'SN', 'CM') choisi par le
+   * client. Transmis à Chariow (phone.country_code + pays) pour afficher les
+   * moyens de paiement adaptés au pays. Défaut backend : 'CI'.
+   */
+  countryCode?: string;
+  /**
+   * Optionnel : domaine (origin) sur lequel construire l'URL de redirection
+   * apres paiement. Sert aux landings hebergees sur le VPS (obrille.com) pour
+   * garder la page « merci » sur leur propre domaine plutot que sur obgestion.
+   * Ex : window.location.origin.
+   */
+  redirectBase?: string;
 }
 
 export interface ChariowCheckoutConfig {
@@ -118,6 +131,8 @@ export function useChariowCheckout({ cfg, company: companyParam }: UseChariowChe
       sourceUrl: window.location.href,
       metaPixelId: cfg.metaPixelId || undefined,
       displayedAmount: data.displayedAmount || cfg.prices?.[data.qty] || 0,
+      redirectBase: data.redirectBase || undefined,
+      countryCode: data.countryCode || undefined,
     };
 
     try {

@@ -38,9 +38,9 @@ const PRODUCT_CODE = 'SPRAY_DOULEUR';
 const META_PIXEL_ID = '26809431761984777';
 const THANK_YOU_URL = '/spraydouleurtk/merci';
 
-const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const PRICES: Record<number, number> = { 1: 7500, 2: 12100, 3: 17700 };
 const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
-const OLD_PRICE_UNIT = 15000;
+const OLD_PRICE_UNIT = 11500;
 const QTY_OPTS = [
   { v: 1, label: '1 spray', sub: packLabel(PRICES, 1, 'FCFA') },
   { v: 2, label: '2 sprays', sub: packLabel(PRICES, 2, 'FCFA'), tag: 'Populaire', save: 'Economisez 2 900 F' },

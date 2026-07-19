@@ -19,7 +19,7 @@ import { orderTotal, packAmount } from '../../utils/pricingHelpers';
 
 const META_PIXEL_ID = '1491294965321454';
 
-const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const PRICES: Record<number, number> = { 1: 7000, 2: 12000, 3: 15000 };
 const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 
 const PRODUCT_CODE = 'CHAUSSETTE_DE_COMPRESSION';

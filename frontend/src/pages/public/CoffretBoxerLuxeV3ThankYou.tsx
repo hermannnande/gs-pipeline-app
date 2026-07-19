@@ -33,7 +33,7 @@ const FALLBACK_LABELS: Record<string, { label: string; sub: string }> = {
   pro: { label: 'Coffret Pack Pro Luxe — 3 boxers', sub: '3 boxers Pack Pro' },
   both: { label: 'Les 2 coffrets (6 boxers)', sub: '6 boxers premium' },
 };
-const FALLBACK_PRICES: Record<string, number> = { noir: 9900, pro: 9900, both: 16900 };
+const FALLBACK_PRICES: Record<string, number> = { noir: 7000, pro: 7000, both: 14000 };
 
 declare global { interface Window { fbq?: (...args: any[]) => void; _fbq?: any } }
 

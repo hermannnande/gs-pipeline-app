@@ -12,7 +12,7 @@ const META_PIXEL_ID = '1587475759254518';
 const TEMPLATE_SLUG = 'chaussette';
 const PRODUCT_CODE = 'CHAUSSETTE_CHAUFFANTE';
 const PRODUCT_NAME = 'Chaussettes chauffantes tourmaline';
-const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const PRICES: Record<number, number> = { 1: 6500, 2: 11000, 3: 13500 };
 const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 
 declare global { interface Window { fbq: any; _fbq: any } }

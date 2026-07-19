@@ -31,8 +31,8 @@ import { orderTotal, DELIVERY_FEE_CI, packLabel } from '../../utils/pricingHelpe
 // CONFIG
 // =========================================================
 export interface PatchDouleurLandingProps {
-  slug: 'patchdouleurtk' | 'patchdouleurfb';
-  productCode: 'PATCH_DOULEUR_TK' | 'PATCH_DOULEUR_FB';
+  slug: 'patchdouleurtk' | 'patchdouleurfb' | 'patchdouleurtiktok';
+  productCode: 'PATCH_DOULEUR_TK' | 'PATCH_DOULEUR_FB' | 'PATCH_DOULEUR_TIKTOK';
   thankYouUrl: string;
   contentName: string;
   /**
@@ -40,22 +40,28 @@ export interface PatchDouleurLandingProps {
    * pour tracker un canal specifique (ex : pixel dedie patchdouleurfb).
    */
   metaPixelId?: string;
+  /** Pixel Meta additionnel (browser + CAPI via secondaryMetaPixelId). */
+  secondaryMetaPixelId?: string;
+  /** Surcharge des prix par canal (ex. TikTok a 7 500 F). */
+  prices?: Record<number, number>;
 }
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const DEFAULT_META_PIXEL_ID = '26809431761984777';
 
-const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
-const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
+const DEFAULT_PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
 const OLD_PRICE_UNIT = 15000;
-const DISCOUNT_PCT = Math.round((1 - PRICES[1] / OLD_PRICE_UNIT) * 100);
-const fmtTot = (v: number) => orderTotal(PRICES, v).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 
-const QTY_OPTS = [
-  { v: 1, label: '1 boite',  sub: `${fmtTot(1)} FCFA`,  save: '' },
-  { v: 2, label: '2 boites', sub: `${fmtTot(2)} FCFA`, tag: 'Populaire',     save: 'Economisez 2 000 F' },
-  { v: 3, label: '3 boites', sub: `${fmtTot(3)} FCFA`, tag: 'Meilleure offre', save: 'Economisez 6 000 F' },
-];
+function buildQtyOpts(prices: Record<number, number>) {
+  const fmtTot = (v: number) => orderTotal(prices, v).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
+  const fmtSave = (amount: number) =>
+    `Economisez ${amount.toLocaleString('fr-FR').replace(/\u202f|,/g, ' ')} F`;
+  return [
+    { v: 1, label: '1 boite', sub: `${fmtTot(1)} FCFA`, save: '' },
+    { v: 2, label: '2 boites', sub: `${fmtTot(2)} FCFA`, tag: 'Populaire', save: fmtSave(prices[1] * 2 - prices[2]) },
+    { v: 3, label: '3 boites', sub: `${fmtTot(3)} FCFA`, tag: 'Meilleure offre', save: fmtSave(prices[1] * 3 - prices[3]) },
+  ];
+}
 
 // 13 medias UNIQUES — chaque slot est utilise UNE fois
 // Note : ?v=2 sur hero pour forcer le contournement du cache navigateur/CDN
@@ -75,6 +81,11 @@ const MEDIA = {
   manBack2:    '/patch-douleur-tk/premium/man-back-2.webp', // bloc 9 (premium homme bis)
   gallery3:    '/patch-douleur-tk/gallery-3.webp',     // bloc 10
   banner:      '/patch-douleur-tk/banner.webp',        // bloc 10 (split)
+  // Videos HD demo produit (01/07/2026) — same-origin, optimisees ~260-360 Ko
+  vAbsorption: '/patch-douleur-tk/absorption.mp4',     // 14 plantes penetrent la peau
+  vPose:       '/patch-douleur-tk/pose.mp4',           // pose express en secondes
+  vSoulagement:'/patch-douleur-tk/soulagement.mp4',    // heures de soulagement sans medicament
+  vSoulagementPoster: '/patch-douleur-tk/soulagement-poster.webp', // poster hero FB (LCP, 9:16, 37 Ko)
 };
 
 declare global { interface Window { fbq: any; _fbq: any; } }
@@ -84,11 +95,26 @@ function initMetaPixel(pixelId: string) {
   const f: any = window.fbq = function (...args: any[]) { f.callMethod ? f.callMethod(...args) : f.queue.push(args); };
   if (!window._fbq) window._fbq = f;
   f.push = f; f.loaded = true; f.version = '2.0'; f.queue = [];
-  const s = document.createElement('script');
-  s.async = true; s.src = 'https://connect.facebook.net/en_US/fbevents.js';
-  document.head.appendChild(s);
+  // Le stub fbq est pret immediatement : init + PageView + tous les track()
+  // suivants (ViewContent/AddToCart) sont mis en file dans f.queue.
   window.fbq('init', pixelId);
   window.fbq('track', 'PageView');
+  // Le SDK lourd (fbevents.js ~70 Ko) est charge en idle : il ne retarde plus
+  // le LCP et vide la file des events des qu'il est pret. Aucun event perdu.
+  const loadSdk = () => {
+    const s = document.createElement('script');
+    s.async = true; s.src = 'https://connect.facebook.net/en_US/fbevents.js';
+    document.head.appendChild(s);
+  };
+  const ric = (window as any).requestIdleCallback;
+  if (typeof ric === 'function') ric(loadSdk, { timeout: 2500 });
+  else setTimeout(loadSdk, 1200);
+}
+
+function initSecondaryMetaPixel(pixelId: string) {
+  if (!pixelId || !window.fbq) return;
+  window.fbq('init', pixelId);
+  window.fbq('trackSingle', pixelId, 'PageView');
 }
 
 interface Product { id: number; code: string; nom: string; prixUnitaire: number }
@@ -157,22 +183,48 @@ function LazyVideo({
   poster?: string;
 }) {
   const { ref, visible } = useOnScreen('400px');
+  // Hero (priority) : le poster (image) est le LCP et s'affiche instantanement ;
+  // la video est montee APRES le premier rendu (idle) pour ne pas concurrencer
+  // le chargement critique et accelerer le LCP.
+  const [heroVideo, setHeroVideo] = useState(false);
+  useEffect(() => {
+    if (!priority) return;
+    const start = () => setHeroVideo(true);
+    const ric = (window as any).requestIdleCallback;
+    if (typeof ric === 'function') {
+      const id = ric(start, { timeout: 1500 });
+      return () => (window as any).cancelIdleCallback?.(id);
+    }
+    const t = setTimeout(start, 700);
+    return () => clearTimeout(t);
+  }, [priority]);
   if (priority) {
     return (
       <div
         className={`relative w-full overflow-hidden bg-gradient-to-br from-[#0a1628] via-[#0c1e2e] to-[#1a2540] ${className}`}
         style={{ aspectRatio: aspect }}
       >
-        <video
-          src={src}
-          poster={poster}
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-          className="h-full w-full object-cover"
-        />
+        {poster && (
+          <img
+            src={poster}
+            alt=""
+            decoding="async"
+            fetchPriority={'high' as any}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        )}
+        {heroVideo && (
+          <video
+            src={src}
+            poster={poster}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            className="pd-fade-in absolute inset-0 h-full w-full object-cover"
+          />
+        )}
         <span className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#0a1628]/60 to-transparent"/>
       </div>
     );
@@ -323,6 +375,71 @@ function BeforeAfter({ before, after }: { before: string; after: string }) {
 }
 
 // =========================================================
+// VIDEO DEMO BLOCK — nouvelles videos HD produit
+// Bloc "En video" reutilisable, intercale 3x dans la page.
+// Sur TK (isTk) : minimal (video + titre + CTA). Sur FB : eyebrow + texte.
+// =========================================================
+function VideoDemoBlock({
+  innerRef, src, eyebrow, title, text, cta, qty, isTk, onOrder, dark = false, note,
+}: {
+  innerRef: React.RefObject<HTMLDivElement>;
+  src: string;
+  eyebrow: string;
+  title: React.ReactNode;
+  text: string;
+  cta: string;
+  qty: number;
+  isTk: boolean;
+  onOrder: (q: number) => void;
+  dark?: boolean;
+  note?: string;
+}) {
+  return (
+    <section
+      ref={innerRef}
+      className={`relative overflow-hidden px-4 py-14 sm:px-6 sm:py-20 ${
+        dark ? 'bg-gradient-to-br from-[#0a1628] via-[#0c1e2e] to-[#1a2540] text-white' : ''
+      }`}
+    >
+      <div className="pointer-events-none absolute inset-0 opacity-30">
+        <div className={`absolute top-1/2 left-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[150px] ${dark ? 'bg-cyan-500' : 'bg-cyan-300/60'}`}/>
+      </div>
+      <div className="relative mx-auto w-full max-w-[860px] text-center">
+        {!isTk && (
+          <span className={`text-[10px] font-black uppercase tracking-[0.45em] ${dark ? 'text-cyan-300' : 'text-cyan-600'}`}>
+            {eyebrow}
+          </span>
+        )}
+        <h2 className={`pd-display ${isTk ? 'mt-0' : 'mt-3'} text-[34px] font-black leading-[1.05] tracking-tight ${dark ? 'text-white' : 'text-[#0a1628]'} sm:text-[48px]`}>
+          {title}
+        </h2>
+        {!isTk && (
+          <p className={`pd-body mx-auto mt-4 max-w-[560px] text-[14px] sm:text-[15px] ${dark ? 'text-cyan-100/85' : 'text-neutral-600'}`}>
+            {text}
+          </p>
+        )}
+
+        <div className="mx-auto mt-8 max-w-[420px]">
+          <LazyVideo src={src} aspect="9/16"/>
+        </div>
+
+        <div className="mt-8">
+          <CTA onClick={() => onOrder(qty)} variant={dark ? 'urgent' : 'primary'} size="lg">
+            {cta}
+            <ArrowR/>
+          </CTA>
+          {!isTk && note && (
+            <p className={`mt-3 text-[10px] font-black uppercase tracking-[0.3em] ${dark ? 'text-cyan-300/60' : 'text-neutral-500'}`}>
+              {note}
+            </p>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// =========================================================
 // MAIN COMPONENT
 // =========================================================
 export default function PatchDouleurLandingPremium({
@@ -331,9 +448,14 @@ export default function PatchDouleurLandingPremium({
   thankYouUrl,
   contentName,
   metaPixelId = DEFAULT_META_PIXEL_ID,
+  secondaryMetaPixelId,
+  prices: pricesOverride,
 }: PatchDouleurLandingProps) {
   const company = co();
   const isTk = slug === 'patchdouleurtk';
+  const prices = pricesOverride ?? DEFAULT_PRICES;
+  const discountPct = useMemo(() => Math.round((1 - prices[1] / OLD_PRICE_UNIT) * 100), [prices]);
+  const qtyOpts = useMemo(() => buildQtyOpts(prices), [prices]);
 
   const [product, setProduct] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
@@ -356,15 +478,25 @@ export default function PatchDouleurLandingPremium({
     trackPageView(slug, company);
     if (metaPixelId) {
       initMetaPixel(metaPixelId);
+      if (secondaryMetaPixelId) initSecondaryMetaPixel(secondaryMetaPixelId);
       window.fbq?.('track', 'ViewContent', {
         content_name: contentName,
         content_ids: [productCode],
         content_type: 'product',
-        value: orderTotal(PRICES, 1),
+        value: orderTotal(prices, 1),
         currency: 'XOF',
       });
+      if (secondaryMetaPixelId) {
+        window.fbq?.('trackSingle', secondaryMetaPixelId, 'ViewContent', {
+          content_name: contentName,
+          content_ids: [productCode],
+          content_type: 'product',
+          value: orderTotal(prices, 1),
+          currency: 'XOF',
+        });
+      }
     }
-  }, [slug, company, productCode, contentName, metaPixelId]);
+  }, [slug, company, productCode, contentName, metaPixelId, secondaryMetaPixelId, prices]);
 
   // ============= FETCH PRODUCT =============
   useEffect(() => {
@@ -450,12 +582,22 @@ export default function PatchDouleurLandingPremium({
         content_name: contentName,
         content_ids: [productCode],
         content_type: 'product',
-        value: orderTotal(PRICES, quantity),
+        value: orderTotal(prices, quantity),
         currency: 'XOF',
         contents: [{ id: productCode, quantity }],
       });
+      if (secondaryMetaPixelId) {
+        window.fbq?.('trackSingle', secondaryMetaPixelId, 'AddToCart', {
+          content_name: contentName,
+          content_ids: [productCode],
+          content_type: 'product',
+          value: orderTotal(prices, quantity),
+          currency: 'XOF',
+          contents: [{ id: productCode, quantity }],
+        });
+      }
     }
-  }, [contentName, productCode, metaPixelId]);
+  }, [contentName, productCode, metaPixelId, secondaryMetaPixelId, prices]);
 
   // ============= CFG =============
   const cfg = useMemo(() => ({
@@ -464,26 +606,26 @@ export default function PatchDouleurLandingPremium({
     title: contentName,
     thankYouUrl,
     metaPixelId,
-    prices: PRICES,
+    secondaryMetaPixelId,
+    prices,
     images: { hero: MEDIA.hero, avant: MEDIA.avant, apres: MEDIA.apres },
-  }), [slug, productCode, contentName, thankYouUrl, metaPixelId]);
+  }), [slug, productCode, contentName, thankYouUrl, metaPixelId, secondaryMetaPixelId, prices]);
 
   // ============= REVEAL HOOKS =============
   const r1 = useReveal(); const r2 = useReveal(); const r3 = useReveal(); const r4 = useReveal();
   const r5 = useReveal(); const r6 = useReveal(); const r7 = useReveal(); const r8 = useReveal();
   const r9 = useReveal(); const r10 = useReveal();
+  // Refs des 3 nouveaux blocs video HD (absorption / pose / soulagement)
+  const rv1 = useReveal(); const rv2 = useReveal(); const rv3 = useReveal();
 
   // ============= PRELOAD HERO =============
   useEffect(() => {
+    // Precharge le poster hero (LCP) en haute priorite. La video hero est
+    // montee en idle (LazyVideo priority) donc on ne la precharge plus.
     const l = document.createElement('link');
     l.rel = 'preload';
-    if (isTk) {
-      l.as = 'video';
-      l.href = MEDIA.heroVideo;
-    } else {
-      l.as = 'image';
-      l.href = MEDIA.hero;
-    }
+    l.as = 'image';
+    l.href = isTk ? MEDIA.hero : MEDIA.vSoulagementPoster;
     (l as any).fetchPriority = 'high';
     document.head.appendChild(l);
     return () => { try { document.head.removeChild(l); } catch {} };
@@ -545,7 +687,7 @@ export default function PatchDouleurLandingPremium({
               className="mx-auto max-h-[78vh] max-w-[720px] rounded-none shadow-[0_30px_80px_-20px_rgba(6,182,212,0.45)]"
             />
             <div className="absolute right-3 top-3 rounded-full bg-gradient-to-br from-rose-500 via-orange-500 to-amber-500 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.28em] text-white shadow-lg ring-2 ring-white/80">
-              -{DISCOUNT_PCT}%
+              -{discountPct}%
             </div>
           </div>
 
@@ -571,7 +713,7 @@ export default function PatchDouleurLandingPremium({
 
             <div className="relative mt-6 rounded-3xl border border-cyan-200/60 bg-white/95 p-5 shadow-[0_25px_60px_-15px_rgba(6,182,212,0.3)]">
               <div className="flex items-baseline justify-center gap-2">
-                <span className="pd-display text-[36px] font-black leading-none text-[#0a1628] sm:text-[42px]">{fmtNum(orderTotal(PRICES, 1))} <span className="text-[16px] font-bold text-neutral-500">F</span></span>
+                <span className="pd-display text-[36px] font-black leading-none text-[#0a1628] sm:text-[42px]">{fmtNum(orderTotal(prices, 1))} <span className="text-[16px] font-bold text-neutral-500">F</span></span>
                 <span className="text-[13px] font-bold text-neutral-400 line-through">{fmtF(OLD_PRICE_UNIT)}</span>
               </div>
               <CTA onClick={() => openOrder(1)} variant="primary" size="lg" fullWidth>
@@ -596,30 +738,16 @@ export default function PatchDouleurLandingPremium({
                 N°1 anti-douleur
               </span>
               <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.32em] text-rose-600 ring-1 ring-rose-300">
-                -{DISCOUNT_PCT}% aujourd'hui
+                -{discountPct}% aujourd'hui
               </span>
             </div>
 
-            <h1 className="pd-display mx-auto max-w-[860px] text-center text-[42px] font-black leading-[1] tracking-[-0.02em] text-[#0a1628] sm:text-[64px] lg:text-[80px]">
-              Stop aux <span className="pd-grad-cyan">douleurs</span>.<br/>
-              En <span className="pd-grad-coral">3 secondes</span>.
-            </h1>
-
-            <p className="pd-body mx-auto mt-5 max-w-[640px] text-center text-[14px] leading-relaxed text-neutral-700 sm:text-[16px]">
-              Patch chauffant nouvelle generation. Diffusion therapeutique <strong className="font-bold text-[#0a1628]">jusqu'a 12h</strong> sur la zone douloureuse. Mal de dos, sciatique, arthrose, rhumatismes — le soulagement est instantane.
-            </p>
-
-            <div className="mt-5 flex items-center justify-center gap-3">
-              <div className="flex gap-0.5 text-amber-400">{[...Array(5)].map((_, k) => <Star key={k} className="h-4 w-4"/>)}</div>
-              <span className="text-[12px] font-bold text-neutral-700">4.7 / 5 · <span className="underline decoration-dotted underline-offset-2">800+ avis verifies</span></span>
-            </div>
-
-            <div className="relative mx-auto mt-8 max-w-[680px]">
+            <div className="relative mx-auto mt-2 max-w-[420px]">
               <div className="absolute -inset-2 hidden rounded-[40px] bg-gradient-to-br from-cyan-200/40 via-sky-200/40 to-orange-200/40 blur-2xl sm:block"/>
               <div className="relative overflow-hidden rounded-[36px] ring-1 ring-cyan-300/30 shadow-[0_40px_100px_-20px_rgba(6,182,212,0.4)]">
-                <LazyImg src={MEDIA.hero} alt="Patch Anti-Douleur — vue produit" eager aspect="1/1" className="bg-neutral-100"/>
+                <LazyVideo src={MEDIA.vSoulagement} aspect="9/16" priority poster={MEDIA.vSoulagementPoster}/>
                 <div className="absolute -bottom-5 -right-3 flex h-24 w-24 rotate-[-10deg] flex-col items-center justify-center rounded-full bg-gradient-to-br from-rose-500 via-orange-500 to-amber-500 text-white shadow-[0_20px_45px_-12px_rgba(249,115,22,0.7)] ring-4 ring-white sm:-right-6 sm:h-32 sm:w-32">
-                  <span className="pd-display text-[28px] font-black leading-none sm:text-[36px]">-{DISCOUNT_PCT}%</span>
+                  <span className="pd-display text-[28px] font-black leading-none sm:text-[36px]">-{discountPct}%</span>
                   <span className="text-[8px] font-black uppercase tracking-[0.3em] sm:text-[9px]">aujourd'hui</span>
                 </div>
                 <div className="absolute -top-3 left-3 rotate-[-3deg] rounded-md bg-cyan-500 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.3em] text-white shadow-md sm:-top-4 sm:left-6">
@@ -628,12 +756,17 @@ export default function PatchDouleurLandingPremium({
               </div>
             </div>
 
+            <h1 className="pd-display mx-auto mt-6 max-w-[860px] text-center text-[42px] font-black leading-[1] tracking-[-0.02em] text-[#0a1628] sm:text-[64px] lg:text-[80px]">
+              Stop aux <span className="pd-grad-cyan">douleurs</span>.<br/>
+              En <span className="pd-grad-coral">3 secondes</span>.
+            </h1>
+
             <div className="mx-auto mt-10 flex max-w-[640px] flex-col items-center gap-5 rounded-3xl border border-cyan-200/70 bg-white/90 p-6 shadow-[0_25px_60px_-15px_rgba(6,182,212,0.25)] backdrop-blur sm:flex-row sm:justify-between">
               <div className="flex items-end gap-3">
                 <div>
                   <span className="block text-[9px] font-black uppercase tracking-[0.4em] text-neutral-500">Prix d'introduction</span>
                   <div className="mt-1 flex items-baseline gap-2.5">
-                    <span className="pd-display text-[40px] font-black leading-none text-[#0a1628] sm:text-[48px]">{fmtNum(orderTotal(PRICES, 1))} <span className="text-[18px] font-bold tracking-tight text-neutral-500">F</span></span>
+                    <span className="pd-display text-[40px] font-black leading-none text-[#0a1628] sm:text-[48px]">{fmtNum(orderTotal(prices, 1))} <span className="text-[18px] font-bold tracking-tight text-neutral-500">F</span></span>
                     <span className="text-[14px] font-bold text-neutral-400 line-through">{fmtF(OLD_PRICE_UNIT)}</span>
                   </div>
                 </div>
@@ -759,6 +892,22 @@ export default function PatchDouleurLandingPremium({
         </div>
       </section>
 
+      {/* ============================================== */}
+      {/* BLOC VIDEO HD — ABSORPTION (14 plantes)        */}
+      {/* ============================================== */}
+      <VideoDemoBlock
+        innerRef={rv1}
+        src={MEDIA.vAbsorption}
+        isTk={isTk}
+        onOrder={openOrder}
+        eyebrow="En video · Absorption"
+        title={<>14 plantes actives qui <span className="pd-grad-cyan">penetrent</span> la peau.</>}
+        text="Sous l'effet de la chaleur, les principes actifs traversent la barriere de la peau et agissent directement au coeur du muscle et de l'articulation."
+        cta="Je veux soulager mes douleurs"
+        qty={1}
+        note="100% naturel · sans medicament"
+      />
+
       <Marquee items={[
         'Mal de dos · Mal de genoux · Sciatique',
         'Articulations · Tensions musculaires',
@@ -789,7 +938,7 @@ export default function PatchDouleurLandingPremium({
                 Commander maintenant
                 <ArrowR/>
               </CTA>
-              {!isTk && <p className="mt-3 text-[10px] font-black uppercase tracking-[0.3em] text-neutral-500">2 boites · economisez {fmtNum(PRICES[1] * 2 - PRICES[2])} F</p>}
+              {!isTk && <p className="mt-3 text-[10px] font-black uppercase tracking-[0.3em] text-neutral-500">2 boites · economisez {fmtNum(prices[1] * 2 - prices[2])} F</p>}
             </div>
           </div>
         </div>
@@ -880,6 +1029,22 @@ export default function PatchDouleurLandingPremium({
           </div>
         </div>
       </section>
+
+      {/* ============================================== */}
+      {/* BLOC VIDEO HD — POSE EXPRESS                    */}
+      {/* ============================================== */}
+      <VideoDemoBlock
+        innerRef={rv2}
+        src={MEDIA.vPose}
+        isTk={isTk}
+        onOrder={openOrder}
+        eyebrow="En video · Pose express"
+        title={<>Se pose en <span className="pd-grad-cyan">quelques secondes</span>.</>}
+        text="Decollez le film, appliquez le patch sur la zone douloureuse et vaquez a vos occupations. Fin et discret, il se porte sous les vetements toute la journee."
+        cta="Commander mon patch"
+        qty={1}
+        note="paiement a la livraison"
+      />
 
       {/* ============================================== */}
       {/* BLOC 7 — VIDEO 3 (sciatique/arthrose)          */}
@@ -978,6 +1143,23 @@ export default function PatchDouleurLandingPremium({
           </div>
         </div>
       </section>
+
+      {/* ============================================== */}
+      {/* BLOC VIDEO HD — SOULAGEMENT (sombre)           */}
+      {/* ============================================== */}
+      <VideoDemoBlock
+        innerRef={rv3}
+        src={MEDIA.vSoulagement}
+        isTk={isTk}
+        onOrder={openOrder}
+        dark
+        eyebrow="En video · Soulagement"
+        title={<>Des heures de <span className="pd-grad-cyan">soulagement</span>, sans medicament.</>}
+        text="Aucune pilule, aucune creme. Vous posez le patch, la chaleur therapeutique fait le travail, et vous retrouvez votre liberte de mouvement."
+        cta="Profiter de l'offre aujourd'hui"
+        qty={2}
+        note="aucun risque · paiement a la reception"
+      />
 
       {/* ============================================== */}
       {/* BLOC 10 — GALLERY-3 + BANNER (split clients)   */}
@@ -1167,11 +1349,11 @@ export default function PatchDouleurLandingPremium({
           </div>
 
           <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-3">
-            {QTY_OPTS.map((o) => {
+            {qtyOpts.map((o) => {
               const isBest = o.v === 3;
               const isPopular = o.v === 2;
               const oldVal = o.v * OLD_PRICE_UNIT;
-              const realVal = orderTotal(PRICES, o.v);
+              const realVal = orderTotal(prices, o.v);
               return (
                 <div
                   key={o.v}
@@ -1353,7 +1535,7 @@ export default function PatchDouleurLandingPremium({
             {/* Prix + countdown (gauche) */}
             <div className="pointer-events-none flex flex-1 flex-col gap-0.5 leading-tight">
               <div className="flex items-baseline gap-2">
-                <span className="pd-display text-[19px] font-black tabular-nums text-cyan-300 sm:text-[22px]">{fmtF(orderTotal(PRICES, 1))}</span>
+                <span className="pd-display text-[19px] font-black tabular-nums text-cyan-300 sm:text-[22px]">{fmtF(orderTotal(prices, 1))}</span>
                 <span className="text-[11px] font-bold text-neutral-400 line-through">{fmtF(OLD_PRICE_UNIT)}</span>
               </div>
               <span className="font-mono text-[10px] tabular-nums text-cyan-200/85 sm:text-[11px]">
@@ -1412,7 +1594,7 @@ export default function PatchDouleurLandingPremium({
             <h4 className="pd-display mt-3 text-[28px] font-black leading-[1.05] tracking-tight text-[#0a1628]">
               <span className="pd-grad-coral">Offre speciale</span> avant de partir.
             </h4>
-            <p className="pd-body mt-3 text-[13.5px] text-neutral-600">Profitez de l'offre <strong className="text-[#0a1628]">2 boites a {fmtF(orderTotal(PRICES, 2))}</strong> avant la rupture de stock.</p>
+            <p className="pd-body mt-3 text-[13.5px] text-neutral-600">Profitez de l'offre <strong className="text-[#0a1628]">2 boites a {fmtF(orderTotal(prices, 2))}</strong> avant la rupture de stock.</p>
             <div className="mt-5">
               <CTA onClick={() => { setExitPopup(false); openOrder(2); }} variant="urgent" size="lg" fullWidth>
                 Je profite de l'offre
@@ -1434,7 +1616,7 @@ export default function PatchDouleurLandingPremium({
         cfg={cfg}
         product={product}
         setProduct={setProduct}
-        qtyOptions={QTY_OPTS}
+        qtyOptions={qtyOpts}
         initialQty={qty}
       />
 
@@ -1466,6 +1648,8 @@ export default function PatchDouleurLandingPremium({
         .pd-glow-cyan   { animation: pdGlowCyan 2.6s ease-in-out infinite }
         .pd-glow-coral  { animation: pdGlowCoral 2.6s ease-in-out infinite }
         .pd-glow-sweep  { animation: pdGlowSweep 3.5s ease-in-out infinite }
+        .pd-fade-in     { animation: pdFadeIn 0.6s ease forwards }
+        @keyframes pdFadeIn { from { opacity: 0 } to { opacity: 1 } }
 
         /* Reveal-on-scroll */
         .pd-reveal-pre  { opacity: 0; transform: translateY(28px) }

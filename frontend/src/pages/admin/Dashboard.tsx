@@ -29,6 +29,7 @@ const WhatsAppInbox = lazy(() => import('./WhatsAppInbox'));
 const LandingTemplates = lazy(() => import('./LandingTemplates'));
 const LandingAnalytics = lazy(() => import('./LandingAnalytics'));
 const WhatsAppSettings = lazy(() => import('./WhatsAppSettings'));
+const DigitalSales = lazy(() => import('./DigitalSales'));
 
 function ContentSpinner() {
   return (
@@ -66,6 +67,7 @@ export default function AdminDashboard() {
         <Route path="audit" element={<Audit />} />
         <Route path="whatsapp" element={<WhatsAppInbox />} />
         <Route path="whatsapp-confirmation" element={<WhatsAppSettings />} />
+        <Route path="ventes-digitales" element={<DigitalSales />} />
         <Route path="templates" element={<LandingTemplates />} />
         <Route path="landing-analytics" element={<LandingAnalytics />} />
       </Routes>

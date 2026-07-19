@@ -71,6 +71,7 @@ export default function Layout({ children }: LayoutProps) {
           { icon: Phone, label: 'À appeler', path: '/admin/to-call' },
           { icon: Calendar, label: 'RDV Programmés', path: '/admin/rdv' },
           { icon: ShoppingCart, label: 'Commandes', path: '/admin/orders' },
+          { icon: DollarSign, label: '📘 Ventes digitales (ebook)', path: '/admin/ventes-digitales' },
           { icon: CheckCircle, label: 'Commandes validées', path: '/admin/validated' },
           { icon: Zap, label: 'Expéditions & EXPRESS', path: '/admin/expeditions' },
           { icon: Bell, label: 'EXPRESS - En agence', path: '/admin/express-agence' },

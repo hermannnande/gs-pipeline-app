@@ -38,6 +38,7 @@ const FALLBACK_NAME_MAPPING = {
   'creme anti cerne': 'CREME_ANTI_CERNE',
   'creme anti lipome': 'CREME_ANTI_LIPOME',
   'creme anti lipome tk': 'CREME_ANTI_LIPOME_TK',
+  'creme lipome tk3': 'CREME_LIPOME_TK3',
   'creme anti verrues': 'CREME_ANTI_VERRUES',
   'creme verrue tk': 'VERRUE_TK',
   'creme probleme de peau': 'CREME_PROBLEME_DE_PEAU',

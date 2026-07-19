@@ -66,7 +66,7 @@ router.get('/products', async (req, res) => {
 // Produits dont les commandes sont consultables via une page-liste autonome
 // (lien public, hors back-office). Whitelist stricte : on n'expose JAMAIS
 // d'autres produits par cet endpoint.
-const PUBLIC_ORDER_PRODUCT_CODES = ISOLATED_PRODUCT_CODES;
+const PUBLIC_ORDER_PRODUCT_CODES = ['BOUILLOIRE_INTELLIGENTE', ...ISOLATED_PRODUCT_CODES];
 
 // Statuts modifiables depuis la page-liste publique (lien sans compte).
 const PUBLIC_ORDER_STATUSES = ['VALIDEE', 'ANNULEE', 'ASSIGNEE', 'LIVREE'];
@@ -93,12 +93,14 @@ router.get('/product-orders', async (req, res) => {
       id: true, orderReference: true, clientNom: true, clientTelephone: true,
       clientVille: true, clientCommune: true, clientAdresse: true,
       quantite: true, montant: true, status: true, createdAt: true, produitNom: true,
+      priorite: true, noteLivreur: true,
     };
 
-    const [orders, total, counts] = await Promise.all([
+    const [orders, total, counts, readyCount] = await Promise.all([
       prisma.order.findMany({ where, select, orderBy: { createdAt: 'desc' }, skip, take: limitNum }),
       prisma.order.count({ where }),
       prisma.order.groupBy({ by: ['status'], where, _count: { _all: true } }),
+      prisma.order.count({ where: { ...where, priorite: true } }),
     ]);
 
     const byStatus = {};
@@ -108,6 +110,7 @@ router.get('/product-orders', async (req, res) => {
       code,
       orders,
       byStatus,
+      readyCount,
       pagination: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) || 1 },
     });
   } catch (error) {
@@ -152,6 +155,101 @@ router.post('/product-orders/:id/status', async (req, res) => {
     res.json({ success: true, id, status });
   } catch (error) {
     console.error('Erreur changement statut public:', error);
+    res.status(500).json({ error: 'Erreur serveur.' });
+  }
+});
+
+// POST /api/public/product-orders/:id/pret-livraison  { code, ready }
+// Marque / démarque une commande « prête à être livrée » (surlignage page bouilloire).
+router.post('/product-orders/:id/pret-livraison', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const code = String(req.body?.code || '').trim().toUpperCase();
+    const ready = req.body?.ready !== false;
+
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'ID invalide.' });
+    if (!PUBLIC_ORDER_PRODUCT_CODES.includes(code)) return res.status(404).json({ error: 'Produit non disponible.' });
+
+    const companyId = await resolveCompanyId(req);
+    const order = await prisma.order.findFirst({ where: { id, companyId }, include: { product: true } });
+    if (!order || (order.product?.code || '').toUpperCase() !== code) {
+      return res.status(404).json({ error: 'Commande introuvable.' });
+    }
+
+    await prisma.order.update({
+      where: { id },
+      data: { priorite: ready, prioriteAt: ready ? new Date() : null, prioritePar: null },
+    });
+
+    res.json({ success: true, id, priorite: ready });
+  } catch (error) {
+    console.error('Erreur pret-livraison public:', error);
+    res.status(500).json({ error: 'Erreur serveur.' });
+  }
+});
+
+// POST /api/public/product-orders/pret-livraison-bulk  { code, ids, ready }
+router.post('/product-orders/pret-livraison-bulk', async (req, res) => {
+  try {
+    const code = String(req.body?.code || '').trim().toUpperCase();
+    const ready = req.body?.ready !== false;
+    const ids = [...new Set(
+      (Array.isArray(req.body?.ids) ? req.body.ids : [])
+        .map((v) => parseInt(v, 10))
+        .filter((v) => !Number.isNaN(v)),
+    )];
+
+    if (!ids.length) return res.status(400).json({ error: 'Aucune commande sélectionnée.' });
+    if (!PUBLIC_ORDER_PRODUCT_CODES.includes(code)) return res.status(404).json({ error: 'Produit non disponible.' });
+
+    const companyId = await resolveCompanyId(req);
+    const orders = await prisma.order.findMany({
+      where: {
+        id: { in: ids },
+        companyId,
+        product: { code: { equals: code, mode: 'insensitive' } },
+      },
+      select: { id: true },
+    });
+    if (!orders.length) return res.status(404).json({ error: 'Commandes introuvables.' });
+
+    const validIds = orders.map((o) => o.id);
+    await prisma.order.updateMany({
+      where: { id: { in: validIds } },
+      data: { priorite: ready, prioriteAt: ready ? new Date() : null, prioritePar: null },
+    });
+
+    res.json({ success: true, count: validIds.length, ids: validIds, priorite: ready });
+  } catch (error) {
+    console.error('Erreur pret-livraison bulk public:', error);
+    res.status(500).json({ error: 'Erreur serveur.' });
+  }
+});
+
+// POST /api/public/product-orders/:id/note  { code, note }
+// Note livraison par commande (page bouilloire-commandes → noteLivreur).
+router.post('/product-orders/:id/note', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const code = String(req.body?.code || '').trim().toUpperCase();
+    const raw = req.body?.note;
+    const note = raw == null || String(raw).trim() === ''
+      ? null
+      : String(raw).trim().slice(0, 300);
+
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'ID invalide.' });
+    if (!PUBLIC_ORDER_PRODUCT_CODES.includes(code)) return res.status(404).json({ error: 'Produit non disponible.' });
+
+    const companyId = await resolveCompanyId(req);
+    const order = await prisma.order.findFirst({ where: { id, companyId }, include: { product: true } });
+    if (!order || (order.product?.code || '').toUpperCase() !== code) {
+      return res.status(404).json({ error: 'Commande introuvable.' });
+    }
+
+    await prisma.order.update({ where: { id }, data: { noteLivreur: note } });
+    res.json({ success: true, id, noteLivreur: note });
+  } catch (error) {
+    console.error('Erreur note livraison public:', error);
     res.status(500).json({ error: 'Erreur serveur.' });
   }
 });
@@ -216,7 +314,9 @@ router.post('/order', async (req, res) => {
     }
 
     try {
-      await notifyNewOrder(order);
+      if (!ISOLATED_PRODUCT_CODES.includes(String(product.code || '').toUpperCase())) {
+        await notifyNewOrder(order);
+      }
     } catch (notifError) {
       console.error('Erreur notification (non bloquante):', notifError);
     }
