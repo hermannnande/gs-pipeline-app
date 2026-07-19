@@ -295,7 +295,10 @@ export default function Orders({ onlyProductCode, pageTitle }: OrdersProps = {})
   // (raison : la DB contient un stock historique enorme de commandes >30j non
   // traitees qui pollueraient la tete de liste. On les ignore = elles restent
   // dans leur ordre naturel par recence, sans promotion.)
-  const MAX_AGE_FOR_PROMOTION_DAYS = 7;
+  // 3 jours : passe ce delai une commande a eu ses chances, elle redescend
+  // d'elle-meme dans l'ordre chronologique au lieu de rester collee en tete.
+  // Pour la garder en haut au-dela, l'appelant l'epingle manuellement (bouton ↑).
+  const MAX_AGE_FOR_PROMOTION_DAYS = 3;
 
   /** Score de base pour les commandes épinglées manuellement (toujours au-dessus des "oubliées"). */
   const MANUAL_PRIORITY_BASE = -1e9;
@@ -303,22 +306,22 @@ export default function Orders({ onlyProductCode, pageTitle }: OrdersProps = {})
   /**
    * Score de tri "intelligent" pour la liste "A appeler" :
    *   - Priorité manuelle (bouton ↑) : score très bas, dernière épinglée en tête
-   *   - Commandes OUBLIEES RECENTES (1-7 jours, 0 appel) : score NEGATIF
+   *   - Commandes OUBLIEES RECENTES (24h-3 jours, 0 appel) : score NEGATIF
    *     => remontent en TETE, plus vieux d'abord
    *   - Commandes RECENTES (< 24h) : score positif = age en heures
    *     => triees par age croissant (les plus recentes d'abord)
-   *   - Commandes ANCIENNES (> 7j) : score positif = age en heures
-   *     => ordre normal (PAS de promotion en tete - on les ignore)
+   *   - Commandes ANCIENNES (> 3j) : score positif = age en heures
+   *     => ordre normal (PAS de promotion en tete - elles redescendent)
    *
    * Resultat visuel :
-   *   [TETE] Cmd 6j sans appel        (score = -144)  🔥 OUBLIEE
-   *          Cmd 3j sans appel        (score = -72)   🔥 OUBLIEE
+   *   [TETE] Cmd 2j sans appel        (score = -48)   🔥 OUBLIEE
+   *          Cmd 30h sans appel       (score = -30)   🔥 OUBLIEE
    *          Cmd 25h sans appel       (score = -25)   🔥 OUBLIEE
    *          ----- limite des 24h -----
    *          Cmd recente 1h           (score = 1)
    *          Cmd recente 23h          (score = 23)
-   *          Cmd 5j (deja appelee)    (score = 120)
-   *          Cmd 30j vieille          (score = 720)   = on l'ignore, en bas
+   *          Cmd 4j sans appel        (score = 96)    = redescendue (>3j)
+   *          Cmd 30j vieille          (score = 720)   = en bas
    *   [PIED] Cmd 152j historique      (score = 3648)  = en bas
    */
   function getPriorityScore(order: Order): number {
@@ -333,13 +336,13 @@ export default function Orders({ onlyProductCode, pageTitle }: OrdersProps = {})
     const ageDays = ageHours / 24;
     const nombreAppels = (order as any).nombreAppels ?? 0;
 
-    // Commande TROP VIEILLE (> 7j) : pas de promotion, ordre habituel
+    // Commande TROP VIEILLE (> 3j) : pas de promotion, ordre habituel
     // (= elle reste a sa place normale dans la liste, pas en tete)
     if (ageDays > MAX_AGE_FOR_PROMOTION_DAYS) {
       return ageHours;
     }
 
-    // Commande OUBLIEE = ancienne (>24h) ET jamais appelee, dans la fenetre 7j.
+    // Commande OUBLIEE = ancienne (>24h) ET jamais appelee, dans la fenetre 3j.
     // Exception : "en attente paiement" = deja traitee par un appelant (le client
     // doit payer), elle ne remonte pas meme si nombreAppels est reste a 0.
     if (ageHours > STALE_HOURS_THRESHOLD && nombreAppels === 0 && !order.enAttentePaiement) {
@@ -387,7 +390,7 @@ export default function Orders({ onlyProductCode, pageTitle }: OrdersProps = {})
     })
     ?.sort((a: Order, b: Order) => getPriorityScore(a) - getPriorityScore(b));
 
-  // Compte des commandes "oubliees recentes" (dans la fenetre 7j) pour le badge
+  // Compte des commandes "oubliees recentes" (dans la fenetre 3j) pour le badge
   const staleCount = (filteredOrders || []).filter(isStaleOrder).length;
   const prioriteCount = (filteredOrders || []).filter((o) => o.priorite).length;
 
@@ -415,7 +418,7 @@ export default function Orders({ onlyProductCode, pageTitle }: OrdersProps = {})
             `${filteredOrders?.length || 0} commande(s) en attente`,
             prioriteCount > 0 ? `↑ ${prioriteCount} en priorité manuelle` : null,
             staleCount > 0
-              ? `🔥 ${staleCount} oubliée(s) (>24h sans appel, <7j) — remontées automatiquement`
+              ? `🔥 ${staleCount} oubliée(s) (>24h sans appel, <3j) — remontées automatiquement`
               : null,
           ]
             .filter(Boolean)
