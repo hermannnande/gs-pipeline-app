@@ -10,12 +10,19 @@ import { useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 
+import { useLandingSlug } from '../../hooks/useLandingSlug';
+
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const META_PIXEL_ID = '1417398840151713';
-const TEMPLATE_SLUG = 'creme-verrue-tk';
-const PRODUCT_CODE = 'CREME_ANTI_VERRUES';
 const PRODUCT_NAME = 'Creme Anti-Verrues TK';
-const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const PRICES_BY_SLUG: Record<string, Record<number, number>> = {
+  'creme-verrue-tk': { 1: 9900, 2: 16900, 3: 24900 },
+  'creme-verrue-tk2': { 1: 8500, 2: 15900, 3: 19400 },
+};
+const PRODUCT_CODE_BY_SLUG: Record<string, string> = {
+  'creme-verrue-tk': 'CREME_ANTI_VERRUES',
+  'creme-verrue-tk2': 'CREME_ANTI_VERRUES2',
+};
 
 declare global { interface Window { fbq: any; _fbq: any } }
 
@@ -43,6 +50,10 @@ function initPixelForPage(pixelId: string): void {
 }
 
 export default function CremeVerrueTkThankYou() {
+  const slug = useLandingSlug();
+  const templateSlug = slug && PRICES_BY_SLUG[slug] ? slug : 'creme-verrue-tk';
+  const productCode = PRODUCT_CODE_BY_SLUG[templateSlug] ?? PRODUCT_CODE_BY_SLUG['creme-verrue-tk'];
+  const prices = PRICES_BY_SLUG[templateSlug] ?? PRICES_BY_SLUG['creme-verrue-tk'];
   const q = new URLSearchParams(useLocation().search);
   const ref = q.get('ref') || '';
   const company = q.get('company') || 'ci';
@@ -58,14 +69,14 @@ export default function CremeVerrueTkThankYou() {
     if (sessionKey && sessionStorage.getItem(sessionKey)) return;
 
     const eventId = ref ? `purchase_${ref}` : `purchase_${Date.now()}`;
-    const value = PRICES[qty] || PRICES[1];
+    const value = prices[qty] || prices[1];
 
     const firePurchase = () => {
       try {
         initPixelForPage(META_PIXEL_ID);
         window.fbq?.('track', 'Purchase', {
           content_name: PRODUCT_NAME,
-          content_ids: [PRODUCT_CODE],
+          content_ids: [productCode],
           content_type: 'product',
           value,
           currency: 'XOF',
@@ -85,14 +96,14 @@ export default function CremeVerrueTkThankYou() {
       const fbp = document.cookie.split('; ').find(c => c.startsWith('_fbp='))?.split('=')[1] || null;
       axios.post(`${API_URL}/public/track-purchase`, {
         ref,
-        slug: TEMPLATE_SLUG,
+        slug: templateSlug,
         company,
         sourceUrl: window.location.href,
         fbc,
         fbp,
       }).catch(() => {});
     }
-  }, [ref, company, qty]);
+  }, [ref, company, qty, prices, productCode, templateSlug]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-sky-50 via-white to-blue-50 px-4 py-10" style={{ fontFamily: "'Inter',system-ui,-apple-system,sans-serif" }}>
@@ -136,7 +147,7 @@ export default function CremeVerrueTkThankYou() {
 
             <div className="flex flex-col gap-2 sm:flex-row">
               <Link
-                to={`/creme-verrue-tk?company=${encodeURIComponent(company)}`}
+                to={`/${templateSlug}?company=${encodeURIComponent(company)}`}
                 className="flex flex-1 items-center justify-center rounded-xl border-2 border-sky-200 px-4 py-3 text-[13px] font-bold text-sky-700 transition hover:border-sky-400 hover:bg-sky-50"
               >
                 Retour au produit

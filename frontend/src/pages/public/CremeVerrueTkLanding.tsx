@@ -11,7 +11,9 @@
  * Config conservee :
  *   - PRODUCT_CODE : CREME_ANTI_VERRUES
  *   - META_PIXEL_ID : 1417398840151713
- *   - Prix : {fmtTotal(1)} / 12 900 / 14 900 FCFA
+ *   - Prix : 9 900 / 16 900 / 24 900 FCFA (pack standard)
+ *     A garder aligne avec la base : scripts/update-creme-verrue-tk-prices.mjs
+ *     (le backend facture depuis le produit, pas depuis la landing).
  *
  * Pour modifier les medias : voir scripts/compress-creme-verrue-tk.mjs
  */
@@ -31,8 +33,8 @@ const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
 const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 const QTY_OPTS = [
   { v: 1, label: '1 boîte',  sub: packLabel(PRICES, 1, 'F') },
-  { v: 2, label: '2 boîtes', sub: packLabel(PRICES, 2, 'F'), tag: 'Le + choisi',     save: 'Économisez 1 100 F' },
-  { v: 3, label: '3 boîtes', sub: packLabel(PRICES, 3, 'F'), tag: 'Meilleure offre', save: 'Économisez 6 100 F + guide offert' },
+  { v: 2, label: '2 boîtes', sub: packLabel(PRICES, 2, 'F'), tag: 'Le + choisi',     save: 'Économisez 2 900 F' },
+  { v: 3, label: '3 boîtes', sub: packLabel(PRICES, 3, 'F'), tag: 'Meilleure offre', save: 'Économisez 4 800 F + guide offert' },
 ];
 
 // Images compressees en WebP local (creme-verrue-tk-v2) + video existante
