@@ -13,7 +13,7 @@ const EMAIL = process.env.ADMIN_EMAIL || 'admin@gs-pipeline.com';
 const PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 const PRODUCT_CODE = 'PATCH_DOULEUR_TIKTOK';
-const NEW_PRICES = { prixUnitaire: 7500, prix2Unites: 12100, prix3Unites: 17700 };
+const NEW_PRICES = { prixUnitaire: 9900, prix2Unites: 16900, prix3Unites: 24900 };
 
 async function login() {
   const res = await fetch(`${API_URL}/auth/login`, {

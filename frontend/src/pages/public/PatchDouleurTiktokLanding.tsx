@@ -12,7 +12,7 @@
  */
 import PatchDouleurLandingPremium from './PatchDouleurLandingPremium';
 
-const TIKTOK_PRICES: Record<number, number> = { 1: 7500, 2: 12100, 3: 17700 };
+const TIKTOK_PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
 
 export default function PatchDouleurTiktokLanding() {
   return (

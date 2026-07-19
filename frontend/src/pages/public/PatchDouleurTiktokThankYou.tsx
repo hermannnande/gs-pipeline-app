@@ -17,7 +17,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 const META_PIXEL_ID = '';
 
 // Memes prix que la landing -> garantit la coherence value cote browser et CAPI.
-const PRICES: Record<number, number> = { 1: 7500, 2: 12100, 3: 17700 };
+const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
 
 const PRODUCT_CODE = 'PATCH_DOULEUR_TIKTOK';
 const CONTENT_NAME = 'Patch Anti-Douleur Chauffant TikTok';
