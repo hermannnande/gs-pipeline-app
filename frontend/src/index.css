@@ -8,7 +8,7 @@
   * {
     @apply border-gray-200;
   }
-  
+
   body {
     @apply bg-gradient-to-br from-gray-50 via-white to-gray-50 text-gray-900;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -36,41 +36,41 @@
     @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
     @apply active:scale-95 transform;
   }
-  
+
   .btn-primary {
-    @apply bg-gradient-to-r from-primary-600 to-primary-700 text-white;
-    @apply hover:from-primary-700 hover:to-primary-800;
-    @apply shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-600/40;
-    @apply disabled:from-gray-300 disabled:to-gray-400 disabled:shadow-none disabled:cursor-not-allowed;
-    @apply focus:ring-primary-500;
+    @apply bg-gradient-to-r from-primary-600 to-primary-500 text-white;
+    @apply hover:brightness-110 hover:-translate-y-0.5;
+    @apply shadow-glow-primary hover:shadow-xl hover:shadow-primary-600/40;
+    @apply disabled:from-gray-300 disabled:to-gray-400 disabled:shadow-none disabled:cursor-not-allowed disabled:translate-y-0;
+    @apply focus:ring-primary-300;
   }
-  
+
   .btn-secondary {
     @apply bg-white text-gray-700 border-2 border-gray-200;
     @apply hover:bg-gray-50 hover:border-gray-300;
     @apply shadow-sm hover:shadow-md;
     @apply focus:ring-gray-300;
   }
-  
+
   .btn-danger {
     @apply bg-gradient-to-r from-red-500 to-red-600 text-white;
     @apply hover:from-red-600 hover:to-red-700;
     @apply shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-600/40;
     @apply focus:ring-red-500;
   }
-  
+
   .btn-success {
-    @apply bg-gradient-to-r from-green-500 to-green-600 text-white;
-    @apply hover:from-green-600 hover:to-green-700;
-    @apply shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-600/40;
-    @apply focus:ring-green-500;
+    @apply bg-gradient-to-r from-emerald-500 to-emerald-600 text-white;
+    @apply hover:from-emerald-600 hover:to-emerald-700;
+    @apply shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-600/40;
+    @apply focus:ring-emerald-500;
   }
 
   .btn-warning {
-    @apply bg-gradient-to-r from-orange-500 to-orange-600 text-white;
-    @apply hover:from-orange-600 hover:to-orange-700;
-    @apply shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-600/40;
-    @apply focus:ring-orange-500;
+    @apply bg-gradient-to-r from-amber-500 to-amber-600 text-white;
+    @apply hover:from-amber-600 hover:to-amber-700;
+    @apply shadow-lg shadow-amber-500/30 hover:shadow-xl hover:shadow-amber-600/40;
+    @apply focus:ring-amber-500;
   }
 
   .btn-ghost {
@@ -81,7 +81,7 @@
   .btn-icon {
     @apply p-2.5 rounded-xl;
   }
-  
+
   /* Inputs Modernes */
   .input {
     @apply w-full px-4 py-3 sm:px-4 sm:py-3 border-2 border-gray-200 rounded-xl;
@@ -94,19 +94,19 @@
   .input-error {
     @apply border-red-300 focus:border-red-500 focus:ring-red-500/20;
   }
-  
+
   /* Cards Modernes */
   .card {
     @apply bg-white rounded-2xl shadow-card p-5 sm:p-6 lg:p-8;
-    @apply border border-gray-100;
-    @apply hover:shadow-card-hover transition-all duration-300;
+    @apply border border-gray-100/80;
+    @apply hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300;
     @apply animate-fade-in;
   }
 
   .card-compact {
     @apply bg-white rounded-xl shadow-card p-4 sm:p-5;
-    @apply border border-gray-100;
-    @apply hover:shadow-card-hover transition-all duration-300;
+    @apply border border-gray-100/80;
+    @apply hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300;
   }
 
   .card-glass {
@@ -118,55 +118,55 @@
     @apply bg-gradient-to-br from-primary-50 to-white rounded-2xl shadow-card p-5 sm:p-6 lg:p-8;
     @apply border border-primary-100;
   }
-  
-  /* Badges Modernes */
+
+  /* Badges Modernes — pastel affine (bg 50, texte 700, anneau 1) */
   .badge {
-    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold;
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] sm:text-xs font-semibold;
     @apply transition-all duration-200;
   }
 
   .badge-primary {
-    @apply bg-blue-100 text-blue-700 ring-1 ring-blue-200;
+    @apply bg-primary-50 text-primary-700 ring-1 ring-primary-100;
   }
 
   .badge-success {
-    @apply bg-green-100 text-green-700 ring-1 ring-green-200;
+    @apply bg-success-50 text-success-700 ring-1 ring-success-100;
   }
 
   .badge-warning {
-    @apply bg-orange-100 text-orange-700 ring-1 ring-orange-200;
+    @apply bg-warning-50 text-warning-700 ring-1 ring-warning-100;
   }
 
   .badge-danger {
-    @apply bg-red-100 text-red-700 ring-1 ring-red-200;
+    @apply bg-danger-50 text-danger-700 ring-1 ring-danger-100;
   }
 
   .badge-gray {
-    @apply bg-gray-100 text-gray-700 ring-1 ring-gray-200;
+    @apply bg-gray-50 text-gray-700 ring-1 ring-gray-200;
   }
 
   /* Stats Card */
   .stat-card {
-    @apply bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6;
-    @apply border border-gray-100 shadow-card;
+    @apply bg-white rounded-2xl p-5 sm:p-6;
+    @apply border border-gray-100/80 shadow-card;
     @apply hover:shadow-card-hover hover:-translate-y-1;
     @apply transition-all duration-300;
   }
 
   .stat-card-primary {
-    @apply from-blue-50 to-white border-blue-100;
+    @apply bg-gradient-to-br from-primary-50/70 to-white border-primary-100;
   }
 
   .stat-card-success {
-    @apply from-green-50 to-white border-green-100;
+    @apply bg-gradient-to-br from-success-50/70 to-white border-success-100;
   }
 
   .stat-card-warning {
-    @apply from-orange-50 to-white border-orange-100;
+    @apply bg-gradient-to-br from-warning-50/70 to-white border-warning-100;
   }
 
   .stat-card-danger {
-    @apply from-red-50 to-white border-red-100;
+    @apply bg-gradient-to-br from-danger-50/70 to-white border-danger-100;
   }
 
   /* Table Moderne */
@@ -175,26 +175,26 @@
   }
 
   .table-modern thead {
-    @apply bg-gradient-to-r from-gray-50 to-gray-100/50;
+    @apply bg-transparent;
   }
 
   .table-modern th {
-    @apply px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider;
-    @apply border-b-2 border-gray-200;
+    @apply px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider;
+    @apply border-b border-gray-100;
   }
 
   .table-modern td {
-    @apply px-4 py-4 text-sm text-gray-900;
+    @apply px-4 py-3.5 text-sm text-gray-900;
     @apply border-b border-gray-100;
   }
 
   .table-modern tbody tr {
-    @apply hover:bg-gray-50/50 transition-colors duration-150;
+    @apply hover:bg-primary-50/40 transition-colors duration-150;
   }
 
   /* Loading States */
   .skeleton {
-    @apply bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200;
+    @apply bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100;
     /* Tailwind n'accepte pas les valeurs arbitraires via @apply (ex: bg-[length:...]) */
     background-size: 1000px 100%;
     @apply animate-shimmer;
@@ -221,6 +221,43 @@
     @apply overflow-y-auto;
     @apply animate-scale-in;
   }
+
+  /* Pastille icone pastel (KPI, actions rapides...) */
+  .chip-icon {
+    @apply inline-flex items-center justify-center p-2.5 rounded-xl shrink-0;
+  }
+  .chip-icon-blue   { @apply bg-primary-50 text-primary-600; }
+  .chip-icon-green  { @apply bg-success-50 text-success-600; }
+  .chip-icon-amber  { @apply bg-warning-50 text-warning-600; }
+  .chip-icon-purple { @apply bg-violet-50 text-violet-600; }
+  .chip-icon-red    { @apply bg-danger-50 text-danger-600; }
+
+  /* Pill de tendance (+/- %) */
+  .trend-pill {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold;
+  }
+  .trend-pill-up {
+    @apply bg-success-50 text-success-600 ring-1 ring-success-100;
+  }
+  .trend-pill-down {
+    @apply bg-danger-50 text-danger-600 ring-1 ring-danger-100;
+  }
+
+  /* Label de section dans la sidebar navy */
+  .nav-section-label {
+    @apply px-4 pt-5 pb-2 text-[10px] font-semibold uppercase text-white/30;
+    letter-spacing: 0.14em;
+  }
+
+  /* Barres de progression degradees (utilisateurs par role, etc.) */
+  .progress-track {
+    @apply h-2 w-full rounded-full bg-gray-100 overflow-hidden;
+  }
+  .progress-fill {
+    @apply h-full rounded-full;
+    background: linear-gradient(90deg, #2E6BFF, #4F8CFF);
+    transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  }
 }
 
 /* Amélioration de la responsivité */
@@ -242,7 +279,7 @@
   .table-responsive::-webkit-scrollbar-thumb {
     @apply bg-gray-300 rounded-full hover:bg-gray-400;
   }
-  
+
   .modal-responsive {
     @apply mx-4 sm:mx-auto max-w-full sm:max-w-lg md:max-w-xl lg:max-w-2xl;
   }
@@ -268,6 +305,41 @@
   .scrollbar-thin::-webkit-scrollbar-thumb {
     @apply bg-gray-300 rounded-full hover:bg-gray-400;
   }
+
+  /* Scrollbar fine pour la sidebar navy */
+  .scrollbar-navy::-webkit-scrollbar {
+    width: 5px;
+  }
+  .scrollbar-navy::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-navy::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+  }
+  .scrollbar-navy::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.22);
+  }
+  .scrollbar-navy {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+  }
+}
+
+/* Stagger helpers : apparition en cascade des cards/KPI */
+.stagger-1, .stagger-2, .stagger-3, .stagger-4, .stagger-5, .stagger-6 {
+  animation-fill-mode: both;
+}
+.stagger-1 { animation-delay: 50ms; }
+.stagger-2 { animation-delay: 100ms; }
+.stagger-3 { animation-delay: 150ms; }
+.stagger-4 { animation-delay: 200ms; }
+.stagger-5 { animation-delay: 250ms; }
+.stagger-6 { animation-delay: 300ms; }
+
+/* Safe-area mobile (bottom nav, iPhone) */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* ==========================================================================
@@ -390,8 +462,24 @@
   .cta-pulse-ring::after,
   .cta-shine::before,
   .cta-attract,
-  .cta-attract::before {
+  .cta-attract::before,
+  .animate-fade-up,
+  .animate-fade-in,
+  .animate-slide-up,
+  .animate-slide-down,
+  .animate-slide-in-right,
+  .animate-slide-in-left,
+  .animate-scale-in,
+  .animate-pulse-dot,
+  .animate-gradient-shift,
+  .animate-shimmer {
     animation: none !important;
   }
+  .card,
+  .card-compact,
+  .stat-card,
+  .btn,
+  .progress-fill {
+    transition: none !important;
+  }
 }
-
