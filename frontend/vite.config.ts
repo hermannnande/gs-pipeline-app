@@ -33,7 +33,11 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: process.env.VITE_PROXY_TARGET || 'http://localhost:5000',
+        // Par defaut : backend de PRODUCTION (Vercel serverless) pour que le
+        // login et les donnees live fonctionnent en preview locale sans
+        // backend a demarrer. Pour developper contre un backend local :
+        //   VITE_PROXY_TARGET=http://localhost:5000 npm run dev
+        target: process.env.VITE_PROXY_TARGET || 'https://gs-pipeline-app-2.vercel.app',
         changeOrigin: true,
       },
     },
