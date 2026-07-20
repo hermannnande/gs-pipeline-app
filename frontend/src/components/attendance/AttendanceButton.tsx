@@ -13,6 +13,44 @@ type Attendance = {
   validation?: string | null;
 };
 
+/* Badge de statut avec point pulse (design 2026). Logique metier inchangee. */
+function StatusPill({
+  tone,
+  icon: Icon,
+  label,
+  pulsing = false,
+}: {
+  tone: 'green' | 'red' | 'orange' | 'blue';
+  icon: any;
+  label: string;
+  pulsing?: boolean;
+}) {
+  const tones = {
+    green: 'bg-success-50 text-success-700 ring-1 ring-success-100',
+    red: 'bg-danger-50 text-danger-700 ring-1 ring-danger-100',
+    orange: 'bg-warning-50 text-warning-700 ring-1 ring-warning-100',
+    blue: 'bg-primary-50 text-primary-700 ring-1 ring-primary-100',
+  };
+  const dotTones = {
+    green: 'bg-success-500',
+    red: 'bg-danger-500',
+    orange: 'bg-warning-500',
+    blue: 'bg-primary-500',
+  };
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wide ${tones[tone]}`}>
+      <span className="relative flex h-2 w-2">
+        {pulsing && (
+          <span className={`absolute inline-flex h-full w-full rounded-full ${dotTones[tone]} opacity-60 animate-pulse-dot`} />
+        )}
+        <span className={`relative inline-flex rounded-full h-2 w-2 ${dotTones[tone]}`} />
+      </span>
+      <Icon size={12} strokeWidth={3} />
+      {label}
+    </span>
+  );
+}
+
 export default function AttendanceButton() {
   const queryClient = useQueryClient();
   const [isGeoLoading, setIsGeoLoading] = useState(false);
@@ -93,43 +131,23 @@ export default function AttendanceButton() {
 
   const statusBadge = () => {
     if (!attendance) {
-      return (
-        <span className="px-3 py-1.5 text-xs font-medium bg-red-100 text-red-700 rounded-full flex items-center gap-1">
-          <X size={14} />
-          ABSENT
-        </span>
-      );
+      return <StatusPill tone="red" icon={X} label="Hors ligne" />;
     }
 
     if (attendance.validation === 'RETARD') {
-      return (
-        <span className="px-3 py-1.5 text-xs font-medium bg-orange-100 text-orange-700 rounded-full flex items-center gap-1">
-          <Clock size={14} />
-          RETARD
-        </span>
-      );
+      return <StatusPill tone="orange" icon={Clock} label="Retard" pulsing />;
     }
 
     if (attendance.heureDepart) {
-      return (
-        <span className="px-3 py-1.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-full flex items-center gap-1">
-          <LogOut size={14} />
-          PARTI
-        </span>
-      );
+      return <StatusPill tone="blue" icon={LogOut} label="Parti" />;
     }
 
-    return (
-      <span className="px-3 py-1.5 text-xs font-medium bg-green-100 text-green-700 rounded-full flex items-center gap-1">
-        <Check size={14} />
-        PRÉSENT
-      </span>
-    );
+    return <StatusPill tone="green" icon={Check} label="En ligne" pulsing />;
   };
 
   if (isLoading) {
     return (
-      <div className="card p-4">
+      <div className="card !p-4 sm:!p-5">
         <div className="flex items-center justify-center py-4">
           <Loader2 className="animate-spin text-primary-600" size={22} />
         </div>
@@ -141,56 +159,86 @@ export default function AttendanceButton() {
   const canMarkDeparture = Boolean(attendance && !attendance.heureDepart);
 
   return (
-    <div className="card p-4 sm:p-6 bg-gradient-to-br from-blue-50 to-purple-50 border border-primary-100">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
-          <MapPin className="text-primary-600" size={20} />
-          Pointage GPS
-        </h3>
-        {statusBadge()}
-      </div>
-
-      {attendance && (
-        <div className="mb-3 p-3 bg-white rounded-lg border border-gray-200">
-          <div className="flex items-center gap-2 text-sm text-gray-700">
-            <Clock size={16} className="text-green-600" />
-            <span className="font-medium">Arrivée :</span>
-            <span className="font-semibold">
-              {new Date(attendance.heureArrivee).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-            </span>
+    <div className="card !p-4 sm:!p-5 relative overflow-hidden">
+      {/* Lisere degrade en fond */}
+      <div
+        className="absolute inset-x-0 top-0 h-1"
+        style={{ background: 'linear-gradient(90deg, #2E6BFF, #4F8CFF, #8B5CF6)' }}
+        aria-hidden="true"
+      />
+      <div className="flex flex-col md:flex-row md:items-center gap-4">
+        {/* Titre + statut */}
+        <div className="flex items-center gap-3 md:w-56 shrink-0">
+          <div className="chip-icon chip-icon-blue">
+            <MapPin size={18} strokeWidth={2.5} />
           </div>
-          {attendance.heureDepart && (
-            <div className="flex items-center gap-2 text-sm text-gray-700 mt-2">
-              <LogOut size={16} className="text-blue-600" />
-              <span className="font-medium">Départ :</span>
-              <span className="font-semibold">
-                {new Date(attendance.heureDepart).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+          <div>
+            <h3 className="text-sm sm:text-base font-bold text-gray-900 font-display">Pointage GPS</h3>
+            <div className="mt-1">{statusBadge()}</div>
+          </div>
+        </div>
+
+        {/* Infos pointage */}
+        <div className="flex-1 min-w-0">
+          {attendance ? (
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-gray-600">
+              <span className="inline-flex items-center gap-1.5">
+                <Clock size={15} className="text-success-600" />
+                Arrivée :
+                <strong className="text-gray-900">
+                  {new Date(attendance.heureArrivee).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                </strong>
               </span>
+              {attendance.heureDepart && (
+                <span className="inline-flex items-center gap-1.5">
+                  <LogOut size={15} className="text-primary-600" />
+                  Départ :
+                  <strong className="text-gray-900">
+                    {new Date(attendance.heureDepart).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  </strong>
+                </span>
+              )}
+              {typeof attendance.distanceArrivee === 'number' && (
+                <span className="text-xs text-gray-400">
+                  Distance arrivée : {Math.round(attendance.distanceArrivee)}m
+                </span>
+              )}
             </div>
-          )}
-          {typeof attendance.distanceArrivee === 'number' && (
-            <p className="text-xs text-gray-500 mt-2">Distance arrivée : {Math.round(attendance.distanceArrivee)}m</p>
+          ) : (
+            <p className="text-sm text-gray-400">
+              Aucun pointage aujourd'hui — marquez votre présence à l'arrivée.
+            </p>
           )}
         </div>
-      )}
 
-      <div className="flex flex-col sm:flex-row gap-2">
-        <button
-          className="btn btn-primary flex-1"
-          disabled={!canMarkArrival || isGeoLoading || markArrivalMutation.isPending}
-          onClick={() => getPosition((pos) => markArrivalMutation.mutate(pos))}
-        >
-          {isGeoLoading || markArrivalMutation.isPending ? 'Pointage...' : 'Marquer ma présence'}
-        </button>
-        <button
-          className="btn btn-secondary flex-1"
-          disabled={!canMarkDeparture || isGeoLoading || markDepartureMutation.isPending}
-          onClick={() => getPosition((pos) => markDepartureMutation.mutate(pos))}
-        >
-          {isGeoLoading || markDepartureMutation.isPending ? 'Départ...' : 'Marquer mon départ'}
-        </button>
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row gap-2 md:w-auto w-full">
+          <button
+            className="btn btn-primary !py-2.5 text-sm whitespace-nowrap"
+            disabled={!canMarkArrival || isGeoLoading || markArrivalMutation.isPending}
+            onClick={() => getPosition((pos) => markArrivalMutation.mutate(pos))}
+          >
+            {isGeoLoading || markArrivalMutation.isPending ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Check size={16} />
+            )}
+            {isGeoLoading || markArrivalMutation.isPending ? 'Pointage...' : 'Marquer ma présence'}
+          </button>
+          <button
+            className="btn btn-secondary !py-2.5 text-sm whitespace-nowrap"
+            disabled={!canMarkDeparture || isGeoLoading || markDepartureMutation.isPending}
+            onClick={() => getPosition((pos) => markDepartureMutation.mutate(pos))}
+          >
+            {isGeoLoading || markDepartureMutation.isPending ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <LogOut size={16} />
+            )}
+            {isGeoLoading || markDepartureMutation.isPending ? 'Départ...' : 'Marquer mon départ'}
+          </button>
+        </div>
       </div>
     </div>
   );
 }
-
