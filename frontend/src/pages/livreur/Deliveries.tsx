@@ -126,7 +126,7 @@ export default function Deliveries() {
           {pendingOrders.length > 0 && (
             <div>
               <h2 className="text-xl font-semibold mb-4">À livrer ({pendingOrders.length})</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                 {pendingOrders.map((order: Order) => {
                   const cloturee = isTourneeCloturee(order);
                   return (

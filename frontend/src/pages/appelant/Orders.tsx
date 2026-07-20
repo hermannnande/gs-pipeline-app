@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Phone, Search, RefreshCw, Truck, Zap, Clock, Calendar, Edit2, Trash2, CheckSquare, Square, PhoneCall, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, RefreshCw, Truck, Zap, Clock, Calendar, Trash2, CheckSquare, Square, PhoneCall, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ordersApi, rdvApi } from '@/lib/api';
-import { formatCurrency, formatDateTime, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
+import { formatCurrency } from '@/utils/statusHelpers';
 import { calculatePriceByQuantity, getPriceLabel } from '@/utils/pricingHelpers';
 import type { Order } from '@/types';
 import ExpeditionModal from '@/components/modals/ExpeditionModal';
@@ -172,21 +172,6 @@ export default function Orders({ onlyProductCode, pageTitle }: OrdersProps = {})
       id: selectedOrder.id,
       note: note || undefined,
     });
-  };
-
-  const notifierClientMutation = useMutation({
-    mutationFn: (id: number) => ordersApi.marquerAppel(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['appelant-orders'] });
-      toast.success('🔔 Client notifié avec succès');
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Erreur lors de la notification');
-    },
-  });
-
-  const handleNotifierClient = (orderId: number) => {
-    notifierClientMutation.mutate(orderId);
   };
 
   const togglePrioriteMutation = useMutation({
@@ -392,9 +377,8 @@ export default function Orders({ onlyProductCode, pageTitle }: OrdersProps = {})
 
   // Compte des commandes "oubliees recentes" (dans la fenetre 3j) pour le badge
   const staleCount = (filteredOrders || []).filter(isStaleOrder).length;
-  const prioriteCount = (filteredOrders || []).filter((o) => o.priorite).length;
+  const prioriteCount = (filteredOrders || []).filter((o: Order) => o.priorite).length;
 
-  const totalFilteredCount = filteredOrders?.length || 0;
   const totalPages = ordersData?.pagination?.totalPages || 1;
 
   // Détecter les nouvelles commandes
@@ -518,7 +502,7 @@ export default function Orders({ onlyProductCode, pageTitle }: OrdersProps = {})
         />
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
             {filteredOrders?.map((order: Order) => (
               <OrderCard
                 key={order.id}
