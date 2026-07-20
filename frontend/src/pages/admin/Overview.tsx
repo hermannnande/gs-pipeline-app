@@ -55,11 +55,11 @@ function ProgressRing({ percent }: { percent: number }) {
     <svg width="64" height="64" viewBox="0 0 64 64" className="-rotate-90">
       <defs>
         <linearGradient id="ringGradient" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#10B981" />
-          <stop offset="100%" stopColor="#34D399" />
+          <stop offset="0%" stopColor="#6D5DF6" />
+          <stop offset="100%" stopColor="#D946EF" />
         </linearGradient>
       </defs>
-      <circle cx="32" cy="32" r={R} fill="none" stroke="#ECFDF5" strokeWidth="7" />
+      <circle cx="32" cy="32" r={R} fill="none" stroke="#EEF0FF" strokeWidth="7" />
       <circle
         cx="32" cy="32" r={R} fill="none"
         stroke="url(#ringGradient)" strokeWidth="7" strokeLinecap="round"
@@ -194,11 +194,11 @@ export default function Overview() {
       else counts.autres += 1;
     });
     return [
-      { name: 'Livrées', value: counts.livrees, color: '#10B981', gradientId: 'donutGreen' },
-      { name: 'Validées', value: counts.validees, color: '#2E6BFF', gradientId: 'donutBlue' },
+      { name: 'Livrées', value: counts.livrees, color: '#6D5DF6', gradientId: 'donutViolet' },
+      { name: 'Validées', value: counts.validees, color: '#22D3EE', gradientId: 'donutCyan' },
       { name: 'Nouvelles', value: counts.nouvelles, color: '#F59E0B', gradientId: 'donutAmber' },
-      { name: 'Annulées', value: counts.annulees, color: '#EF4444', gradientId: 'donutRed' },
-      { name: 'Autres', value: counts.autres, color: '#8B5CF6', gradientId: 'donutViolet' },
+      { name: 'Annulées', value: counts.annulees, color: '#D946EF', gradientId: 'donutFuchsia' },
+      { name: 'Autres', value: counts.autres, color: '#8D88FF', gradientId: 'donutLavender' },
     ].filter((d) => d.value > 0);
   }, [filteredOrders]);
 
@@ -208,9 +208,9 @@ export default function Overview() {
   const roleStats = useMemo(() => {
     const users: any[] = usersData?.users || [];
     const config = [
-      { role: 'ADMIN', label: 'Administrateurs', gradient: 'linear-gradient(90deg,#2E6BFF,#4F8CFF)' },
-      { role: 'GESTIONNAIRE', label: 'Gestionnaires', gradient: 'linear-gradient(90deg,#8B5CF6,#A78BFA)' },
-      { role: 'APPELANT', label: 'Appelants', gradient: 'linear-gradient(90deg,#10B981,#34D399)' },
+      { role: 'ADMIN', label: 'Administrateurs', gradient: 'linear-gradient(90deg,#6D5DF6,#A855F7)' },
+      { role: 'GESTIONNAIRE', label: 'Gestionnaires', gradient: 'linear-gradient(90deg,#D946EF,#E879F9)' },
+      { role: 'APPELANT', label: 'Appelants', gradient: 'linear-gradient(90deg,#22D3EE,#67E8F9)' },
       { role: 'LIVREUR', label: 'Livreurs', gradient: 'linear-gradient(90deg,#F59E0B,#FBBF24)' },
     ];
     const rows = config.map((c) => ({
@@ -254,7 +254,7 @@ export default function Overview() {
               onClick={() => setPeriod(p)}
               className={`px-4 py-2 rounded-full text-[13px] font-semibold transition-all duration-300 whitespace-nowrap ${
                 period === p
-                  ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-glow-primary'
+                  ? 'bg-gradient-to-br from-primary-500 to-purple-500 text-white shadow-glow-primary'
                   : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
@@ -375,9 +375,9 @@ export default function Overview() {
             <>
               <div className="flex items-center gap-4 mb-3">
                 {[
-                  { label: 'Total', color: '#2E6BFF' },
-                  { label: 'Livrées', color: '#10B981' },
-                  { label: 'Annulées', color: '#EF4444' },
+                  { label: 'Total', color: '#6D5DF6' },
+                  { label: 'Livrées', color: '#22D3EE' },
+                  { label: 'Annulées', color: '#D946EF' },
                 ].map((l) => (
                   <span key={l.label} className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500">
                     <span className="w-2 h-2 rounded-full" style={{ background: l.color }} />
@@ -390,21 +390,21 @@ export default function Overview() {
                   <AreaChart data={daily} margin={{ top: 5, right: 5, left: -18, bottom: 0 }}>
                     <defs>
                       <linearGradient id="areaTotal" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#2E6BFF" stopOpacity={0.25} />
-                        <stop offset="100%" stopColor="#2E6BFF" stopOpacity={0} />
+                        <stop offset="0%" stopColor="#6D5DF6" stopOpacity={0.25} />
+                        <stop offset="100%" stopColor="#6D5DF6" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="areaDelivered" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#10B981" stopOpacity={0.2} />
-                        <stop offset="100%" stopColor="#10B981" stopOpacity={0} />
+                        <stop offset="0%" stopColor="#22D3EE" stopOpacity={0.2} />
+                        <stop offset="100%" stopColor="#22D3EE" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#EEF1F7" vertical={false} />
                     <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#9CA3AF' }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                     <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} tickLine={false} axisLine={false} allowDecimals={false} />
                     <RechartsTooltip content={<ChartTooltip />} />
-                    <Area type="monotone" dataKey="total" name="Total" stroke="#2E6BFF" strokeWidth={2.5} fill="url(#areaTotal)" isAnimationActive animationDuration={800} />
-                    <Area type="monotone" dataKey="delivered" name="Livrées" stroke="#10B981" strokeWidth={2} fill="url(#areaDelivered)" isAnimationActive animationDuration={800} />
-                    <Area type="monotone" dataKey="cancelled" name="Annulées" stroke="#EF4444" strokeWidth={2} fill="transparent" isAnimationActive animationDuration={800} />
+                    <Area type="monotone" dataKey="total" name="Total" stroke="#6D5DF6" strokeWidth={2.5} fill="url(#areaTotal)" isAnimationActive animationDuration={800} />
+                    <Area type="monotone" dataKey="delivered" name="Livrées" stroke="#22D3EE" strokeWidth={2} fill="url(#areaDelivered)" isAnimationActive animationDuration={800} />
+                    <Area type="monotone" dataKey="cancelled" name="Annulées" stroke="#D946EF" strokeWidth={2} fill="transparent" isAnimationActive animationDuration={800} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -426,20 +426,20 @@ export default function Overview() {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <defs>
-                      <linearGradient id="donutGreen" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stopColor="#10B981" /><stop offset="100%" stopColor="#34D399" />
+                      <linearGradient id="donutViolet" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stopColor="#6D5DF6" /><stop offset="100%" stopColor="#8D88FF" />
                       </linearGradient>
-                      <linearGradient id="donutBlue" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stopColor="#2E6BFF" /><stop offset="100%" stopColor="#4F8CFF" />
+                      <linearGradient id="donutCyan" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stopColor="#22D3EE" /><stop offset="100%" stopColor="#67E8F9" />
                       </linearGradient>
                       <linearGradient id="donutAmber" x1="0" y1="0" x2="1" y2="1">
                         <stop offset="0%" stopColor="#F59E0B" /><stop offset="100%" stopColor="#FBBF24" />
                       </linearGradient>
-                      <linearGradient id="donutRed" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stopColor="#EF4444" /><stop offset="100%" stopColor="#F87171" />
+                      <linearGradient id="donutFuchsia" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stopColor="#D946EF" /><stop offset="100%" stopColor="#E879F9" />
                       </linearGradient>
-                      <linearGradient id="donutViolet" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stopColor="#8B5CF6" /><stop offset="100%" stopColor="#A78BFA" />
+                      <linearGradient id="donutLavender" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stopColor="#8D88FF" /><stop offset="100%" stopColor="#CDD0FF" />
                       </linearGradient>
                     </defs>
                     <Pie
@@ -500,8 +500,8 @@ export default function Overview() {
                 <BarChart data={daily} margin={{ top: 5, right: 5, left: -18, bottom: 0 }}>
                   <defs>
                     <linearGradient id="barRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#8B5CF6" />
-                      <stop offset="100%" stopColor="#2E6BFF" />
+                      <stop offset="0%" stopColor="#6D5DF6" />
+                      <stop offset="100%" stopColor="#D946EF" />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#EEF1F7" vertical={false} />
@@ -512,7 +512,7 @@ export default function Overview() {
                     axisLine={false}
                     tickFormatter={(v: number) => (v >= 1000 ? `${Math.round(v / 1000)}k` : String(v))}
                   />
-                  <RechartsTooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(46,107,255,0.05)' }} />
+                  <RechartsTooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(109,93,246,0.05)' }} />
                   <Bar dataKey="revenue" name="CA" fill="url(#barRevenue)" radius={[6, 6, 0, 0]} maxBarSize={22} isAnimationActive animationDuration={800} />
                 </BarChart>
               </ResponsiveContainer>
@@ -554,7 +554,7 @@ export default function Overview() {
                     <td className="font-mono text-xs text-gray-500 max-w-[110px] truncate">{order.orderReference}</td>
                     <td>
                       <div className="flex items-center gap-2.5">
-                        <span className="w-8 h-8 shrink-0 rounded-full bg-gradient-to-br from-primary-100 to-violet-100 text-primary-700 flex items-center justify-center text-[11px] font-bold">
+                        <span className="w-8 h-8 shrink-0 rounded-full bg-gradient-to-br from-primary-100 to-fuchsia-100 text-primary-700 flex items-center justify-center text-[11px] font-bold">
                           {order.clientNom?.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase() || '?'}
                         </span>
                         <span className="font-medium text-gray-900 truncate max-w-[130px]">{order.clientNom}</span>

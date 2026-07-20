@@ -307,7 +307,7 @@ export default function Layout({ children }: LayoutProps) {
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group ${
                     isActive
-                      ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-nav-active font-medium'
+                      ? 'bg-gradient-to-br from-primary-500 to-purple-500 text-white shadow-nav-active font-medium'
                       : 'text-slate-400 hover:text-white hover:bg-white/5 hover:translate-x-1'
                   }`}
                 >
@@ -334,7 +334,7 @@ export default function Layout({ children }: LayoutProps) {
     <div className="p-5 border-b border-white/5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 shrink-0 bg-gradient-to-br from-primary-600 to-primary-400 rounded-xl flex items-center justify-center shadow-glow-primary">
+          <div className="w-10 h-10 shrink-0 bg-gradient-to-br from-primary-500 to-purple-500 rounded-xl flex items-center justify-center shadow-glow-primary">
             <Zap size={20} className="text-white" strokeWidth={2.5} />
           </div>
           <div className="min-w-0">
@@ -386,7 +386,7 @@ export default function Layout({ children }: LayoutProps) {
       {/* ============ Sidebar desktop (navy) ============ */}
       <aside
         className="hidden lg:flex fixed left-0 top-0 h-full w-64 flex-col z-40"
-        style={{ background: 'linear-gradient(180deg, #0A1330 0%, #101B45 100%)' }}
+        style={{ background: 'linear-gradient(180deg, #0C0A1D 0%, #14112E 100%)' }}
       >
         {renderSidebarHeader(false)}
         {renderNavItems()}
@@ -396,7 +396,7 @@ export default function Layout({ children }: LayoutProps) {
       {/* ============ Top app bar mobile ============ */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 glass-effect border-b border-gray-200/60 backdrop-blur-xl flex items-center justify-between px-4 z-30">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 shrink-0 bg-gradient-to-br from-primary-600 to-primary-400 rounded-lg flex items-center justify-center shadow-glow-primary">
+          <div className="w-8 h-8 shrink-0 bg-gradient-to-br from-primary-500 to-purple-500 rounded-lg flex items-center justify-center shadow-glow-primary">
             <Zap size={16} className="text-white" strokeWidth={2.5} />
           </div>
           <div className="min-w-0">
@@ -427,7 +427,7 @@ export default function Layout({ children }: LayoutProps) {
         className={`lg:hidden fixed left-0 top-0 h-full w-72 flex flex-col z-50 ${
           isMobileMenuOpen ? 'animate-slide-in-right' : '-translate-x-full'
         }`}
-        style={{ background: 'linear-gradient(180deg, #0A1330 0%, #101B45 100%)' }}
+        style={{ background: 'linear-gradient(180deg, #0C0A1D 0%, #14112E 100%)' }}
       >
         {isMobileMenuOpen && (
           <>
@@ -485,7 +485,7 @@ export default function Layout({ children }: LayoutProps) {
                 <span
                   className={`flex items-center justify-center w-10 h-7 rounded-full transition-all duration-300 ${
                     isActive
-                      ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-nav-active'
+                      ? 'bg-gradient-to-br from-primary-500 to-purple-500 text-white shadow-nav-active'
                       : 'text-gray-400'
                   }`}
                 >
@@ -508,7 +508,7 @@ export default function Layout({ children }: LayoutProps) {
           >
             <span
               className={`flex items-center justify-center w-10 h-7 rounded-full transition-all duration-300 ${
-                isMobileMenuOpen ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-nav-active' : 'text-gray-400'
+                isMobileMenuOpen ? 'bg-gradient-to-br from-primary-500 to-purple-500 text-white shadow-nav-active' : 'text-gray-400'
               }`}
             >
               <Menu size={18} strokeWidth={isMobileMenuOpen ? 2.5 : 2} />

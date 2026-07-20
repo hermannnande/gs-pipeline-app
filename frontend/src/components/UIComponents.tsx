@@ -46,11 +46,11 @@ function useCountUp(target: number, duration = 600): number {
 /* Sparkline SVG inline (sans lib) : polyline degradee + aire legere.  */
 /* ------------------------------------------------------------------ */
 const SPARK_COLORS: Record<string, { stroke: string; fill: string; id: string }> = {
-  primary: { stroke: '#2E6BFF', fill: 'rgba(46,107,255,0.12)', id: 'sparkPrimary' },
+  primary: { stroke: '#6D5DF6', fill: 'rgba(109,93,246,0.12)', id: 'sparkPrimary' },
   success: { stroke: '#10B981', fill: 'rgba(16,185,129,0.12)', id: 'sparkSuccess' },
   warning: { stroke: '#F59E0B', fill: 'rgba(245,158,11,0.12)', id: 'sparkWarning' },
   danger:  { stroke: '#EF4444', fill: 'rgba(239,68,68,0.12)',  id: 'sparkDanger' },
-  default: { stroke: '#8B5CF6', fill: 'rgba(139,92,246,0.12)', id: 'sparkDefault' },
+  default: { stroke: '#A855F7', fill: 'rgba(168,85,247,0.12)', id: 'sparkDefault' },
 };
 
 function Sparkline({ data, variant }: { data: number[]; variant: string }) {
@@ -173,7 +173,7 @@ export function PageHeader({ title, subtitle, icon: Icon, actions }: PageHeaderP
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">
           {Icon && (
-            <div className="hidden sm:flex p-3 bg-gradient-to-br from-primary-600 to-primary-500 text-white rounded-2xl shadow-glow-primary">
+            <div className="hidden sm:flex p-3 bg-gradient-to-br from-primary-500 to-purple-500 text-white rounded-2xl shadow-glow-primary">
               <Icon size={26} strokeWidth={2} />
             </div>
           )}

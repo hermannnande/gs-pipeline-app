@@ -163,7 +163,7 @@ export default function AttendanceButton() {
       {/* Lisere degrade en fond */}
       <div
         className="absolute inset-x-0 top-0 h-1"
-        style={{ background: 'linear-gradient(90deg, #2E6BFF, #4F8CFF, #8B5CF6)' }}
+        style={{ background: 'linear-gradient(90deg, #6D5DF6, #A855F7, #D946EF)' }}
         aria-hidden="true"
       />
       <div className="flex flex-col md:flex-row md:items-center gap-4">

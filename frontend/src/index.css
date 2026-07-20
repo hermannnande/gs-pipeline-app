@@ -38,11 +38,18 @@
   }
 
   .btn-primary {
-    @apply bg-gradient-to-r from-primary-600 to-primary-500 text-white;
+    /* Degrade signature 2026 : violet -> fuchsia (135deg) */
+    background-image: linear-gradient(135deg, #6D5DF6, #A855F7);
+    @apply text-white;
     @apply hover:brightness-110 hover:-translate-y-0.5;
     @apply shadow-glow-primary hover:shadow-xl hover:shadow-primary-600/40;
-    @apply disabled:from-gray-300 disabled:to-gray-400 disabled:shadow-none disabled:cursor-not-allowed disabled:translate-y-0;
     @apply focus:ring-primary-300;
+  }
+  .btn-primary:disabled {
+    background-image: linear-gradient(135deg, #D1D5DB, #9CA3AF);
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
   }
 
   .btn-secondary {
@@ -229,7 +236,7 @@
   .chip-icon-blue   { @apply bg-primary-50 text-primary-600; }
   .chip-icon-green  { @apply bg-success-50 text-success-600; }
   .chip-icon-amber  { @apply bg-warning-50 text-warning-600; }
-  .chip-icon-purple { @apply bg-violet-50 text-violet-600; }
+  .chip-icon-purple { @apply bg-fuchsia-50 text-fuchsia-600; }
   .chip-icon-red    { @apply bg-danger-50 text-danger-600; }
 
   /* Pill de tendance (+/- %) */
@@ -255,7 +262,7 @@
   }
   .progress-fill {
     @apply h-full rounded-full;
-    background: linear-gradient(90deg, #2E6BFF, #4F8CFF);
+    background: linear-gradient(90deg, #6D5DF6, #A855F7);
     transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
   }
 }
@@ -289,7 +296,7 @@
   }
 
   .gradient-text {
-    @apply bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-primary-600 to-purple-500 bg-clip-text text-transparent;
   }
 
   /* Custom Scrollbar */

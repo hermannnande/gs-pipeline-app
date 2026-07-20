@@ -7,27 +7,27 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Royal Blue 2026 — couleur principale du back-office
+        // Indigo-violet premium 2026 (style Linear/Stripe) + accent fuchsia
         primary: {
-          50: '#EEF4FF',
-          100: '#E0EAFF',
-          200: '#C7D9FE',
-          300: '#A4BEFC',
-          400: '#8098F9',
-          500: '#617CF5',
-          600: '#2E6BFF',
-          700: '#2050E0',
-          800: '#1E40AF',
-          900: '#1E3A8A',
-          950: '#172554',
+          50: '#EEF0FF',
+          100: '#E4E6FF',
+          200: '#CDD0FF',
+          300: '#AEB1FF',
+          400: '#8D88FF',
+          500: '#6D5DF6',
+          600: '#5B45E0',
+          700: '#4A38C0',
+          800: '#3B2E96',
+          900: '#2C2470',
+          950: '#1A1440',
         },
-        // Navy profond — sidebar & drawer
+        // Navy indigo profond — sidebar & drawer
         navy: {
-          700: '#1A2756',
-          800: '#101B45',
-          850: '#0D1738',
-          900: '#0A1330',
-          950: '#060C20',
+          700: '#1D1942',
+          800: '#14112E',
+          850: '#100D26',
+          900: '#0C0A1D',
+          950: '#070512',
         },
         success: {
           50: '#f0fdf4',
@@ -88,10 +88,10 @@ export default {
       boxShadow: {
         'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
         'card': '0 1px 2px rgba(16,24,40,.05), 0 10px 30px -12px rgba(16,24,40,.12)',
-        'card-hover': '0 4px 8px rgba(16,24,40,.06), 0 20px 40px -16px rgba(46,107,255,.18)',
+        'card-hover': '0 4px 8px rgba(16,24,40,.06), 0 20px 40px -16px rgba(109,93,246,.18)',
         'inner-soft': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.04)',
-        'glow-primary': '0 8px 24px -6px rgba(46,107,255,.45)',
-        'nav-active': '0 6px 16px -4px rgba(46,107,255,.5)',
+        'glow-primary': '0 8px 24px -6px rgba(109,93,246,.45)',
+        'nav-active': '0 6px 16px -4px rgba(109,93,246,.5)',
       },
       borderRadius: {
         'xl': '1rem',
