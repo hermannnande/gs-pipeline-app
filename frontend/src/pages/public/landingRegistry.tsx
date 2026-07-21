@@ -62,6 +62,7 @@ export const LANDING_COMPONENTS: Record<string, LazyLanding> = {
   'bouilloire-intelligente': lazy(() => import('./BouilloireIntelligenteLanding')),
   'guide-pousse-naturelle': lazy(() => import('./GuidePousseNaturelleLanding')),
   'mini-sac-bandouliere': lazy(() => import('./MiniSacBandouliereLanding')),
+  'mini-sac-bandouliere-tk': lazy(() => import('./MiniSacBandouliereTkLanding')),
 };
 
 export const AUTONOMOUS_LANDING_SLUGS = new Set(Object.keys(LANDING_COMPONENTS));
