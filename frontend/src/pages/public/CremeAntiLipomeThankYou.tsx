@@ -16,7 +16,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
-const META_PIXEL_ID = '1857129471642967';
+// Pixel Meta : 902265788982876 sur soindemoi.net (campagne en cours), 1857129471642967 ailleurs (obrille.com…)
+const META_PIXEL_ID = typeof window !== 'undefined' && window.location.hostname.includes('soindemoi')
+  ? '902265788982876'
+  : '1857129471642967';
 
 const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
 

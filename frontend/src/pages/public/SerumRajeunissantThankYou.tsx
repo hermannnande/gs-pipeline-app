@@ -8,7 +8,7 @@ import axios from 'axios';
 import { orderTotal } from '../../utils/pricingHelpers';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
-const META_PIXEL_ID = ''; // Pixel Meta : le client le fournira plus tard (event: Purchase)
+const META_PIXEL_ID = '2511991909304152'; // Pixel Meta campagne sérum rajeunissant (event: Purchase)
 const SLUG = 'serum-rajeunissant';
 const PRODUCT_CODE = 'SERUM_RAJEUNISSANT';
 const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };

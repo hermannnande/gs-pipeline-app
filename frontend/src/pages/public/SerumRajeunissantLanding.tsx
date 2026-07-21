@@ -16,7 +16,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'serum-rajeunissant';
 const PRODUCT_CODE = 'SERUM_RAJEUNISSANT';
 const CONTENT_NAME = 'Sérum Rajeunissant Anti-Âge Yeux';
-const META_PIXEL_ID = ''; // Pixel Meta : le client le fournira plus tard (init conditionnée)
+const META_PIXEL_ID = '2511991909304152'; // Pixel Meta campagne sérum rajeunissant (achat compris)
 const THANK_YOU_URL = '/serum-rajeunissant/merci';
 
 const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
