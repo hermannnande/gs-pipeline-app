@@ -305,14 +305,38 @@ export default function LandingAnalytics() {
   const [startDate, setStartDate] = useState(thirtyDaysAgo);
   const [endDate, setEndDate] = useState(today);
   const [period, setPeriod] = useState<'day' | 'week' | 'month'>('day');
+  const [pageFilter, setPageFilter] = useState('');
 
-  const { data, isLoading } = useQuery<LandingData>({
+  const { data, isLoading, dataUpdatedAt } = useQuery<LandingData>({
     queryKey: ['landing-analytics', startDate, endDate, period],
     queryFn: () => api.get('/analytics/landing', { params: { startDate, endDate, period } }).then(r => r.data),
+    // Temps quasi-reel : refresh auto 30s + au retour sur l'onglet
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
 
+  // Meme queryKey que le RealtimePanel -> cache partage, aucune requete en plus.
+  const { data: realtime } = useQuery<RealtimeData>({
+    queryKey: ['analytics-realtime'],
+    queryFn: () => api.get('/analytics/realtime').then((r) => r.data),
+    refetchInterval: 10_000,
+    refetchOnWindowFocus: true,
+  });
+  const liveBySlug = useMemo(
+    () => Object.fromEntries((realtime?.bySlug ?? []).map((s) => [s.slug, s.activeVisitors])),
+    [realtime]
+  );
+  const totalLive = realtime?.activeNow.totalVisitors ?? 0;
+
   const ov = data?.overview;
-  const templateData = data?.templateStats || [];
+  const templateData = useMemo(() => {
+    const rows = data?.templateStats || [];
+    const q = pageFilter.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter((t) =>
+      t.templateName.toLowerCase().includes(q) || (t.slug || '').toLowerCase().includes(q)
+    );
+  }, [data, pageFilter]);
   const timeline = data?.timeline || [];
   const cities = data?.topCities || [];
   const statusBreakdown = useMemo(() =>
@@ -346,8 +370,20 @@ export default function LandingAnalytics() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-extrabold text-neutral-900 sm:text-2xl">Analytics Pages de Vente</h1>
-          <p className="text-sm text-neutral-400">Performance de vos landing pages et templates</p>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl font-extrabold text-neutral-900 sm:text-2xl">Analytics Pages de Vente</h1>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 ring-1 ring-emerald-200">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"/>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"/>
+              </span>
+              Live · {totalLive} en ligne
+            </span>
+          </div>
+          <p className="text-sm text-neutral-400">
+            Performance de vos landing pages et templates · maj auto 30s
+            {dataUpdatedAt ? ` · dernière synchro ${new Date(dataUpdatedAt).toLocaleTimeString('fr-FR')}` : ''}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5">
@@ -664,11 +700,24 @@ export default function LandingAnalytics() {
 
       {/* Template table */}
       <ChartCard title="Performance par page de vente">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <input
+            type="text"
+            value={pageFilter}
+            onChange={(e) => setPageFilter(e.target.value)}
+            placeholder="Filtrer une page (nom ou slug)…"
+            className="w-full max-w-xs rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-[12px] font-medium outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+          />
+          <p className="text-[11px] text-neutral-400">
+            {templateData.length} page{templateData.length > 1 ? 's' : ''} · <span className="font-bold text-emerald-600">{totalLive} visiteur{totalLive > 1 ? 's' : ''} en ligne</span>
+          </p>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-[12px]">
             <thead>
               <tr className="border-b border-neutral-100 text-left text-[10px] font-bold uppercase tracking-wider text-neutral-400">
                 <th className="pb-2 pr-4">Template</th>
+                <th className="pb-2 px-2 text-right">En ligne</th>
                 <th className="pb-2 px-2 text-right">Vues</th>
                 <th className="pb-2 px-2 text-right">Visiteurs</th>
                 <th className="pb-2 px-2 text-right">Commandes</th>
@@ -685,8 +734,9 @@ export default function LandingAnalytics() {
               {templateData.map((t, i) => {
                 const convRate = t.total > 0 ? ((t.delivered / t.total) * 100).toFixed(1) : '0';
                 const visitToOrder = t.orderConversionRate;
+                const live = t.slug ? (liveBySlug[t.slug] || 0) : 0;
                 return (
-                  <tr key={i} className="border-b border-neutral-50 hover:bg-neutral-50/50 transition">
+                  <tr key={i} className={`border-b border-neutral-50 hover:bg-neutral-50/50 transition ${live > 0 ? 'bg-emerald-50/40' : ''}`}>
                     <td className="py-2.5 pr-4">
                       <div className="flex items-center gap-2">
                         <div className={`h-2 w-2 rounded-full ${t.actif === false ? 'bg-neutral-300' : 'bg-emerald-500'}`} />
@@ -695,6 +745,19 @@ export default function LandingAnalytics() {
                           <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[9px] font-mono text-neutral-400">/{t.slug}</span>
                         )}
                       </div>
+                    </td>
+                    <td className="py-2.5 px-2 text-right">
+                      {live > 0 ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-extrabold tabular-nums text-white">
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"/>
+                            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white"/>
+                          </span>
+                          {live}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-neutral-300">—</span>
+                      )}
                     </td>
                     <td className="py-2.5 px-2 text-right font-bold text-violet-600">{fmt(t.views || 0)}</td>
                     <td className="py-2.5 px-2 text-right font-semibold text-fuchsia-600">{fmt(t.uniqueVisitors || 0)}</td>
@@ -726,7 +789,7 @@ export default function LandingAnalytics() {
                 );
               })}
               {templateData.length === 0 && (
-                <tr><td colSpan={11} className="py-8 text-center text-neutral-400">Aucune donnée pour cette période</td></tr>
+                <tr><td colSpan={12} className="py-8 text-center text-neutral-400">Aucune donnée pour cette période</td></tr>
               )}
             </tbody>
           </table>

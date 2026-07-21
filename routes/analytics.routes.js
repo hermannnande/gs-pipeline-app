@@ -684,6 +684,21 @@ router.get('/landing', authorize('ADMIN'), async (req, res) => {
       return null;
     };
 
+    // Pages autonomes SANS landingTemplate (mini-sac-bandouliere, -tk, etc.) :
+    // on matche les commandes directement par le slug vu dans sourcePage.
+    // Les slugs connus = ceux trackes par les PageView de la periode.
+    // Tri par longueur DECROISSANTE : 'mini-sac-bandouliere-tk' doit matcher
+    // avant 'mini-sac-bandouliere' (prefixe commun).
+    const findSlugDirect = (order, knownSlugs) => {
+      if (!order.sourcePage) return null;
+      const sp = order.sourcePage.toLowerCase();
+      for (const slug of knownSlugs) {
+        if (slug !== '_unknown' && sp.includes(slug)) return slug;
+      }
+      return null;
+    };
+    const prettifySlug = (slug) => slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
     const VALIDATED = ['VALIDEE', 'ASSIGNEE', 'LIVREE', 'EXPRESS', 'EXPRESS_ARRIVE', 'EXPRESS_LIVRE', 'EXPEDITION'];
     const DELIVERED = ['LIVREE', 'EXPRESS_LIVRE'];
     const CANCELLED = ['ANNULEE', 'INJOIGNABLE', 'RETOUR'];
@@ -757,17 +772,30 @@ router.get('/landing', authorize('ADMIN'), async (req, res) => {
       pvBySource[source] = (pvBySource[source] || 0) + 1;
     });
 
+    // Slugs connus (pages trackees sur la periode), tries par longueur decroissante
+    // pour que 'xxx-tk' matche avant 'xxx' en cas de prefixe commun.
+    const knownSlugsDesc = [...new Set(pageViews.map(pv => pv.slug).filter(Boolean))]
+      .sort((a, b) => b.length - a.length);
+
     orders.forEach(order => {
       const tpl = findTemplate(order);
-      const key = tpl ? `tpl:${tpl.id}` : '_other';
+      let key;
+      if (tpl) {
+        key = `tpl:${tpl.id}`;
+      } else {
+        // Pas de template : on tente le matching direct par slug (pages autonomes)
+        const slugHit = findSlugDirect(order, knownSlugsDesc);
+        key = slugHit ? `slug:${slugHit}` : '_other';
+      }
 
-      if (tpl) totalLanding++; else totalOther++;
+      if (tpl || key.startsWith('slug:')) totalLanding++; else totalOther++;
 
       if (!byTemplate[key]) {
+        const slugName = key.startsWith('slug:') ? key.slice(5) : null;
         byTemplate[key] = {
           templateId: tpl?.id || null,
-          templateName: tpl?.nom || 'Autres sources',
-          slug: tpl?.slug || null,
+          templateName: tpl?.nom || (slugName ? prettifySlug(slugName) : 'Autres sources'),
+          slug: tpl?.slug || slugName,
           actif: tpl?.actif ?? null,
           total: 0, validated: 0, delivered: 0, cancelled: 0,
           revenue: 0, quantite: 0,
@@ -809,8 +837,25 @@ router.get('/landing', authorize('ADMIN'), async (req, res) => {
       byStatus[order.status]++;
     });
 
+    // Lignes "vues seules" : chaque page trackee apparait dans le tableau meme
+    // sans commande sur la periode (suivi du trafic temps reel par page).
+    Object.values(pvByTemplate).forEach(pv => {
+      if (!pv.slug || pv.slug === '_unknown') return;
+      const key = pv.templateId ? `tpl:${pv.templateId}` : `slug:${pv.slug}`;
+      if (!byTemplate[key]) {
+        const tplRow = pv.templateId ? templates.find(t => t.id === pv.templateId) : null;
+        byTemplate[key] = {
+          templateId: pv.templateId || null,
+          templateName: tplRow?.nom || prettifySlug(pv.slug),
+          slug: tplRow?.slug || pv.slug,
+          actif: tplRow?.actif ?? null,
+          total: 0, validated: 0, delivered: 0, cancelled: 0,
+          revenue: 0, quantite: 0,
+        };
+      }
+    });
+
     const templateStats = Object.values(byTemplate)
-      .sort((a, b) => b.total - a.total)
       .map(t => {
         let pvKey = t.templateId ? `tpl:${t.templateId}` : (t.slug ? `slug:${t.slug}` : null);
         const pvData = pvKey ? pvByTemplate[pvKey] : null;
@@ -823,7 +868,8 @@ router.get('/landing', authorize('ADMIN'), async (req, res) => {
           sessions: pvData?.sessions.size || 0,
           orderConversionRate: views > 0 ? ((t.total / views) * 100).toFixed(2) : null,
         };
-      });
+      })
+      .sort((a, b) => b.total - a.total || b.views - a.views);
 
     const timeline = Object.values(timelineMap)
       .sort((a, b) => a.date.localeCompare(b.date))
