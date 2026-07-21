@@ -49,6 +49,7 @@ export const LANDING_SLUGS = [
   'lunette-de-nuit',
   'bouilloire-intelligente',
   'guide-pousse-naturelle',
+  'mini-sac-bandouliere',
   'boutique',
 ] as const;
 

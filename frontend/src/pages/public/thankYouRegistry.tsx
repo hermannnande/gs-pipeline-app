@@ -50,6 +50,7 @@ export const THANKYOU_COMPONENTS: Record<string, LazyThankYou> = {
   'lunette-de-nuit': lazy(() => import('./LunetteDeNuitThankYou')),
   'bouilloire-intelligente': lazy(() => import('./BouilloireIntelligenteThankYou')),
   'guide-pousse-naturelle': lazy(() => import('./GuidePousseNaturelleThankYou')),
+  'mini-sac-bandouliere': lazy(() => import('./MiniSacBandouliereThankYou')),
 };
 
 export const DEDICATED_THANKYOU_SLUGS = new Set(Object.keys(THANKYOU_COMPONENTS));
