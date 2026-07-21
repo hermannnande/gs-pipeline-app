@@ -111,25 +111,12 @@ export default function OrderModalMiniSac({ open, onClose, cfg, product, setProd
             <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.08em] text-[#A0683C]">
               Votre coloris : <span className="text-[#7C3AED]">{coloris}</span>
             </p>
-            <div className="grid grid-cols-4 gap-2">
-              {COLORIS.map((c) => {
+            <div className="flex justify-center">
+              {COLORIS.filter((c) => c.stock).map((c) => {
                 const active = coloris === c.label;
-                if (!c.stock) {
-                  return (
-                    <div key={c.id} title="Rupture de stock"
-                      className="flex cursor-not-allowed flex-col items-center gap-1 rounded-xl bg-neutral-100/70 px-1 py-2 opacity-55 ring-1 ring-neutral-200">
-                      <span className="relative h-6 w-6">
-                        <span className="block h-6 w-6 rounded-full ring-2 ring-white grayscale" style={{ background: c.hex }} />
-                        <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-red-500">✕</span>
-                      </span>
-                      <span className="text-[8px] font-bold leading-tight text-neutral-400 line-through">{c.label}</span>
-                      <span className="-mt-0.5 text-[7px] font-black uppercase text-red-400">Rupture</span>
-                    </div>
-                  );
-                }
                 return (
                   <button key={c.id} type="button" onClick={() => setColoris(c.label)}
-                    className={`flex flex-col items-center gap-1 rounded-xl px-1 py-2 ring-2 transition ${active ? 'scale-[1.04] bg-white ring-[#A855F7] shadow-md' : 'bg-white/60 ring-transparent hover:ring-[#F4A7C3]'}`}>
+                    className={`flex flex-col items-center gap-1 rounded-xl px-4 py-2 ring-2 transition ${active ? 'scale-[1.04] bg-white ring-[#A855F7] shadow-md' : 'bg-white/60 ring-transparent hover:ring-[#F4A7C3]'}`}>
                     <span className="h-6 w-6 rounded-full ring-2 ring-white shadow" style={{ background: c.hex }} />
                     <span className={`text-[8px] font-bold leading-tight ${active ? 'text-[#7C3AED]' : 'text-neutral-500'}`}>{c.label}</span>
                     <span className="-mt-0.5 text-[7px] font-black uppercase text-emerald-500">Disponible</span>

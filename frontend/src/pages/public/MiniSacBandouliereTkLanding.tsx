@@ -15,7 +15,7 @@ const OrderModalMiniSac = lazy(() => import('../../components/order/OrderModalMi
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'mini-sac-bandouliere-tk';
-const PRODUCT_CODE = 'MINI_SAC_BANDOULIERE';
+const PRODUCT_CODE = 'MINI_SAC_BANDOULIERE_TK'; // Produit dedie : commandes TikTok separees de la page Meta dans obgestion
 const CONTENT_NAME = 'Mini sac bandoulière tactile';
 const META_PIXEL_ID = ''; // Variante TikTok : pas de pixel Meta (evite de polluer les stats Meta)
 const TIKTOK_PIXEL_ID = ''; // <- renseigner l'ID pixel TikTok quand dispo (init conditionnée)
@@ -493,10 +493,6 @@ export default function MiniSacBandouliereTkLanding() {
           <h1 className="mt-5 text-[30px] font-black leading-[1.1] sm:text-[38px]">
             Le mini-sac <span className="msb-grad">tactile</span> qui change tout.
           </h1>
-          <p className="mx-auto mt-3 max-w-[440px] text-[14px] leading-relaxed text-[#7B4B2A]/85">
-            Utilisez votre téléphone <strong>sans jamais le sortir</strong> grâce à la fenêtre tactile.
-            Portefeuille intégré, porte-téléphone, 8 coloris — l'élégance mains libres.
-          </p>
 
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[11px] font-bold">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 ring-1 ring-[#D4A24E]/40">
@@ -626,32 +622,19 @@ export default function MiniSacBandouliereTkLanding() {
         <div className="mx-auto max-w-[560px] text-center">
           <span className="inline-flex rounded-full bg-white/70 px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#A0683C] ring-1 ring-[#E8739E]/30">🎨 Coloris du moment</span>
           <h2 className="mt-3 text-[24px] font-black sm:text-[28px]">Disponible en <span className="msb-grad">Marron</span></h2>
-          <p className="mt-2 text-[13px] text-[#7B4B2A]/80">Le coloris <strong>Marron</strong> est le dernier en stock — les autres sont en rupture.</p>
+          <p className="mt-2 text-[13px] text-[#7B4B2A]/80">Le coloris <strong>Marron</strong> — élégant, intemporel, le plus demandé.</p>
           <div className="mx-auto mt-5 max-w-[440px] overflow-hidden rounded-[28px] shadow-xl ring-1 ring-[#7B4B2A]/10">
-            <LazyImg src={MEDIA.coloris} alt="Grille des coloris du mini sac bandoulière tactile" aspect="4/5" />
+            <LazyImg src={MEDIA.coloris} alt="Mini sac bandoulière tactile coloris Marron" aspect="4/5" />
           </div>
-          <div className="mt-5 grid grid-cols-4 gap-2.5">
-            {COLORIS.map((c) => {
+          <div className="mx-auto mt-5 flex max-w-[160px] justify-center">
+            {COLORIS.filter((c) => c.stock).map((c) => {
               const active = coloris === c.label;
-              if (!c.stock) {
-                return (
-                  <div key={c.id} title="Rupture de stock"
-                    className="flex cursor-not-allowed flex-col items-center gap-1.5 rounded-2xl bg-neutral-100/70 px-1 py-2.5 opacity-55 ring-1 ring-neutral-200">
-                    <span className="relative h-7 w-7">
-                      <span className="block h-7 w-7 rounded-full ring-2 ring-white grayscale" style={{ background: c.hex }} />
-                      <span className="absolute inset-0 flex items-center justify-center text-[11px] font-black text-red-500">✕</span>
-                    </span>
-                    <span className="text-[9px] font-bold leading-tight text-neutral-400 line-through">{c.label}</span>
-                    <span className="-mt-1 text-[7px] font-black uppercase text-red-400">Rupture</span>
-                  </div>
-                );
-              }
               return (
                 <button
                   key={c.id}
                   type="button"
                   onClick={() => setColoris(c.label)}
-                  className={`flex flex-col items-center gap-1.5 rounded-2xl bg-white/80 px-1 py-2.5 ring-2 transition ${active ? 'scale-[1.03] ring-[#A855F7] shadow-lg' : 'ring-transparent hover:ring-[#F4A7C3]'}`}
+                  className={`flex flex-col items-center gap-1.5 rounded-2xl bg-white/80 px-4 py-2.5 ring-2 transition ${active ? 'scale-[1.03] ring-[#A855F7] shadow-lg' : 'ring-transparent hover:ring-[#F4A7C3]'}`}
                 >
                   <span className="h-7 w-7 rounded-full ring-2 ring-white shadow-md" style={{ background: c.hex }} />
                   <span className={`text-[9px] font-bold leading-tight ${active ? 'text-[#7C3AED]' : 'text-neutral-600'}`}>{c.label}</span>

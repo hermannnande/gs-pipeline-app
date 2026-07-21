@@ -11,7 +11,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 const META_PIXEL_ID = ''; // Variante TikTok : pas de pixel Meta
 const TIKTOK_PIXEL_ID = ''; // <- renseigner l'ID pixel TikTok quand dispo
 const SLUG = 'mini-sac-bandouliere-tk';
-const PRODUCT_CODE = 'MINI_SAC_BANDOULIERE';
+const PRODUCT_CODE = 'MINI_SAC_BANDOULIERE_TK'; // Produit dedie (meme mapping que la landing -tk)
 const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
 
 declare global { interface Window { fbq?: (...args: any[]) => void; _fbq?: any; ttq?: any } }
