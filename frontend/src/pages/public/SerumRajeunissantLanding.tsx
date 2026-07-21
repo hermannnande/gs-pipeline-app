@@ -31,14 +31,14 @@ const QTY_OPTS = [
 
 const M = (n: string) => `/serum-rajeunissant/${n}`;
 const MEDIA = {
-  hero: M('s01.webp'),
+  hero: M('s06.webp'),
   packshotVideo: M('v1.mp4'), packshotPoster: M('v1p.webp'),
   portrait: M('s02.webp'),
   avantApresHomme: M('s03.webp'),
   avantApresFemme: M('s04.webp'),
   sourireEclatant: M('s05.webp'),
   gestuelleVideo: M('v2.mp4'), gestuellePoster: M('v2p.webp'),
-  barbeGrise: M('s06.webp'),
+  posterRegard: M('s01.webp'),
   jeuneFemme: M('s07.webp'),
   posterOfficiel: M('s08.webp'),
   lifestyle: M('s09.webp'),
@@ -477,7 +477,7 @@ export default function SerumRajeunissantLanding() {
           <div className="relative mx-auto mt-6 max-w-[440px]">
             <div className="absolute -inset-3 rounded-[36px] bg-gradient-to-r from-[#7B4B2A]/20 via-[#E8739E]/25 to-[#A855F7]/20 blur-xl" />
             <div className="relative overflow-hidden rounded-[32px] shadow-2xl ring-1 ring-white/60">
-              <LazyImg src={MEDIA.hero} alt="Sérum Rajeunissant Anti-Âge Yeux — flacon tenu en main, révélez un regard éclatant" aspect="1080/1441" priority />
+              <LazyImg src={MEDIA.hero} alt="Avant après : homme à la barbe grise, regard visiblement rajeuni grâce au Sérum Rajeunissant" aspect="1/1" priority />
             </div>
           </div>
 
@@ -574,14 +574,14 @@ export default function SerumRajeunissantLanding() {
       />
 
       <MediaBlock
-        media={<LazyImg src={MEDIA.barbeGrise} alt="Avant après : homme à la barbe grise, sourire, tenant le flacon" aspect="1/1" />}
+        media={<LazyImg src={MEDIA.posterRegard} alt="Poster officiel : flacon tenu en main — révélez un regard éclatant" aspect="1080/1441" />}
         bg="bg-gradient-to-b from-[#FDF0F5] to-[#F4A7C3]/40"
-        kicker="Avant / Après"
-        title={<>Les hommes aussi <span className="sr-grad">rajeunissent leur regard</span></>}
-        text="Poches dégonflées et traits défatigués : efficace sur tous les types de peau, à tout âge."
+        kicker="Formule officielle"
+        title={<>Révélez un regard <span className="sr-grad">éclatant</span></>}
+        text="Réduit cernes et poches, hydrate et apaise, lisse et rajeunit : la formule douce spécialement conçue pour le contour des yeux."
         cta="Profiter de l'offre"
         onCta={() => openModal()}
-        ratio="1/1"
+        ratio="1080/1441"
       />
 
       <MediaBlock
