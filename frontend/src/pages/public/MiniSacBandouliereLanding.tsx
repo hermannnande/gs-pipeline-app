@@ -405,11 +405,13 @@ export default function MiniSacBandouliereLanding() {
   const pixelFired = useRef(false);
 
   const openModal = useCallback((q?: number, c?: string) => {
-    const pack = q || selectedPack || 1;
+    // Sans quantite explicite, on ouvre toujours sur 1 sac (CTA collant,
+    // hero, blocs). Seul le selecteur de pack passe selectedPack en explicite.
+    const pack = q || 1;
     if (c) setColoris(c);
     setQty(pack); setModal(true);
     track('OpenForm', { product: PRODUCT_CODE, pack, value: orderTotal(PRICES, pack), currency: 'XOF' });
-  }, [selectedPack]);
+  }, []);
 
   useEffect(() => {
     document.title = 'Mini sac bandoulière tactile — Fenêtre tactile & portefeuille intégré · -50 %';
