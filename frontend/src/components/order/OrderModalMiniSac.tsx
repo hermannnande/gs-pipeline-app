@@ -1,11 +1,7 @@
 /**
  * Modal commande — Mini sac bandoulière tactile (MINI_SAC_BANDOULIERE).
  * Base : OrderModalBandeSport (logique metier useOrderSubmit 100% conservee).
- *
- * COLORIS : la selection est concatenee au champ "city" avant le submit
- * (`${city} | COLORIS ${coloris}`) — meme canal maison que la taille des
- * chaussettes : le backend n'a pas de champ variante dedie, l'operateur voit
- * le coloris dans le champ adresse et le confirme au telephone.
+ * Pas de selection de coloris : seul Marron est vendu, rien a choisir.
  *
  * Theme : marron #7B4B2A / rose #E8739E / violet #A855F7.
  */
@@ -20,29 +16,15 @@ interface Props {
   cfg: OrderSubmitConfig & { images: { hero: string } };
   product: OrderProduct | null; setProduct?: (p: OrderProduct | null) => void;
   qtyOptions: QtyOption[]; initialQty?: number;
-  /** Coloris preselectionne depuis la landing (defaut : Marron). */
-  initialColor?: string;
 }
-
-const COLORIS = [
-  { id: 'marron', label: 'Marron', hex: '#8B5E3C', stock: true },
-  { id: 'rose-poudre', label: 'Rose poudré', hex: '#F2B8C6', stock: false },
-  { id: 'beige-rose', label: 'Beige rosé', hex: '#E8C4B0', stock: false },
-  { id: 'rouge', label: 'Rouge', hex: '#C0392B', stock: false },
-  { id: 'vert-eau', label: "Vert d'eau", hex: '#9FD8CB', stock: false },
-  { id: 'gris', label: 'Gris', hex: '#9AA0A6', stock: false },
-  { id: 'bleu', label: 'Bleu', hex: '#4A6FA5', stock: false },
-  { id: 'noir', label: 'Noir', hex: '#2B2B2B', stock: false },
-];
 
 function fmt(n: number) { return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' F'; }
 const pad = (n: number) => String(n).padStart(2, '0');
 const inputCls = 'block h-12 w-full rounded-2xl border border-[#F4A7C3]/50 bg-white px-4 text-[16px] font-medium outline-none focus:border-[#A855F7] focus:ring-2 focus:ring-[#A855F7]/25';
 
-export default function OrderModalMiniSac({ open, onClose, cfg, product, setProduct, qtyOptions, initialQty = 1, initialColor }: Props) {
+export default function OrderModalMiniSac({ open, onClose, cfg, product, setProduct, qtyOptions, initialQty = 1 }: Props) {
   const { submit, sending, formErr, trackOpen } = useOrderSubmit({ cfg, product, setProduct });
   const [qty, setQty] = useState(initialQty);
-  const [coloris, setColoris] = useState(initialColor || COLORIS[0].label);
   const [name, setName] = useState(''); const [city, setCity] = useState(''); const [phone, setPhone] = useState('');
   const [cd, setCd] = useState({ m: 0, s: 0 });
   const wasOpenRef = useRef(false); const trackRef = useRef(trackOpen); const nameRef = useRef<HTMLInputElement>(null);
@@ -54,11 +36,10 @@ export default function OrderModalMiniSac({ open, onClose, cfg, product, setProd
     if (!wasOpenRef.current) {
       wasOpenRef.current = true;
       setName(''); setCity(''); setPhone('');
-      setColoris(initialColor || COLORIS[0].label);
       trackRef.current(initialQty);
       requestAnimationFrame(() => nameRef.current?.focus());
     }
-  }, [open, initialQty, initialColor]);
+  }, [open, initialQty]);
 
   useEffect(() => {
     if (!open) return;
@@ -103,29 +84,9 @@ export default function OrderModalMiniSac({ open, onClose, cfg, product, setProd
         </div>
 
         <form
-          onSubmit={async (e) => { e.preventDefault(); await submit({ name, city: `${city} | COLORIS ${coloris}`, phone, qty }); }}
+          onSubmit={async (e) => { e.preventDefault(); await submit({ name, city, phone, qty }); }}
           className="flex flex-col gap-4 overflow-y-auto px-5 py-4"
         >
-          {/* Sélecteur de coloris (requis — défaut Marron) */}
-          <div>
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.08em] text-[#A0683C]">
-              Votre coloris : <span className="text-[#7C3AED]">{coloris}</span>
-            </p>
-            <div className="flex justify-center">
-              {COLORIS.filter((c) => c.stock).map((c) => {
-                const active = coloris === c.label;
-                return (
-                  <button key={c.id} type="button" onClick={() => setColoris(c.label)}
-                    className={`flex flex-col items-center gap-1 rounded-xl px-4 py-2 ring-2 transition ${active ? 'scale-[1.04] bg-white ring-[#A855F7] shadow-md' : 'bg-white/60 ring-transparent hover:ring-[#F4A7C3]'}`}>
-                    <span className="h-6 w-6 rounded-full ring-2 ring-white shadow" style={{ background: c.hex }} />
-                    <span className={`text-[8px] font-bold leading-tight ${active ? 'text-[#7C3AED]' : 'text-neutral-500'}`}>{c.label}</span>
-                    <span className="-mt-0.5 text-[7px] font-black uppercase text-emerald-500">Disponible</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
           <div className="grid grid-cols-3 gap-2">
             {qtyOptions.map((o) => {
               const active = qty === o.v;
@@ -157,7 +118,7 @@ export default function OrderModalMiniSac({ open, onClose, cfg, product, setProd
           {selected?.save && <p className="-mt-2 text-center text-[10px] font-semibold text-emerald-600">{selected.save}</p>}
         </form>
         <p className="shrink-0 px-5 pb-4 text-center text-[10px] text-[#A0683C]" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
-          🔒 Aucun paiement en ligne · Vous payez à la réception · Coloris confirmé par téléphone
+          🔒 Aucun paiement en ligne · Vous payez à la réception · Confirmation par téléphone
         </p>
       </div>
     </div>

@@ -735,7 +735,6 @@ export default function MiniSacBandouliereLanding() {
             setProduct={(p) => setProduct(p as Product | null)}
             qtyOptions={QTY_OPTS}
             initialQty={qty}
-            initialColor={coloris}
           />
         )}
       </Suspense>
