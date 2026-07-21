@@ -64,6 +64,7 @@ export const LANDING_COMPONENTS: Record<string, LazyLanding> = {
   'mini-sac-bandouliere': lazy(() => import('./MiniSacBandouliereLanding')),
   'mini-sac-bandouliere-tk': lazy(() => import('./MiniSacBandouliereTkLanding')),
   'serum-rajeunissant': lazy(() => import('./SerumRajeunissantLanding')),
+  'serum-rajeunissant-tk': lazy(() => import('./SerumRajeunissantTkLanding')),
 };
 
 export const AUTONOMOUS_LANDING_SLUGS = new Set(Object.keys(LANDING_COMPONENTS));

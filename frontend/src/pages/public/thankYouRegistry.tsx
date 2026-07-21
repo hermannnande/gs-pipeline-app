@@ -53,6 +53,7 @@ export const THANKYOU_COMPONENTS: Record<string, LazyThankYou> = {
   'mini-sac-bandouliere': lazy(() => import('./MiniSacBandouliereThankYou')),
   'mini-sac-bandouliere-tk': lazy(() => import('./MiniSacBandouliereTkThankYou')),
   'serum-rajeunissant': lazy(() => import('./SerumRajeunissantThankYou')),
+  'serum-rajeunissant-tk': lazy(() => import('./SerumRajeunissantTkThankYou')),
 };
 
 export const DEDICATED_THANKYOU_SLUGS = new Set(Object.keys(THANKYOU_COMPONENTS));
