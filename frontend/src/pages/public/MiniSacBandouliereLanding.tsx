@@ -44,16 +44,16 @@ const MEDIA = {
   final: M('n8.webp'),
 };
 
-/** 8 coloris — pastilles partagées landing (présélection) + modal. */
+/** 8 coloris — pastilles partagées landing (présélection) + modal. Seul Marron en stock. */
 const COLORIS = [
-  { id: 'marron', label: 'Marron', hex: '#8B5E3C' },
-  { id: 'rose-poudre', label: 'Rose poudré', hex: '#F2B8C6' },
-  { id: 'beige-rose', label: 'Beige rosé', hex: '#E8C4B0' },
-  { id: 'rouge', label: 'Rouge', hex: '#C0392B' },
-  { id: 'vert-eau', label: "Vert d'eau", hex: '#9FD8CB' },
-  { id: 'gris', label: 'Gris', hex: '#9AA0A6' },
-  { id: 'bleu', label: 'Bleu', hex: '#4A6FA5' },
-  { id: 'noir', label: 'Noir', hex: '#2B2B2B' },
+  { id: 'marron', label: 'Marron', hex: '#8B5E3C', stock: true },
+  { id: 'rose-poudre', label: 'Rose poudré', hex: '#F2B8C6', stock: false },
+  { id: 'beige-rose', label: 'Beige rosé', hex: '#E8C4B0', stock: false },
+  { id: 'rouge', label: 'Rouge', hex: '#C0392B', stock: false },
+  { id: 'vert-eau', label: "Vert d'eau", hex: '#9FD8CB', stock: false },
+  { id: 'gris', label: 'Gris', hex: '#9AA0A6', stock: false },
+  { id: 'bleu', label: 'Bleu', hex: '#4A6FA5', stock: false },
+  { id: 'noir', label: 'Noir', hex: '#2B2B2B', stock: false },
 ];
 
 interface Product { id: number; code: string; nom: string; prixUnitaire: number }
@@ -426,12 +426,8 @@ export default function MiniSacBandouliereLanding() {
       .catch(() => {});
   }, [company]);
 
-  useEffect(() => {
-    const onScroll = () => setSticky(window.scrollY > 480);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  // CTA collant : visible dès l'arrivée sur la page (masqué quand la modal est ouverte).
+  useEffect(() => { setSticky(true); }, []);
 
   useEffect(() => {
     const tick = () => {
@@ -601,15 +597,28 @@ export default function MiniSacBandouliereLanding() {
       {/* ==================== COLORIS ==================== */}
       <section className="bg-gradient-to-b from-[#FFF6EF] to-[#F4A7C3]/25 px-4 py-12">
         <div className="mx-auto max-w-[560px] text-center">
-          <span className="inline-flex rounded-full bg-white/70 px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#A0683C] ring-1 ring-[#E8739E]/30">🎨 8 coloris</span>
-          <h2 className="mt-3 text-[24px] font-black sm:text-[28px]">Un coloris pour <span className="msb-grad">chaque humeur</span></h2>
-          <p className="mt-2 text-[13px] text-[#7B4B2A]/80">Touchez votre coloris préféré : il sera présélectionné dans votre commande.</p>
+          <span className="inline-flex rounded-full bg-white/70 px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#A0683C] ring-1 ring-[#E8739E]/30">🎨 Coloris du moment</span>
+          <h2 className="mt-3 text-[24px] font-black sm:text-[28px]">Disponible en <span className="msb-grad">Marron</span></h2>
+          <p className="mt-2 text-[13px] text-[#7B4B2A]/80">Le coloris <strong>Marron</strong> est le dernier en stock — les autres sont en rupture.</p>
           <div className="mx-auto mt-5 max-w-[440px] overflow-hidden rounded-[28px] shadow-xl ring-1 ring-[#7B4B2A]/10">
-            <LazyImg src={MEDIA.coloris} alt="Grille des 8 coloris du mini sac bandoulière tactile" aspect="4/5" />
+            <LazyImg src={MEDIA.coloris} alt="Grille des coloris du mini sac bandoulière tactile" aspect="4/5" />
           </div>
           <div className="mt-5 grid grid-cols-4 gap-2.5">
             {COLORIS.map((c) => {
               const active = coloris === c.label;
+              if (!c.stock) {
+                return (
+                  <div key={c.id} title="Rupture de stock"
+                    className="flex cursor-not-allowed flex-col items-center gap-1.5 rounded-2xl bg-neutral-100/70 px-1 py-2.5 opacity-55 ring-1 ring-neutral-200">
+                    <span className="relative h-7 w-7">
+                      <span className="block h-7 w-7 rounded-full ring-2 ring-white grayscale" style={{ background: c.hex }} />
+                      <span className="absolute inset-0 flex items-center justify-center text-[11px] font-black text-red-500">✕</span>
+                    </span>
+                    <span className="text-[9px] font-bold leading-tight text-neutral-400 line-through">{c.label}</span>
+                    <span className="-mt-1 text-[7px] font-black uppercase text-red-400">Rupture</span>
+                  </div>
+                );
+              }
               return (
                 <button
                   key={c.id}
@@ -619,6 +628,7 @@ export default function MiniSacBandouliereLanding() {
                 >
                   <span className="h-7 w-7 rounded-full ring-2 ring-white shadow-md" style={{ background: c.hex }} />
                   <span className={`text-[9px] font-bold leading-tight ${active ? 'text-[#7C3AED]' : 'text-neutral-600'}`}>{c.label}</span>
+                  <span className="-mt-1 text-[7px] font-black uppercase text-emerald-500">Disponible</span>
                 </button>
               );
             })}
