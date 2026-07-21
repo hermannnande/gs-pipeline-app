@@ -15,7 +15,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'mini-sac-bandouliere';
 const PRODUCT_CODE = 'MINI_SAC_BANDOULIERE';
 const CONTENT_NAME = 'Mini sac bandoulière tactile';
-const META_PIXEL_ID = ''; // <- renseigner l'ID pixel Meta quand dispo (init conditionnée)
+const META_PIXEL_ID = '1613380123108753'; // Pixel Meta du produit (events: PageView, ViewContent, AddToCart, InitiateCheckout)
 const THANK_YOU_URL = '/mini-sac-bandouliere/merci';
 
 const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };

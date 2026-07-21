@@ -8,7 +8,7 @@ import axios from 'axios';
 import { orderTotal } from '../../utils/pricingHelpers';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
-const META_PIXEL_ID = ''; // <- renseigner l'ID pixel Meta quand dispo
+const META_PIXEL_ID = '1613380123108753'; // Pixel Meta du produit (event: Purchase)
 const SLUG = 'mini-sac-bandouliere';
 const PRODUCT_CODE = 'MINI_SAC_BANDOULIERE';
 const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
