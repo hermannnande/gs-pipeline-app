@@ -1,6 +1,6 @@
 /**
  * Landing premium — Support Téléphone Flexible Mains Libres (SUPPORT_TELEPHONE_FLEXIBLE).
- * Slug : support-telephone-flexible · Prix : 9 900 / 16 900 / 24 900 F (-50 % affiché)
+ * Slug : support-telephone-flexible · Prix : 7 900 / 14 900 / 19 900 F (-50 % affiché) · Livraison aux frais du client
  * Direction : dégradés fluides cyan -> bleu -> violet sur toute la page (thème tech).
  * Cible : COD Côte d'Ivoire (80 % trafic mobile in-app Facebook/TikTok).
  * Pattern : copie conforme de SerumRajeunissantLanding (validé client).
@@ -19,14 +19,14 @@ const CONTENT_NAME = 'Support Téléphone Flexible Mains Libres';
 const META_PIXEL_ID = ''; // Pixel Meta : le client le fournira plus tard (init conditionnée)
 const THANK_YOU_URL = '/support-telephone-flexible/merci';
 
-const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
-const OLD_UNIT = 19800; // prix barré cohérent avec l'offre -50 %
+const PRICES: Record<number, number> = { 1: 7900, 2: 14900, 3: 19900 };
+const OLD_UNIT = 15800; // prix barré cohérent avec l'offre -50 %
 const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/ |,/g, ' ');
 const fmtN = (n: number) => n.toLocaleString('fr-FR').replace(/ |,/g, ' ');
 const QTY_OPTS = [
   { v: 1, label: '1 support', sub: packLabel(PRICES, 1, 'F'), save: '' },
-  { v: 2, label: '2 supports', sub: packLabel(PRICES, 2, 'F'), tag: 'Populaire', save: 'Économisez 2 900 F' },
-  { v: 3, label: '3 supports', sub: packLabel(PRICES, 3, 'F'), tag: 'Meilleure offre', save: 'Économisez 4 800 F' },
+  { v: 2, label: '2 supports', sub: packLabel(PRICES, 2, 'F'), tag: 'Populaire', save: 'Économisez 900 F' },
+  { v: 3, label: '3 supports', sub: packLabel(PRICES, 3, 'F'), tag: 'Meilleure offre', save: 'Économisez 3 800 F' },
 ];
 
 const M = (n: string) => `/support-telephone-flexible/${n}`;

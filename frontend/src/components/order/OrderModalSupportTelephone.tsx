@@ -111,6 +111,7 @@ export default function OrderModalSupportTelephone({ open, onClose, cfg, product
           </div>
 
           {formErr && <p className="rounded-xl bg-red-50 px-3 py-2 text-center text-[12px] font-semibold text-red-600">{formErr}</p>}
+          <p className="rounded-xl border border-[#67E8F9]/50 bg-[#ECFEFF] px-3 py-2 text-center text-[12px] font-black text-[#1D4ED8]">🚚 Livraison à vos frais · Paiement à la réception</p>
           <button type="submit" disabled={sending}
             className="flex h-[54px] w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#06B6D4] via-[#3B82F6] to-[#8B5CF6] text-[15px] font-black text-white shadow-[0_14px_36px_-10px_rgba(59,130,246,.55)] transition hover:brightness-110 active:scale-[0.99] disabled:opacity-60">
             {sending ? 'Envoi en cours…' : <>Commander · {fmt(total)}</>}
