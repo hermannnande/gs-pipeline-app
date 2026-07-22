@@ -16,7 +16,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'support-telephone-flexible';
 const PRODUCT_CODE = 'SUPPORT_TELEPHONE_FLEXIBLE';
 const CONTENT_NAME = 'Support Téléphone Flexible Mains Libres';
-const META_PIXEL_ID = ''; // Pixel Meta : le client le fournira plus tard (init conditionnée)
+const META_PIXEL_ID = '1333239138939400'; // Pixel Meta campagne support téléphone (ViewContent, InitiateCheckout, Purchase)
 const THANK_YOU_URL = '/support-telephone-flexible/merci';
 
 const PRICES: Record<number, number> = { 1: 7900, 2: 14900, 3: 19900 };

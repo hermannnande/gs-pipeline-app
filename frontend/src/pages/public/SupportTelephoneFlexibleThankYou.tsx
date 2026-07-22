@@ -8,7 +8,7 @@ import axios from 'axios';
 import { orderTotal } from '../../utils/pricingHelpers';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
-const META_PIXEL_ID = ''; // Pixel Meta : le client le fournira plus tard (event: Purchase conditionné)
+const META_PIXEL_ID = '1333239138939400'; // Pixel Meta campagne support téléphone (event: Purchase)
 const SLUG = 'support-telephone-flexible';
 const PRODUCT_CODE = 'SUPPORT_TELEPHONE_FLEXIBLE';
 const PRICES: Record<number, number> = { 1: 7900, 2: 14900, 3: 19900 };
