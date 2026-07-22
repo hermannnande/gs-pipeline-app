@@ -66,6 +66,7 @@ export const LANDING_COMPONENTS: Record<string, LazyLanding> = {
   'serum-rajeunissant': lazy(() => import('./SerumRajeunissantLanding')),
   'serum-rajeunissant-tk': lazy(() => import('./SerumRajeunissantTkLanding')),
   'support-telephone-flexible': lazy(() => import('./SupportTelephoneFlexibleLanding')),
+  'repulsif-ultrasons': lazy(() => import('./RepulsifUltrasonsLanding')),
 };
 
 export const AUTONOMOUS_LANDING_SLUGS = new Set(Object.keys(LANDING_COMPONENTS));

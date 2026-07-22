@@ -54,6 +54,7 @@ export const LANDING_SLUGS = [
   'serum-rajeunissant',
   'serum-rajeunissant-tk',
   'support-telephone-flexible',
+  'repulsif-ultrasons',
   'boutique',
 ] as const;
 
