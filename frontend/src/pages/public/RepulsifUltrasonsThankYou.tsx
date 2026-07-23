@@ -11,7 +11,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 const META_PIXEL_ID = ''; // Pixel Meta : le client le fournira plus tard (event: Purchase conditionné)
 const SLUG = 'repulsif-ultrasons';
 const PRODUCT_CODE = 'REPULSIF_ULTRASONS';
-const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const PRICES: Record<number, number> = { 1: 7900, 2: 14900, 3: 19900 };
 
 declare global { interface Window { fbq?: (...args: any[]) => void; _fbq?: any } }
 

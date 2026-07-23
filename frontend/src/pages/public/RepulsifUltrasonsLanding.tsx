@@ -1,6 +1,6 @@
 /**
  * Landing premium — Répulsif Ultrasons Anti-Nuisibles (REPULSIF_ULTRASONS).
- * Slug : repulsif-ultrasons · Prix : 9 900 / 16 900 / 24 900 F (-50 % affiché)
+ * Slug : repulsif-ultrasons · Prix : 7 900 / 14 900 / 19 900 F (-50 % affiché)
  * Direction : dégradés bleu nuit #1E3A8A / bleu #2563EB -> cyan #06B6D4,
  * accents orange #F97316 (rappel des visuels produit).
  * Sections sombres (la nuit, quand les nuisibles attaquent) alternées aux claires.
@@ -21,14 +21,14 @@ const CONTENT_NAME = 'Répulsif Ultrasons Anti-Nuisibles';
 const META_PIXEL_ID = ''; // Pixel Meta : le client le fournira plus tard (init conditionnée)
 const THANK_YOU_URL = '/repulsif-ultrasons/merci';
 
-const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
-const OLD_UNIT = 19800; // prix barré cohérent avec l'offre -50 %
+const PRICES: Record<number, number> = { 1: 7900, 2: 14900, 3: 19900 };
+const OLD_UNIT = 15800; // prix barré cohérent avec l'offre -50 %
 const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/ |,/g, ' ');
 const fmtN = (n: number) => n.toLocaleString('fr-FR').replace(/ |,/g, ' ');
 const QTY_OPTS = [
   { v: 1, label: '1 boîtier', sub: packLabel(PRICES, 1, 'F'), save: '' },
-  { v: 2, label: '2 boîtiers', sub: packLabel(PRICES, 2, 'F'), tag: 'Populaire', save: 'Économisez 2 900 F' },
-  { v: 3, label: '3 boîtiers', sub: packLabel(PRICES, 3, 'F'), tag: 'Meilleure offre', save: 'Économisez 4 800 F' },
+  { v: 2, label: '2 boîtiers', sub: packLabel(PRICES, 2, 'F'), tag: 'Populaire', save: 'Économisez 900 F' },
+  { v: 3, label: '3 boîtiers', sub: packLabel(PRICES, 3, 'F'), tag: 'Meilleure offre', save: 'Économisez 3 800 F' },
 ];
 
 const M = (n: string) => `/repulsif-ultrasons/${n}`;
