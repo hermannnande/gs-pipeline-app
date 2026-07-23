@@ -18,7 +18,8 @@
     "deploy:vps:dry": "node scripts/deploy-vps.mjs --dry-run",
     "vps:landing-regex": "node scripts/generate-landing-slug-regex.mjs",
     "vps:patch-htaccess-coffret": "node scripts/patch-vps-root-htaccess-coffret.mjs",
-    "deploy:coffret-versace": "node scripts/deploy-coffret-versace.mjs"
+    "deploy:coffret-versace": "node scripts/deploy-coffret-versace.mjs",
+    "deploy:sac-lv": "node scripts/deploy-sac-lv.mjs"
   },
   "keywords": [
     "ecommerce",
