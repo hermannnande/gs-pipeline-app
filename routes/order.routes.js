@@ -201,15 +201,21 @@ router.get('/', async (req, res) => {
             select: { id: true, nom: true, prenom: true }
           },
           product: {
-            select: { 
-              id: true, 
-              code: true, 
-              nom: true, 
+            select: {
+              id: true,
+              code: true,
+              nom: true,
               prixUnitaire: true,
               prix2Unites: true,
               prix3Unites: true
             }
-          }
+          },
+          // Qui a marqué la commande "en attente de paiement" — RÉSERVÉ À L'ADMIN.
+          // La relation n'est chargée (et donc envoyée au client) que pour un ADMIN ;
+          // les autres rôles (APPELANT, GESTIONNAIRE...) ne reçoivent jamais ce champ.
+          ...(user.role === 'ADMIN'
+            ? { attentePaiementBy: { select: { id: true, nom: true, prenom: true } } }
+            : {}),
         },
         orderBy: [
           { priorite: 'desc' }, // Priorité d'abord
@@ -866,7 +872,11 @@ router.get('/:id', async (req, res) => {
         },
         statusHistory: {
           orderBy: { createdAt: 'desc' }
-        }
+        },
+        // Qui a marqué "en attente de paiement" — RÉSERVÉ À L'ADMIN (voir GET /).
+        ...(user.role === 'ADMIN'
+          ? { attentePaiementBy: { select: { id: true, nom: true, prenom: true } } }
+          : {}),
       }
     });
 
@@ -1631,12 +1641,14 @@ router.post('/:id/attente-paiement', authorize('APPELANT', 'ADMIN', 'GESTIONNAIR
       data: {
         enAttentePaiement: true,
         attentePaiementAt: new Date(),
+        attentePaiementById: req.user.id, // Employé/gestionnaire qui a marqué "en attente de paiement" (visible ADMIN uniquement)
         callerId: req.user.id, // Assigner l'appelant
         calledAt: new Date(),
         noteAppelant: note ? `[EN ATTENTE PAIEMENT] ${note}` : '[EN ATTENTE PAIEMENT] Client prêt à payer',
       },
       include: {
-        caller: { select: { id: true, nom: true, prenom: true } }
+        caller: { select: { id: true, nom: true, prenom: true } },
+        attentePaiementBy: { select: { id: true, nom: true, prenom: true } }
       }
     });
 

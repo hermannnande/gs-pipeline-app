@@ -534,6 +534,7 @@ export default function Orders({ onlyProductCode, pageTitle }: OrdersProps = {})
                 onTogglePriorite={canTogglePriorite ? handleTogglePriorite : undefined}
                 canTogglePriorite={canTogglePriorite}
                 isStale={isStaleOrder(order)}
+                showAttentePaiementBy={isAdmin}
               />
             ))}
           </div>

@@ -94,7 +94,11 @@ export interface Order {
   // Attente paiement
   enAttentePaiement?: boolean;
   attentePaiementAt?: string;
-  
+  attentePaiementById?: number;
+  // Employé/gestionnaire qui a marqué "en attente de paiement".
+  // Renvoyé par l'API UNIQUEMENT à l'ADMIN (absent pour les autres rôles).
+  attentePaiementBy?: { id: number; nom: string; prenom: string };
+
   // Priorité (faire remonter)
   priorite?: boolean;
   prioriteAt?: string;

@@ -1,4 +1,4 @@
-import { Phone, MapPin, Package, Calendar, DollarSign, Clock, Edit2, CheckSquare, Square, MoreVertical, ArrowUp } from 'lucide-react';
+import { Phone, MapPin, Package, Calendar, DollarSign, Clock, Edit2, CheckSquare, Square, MoreVertical, ArrowUp, User } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '@/utils/statusHelpers';
 import type { Order } from '@/types';
 import { useState } from 'react';
@@ -22,6 +22,8 @@ interface OrderCardProps {
   canTogglePriorite?: boolean;
   /** Si true, affiche un badge "OUBLIEE" (commande recente >24h sans appel). */
   isStale?: boolean;
+  /** Si true (ADMIN uniquement), affiche le nom de l'employé qui a mis "Attente paiement". */
+  showAttentePaiementBy?: boolean;
 }
 
 export function OrderCard({
@@ -42,6 +44,7 @@ export function OrderCard({
   onTogglePriorite,
   canTogglePriorite,
   isStale = false,
+  showAttentePaiementBy = false,
 }: OrderCardProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -107,6 +110,18 @@ export function OrderCard({
               {order.enAttentePaiement && (
                 <span className="badge bg-purple-100 text-purple-700 ring-1 ring-purple-200">
                   ⏳ Attente paiement
+                </span>
+              )}
+              {/* Nom de l'employé/gestionnaire qui a mis "Attente paiement".
+                  RÉSERVÉ À L'ADMIN : showAttentePaiementBy n'est vrai que pour un admin,
+                  et l'API ne renvoie attentePaiementBy qu'aux admins (double protection). */}
+              {showAttentePaiementBy && order.enAttentePaiement && order.attentePaiementBy && (
+                <span
+                  className="badge inline-flex items-center gap-1 bg-slate-100 text-slate-600 ring-1 ring-slate-200"
+                  title="Employé qui a mis « Attente paiement » — visible admin uniquement"
+                >
+                  <User size={12} />
+                  {order.attentePaiementBy.prenom} {order.attentePaiementBy.nom}
                 </span>
               )}
               {/* Badge "DEJA PAYE" : commande deja reglee en ligne (Chariow Mobile Money).
