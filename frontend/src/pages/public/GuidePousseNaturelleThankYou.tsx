@@ -79,13 +79,13 @@ export default function GuidePousseNaturelleThankYou() {
   }, [reference, isPhysique, price]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-amber-50 px-4 py-8 sm:py-12">
+    <div className="min-h-screen bg-gradient-to-br from-[#EDF7F0] via-white to-[#FBF7EE] px-4 py-8 sm:py-12">
       <div className="mx-auto w-full max-w-[480px] space-y-4">
         <div className="overflow-hidden rounded-[1.5rem] bg-white shadow-[0_20px_50px_-12px_rgba(16,185,129,.25)] ring-1 ring-emerald-100">
           {/* Bandeau succes */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-[#218C4F] via-[#126B3A] to-[#218C4F] px-6 py-8 text-center text-white">
+          <div className="relative overflow-hidden bg-gradient-to-br from-[#10B981] via-[#0E7A3D] to-[#065F46] px-6 py-8 text-center text-white">
             <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-lg">
-              <svg className="h-12 w-12 text-[#126B3A]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <svg className="h-12 w-12 text-[#0E7A3D]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
@@ -114,7 +114,7 @@ export default function GuidePousseNaturelleThankYou() {
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-2xl shadow-md ring-1 ring-amber-200">{isPhysique ? '📞' : '📩'}</div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#126B3A]">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0E7A3D]">
                   {isPhysique ? 'Prochaine etape' : 'Acces numerique'}
                 </p>
                 <p className="text-[16px] font-bold text-slate-900">
@@ -131,10 +131,10 @@ export default function GuidePousseNaturelleThankYou() {
 
           {/* Etapes */}
           <div className="px-6 py-5">
-            <p className="mb-3 text-center text-[10px] font-black uppercase tracking-[0.3em] text-[#126B3A]">Et maintenant ?</p>
+            <p className="mb-3 text-center text-[10px] font-black uppercase tracking-[0.3em] text-[#0E7A3D]">Et maintenant ?</p>
             <ol className="space-y-2.5 text-[13px]">
               <li className="flex items-start gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#218C4F] text-[11px] font-black text-white">1</span>
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0E7A3D] text-[11px] font-black text-white">1</span>
                 <span className="text-slate-700">
                   {isPhysique
                     ? "Repondez a l'appel de notre conseiller pour confirmer l'adresse."
@@ -142,11 +142,11 @@ export default function GuidePousseNaturelleThankYou() {
                 </span>
               </li>
               <li className="flex items-start gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#218C4F] text-[11px] font-black text-white">2</span>
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0E7A3D] text-[11px] font-black text-white">2</span>
                 <span className="text-slate-700">Commencez par le chapitre « diagnostic », puis choisissez UNE seule routine.</span>
               </li>
               <li className="flex items-start gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#218C4F] text-[11px] font-black text-white">3</span>
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0E7A3D] text-[11px] font-black text-white">3</span>
                 <span className="text-slate-700">Suivez-la regulierement (defi 30 jours) et notez votre progression.</span>
               </li>
             </ol>
@@ -154,7 +154,7 @@ export default function GuidePousseNaturelleThankYou() {
 
           {/* WhatsApp support */}
           <div className="border-t border-stone-100 px-6 py-5">
-            <p className="text-center text-[10px] font-black uppercase tracking-[0.3em] text-[#126B3A]">
+            <p className="text-center text-[10px] font-black uppercase tracking-[0.3em] text-[#0E7A3D]">
               {isPhysique ? 'Une question sur votre livraison ?' : 'Un souci pour acceder au guide ?'}
             </p>
             <a
@@ -178,7 +178,7 @@ export default function GuidePousseNaturelleThankYou() {
           <p>Ce guide est educatif et ne remplace pas un diagnostic medical.</p>
         </div>
         <div className="text-center">
-          <Link to="/guide-pousse-naturelle" className="text-[11px] font-medium text-[#126B3A] underline-offset-2 hover:underline">Retour au site</Link>
+          <Link to="/guide-pousse-naturelle" className="text-[11px] font-medium text-[#0E7A3D] underline-offset-2 hover:underline">Retour au site</Link>
         </div>
       </div>
     </div>
