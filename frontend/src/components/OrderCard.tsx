@@ -107,6 +107,13 @@ export function OrderCard({
               {order.enAttentePaiement && (
                 <span className="badge bg-purple-100 text-purple-700 ring-1 ring-purple-200">
                   ⏳ Attente paiement
+                  {/* Nom de l'employé qui a mis ce statut — affiché UNIQUEMENT pour l'ADMIN
+                      (l'API ne renvoie attentePaiementBy qu'aux admins). */}
+                  {order.attentePaiementBy && (
+                    <span className="ml-1 font-black text-purple-900">
+                      · par {[order.attentePaiementBy.prenom, order.attentePaiementBy.nom].filter(Boolean).join(' ')}
+                    </span>
+                  )}
                 </span>
               )}
               {/* Badge "DEJA PAYE" : commande deja reglee en ligne (Chariow Mobile Money).

@@ -107,6 +107,9 @@ model User {
   // WhatsApp
   waConversations          WaConversation[] @relation("WaConvAssigned")
 
+  // Commandes marquées "en attente de paiement" par cet utilisateur
+  ordersAttentePaiement    Order[]                  @relation("AttentePaiementBy")
+
   @@map("users")
 }
 
@@ -193,6 +196,8 @@ model Order {
   // Statut paiement EXPEDITION
   enAttentePaiement Boolean   @default(false) // Commande en attente de paiement (pour EXPEDITION)
   attentePaiementAt DateTime? // Date de mise en attente de paiement
+  attentePaiementById Int? // Employé qui a marqué "en attente de paiement" (visible ADMIN uniquement)
+  attentePaiementBy   User? @relation("AttentePaiementBy", fields: [attentePaiementById], references: [id])
 
   // Gestion des RDV (Rendez-vous pour rappel)
   rdvProgramme    Boolean   @default(false) // RDV programmé pour rappeler le client
