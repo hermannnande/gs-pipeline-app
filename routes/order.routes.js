@@ -210,12 +210,14 @@ router.get('/', async (req, res) => {
               prix3Unites: true
             }
           },
-          // Qui a marqué la commande "en attente de paiement" — RÉSERVÉ À L'ADMIN.
-          // La relation n'est chargée (et donc envoyée au client) que pour un ADMIN ;
-          // les autres rôles (APPELANT, GESTIONNAIRE...) ne reçoivent jamais ce champ.
-          ...(user.role === 'ADMIN'
-            ? { attentePaiementBy: { select: { id: true, nom: true, prenom: true } } }
-            : {}),
+          // Qui a mis "en attente de paiement" : renvoyé UNIQUEMENT à l'ADMIN
+          // (les employés ne doivent pas voir ce nom — la relation n'est
+          //  tout simplement pas incluse pour les autres rôles).
+          ...(user.role === 'ADMIN' ? {
+            attentePaiementBy: {
+              select: { id: true, nom: true, prenom: true }
+            }
+          } : {})
         },
         orderBy: [
           { priorite: 'desc' }, // Priorité d'abord
@@ -873,10 +875,12 @@ router.get('/:id', async (req, res) => {
         statusHistory: {
           orderBy: { createdAt: 'desc' }
         },
-        // Qui a marqué "en attente de paiement" — RÉSERVÉ À L'ADMIN (voir GET /).
-        ...(user.role === 'ADMIN'
-          ? { attentePaiementBy: { select: { id: true, nom: true, prenom: true } } }
-          : {}),
+        // Qui a mis "en attente de paiement" : ADMIN uniquement
+        ...(user.role === 'ADMIN' ? {
+          attentePaiementBy: {
+            select: { id: true, nom: true, prenom: true }
+          }
+        } : {})
       }
     });
 
@@ -1641,14 +1645,13 @@ router.post('/:id/attente-paiement', authorize('APPELANT', 'ADMIN', 'GESTIONNAIR
       data: {
         enAttentePaiement: true,
         attentePaiementAt: new Date(),
-        attentePaiementById: req.user.id, // Employé/gestionnaire qui a marqué "en attente de paiement" (visible ADMIN uniquement)
+        attentePaiementById: req.user.id, // Employé qui a mis le statut (visible ADMIN uniquement)
         callerId: req.user.id, // Assigner l'appelant
         calledAt: new Date(),
         noteAppelant: note ? `[EN ATTENTE PAIEMENT] ${note}` : '[EN ATTENTE PAIEMENT] Client prêt à payer',
       },
       include: {
-        caller: { select: { id: true, nom: true, prenom: true } },
-        attentePaiementBy: { select: { id: true, nom: true, prenom: true } }
+        caller: { select: { id: true, nom: true, prenom: true } }
       }
     });
 
@@ -1659,7 +1662,7 @@ router.post('/:id/attente-paiement', authorize('APPELANT', 'ADMIN', 'GESTIONNAIR
         oldStatus: order.status,
         newStatus: order.status, // Le statut ne change pas
         changedBy: req.user.id,
-        comment: `Marquée "En attente de paiement" par ${req.user.prenom} ${req.user.nom}${note ? ' - Note: ' + note : ''}`
+        comment: `Marquée "En attente de paiement"${note ? ' - Note: ' + note : ''}`
       }
     });
 
