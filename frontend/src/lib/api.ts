@@ -266,6 +266,11 @@ export const statsApi = {
     return data;
   },
 
+  getCallActivity: async (params?: { date?: string }) => {
+    const { data } = await api.get('/stats/call-activity', { params });
+    return data;
+  },
+
   export: async (params?: any) => {
     const { data } = await api.get('/stats/export', { params });
     return data;

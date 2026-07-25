@@ -331,6 +331,96 @@ router.get('/deliverers', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) =
   }
 });
 
+// GET /api/stats/call-activity - Activité des appels heure par heure (Admin/Gestionnaire)
+// Source de vérité : StatusHistory (changedBy + createdAt + newStatus).
+// ⚠️ StatusHistory n'a PAS de relation user dans le schéma (changedBy est un Int brut) :
+// on récupère donc les employés de la compagnie séparément puis on fait le join en JS.
+router.get('/call-activity', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
+  try {
+    const { date } = req.query;
+
+    // Journée bornée en UTC (Abidjan = UTC, pas de décalage horaire).
+    // Param `date` au format YYYY-MM-DD, défaut = aujourd'hui.
+    const day = /^\d{4}-\d{2}-\d{2}$/.test(date || '')
+      ? date
+      : new Date().toISOString().slice(0, 10);
+    const gte = new Date(`${day}T00:00:00.000Z`);
+    const lte = new Date(`${day}T23:59:59.999Z`);
+
+    // Tous les utilisateurs de la compagnie (pour le join + le rôle).
+    const users = await prisma.user.findMany({
+      where: { companyId: req.user.companyId },
+      select: { id: true, nom: true, prenom: true, role: true }
+    });
+    const usersById = new Map(users.map(u => [u.id, u]));
+
+    // Historique du jour, restreint aux commandes de la compagnie et aux
+    // changements faits par ses employés (exclut changedBy=0 des liens publics).
+    const history = await prisma.statusHistory.findMany({
+      where: {
+        createdAt: { gte, lte },
+        changedBy: { in: users.map(u => u.id) },
+        order: { companyId: req.user.companyId }
+      },
+      include: {
+        order: { select: { id: true, clientNom: true, clientTelephone: true } }
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 5000 // garde-fou, une journée d'appels reste très en dessous
+    });
+
+    // Action dérivée : certaines entrées ne changent pas le statut
+    // (oldStatus === newStatus) — le commentaire porte alors l'action réelle
+    // (ex. "Marquée En attente de paiement", "RDV programmé…").
+    const deriveAction = (h) => {
+      const c = (h.comment || '').toLowerCase();
+      if (c.includes('attente de paiement')) return 'ATTENTE_PAIEMENT';
+      if (c.startsWith('rdv')) return 'RDV';
+      return h.newStatus;
+    };
+
+    // Regrouper par employé
+    const byUser = new Map();
+    for (const h of history) {
+      const user = usersById.get(h.changedBy);
+      if (!user) continue; // ne devrait pas arriver (filtre in:), sécurité
+      let entry = byUser.get(h.changedBy);
+      if (!entry) {
+        entry = {
+          user,
+          firstActionAt: h.createdAt,
+          lastActionAt: h.createdAt,
+          totalActions: 0,
+          byStatus: {},
+          timeline: []
+        };
+        byUser.set(h.changedBy, entry);
+      }
+      const action = deriveAction(h);
+      entry.lastActionAt = h.createdAt; // history trié asc → dernière vue = dernière action
+      entry.totalActions += 1;
+      entry.byStatus[action] = (entry.byStatus[action] || 0) + 1;
+      entry.timeline.push({
+        at: h.createdAt,
+        orderId: h.orderId,
+        clientNom: h.order?.clientNom || '',
+        oldStatus: h.oldStatus,
+        newStatus: h.newStatus,
+        action,
+        comment: h.comment
+      });
+    }
+
+    const employees = [...byUser.values()]
+      .sort((a, b) => new Date(a.firstActionAt) - new Date(b.firstActionAt));
+
+    res.json({ date: day, employees });
+  } catch (error) {
+    console.error('Erreur récupération activité des appels:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération de l\'activité des appels.' });
+  }
+});
+
 // GET /api/stats/my-stats - Statistiques personnelles (Appelant/Livreur)
 router.get('/my-stats', authorize('APPELANT', 'LIVREUR'), async (req, res) => {
   try {

@@ -5,6 +5,24 @@ import { statsApi } from '@/lib/api';
 import { formatCurrency, formatDateTime, getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
 import type { Order } from '@/types';
 
+// Icônes/couleurs par type d'action d'appel (clé dérivée côté backend depuis StatusHistory).
+const ACTION_META: Record<string, { icon: string; label: string; classes: string }> = {
+  VALIDEE: { icon: '✅', label: 'validée(s)', classes: 'bg-green-100 text-green-800' },
+  ANNULEE: { icon: '❌', label: 'annulée(s)', classes: 'bg-red-100 text-red-800' },
+  INJOIGNABLE: { icon: '📵', label: 'injoignable(s)', classes: 'bg-orange-100 text-orange-800' },
+  ATTENTE_PAIEMENT: { icon: '⏳', label: 'attente paiement', classes: 'bg-amber-100 text-amber-800' },
+  A_APPELER: { icon: '📞', label: 'à appeler', classes: 'bg-yellow-100 text-yellow-800' },
+  NOUVELLE: { icon: '🆕', label: 'nouvelle(s)', classes: 'bg-blue-100 text-blue-800' },
+  ASSIGNEE: { icon: '🚚', label: 'assignée(s)', classes: 'bg-indigo-100 text-indigo-800' },
+  RDV: { icon: '📅', label: 'RDV', classes: 'bg-purple-100 text-purple-800' },
+};
+
+const actionMeta = (action: string) =>
+  ACTION_META[action] || { icon: '🔹', label: action.toLowerCase().replace(/_/g, ' '), classes: 'bg-gray-100 text-gray-700' };
+
+const fmtTime = (at: string) => new Date(at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+const fmtTimeSec = (at: string) => new Date(at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
 export default function Stats() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -18,7 +36,11 @@ export default function Stats() {
   const [searchPrepaidExpeditions, setSearchPrepaidExpeditions] = useState('');
   const [onlyExpedied, setOnlyExpedied] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  
+
+  // Activité des appels heure par heure (sélecteur de journée local à la section)
+  const [activityDate, setActivityDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [expandedEmployee, setExpandedEmployee] = useState<number | null>(null);
+
   const { data: callersData, isLoading: loadingCallers } = useQuery({
     queryKey: ['callers-stats', startDate, endDate],
     queryFn: () => statsApi.getCallers({ startDate, endDate }),
@@ -42,6 +64,11 @@ export default function Stats() {
       search: searchPrepaidExpeditions || undefined,
       onlyExpedied
     }),
+  });
+
+  const { data: activityData, isLoading: loadingActivity } = useQuery({
+    queryKey: ['call-activity', activityDate],
+    queryFn: () => statsApi.getCallActivity({ date: activityDate }),
   });
 
   // Filtrer et trier les appelants
@@ -323,6 +350,109 @@ export default function Stats() {
           </div>
         </div>
       )}
+
+      {/* ⏱️ Activité des appels — heure par heure */}
+      <div className="card">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+          <h2 className="text-xl font-semibold">⏱️ Activité des appels — heure par heure</h2>
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600">Journée :</label>
+            <input
+              type="date"
+              value={activityDate}
+              onChange={(e) => setActivityDate(e.target.value || new Date().toISOString().split('T')[0])}
+              className="input md:w-44"
+            />
+          </div>
+        </div>
+
+        {loadingActivity ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          </div>
+        ) : !activityData?.employees || activityData.employees.length === 0 ? (
+          <p className="text-center py-8 text-gray-500">Aucune activité d'appel ce jour</p>
+        ) : (
+          <div className="space-y-3">
+            {activityData.employees.map((emp: any) => {
+              const expanded = expandedEmployee === emp.user.id;
+              return (
+                <div key={emp.user.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => setExpandedEmployee(expanded ? null : emp.user.id)}
+                    className="w-full text-left p-4 hover:bg-gray-50 transition"
+                  >
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                      <span className="font-medium text-gray-900">
+                        {emp.user.prenom} {emp.user.nom}
+                      </span>
+                      {emp.user.role !== 'APPELANT' && (
+                        <span className="badge bg-purple-100 text-purple-800">{emp.user.role}</span>
+                      )}
+                      <span className="text-sm text-gray-600">
+                        🕐 Début : <span className="font-semibold text-gray-900">{fmtTime(emp.firstActionAt)}</span>
+                      </span>
+                      <span className="text-sm text-gray-600">
+                        Dernière action : <span className="font-semibold text-gray-900">{fmtTime(emp.lastActionAt)}</span>
+                      </span>
+                      <span className="text-sm text-gray-600">
+                        <span className="font-semibold text-gray-900">{emp.totalActions}</span> action(s)
+                      </span>
+                      <span className="ml-auto text-gray-400 text-sm">{expanded ? '▲ Masquer' : '▼ Détail'}</span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {Object.entries(emp.byStatus).map(([action, count]) => {
+                        const meta = actionMeta(action);
+                        return (
+                          <span key={action} className={`badge ${meta.classes}`}>
+                            {meta.icon} {count as number} {meta.label}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </button>
+
+                  {expanded && (
+                    <div className="border-t border-gray-200 bg-gray-50 px-4 py-3">
+                      <ol className="space-y-2">
+                        {emp.timeline.map((ev: any, i: number) => {
+                          const meta = actionMeta(ev.action);
+                          return (
+                            <li key={i} className="text-sm">
+                              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                <span className="font-mono text-gray-500 w-[4.5rem] shrink-0">{fmtTimeSec(ev.at)}</span>
+                                <span className="text-gray-700">
+                                  commande <span className="font-medium">#{ev.orderId}</span>
+                                  {ev.clientNom ? ` (${ev.clientNom})` : ''}
+                                </span>
+                                <span className="text-gray-400">:</span>
+                                {ev.oldStatus && ev.oldStatus !== ev.newStatus && (
+                                  <>
+                                    <span className={`badge ${getStatusColor(ev.oldStatus)}`}>
+                                      {getStatusLabel(ev.oldStatus)}
+                                    </span>
+                                    <span className="text-gray-400">→</span>
+                                  </>
+                                )}
+                                <span className={`badge ${meta.classes}`}>
+                                  {meta.icon} {ev.oldStatus && ev.oldStatus !== ev.newStatus ? getStatusLabel(ev.newStatus) : meta.label}
+                                </span>
+                              </div>
+                              {ev.comment && (
+                                <p className="pl-[5.5rem] text-xs text-gray-400 mt-0.5">{ev.comment}</p>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Statistiques Appelants */}
       <div className="card">
