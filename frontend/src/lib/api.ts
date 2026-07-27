@@ -288,6 +288,11 @@ export const callRecordingsApi = {
     const { data } = await api.get(`/call-recordings/by-order/${orderId}`);
     return data;
   },
+
+  remove: async (id: number) => {
+    const { data } = await api.delete(`/call-recordings/${id}`);
+    return data;
+  },
 };
 
 // Products API

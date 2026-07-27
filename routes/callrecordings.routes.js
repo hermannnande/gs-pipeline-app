@@ -1,5 +1,6 @@
 import express from 'express';
 import { authenticate, authorize } from '../middlewares/auth.middleware.js';
+import { logAudit } from '../middlewares/audit.middleware.js';
 import multer from 'multer';
 import { prisma } from '../utils/prisma.js';
 import { supabaseAdmin } from '../utils/supabaseAdmin.js';
@@ -285,6 +286,56 @@ router.get('/by-order/:orderId', authorize('ADMIN', 'GESTIONNAIRE', 'APPELANT'),
   } catch (error) {
     console.error('Erreur enregistrements par commande:', error);
     res.status(500).json({ error: 'Erreur lors de la récupération des enregistrements.' });
+  }
+});
+
+// ========================================
+// DELETE /api/call-recordings/:id — supprimer un enregistrement (ADMIN, GESTIONNAIRE)
+// Supprime le fichier du bucket (erreur storage loguée, non bloquante) puis la ligne DB.
+// ========================================
+router.delete('/:id', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
+  try {
+    if (!requireSupabaseStorage(res)) return;
+
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'id invalide.' });
+    }
+
+    const recording = await prisma.callRecording.findFirst({
+      where: { id, user: { companyId: req.user.companyId } }
+    });
+    if (!recording) {
+      return res.status(404).json({ error: 'Enregistrement non trouvé.' });
+    }
+
+    // Fichier d'abord (erreur loguée mais suppression DB quand même).
+    const { error: removeError } = await supabaseAdmin.storage
+      .from(BUCKET)
+      .remove([recording.filePath]);
+    if (removeError) {
+      console.warn(`[call-recordings] Suppression storage échouée (${recording.filePath}):`, removeError.message);
+    }
+
+    await prisma.callRecording.delete({ where: { id } });
+
+    logAudit(req, {
+      action: 'CALL_RECORDING_DELETE',
+      entityType: 'CallRecording',
+      entityId: id,
+      details: {
+        recordingUserId: recording.userId,
+        orderId: recording.orderId,
+        phone: recording.phone,
+        startedAt: recording.startedAt,
+        storageRemoved: !removeError,
+      },
+    });
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Erreur suppression enregistrement appel:', error);
+    res.status(500).json({ error: 'Erreur lors de la suppression de l\'enregistrement.' });
   }
 });
 

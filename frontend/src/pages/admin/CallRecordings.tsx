@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Headphones, ChevronLeft, ChevronRight, Search, Calendar, Users } from 'lucide-react';
+import { Headphones, ChevronLeft, ChevronRight, Search, Calendar, Users, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { callRecordingsApi, usersApi } from '@/lib/api';
 
 const fmtDateTime = (at: string) => new Date(at).toLocaleString('fr-FR');
@@ -19,7 +20,7 @@ export default function CallRecordings() {
   });
   const callers = usersData?.users || [];
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ['call-recordings', userId, orderId, date, page],
     queryFn: () => callRecordingsApi.list({
       userId: userId ? parseInt(userId, 10) : undefined,
@@ -36,6 +37,23 @@ export default function CallRecordings() {
 
   // Tout changement de filtre ramène à la page 1
   const changeFilter = (setter: (v: string) => void) => (v: string) => { setter(v); setPage(1); };
+
+  // Suppression d'un enregistrement (fichier bucket + ligne DB côté serveur)
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  const handleDelete = async (rec: any) => {
+    if (!window.confirm('Supprimer cet enregistrement ? (fichier audio définitivement effacé)')) return;
+    setDeletingId(rec.id);
+    try {
+      await callRecordingsApi.remove(rec.id);
+      toast.success('Enregistrement supprimé');
+      await refetch();
+    } catch {
+      toast.error("Erreur lors de la suppression de l'enregistrement.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -116,6 +134,7 @@ export default function CallRecordings() {
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Direction</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Durée</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Écouter</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -153,6 +172,17 @@ export default function CallRecordings() {
                         ) : (
                           <span className="text-xs text-gray-400">Lien indisponible</span>
                         )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <button
+                          onClick={() => handleDelete(rec)}
+                          disabled={deletingId === rec.id}
+                          title="Supprimer cet enregistrement"
+                          className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition disabled:opacity-50"
+                        >
+                          <Trash2 size={15} />
+                          {deletingId === rec.id ? 'Suppression…' : 'Supprimer'}
+                        </button>
                       </td>
                     </tr>
                   ))}
