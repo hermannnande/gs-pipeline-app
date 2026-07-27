@@ -7,6 +7,7 @@ import userRoutes from './routes/user.routes.js';
 import orderRoutes from './routes/order.routes.js';
 import deliveryRoutes from './routes/delivery.routes.js';
 import statsRoutes from './routes/stats.routes.js';
+import callRecordingRoutes from './routes/callrecordings.routes.js';
 import webhookRoutes from './routes/webhook.routes.js';
 import productRoutes from './routes/product.routes.js';
 import accountingRoutes from './routes/accounting.routes.js';
@@ -88,6 +89,7 @@ export function createApp() {
   app.use('/api/orders', orderRoutes);
   app.use('/api/delivery', deliveryRoutes);
   app.use('/api/stats', statsRoutes);
+  app.use('/api/call-recordings', callRecordingRoutes);
   app.use('/api/webhook', webhookRoutes);
   app.use('/api/products', productRoutes);
   app.use('/api/stock', stockRoutes);
