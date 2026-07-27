@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/providers.dart';
 import '../theme/app_theme.dart';
 import 'all_orders_screen.dart';
+import 'call_recordings_screen.dart';
 import 'dashboard_screen.dart';
 import 'deliveries_screen.dart';
 import 'expeditions_express_screen.dart';
@@ -37,7 +38,17 @@ class _AppShellState extends ConsumerState<AppShell> {
     'Listes de livraison',
     'Mes commandes traitees',
     'Mes statistiques',
+    'Mes appels enregistres',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Demarre le watcher des enregistrements d'appels (foreground, 2 min).
+    // Le reliquat arriere-plan est la tache periodique workmanager (main.dart).
+    Future.microtask(
+        () => ref.read(callRecordingServiceProvider).startWatching());
+  }
 
   Widget _body() {
     switch (_index) {
@@ -59,6 +70,8 @@ class _AppShellState extends ConsumerState<AppShell> {
         return const ProcessedOrdersScreen();
       case 8:
         return const StatsScreen();
+      case 9:
+        return const CallRecordingsScreen();
       default:
         return const DashboardScreen();
     }
@@ -216,6 +229,11 @@ class _AppShellState extends ConsumerState<AppShell> {
             icon: Icon(Icons.bar_chart_outlined),
             selectedIcon: Icon(Icons.bar_chart),
             label: Text('Mes statistiques'),
+          ),
+          const NavigationDrawerDestination(
+            icon: Icon(Icons.mic_none_outlined),
+            selectedIcon: Icon(Icons.mic),
+            label: Text('Mes appels enregistres'),
           ),
           const Divider(indent: 20, endIndent: 20, height: 32),
           Padding(

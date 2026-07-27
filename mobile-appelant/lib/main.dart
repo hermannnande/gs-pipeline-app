@@ -6,6 +6,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'providers/providers.dart';
 import 'screens/app_shell.dart';
 import 'screens/login_screen.dart';
+import 'services/call_recording_worker.dart';
 import 'services/notification_service.dart';
 import 'theme/app_theme.dart';
 
@@ -13,6 +14,10 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('fr_FR');
   await NotificationService().init();
+  // Tache periodique (15 min) de scan/envoi des enregistrements d'appels.
+  // Ne bloque pas le demarrage : en cas d'echec, le watcher foreground
+  // (AppShell) et le bouton "Verifier" restent fonctionnels.
+  registerCallRecordingWorker().catchError((_) {});
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.dark,

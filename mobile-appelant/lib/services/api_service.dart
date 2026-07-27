@@ -156,6 +156,36 @@ class ApiService {
     await _dio.post('/orders/$id/marquer-appel');
   }
 
+  // ============== CALL RECORDINGS ==============
+
+  /// Upload un enregistrement d'appel (multipart, max 25 Mo cote serveur).
+  /// Sans orderId, le backend matche la commande par les 8 derniers chiffres.
+  Future<void> uploadCallRecording({
+    required String filePath,
+    required String phone,
+    required String direction,
+    required DateTime startedAt,
+    required int durationSec,
+    int? orderId,
+  }) async {
+    final form = FormData.fromMap({
+      'file': await MultipartFile.fromFile(filePath),
+      'phone': phone,
+      'direction': direction,
+      'startedAt': startedAt.toUtc().toIso8601String(),
+      'durationSec': durationSec.toString(),
+      if (orderId != null) 'orderId': orderId.toString(),
+    });
+    await _dio.post(
+      '/call-recordings',
+      data: form,
+      options: Options(
+        sendTimeout: const Duration(minutes: 3),
+        receiveTimeout: const Duration(minutes: 2),
+      ),
+    );
+  }
+
   /// Marque une commande "EN ATTENTE PAIEMENT" (futur EXPEDITION).
   Future<void> marquerAttentePaiement(int id, {String? note}) async {
     await _dio.post('/orders/$id/attente-paiement', data: {

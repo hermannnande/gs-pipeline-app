@@ -2,8 +2,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/user.dart';
 import '../services/api_service.dart';
+import '../services/call_recordings_service.dart';
 
 final apiServiceProvider = Provider<ApiService>((ref) => ApiService());
+
+/// Service de collecte/envoi des enregistrements d'appels (singleton).
+final callRecordingServiceProvider = Provider<CallRecordingsService>(
+  (ref) => CallRecordingsService(ref.read(apiServiceProvider)),
+);
 
 class AuthState {
   final AppUser? user;

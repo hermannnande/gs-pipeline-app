@@ -45,17 +45,9 @@ android {
         }
     }
 
-    // Genere une APK separee par architecture CPU au lieu d'une "fat APK"
-    // qui contient les 3 (armeabi-v7a + arm64-v8a + x86_64). Sur un phone
-    // moderne (>= 2014), seule arm64-v8a est utilisee -> ~17 MB au lieu de 52.
-    splits {
-        abi {
-            isEnable = true
-            reset()
-            include("armeabi-v7a", "arm64-v8a")
-            isUniversalApk = false
-        }
-    }
+    // Les APK par architecture sont generees via `flutter build apk --split-per-abi`
+    // (le bloc splits{} entre en conflit avec le ndk abiFilters que Flutter
+    // ajoute automatiquement pour les 3 plateformes cibles).
 }
 
 dependencies {
