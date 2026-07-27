@@ -11,6 +11,7 @@ class CallRecordingEntry {
   final String direction; // OUTGOING | INCOMING
   final DateTime startedAt;
   final int durationSec;
+  final String? contactName; // nom du contact si present dans le journal (matching MIUI)
 
   String? filePath; // audio trouve (scan auto ou joint manuellement)
   String status; // PENDING | SENT | NO_FILE
@@ -28,6 +29,7 @@ class CallRecordingEntry {
     required this.direction,
     required this.startedAt,
     required this.durationSec,
+    this.contactName,
     this.filePath,
     this.status = statusPending,
     this.error,
@@ -41,6 +43,7 @@ class CallRecordingEntry {
         'direction': direction,
         'startedAt': startedAt.toIso8601String(),
         'durationSec': durationSec,
+        'contactName': contactName,
         'filePath': filePath,
         'status': status,
         'error': error,
@@ -56,6 +59,7 @@ class CallRecordingEntry {
         startedAt:
             DateTime.tryParse(j['startedAt'] as String? ?? '') ?? DateTime.now(),
         durationSec: (j['durationSec'] as num?)?.toInt() ?? 0,
+        contactName: j['contactName'] as String?,
         filePath: j['filePath'] as String?,
         status: j['status'] as String? ?? statusPending,
         error: j['error'] as String?,

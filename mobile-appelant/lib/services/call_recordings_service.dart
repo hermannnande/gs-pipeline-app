@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:call_log/call_log.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../models/call_recording_entry.dart';
 import 'api_service.dart';
@@ -197,6 +199,7 @@ class CallRecordingsService {
         direction: e.callType == CallType.incoming ? 'INCOMING' : 'OUTGOING',
         startedAt: DateTime.fromMillisecondsSinceEpoch(ts),
         durationSec: duration,
+        contactName: (e.name ?? '').trim().isEmpty ? null : e.name!.trim(),
       ));
     }
   }
@@ -216,24 +219,54 @@ class CallRecordingsService {
     return d;
   }
 
-  /// Cherche un fichier audio modifie dans la fenetre
-  /// [debut appel - 2 min ; fin appel + 10 min] dans les dossiers connus.
+  /// Cherche un fichier audio dans les dossiers connus, dans la fenetre
+  /// [debut appel - 3 min ; fin appel + 10 min].
+  /// Scoring des candidats (fenetre respectee dans tous les cas) :
+  ///  100 = nom contenant le numero · 80 = nom contenant le nom du contact
+  ///  (cas MIUI : "Appel Blaise Koffi Couturier_...") · 60 = 'call'/'appel'
+  ///  dans le nom · 40 = n'importe quel audio de la fenetre.
+  /// A score egal, on prend le fichier le plus proche du DEBUT de l'appel.
   /// Retourne null si introuvable (acces restreint Android 11+ possible).
   Future<String?> findRecordingFile(CallRecordingEntry entry) async {
     final root = Directory('/storage/emulated/0');
     if (!await root.exists()) return null;
 
-    final windowStart = entry.startedAt.subtract(const Duration(minutes: 2));
+    final windowStart = entry.startedAt.subtract(const Duration(minutes: 3));
     final windowEnd = entry.startedAt
         .add(Duration(seconds: entry.durationSec))
         .add(const Duration(minutes: 10));
-    final phoneTail =
-        entry.phone.length >= 8 ? entry.phone.substring(entry.phone.length - 8) : entry.phone;
+    final phoneTail = entry.phone.length >= 8
+        ? entry.phone.substring(entry.phone.length - 8)
+        : entry.phone;
+    // Mots du nom du contact (>= 3 lettres) pour le matching MIUI.
+    final contactWords = (entry.contactName ?? '')
+        .toLowerCase()
+        .split(RegExp(r'[^a-zA-Z\u00C0-\u00FF]+'))
+        .where((w) => w.length >= 3)
+        .toList();
 
-    File? bestByName;
-    File? bestByWindow;
-    var bestByNameTime = DateTime.fromMillisecondsSinceEpoch(0);
-    var bestByWindowTime = DateTime.fromMillisecondsSinceEpoch(0);
+    var scanned = 0; // fichiers audio vus (debug terrain)
+    // (score, distance au debut d'appel en ms, chemin)
+    (int, int, String)? best;
+
+    void consider(File f, DateTime modified, String lowerName) {
+      scanned++;
+      if (modified.isBefore(windowStart) || modified.isAfter(windowEnd)) return;
+      final nameDigits = lowerName.replaceAll(RegExp(r'\D'), '');
+      var score = 40;
+      if (phoneTail.isNotEmpty && nameDigits.contains(phoneTail)) {
+        score = 100;
+      } else if (contactWords.isNotEmpty &&
+          contactWords.any(lowerName.contains)) {
+        score = 80;
+      } else if (lowerName.contains('call') || lowerName.contains('appel')) {
+        score = 60;
+      }
+      final dist = modified.difference(entry.startedAt).inMilliseconds.abs();
+      if (best == null || score > best!.$1 || (score == best!.$1 && dist < best!.$2)) {
+        best = (score, dist, f.path);
+      }
+    }
 
     for (final rel in _recordingDirs) {
       final dir = Directory('${root.path}/$rel');
@@ -248,33 +281,16 @@ class CallRecordingsService {
         if (f is! File) continue;
         final name = f.uri.pathSegments.last.toLowerCase();
         if (!_audioExts.any(name.endsWith)) continue;
-        FileStat stat;
         try {
-          stat = await f.stat();
+          consider(f, (await f.stat()).modified, name);
         } catch (_) {
           continue;
         }
-        final modified = stat.modified;
-        if (modified.isBefore(windowStart) || modified.isAfter(windowEnd)) {
-          continue;
-        }
-        // Priorite 1 : le nom contient le numero (ou 'call'/'appel').
-        final nameDigits = name.replaceAll(RegExp(r'\D'), '');
-        final matchesNumber =
-            phoneTail.isNotEmpty && nameDigits.contains(phoneTail);
-        final matchesCall = name.contains('call') || name.contains('appel');
-        if ((matchesNumber || matchesCall) && modified.isAfter(bestByNameTime)) {
-          bestByName = f;
-          bestByNameTime = modified;
-        }
-        // Priorite 2 : n'importe quel audio dans la fenetre (le plus recent).
-        if (modified.isAfter(bestByWindowTime)) {
-          bestByWindow = f;
-          bestByWindowTime = modified;
-        }
       }
     }
-    return (bestByName ?? bestByWindow)?.path;
+    debugPrint('[call-rec] ${entry.phone}: $scanned audio(s) scannes, '
+        'match=${best == null ? 'aucun' : 'score ${best!.$1}'}');
+    return best?.$3;
   }
 
   // ------------------------------------------------------------------
@@ -353,6 +369,7 @@ class CallRecordingsService {
         direction: log.callType == CallType.incoming ? 'INCOMING' : 'OUTGOING',
         startedAt: DateTime.fromMillisecondsSinceEpoch(ts),
         durationSec: log.duration ?? 0,
+        contactName: (log.name ?? '').trim().isEmpty ? null : log.name!.trim(),
       );
       entries.add(entry);
     }
@@ -361,6 +378,116 @@ class CallRecordingsService {
 
   /// Reessaie explicitement tous les envois en attente / sans fichier.
   Future<void> retryAll() => processOnce();
+
+  // ------------------------------------------------------------------
+  // Acces « tous les fichiers » (MANAGE_EXTERNAL_STORAGE)
+  // ------------------------------------------------------------------
+
+  /// Vrai si l'app a l'acces elargi aux fichiers (requis pour lire les
+  /// dossiers d'enregistrement sur Android 11+).
+  Future<bool> hasAllFilesAccess() async {
+    try {
+      return await Permission.manageExternalStorage.isGranted;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Ouvre l'ecran systeme « Acces a tous les fichiers » pour cette app.
+  Future<bool> requestAllFilesAccess() async {
+    try {
+      final status = await Permission.manageExternalStorage.request();
+      return status.isGranted;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // Scan de l'historique (appels anterieurs a l'install)
+  // ------------------------------------------------------------------
+
+  /// Traite les appels des [days] derniers jours (duree > 5 s) non encore
+  /// suivis, les plus recents d'abord, en envoyant au plus [maxUploads]
+  /// fichiers. [onProgress](traites, total, envoyes) pour l'UI.
+  /// Retourne (traites, envoyes, introuvables).
+  Future<({int processed, int sent, int noFile})> scanHistory({
+    int days = 7,
+    int maxUploads = 30,
+    void Function(int processed, int total, int sent)? onProgress,
+  }) async {
+    await load();
+    var processed = 0, sent = 0, noFile = 0;
+
+    final Iterable<CallLogEntry> logs;
+    try {
+      logs = await CallLog.query(
+        dateTimeFrom: DateTime.now().subtract(Duration(days: days)),
+        durationFrom: _minCallDurationSec + 1,
+      );
+    } catch (_) {
+      return (processed: 0, sent: 0, noFile: 0);
+    }
+
+    // Candidats : appels sortants/entrants non encore en file, recents d'abord.
+    final candidates = <CallRecordingEntry>[];
+    final sorted = logs
+        .where((e) =>
+            e.callType == CallType.outgoing || e.callType == CallType.incoming)
+        .toList()
+      ..sort((a, b) => (b.timestamp ?? 0).compareTo(a.timestamp ?? 0));
+    for (final log in sorted) {
+      final ts = log.timestamp ?? 0;
+      final number = (log.number ?? '').trim();
+      if (number.isEmpty) continue;
+      final phone = normalizePhone(number);
+      if (phone.length < 8) continue;
+      if (entryFor(ts, number) != null) continue; // deja suivi
+      candidates.add(CallRecordingEntry(
+        id: '$ts-$phone',
+        number: number,
+        phone: phone,
+        direction: log.callType == CallType.incoming ? 'INCOMING' : 'OUTGOING',
+        startedAt: DateTime.fromMillisecondsSinceEpoch(ts),
+        durationSec: log.duration ?? 0,
+        contactName: (log.name ?? '').trim().isEmpty ? null : log.name!.trim(),
+      ));
+      if (candidates.length >= maxUploads) break;
+    }
+
+    final total = candidates.length;
+    for (final entry in candidates) {
+      entries.add(entry);
+      entry.filePath = await findRecordingFile(entry);
+      if (entry.filePath == null) {
+        entry.status = CallRecordingEntry.statusNoFile;
+        noFile++;
+      } else {
+        try {
+          await _api.uploadCallRecording(
+            filePath: entry.filePath!,
+            phone: entry.phone,
+            direction: entry.direction,
+            startedAt: entry.startedAt,
+            durationSec: entry.durationSec,
+          );
+          entry.status = CallRecordingEntry.statusSent;
+          entry.error = null;
+          sent++;
+        } catch (err) {
+          entry.status = CallRecordingEntry.statusPending;
+          entry.error = _shortError(err);
+        }
+      }
+      entry.updatedAt = DateTime.now();
+      processed++;
+      onProgress?.call(processed, total, sent);
+      await _save();
+      _notify();
+    }
+
+    return (processed: processed, sent: sent, noFile: noFile);
+  }
 
   int get pendingCount => entries
       .where((e) => e.status != CallRecordingEntry.statusSent)

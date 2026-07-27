@@ -27,6 +27,9 @@ class _CallRecordingsScreenState extends ConsumerState<CallRecordingsScreen> {
   StreamSubscription<void>? _sub;
   List<CallLogEntry> _recent = [];
   bool _busy = false;
+  bool _allFilesAccess = true;
+  bool _historyBusy = false;
+  String? _historyProgress;
 
   CallRecordingsService get _svc => ref.read(callRecordingServiceProvider);
 
@@ -47,8 +50,14 @@ class _CallRecordingsScreenState extends ConsumerState<CallRecordingsScreen> {
 
   Future<void> _bootstrap() async {
     await _requestPermissions();
+    await _refreshAllFilesAccess();
     await _svc.processOnce();
     await _loadRecent();
+  }
+
+  Future<void> _refreshAllFilesAccess() async {
+    final ok = await _svc.hasAllFilesAccess();
+    if (mounted) setState(() => _allFilesAccess = ok);
   }
 
   Future<void> _requestPermissions() async {
@@ -76,6 +85,49 @@ class _CallRecordingsScreenState extends ConsumerState<CallRecordingsScreen> {
       await action();
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Ouvre l'ecran systeme « Acces a tous les fichiers » puis relance le scan.
+  Future<void> _requestAllFiles() async {
+    final granted = await _svc.requestAllFilesAccess();
+    await _refreshAllFilesAccess();
+    if (granted) await _run(() => _svc.processOnce());
+  }
+
+  /// Scan des appels des 7 derniers jours (historique pre-install).
+  Future<void> _scanHistory() async {
+    if (_historyBusy) return;
+    setState(() {
+      _historyBusy = true;
+      _historyProgress = 'Lecture du journal…';
+    });
+    try {
+      final res = await _svc.scanHistory(
+        onProgress: (processed, total, sent) {
+          if (mounted) {
+            setState(() => _historyProgress = total == 0
+                ? 'Aucun nouvel appel à traiter'
+                : '$processed/$total traités · $sent envoyé(s)');
+          }
+        },
+      );
+      await _loadRecent();
+      if (mounted) {
+        final msg = res.processed == 0
+            ? 'Aucun nouvel appel trouvé dans l\'historique.'
+            : 'Scan terminé : ${res.sent} envoyé(s)'
+                '${res.noFile > 0 ? ' · ${res.noFile} introuvable(s) → joignables manuellement' : ''}.';
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(msg)));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _historyBusy = false;
+          _historyProgress = null;
+        });
+      }
     }
   }
 
@@ -156,6 +208,10 @@ class _CallRecordingsScreenState extends ConsumerState<CallRecordingsScreen> {
         children: [
           _helpBanner(),
           const SizedBox(height: 12),
+          if (!_allFilesAccess) ...[
+            _allFilesBanner(),
+            const SizedBox(height: 12),
+          ],
           _watchCard(pending),
           const SizedBox(height: 20),
           _sectionTitle('Enregistrements détectés', entries.length),
@@ -210,6 +266,52 @@ class _CallRecordingsScreenState extends ConsumerState<CallRecordingsScreen> {
               "du téléphone (Composeur → Paramètres → Enregistrement des appels). "
               "L'app récupère ensuite les fichiers et les envoie au bureau.",
               style: TextStyle(fontSize: 13, color: AppColors.gray800, height: 1.35),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Bandeau « acces a tous les fichiers » (requis Android 11+ pour lire
+  /// les dossiers d'enregistrement du composeur natif).
+  Widget _allFilesBanner() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.danger50,
+        border: Border.all(color: AppColors.danger100),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.folder_off_outlined, color: AppColors.danger600, size: 22),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  "L'app ne voit pas les enregistrements du téléphone. "
+                  "Autorise l'accès à tous les fichiers : sur l'écran suivant, "
+                  "sélectionne « GS Appelant » puis active l'interrupteur.",
+                  style: TextStyle(fontSize: 13, color: AppColors.gray800, height: 1.35),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _requestAllFiles,
+              icon: const Icon(Icons.folder_open, size: 18),
+              label: const Text('Autoriser l\'accès à tous les fichiers'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.danger600,
+                foregroundColor: Colors.white,
+              ),
             ),
           ),
         ],
@@ -275,6 +377,34 @@ class _CallRecordingsScreenState extends ConsumerState<CallRecordingsScreen> {
               ],
             ),
           ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: _historyBusy ? null : _scanHistory,
+                  icon: _historyBusy
+                      ? const SizedBox(
+                          width: 16, height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.download, size: 18),
+                  label: const Text('📥 Scanner l\'historique (7 jours)'),
+                ),
+                if (_historyProgress != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      _historyProgress!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 12, color: AppColors.gray500),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -318,11 +448,12 @@ class _CallRecordingsScreenState extends ConsumerState<CallRecordingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(e.number,
+                  Text(e.contactName ?? e.number,
                       style: const TextStyle(
                           fontWeight: FontWeight.w600, color: AppColors.gray900)),
                   const SizedBox(height: 2),
-                  Text('${_fmtDate(e.startedAt)} · ${_fmtDur(e.durationSec)}',
+                  Text(
+                      '${e.contactName != null ? '${e.number} · ' : ''}${_fmtDate(e.startedAt)} · ${_fmtDur(e.durationSec)}',
                       style: const TextStyle(fontSize: 12, color: AppColors.gray500)),
                   if (e.error != null)
                     Text(e.error!,
@@ -378,11 +509,15 @@ class _CallRecordingsScreenState extends ConsumerState<CallRecordingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(number.isEmpty ? 'Numéro masqué' : number,
+                  Text(
+                      (log.name ?? '').trim().isNotEmpty
+                          ? log.name!.trim()
+                          : (number.isEmpty ? 'Numéro masqué' : number),
                       style: const TextStyle(
                           fontWeight: FontWeight.w600, color: AppColors.gray900)),
                   const SizedBox(height: 2),
-                  Text('${_fmtDate(startedAt)} · ${_fmtDur(log.duration ?? 0)}',
+                  Text(
+                      '${(log.name ?? '').trim().isNotEmpty && number.isNotEmpty ? '$number · ' : ''}${_fmtDate(startedAt)} · ${_fmtDur(log.duration ?? 0)}',
                       style: const TextStyle(fontSize: 12, color: AppColors.gray500)),
                 ],
               ),
