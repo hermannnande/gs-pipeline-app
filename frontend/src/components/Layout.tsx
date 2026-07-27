@@ -26,6 +26,7 @@ import {
   MapPin,
   MessageCircle,
   FileText,
+  Headphones,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { api, getActiveCompanyId, setActiveCompanyId } from '@/lib/api';
@@ -84,6 +85,7 @@ export default function Layout({ children }: LayoutProps) {
           { icon: History, label: 'Historique Mouvements', path: '/admin/movements' },
           { icon: Database, label: 'Base Clients', path: '/admin/database' },
           { icon: Eye, label: 'Supervision Appelants', path: '/admin/supervision' },
+          { icon: Headphones, label: '🎧 Enregistrements', path: '/admin/call-recordings' },
           { icon: BarChart3, label: 'Statistiques', path: '/admin/stats' },
           { icon: PieChart, label: '📊 Analyse Produits', path: '/admin/product-analytics' },
           { icon: DollarSign, label: 'Comptabilité', path: '/admin/accounting' },
@@ -109,6 +111,7 @@ export default function Layout({ children }: LayoutProps) {
           { icon: Truck, label: 'Livraisons', path: '/gestionnaire/deliveries' },
           { icon: Users, label: 'Utilisateurs', path: '/gestionnaire/users' },
           { icon: Eye, label: 'Supervision Appelants', path: '/gestionnaire/supervision' },
+          { icon: Headphones, label: '🎧 Enregistrements', path: '/gestionnaire/call-recordings' },
           { icon: BarChart3, label: 'Statistiques', path: '/gestionnaire/stats' },
         ];
       case 'GESTIONNAIRE_STOCK':

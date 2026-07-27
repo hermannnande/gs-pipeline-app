@@ -277,6 +277,19 @@ export const statsApi = {
   },
 };
 
+// Call Recordings API (enregistrements audio des appels appelant <-> client)
+export const callRecordingsApi = {
+  list: async (params?: { userId?: number; orderId?: number; date?: string; page?: number }) => {
+    const { data } = await api.get('/call-recordings', { params });
+    return data;
+  },
+
+  byOrder: async (orderId: number) => {
+    const { data } = await api.get(`/call-recordings/by-order/${orderId}`);
+    return data;
+  },
+};
+
 // Products API
 export const productsApi = {
   getAll: async (params?: any) => {

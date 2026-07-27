@@ -30,6 +30,7 @@ const LandingTemplates = lazy(() => import('./LandingTemplates'));
 const LandingAnalytics = lazy(() => import('./LandingAnalytics'));
 const WhatsAppSettings = lazy(() => import('./WhatsAppSettings'));
 const DigitalSales = lazy(() => import('./DigitalSales'));
+const CallRecordings = lazy(() => import('./CallRecordings'));
 
 function ContentSpinner() {
   return (
@@ -58,6 +59,7 @@ export default function AdminDashboard() {
         <Route path="movements" element={<Movements />} />
         <Route path="database" element={<ClientDatabase />} />
         <Route path="supervision" element={<CallerSupervision />} />
+        <Route path="call-recordings" element={<CallRecordings />} />
         <Route path="presences" element={<Attendances />} />
         <Route path="stats" element={<Stats />} />
         <Route path="accounting" element={<Accounting />} />

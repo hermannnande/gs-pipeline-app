@@ -110,6 +110,9 @@ model User {
   // Commandes marquées "en attente de paiement" par cet utilisateur
   ordersAttentePaiement    Order[]                  @relation("AttentePaiementBy")
 
+  // Enregistrements audio des appels passés par cet utilisateur
+  callRecordings           CallRecording[]
+
   @@map("users")
 }
 
@@ -225,6 +228,9 @@ model Order {
   // Notifications EXPRESS
   expressNotifications ExpressNotification[]
 
+  // Enregistrements audio liés à cette commande
+  callRecordings CallRecording[]
+
   @@index([status])
   @@index([clientTelephone])
   @@index([clientVille])
@@ -247,6 +253,29 @@ model StatusHistory {
 
   @@index([orderId])
   @@map("status_history")
+}
+
+// Enregistrements audio des appels appelant <-> client.
+// Le fichier audio est stocké dans le bucket Supabase Storage privé "call-recordings" ;
+// ce modèle ne conserve que les métadonnées + le chemin (filePath).
+model CallRecording {
+  id          Int      @id @default(autoincrement())
+  userId      Int // appelant qui a enregistré
+  user        User     @relation(fields: [userId], references: [id])
+  orderId     Int? // commande liée si numéro reconnu
+  order       Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  phone       String // numéro du client (normalisé : chiffres, sans indicatif 225)
+  direction   String // "OUTGOING" | "INCOMING"
+  startedAt   DateTime // début de l'appel
+  durationSec Int      @default(0)
+  filePath    String // chemin dans le bucket call-recordings
+  mimeType    String   @default("audio/mpeg")
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([orderId])
+  @@index([phone])
+  @@map("call_recordings")
 }
 
 // Listes de livraison journalières
