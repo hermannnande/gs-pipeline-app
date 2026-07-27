@@ -102,6 +102,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             keyboardType: TextInputType.emailAddress,
                             textInputAction: TextInputAction.next,
                             autofillHints: const [AutofillHints.email],
+                            autocorrect: false,
+                            enableSuggestions: false,
+                            textCapitalization: TextCapitalization.none,
                             decoration: const InputDecoration(
                               labelText: 'Email',
                               hintText: 'votre.email@gmail.com',
@@ -117,6 +120,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             obscureText: _obscure,
                             textInputAction: TextInputAction.done,
                             autofillHints: const [AutofillHints.password],
+                            autocorrect: false,
+                            enableSuggestions: false,
+                            textCapitalization: TextCapitalization.none,
                             onFieldSubmitted: (_) => _submit(),
                             decoration: InputDecoration(
                               labelText: 'Mot de passe',

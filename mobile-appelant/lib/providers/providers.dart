@@ -57,7 +57,7 @@ class AuthNotifier extends Notifier<AuthState> {
       String email, String password) async {
     state = state.copyWith(loading: true, error: null);
     try {
-      final res = await _api.login(email.trim(), password);
+      final res = await _api.login(email.trim().toLowerCase(), password);
       if (res.user.role != 'APPELANT') {
         await _api.logout();
         const msg =
