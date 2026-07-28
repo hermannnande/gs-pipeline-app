@@ -195,3 +195,7 @@ backups/*.tar.gz
 backups/*.zip
 backups/*.sql
 backups/
+
+# builds Flutter app appelant
+mobile-appelant/build/
+mobile-appelant/android/build/
