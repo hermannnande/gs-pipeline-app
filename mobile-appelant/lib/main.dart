@@ -6,6 +6,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'providers/providers.dart';
 import 'screens/app_shell.dart';
 import 'screens/login_screen.dart';
+import 'services/call_recording_foreground.dart';
 import 'services/call_recording_worker.dart';
 import 'services/notification_service.dart';
 import 'theme/app_theme.dart';
@@ -14,9 +15,13 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('fr_FR');
   await NotificationService().init();
+  // Foreground service des enregistrements d'appels (notification persistante) :
+  // configuration uniquement ; le demarrage est pilote par le toggle de
+  // surveillance (app_shell / onglet Mes appels enregistres).
+  CallRecordingForeground.init();
   // Tache periodique (15 min) de scan/envoi des enregistrements d'appels.
-  // Ne bloque pas le demarrage : en cas d'echec, le watcher foreground
-  // (AppShell) et le bouton "Verifier" restent fonctionnels.
+  // Ne bloque pas le demarrage : en cas d'echec, le foreground service
+  // et les declencheurs UI restent fonctionnels.
   registerCallRecordingWorker().catchError((_) {});
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,

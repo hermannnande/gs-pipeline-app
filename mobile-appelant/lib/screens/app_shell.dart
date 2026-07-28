@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/providers.dart';
+import '../services/call_recording_foreground.dart';
 import '../theme/app_theme.dart';
 import 'all_orders_screen.dart';
 import 'call_recordings_screen.dart';
@@ -44,10 +47,15 @@ class _AppShellState extends ConsumerState<AppShell> {
   @override
   void initState() {
     super.initState();
-    // Demarre le watcher des enregistrements d'appels (foreground, 2 min).
-    // Le reliquat arriere-plan est la tache periodique workmanager (main.dart).
-    Future.microtask(
-        () => ref.read(callRecordingServiceProvider).startWatching());
+    // Demarre le foreground service des enregistrements d'appels si la
+    // surveillance est active (notif persistante = envoi meme app fermee),
+    // puis un premier passage immediat au premier plan.
+    Future.microtask(() async {
+      final svc = ref.read(callRecordingServiceProvider);
+      await svc.load(); // recharge watchingEnabled depuis la file JSON
+      await CallRecordingForeground.sync(svc.watchingEnabled);
+      unawaited(svc.processOnce());
+    });
   }
 
   Widget _body() {

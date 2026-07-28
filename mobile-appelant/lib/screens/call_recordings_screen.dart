@@ -10,6 +10,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../models/call_recording_entry.dart';
 import '../providers/providers.dart';
+import '../services/call_recording_foreground.dart';
 import '../services/call_recordings_service.dart';
 import '../theme/app_theme.dart';
 
@@ -112,6 +113,7 @@ class _CallRecordingsScreenState extends ConsumerState<CallRecordingsScreen>
         Permission.phone, // READ_PHONE_STATE
         Permission.audio, // READ_MEDIA_AUDIO (Android 13+)
         Permission.storage, // READ_EXTERNAL_STORAGE (Android <= 12)
+        Permission.notification, // POST_NOTIFICATIONS (notif du foreground service)
       ].request();
     } catch (_) {
       // Une permission refusee n'empeche pas l'affichage de l'ecran.
@@ -431,8 +433,22 @@ class _CallRecordingsScreenState extends ConsumerState<CallRecordingsScreen>
               style: const TextStyle(fontSize: 12, color: AppColors.gray500),
             ),
             value: _svc.watchingEnabled,
-            onChanged: (v) => _run(() => _svc.setWatchingEnabled(v)),
+            onChanged: (v) => _run(() async {
+              await _svc.setWatchingEnabled(v);
+              // ON -> foreground service + notif persistante ; OFF -> arrete.
+              await CallRecordingForeground.sync(v);
+            }),
           ),
+          if (_svc.watchingEnabled)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: Text(
+                "La notification 'Enregistrements actifs' dans la barre d'état "
+                "signifie que l'envoi automatique fonctionne même app fermée. "
+                "Ne la désactive pas.",
+                style: TextStyle(fontSize: 11.5, color: AppColors.gray500, height: 1.35),
+              ),
+            ),
           const Divider(height: 1),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

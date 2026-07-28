@@ -46,10 +46,8 @@ class CallRecordingsService {
 
   final List<CallRecordingEntry> entries = [];
   int _lastSeenTs = 0; // ms epoch du dernier appel du journal deja traite
-  bool _loaded = false;
   bool _processing = false;
   bool watchingEnabled = true;
-  Timer? _timer;
 
   /// Notifie l'UI a chaque changement de la file.
   final _changes = StreamController<void>.broadcast();
@@ -70,9 +68,9 @@ class CallRecordingsService {
     return File('${dir.path}/$_storeFileName');
   }
 
+  /// Recharge TOUJOURS depuis le fichier : la file est partagee entre
+  /// l'UI isolate et l'isolate du foreground service (pas de cache).
   Future<void> load() async {
-    if (_loaded) return;
-    _loaded = true;
     try {
       final f = await _storeFile();
       if (!await f.exists()) return;
@@ -112,32 +110,55 @@ class CallRecordingsService {
   // Cycle de traitement
   // ------------------------------------------------------------------
 
-  /// Un passage complet : scan du journal (si surveillance active) puis
-  /// envoi des entrees en attente. Idempotent, sans reentrance.
+  /// Un passage complet : recharge la file, scan du journal (si surveillance
+  /// active) puis envoi des entrees en attente.
+  /// Peut etre appele depuis l'UI isolate OU l'isolate du foreground service :
+  /// un verrou fichier (fraicheur 90 s) empeche les passages concurrents.
   Future<void> processOnce() async {
-    await load();
     if (_processing) return;
+    if (!await _acquireLock()) return; // un autre isolate traite deja
     _processing = true;
     try {
+      await load();
       if (watchingEnabled) await _scanCallLog();
       await _uploadPending();
       await _save();
       _notify();
     } finally {
       _processing = false;
+      await _releaseLock();
     }
   }
 
-  /// Watcher foreground : un passage immediat puis toutes les [every].
-  void startWatching({Duration every = const Duration(minutes: 2)}) {
-    _timer?.cancel();
-    unawaited(processOnce());
-    _timer = Timer.periodic(every, (_) => unawaited(processOnce()));
+  // Verrou fichier inter-isolates (pas de mutex partage entre isolates Dart).
+  static const String _lockFileName = 'call_recordings.lock';
+  static const Duration _lockFreshness = Duration(seconds: 90);
+
+  Future<File> _lockFile() async {
+    final dir = await getApplicationDocumentsDirectory();
+    return File('${dir.path}/$_lockFileName');
   }
 
-  void stopWatching() {
-    _timer?.cancel();
-    _timer = null;
+  Future<bool> _acquireLock() async {
+    try {
+      final f = await _lockFile();
+      if (await f.exists()) {
+        final ts = int.tryParse(await f.readAsString()) ?? 0;
+        final age = DateTime.now().millisecondsSinceEpoch - ts;
+        if (age < _lockFreshness.inMilliseconds) return false; // verrou frais
+      }
+      await f.writeAsString('${DateTime.now().millisecondsSinceEpoch}');
+      return true;
+    } catch (_) {
+      return true; // en cas d'erreur d'ecriture, on tente quand meme
+    }
+  }
+
+  Future<void> _releaseLock() async {
+    try {
+      final f = await _lockFile();
+      if (await f.exists()) await f.delete();
+    } catch (_) {}
   }
 
   Future<void> setWatchingEnabled(bool v) async {
@@ -344,10 +365,18 @@ class CallRecordingsService {
   // ------------------------------------------------------------------
 
   /// Joint manuellement un fichier audio a une entree puis l'envoie.
+  /// (Retrouve l'instance fraiche : load() recharge la file a chaque passage.)
   Future<void> attachAndSend(CallRecordingEntry entry, String filePath) async {
-    entry.filePath = filePath;
-    entry.status = CallRecordingEntry.statusPending;
-    entry.error = null;
+    await load();
+    CallRecordingEntry? fresh;
+    for (final x in entries) {
+      if (x.id == entry.id) { fresh = x; break; }
+    }
+    fresh ??= entry; // pas encore persistee : on la (re)ajoute
+    if (!entries.contains(fresh)) entries.add(fresh);
+    fresh.filePath = filePath;
+    fresh.status = CallRecordingEntry.statusPending;
+    fresh.error = null;
     await _save();
     _notify();
     await processOnce();
@@ -522,7 +551,6 @@ class CallRecordingsService {
   }
 
   void dispose() {
-    stopWatching();
     _changes.close();
   }
 }
