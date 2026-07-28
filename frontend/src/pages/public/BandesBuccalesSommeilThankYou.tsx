@@ -45,9 +45,9 @@ export default function BandesBuccalesSommeilThankYou() {
   }, [ref, company, qty]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-[#0B1035] via-[#1E1B4B] to-[#0B1035] px-4 py-10">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-[#0A0A0F] via-[#111118] to-[#0A0A0F] px-4 py-10">
       <div className="w-full max-w-md overflow-hidden rounded-[28px] border border-white/15 bg-white/5 shadow-2xl backdrop-blur-md">
-        <div className="bg-gradient-to-br from-[#312E81] via-[#7C3AED] to-[#22D3EE] px-6 py-8 text-center text-white">
+        <div className="bg-gradient-to-br from-[#B45309] via-[#D97706] to-[#F59E0B] px-6 py-8 text-center text-white">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white/20 text-2xl ring-2 ring-white/40">✓</div>
           <h1 className="text-xl font-extrabold">Commande envoyée 🌙</h1>
           <p className="mt-1.5 text-[13px] text-white/85">Vos bandes buccales pour le sommeil sont bien enregistrées.</p>
@@ -67,7 +67,7 @@ export default function BandesBuccalesSommeilThankYou() {
           <p className="text-center text-[12px] text-white/50">
             Gardez votre téléphone à portée de main : sans confirmation, le paquet ne peut pas être expédié.
           </p>
-          <Link to="/bandes-buccales-sommeil" className="block rounded-full bg-gradient-to-r from-[#F59E0B] via-[#FCD34D] to-[#F59E0B] py-3.5 text-center text-[12px] font-black uppercase tracking-[0.12em] text-[#312E81] shadow-lg transition hover:brightness-110">
+          <Link to="/bandes-buccales-sommeil" className="block rounded-full bg-gradient-to-r from-[#F59E0B] via-[#FCD34D] to-[#F59E0B] py-3.5 text-center text-[12px] font-black uppercase tracking-[0.12em] text-[#1A1207] shadow-lg transition hover:brightness-110">
             Retour au produit
           </Link>
         </div>

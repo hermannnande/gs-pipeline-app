@@ -69,8 +69,8 @@ export default function OrderModalBandesBuccales({ open, onClose, cfg, product, 
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true">
-      <div onClick={() => !sending && onClose()} className="absolute inset-0 bg-[#070B26]/70 backdrop-blur-[3px]" />
-      <div className="relative z-10 flex max-h-[94vh] w-full max-w-[420px] flex-col overflow-hidden rounded-t-[28px] border border-white/15 bg-gradient-to-b from-[#1E1B4B] to-[#0B1035] shadow-2xl sm:rounded-3xl">
+      <div onClick={() => !sending && onClose()} className="absolute inset-0 bg-black/70 backdrop-blur-[3px]" />
+      <div className="relative z-10 flex max-h-[94vh] w-full max-w-[420px] flex-col overflow-hidden rounded-t-[28px] border border-white/15 bg-gradient-to-b from-[#111118] to-[#0A0A0F] shadow-2xl sm:rounded-3xl">
         <div className="shrink-0 border-b border-white/10 px-5 pb-4 pt-3">
           <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/25 sm:hidden" />
           <div className="flex items-start justify-between gap-3">
@@ -95,7 +95,7 @@ export default function OrderModalBandesBuccales({ open, onClose, cfg, product, 
                   className={`relative rounded-2xl border-2 px-2 py-3 text-center transition ${active ? 'scale-[1.02] border-[#FCD34D] bg-white/10 shadow-md' : 'border-white/15 bg-white/5'}`}>
                   {o.tag && active && <span className="absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-to-r from-[#F59E0B] to-[#FCD34D] px-2 py-0.5 text-[7px] font-black uppercase text-[#312E81]">{o.tag}</span>}
                   <p className={`text-[15px] font-black ${active ? 'text-[#FCD34D]' : 'text-white/85'}`}>{o.sub}</p>
-                  <p className="mt-0.5 text-[9px] font-bold uppercase text-[#A5F3FC]">{o.label}</p>
+                  <p className="mt-0.5 text-[9px] font-bold uppercase text-[#FDE68A]">{o.label}</p>
                 </button>
               );
             })}
