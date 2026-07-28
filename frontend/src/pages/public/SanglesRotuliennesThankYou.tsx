@@ -11,7 +11,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 const META_PIXEL_ID = '1896798985057430'; // Pixel Meta achat - page sangles rotuliennes (campagnes Meta)
 const SLUG = 'sangles-rotuliennes';
 const PRODUCT_CODE = 'SANGLE_ROTULIENNE';
-const PRICES: Record<number, number> = { 1: 9900, 2: 18900, 3: 26900 };
+const PRICES: Record<number, number> = { 1: 8500, 2: 16100, 3: 22700 };
 
 declare global { interface Window { fbq?: (...args: any[]) => void; _fbq?: any } }
 

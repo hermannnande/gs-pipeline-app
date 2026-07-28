@@ -12,7 +12,7 @@ const META_PIXEL_ID = ''; // Variante TikTok : pas de pixel Meta
 const TIKTOK_PIXEL_ID = ''; // <- renseigner l'ID pixel TikTok quand dispo
 const SLUG = 'sangles-rotuliennes-tk';
 const PRODUCT_CODE = 'SANGLE_ROTULIENNE_TK'; // Produit dedie (meme mapping que la landing -tk)
-const PRICES: Record<number, number> = { 1: 9900, 2: 18900, 3: 26900 };
+const PRICES: Record<number, number> = { 1: 8500, 2: 16100, 3: 22700 };
 
 declare global { interface Window { fbq?: (...args: any[]) => void; _fbq?: any; ttq?: any } }
 
