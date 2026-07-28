@@ -312,11 +312,10 @@ type NightBlockProps = {
   ratio?: string;
 };
 
-function NightBlock({ media, glow, title, hook, cta, onCta, variant, ratio = '1/1' }: NightBlockProps) {
+function NightBlock({ media, title, hook, cta, onCta, variant, ratio = '1/1' }: NightBlockProps) {
   return (
     <section className="relative px-4 py-8 sm:py-10">
       <div className="relative mx-auto max-w-[560px]">
-        <div className={`absolute -inset-4 rounded-[38px] bg-gradient-to-br ${glow} opacity-70 blur-2xl`} />
         <div className="bb-glass relative overflow-hidden rounded-[30px] p-3 shadow-2xl">
           <div className="overflow-hidden rounded-[22px]" style={{ aspectRatio: ratio }}>
             <div className="h-full [&>div]:h-full">{media}</div>
@@ -550,7 +549,6 @@ export default function BandesBuccalesSommeilLanding() {
       <div className="relative z-10">
         {/* ==================== HERO ==================== */}
         <section className="bb-moon relative overflow-hidden px-4 pb-10 pt-10">
-          <div className="pointer-events-none absolute left-1/2 top-6 h-40 w-40 -translate-x-1/2 rounded-full bg-[#FCD34D]/20 blur-3xl" />
           <div className="relative mx-auto max-w-[560px] text-center">
             <div className="flex flex-wrap items-center justify-center gap-2">
               <span className="bb-glass inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#FCD34D]">🌙 Nouveauté sommeil 2026</span>
@@ -577,7 +575,6 @@ export default function BandesBuccalesSommeilLanding() {
             <p className="mt-1 text-[11px] font-black uppercase tracking-[0.18em] text-[#FCD34D]">Le paquet de 30 nuits · Paiement à la livraison 🔒</p>
 
             <div className="relative mx-auto mt-7 max-w-[440px]">
-              <div className="absolute -inset-4 rounded-[40px] bg-gradient-to-br from-[#F59E0B]/35 via-[#1E3A8A]/35 to-[#3B82F6]/25 blur-2xl" />
               <div className="bb-glass relative overflow-hidden rounded-[30px] p-2.5 shadow-2xl">
                 <div className="overflow-hidden rounded-[22px]">
                   <LazyImg src={MEDIA.hero} alt="Couple dormant paisiblement grâce aux bandes buccales Premium Tape : nuits plus paisibles et respiration nasale favorisée" aspect="1/1" priority />
@@ -599,7 +596,6 @@ export default function BandesBuccalesSommeilLanding() {
         {/* ==================== COMPTE À REBOURS (carte glass) ==================== */}
         <section className="px-4 py-9">
           <div className="bb-glass relative mx-auto max-w-[560px] overflow-hidden rounded-[28px] p-6 text-center shadow-2xl">
-            <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[#F59E0B]/25 blur-2xl" />
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#FCD34D]">⚡ L'offre -50 % s'endort à minuit</p>
             <div className="mt-4"><Countdown h={countdown.h} m={countdown.m} s={countdown.s} /></div>
             <p className="mt-3 text-[11px] font-semibold text-white/60">À minuit, le paquet repasse à {fmtN(OLD_UNIT)} F.</p>
@@ -724,7 +720,6 @@ export default function BandesBuccalesSommeilLanding() {
         {/* ==================== GARANTIE DÉDIÉE (courte) ==================== */}
         <section className="px-4 py-10">
           <div className="relative mx-auto max-w-[560px]">
-            <div className="absolute -inset-3 rounded-[34px] bg-gradient-to-br from-[#F59E0B]/35 to-[#1E3A8A]/25 blur-2xl" />
             <div className="bb-glass relative overflow-hidden rounded-[28px] p-6 text-center shadow-2xl sm:p-8">
               <span className="text-[34px]">🛡️</span>
               <h2 className="mt-2 text-[22px] font-black text-[#FAFAF9] sm:text-[26px]">Satisfait ou remboursé <span className="bb-grad">pendant 7 jours</span></h2>
@@ -768,7 +763,6 @@ export default function BandesBuccalesSommeilLanding() {
         {/* ==================== OFFRE / URGENCE ==================== */}
         <section className="px-4 py-10">
           <div className="bb-glass relative mx-auto max-w-[560px] overflow-hidden rounded-[28px] p-6 text-center shadow-2xl sm:p-8">
-            <div className="pointer-events-none absolute -left-10 -bottom-10 h-32 w-32 rounded-full bg-[#3B82F6]/20 blur-2xl" />
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#FCD34D]">⏳ Dernières heures au prix de lancement</p>
             <div className="mt-5 flex items-baseline justify-center gap-3">
               <span className="text-[15px] font-bold text-white/40 line-through">{fmtN(OLD_UNIT)} F</span>
