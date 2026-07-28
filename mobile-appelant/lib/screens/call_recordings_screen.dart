@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:call_log/call_log.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,19 +24,22 @@ class CallRecordingsScreen extends ConsumerStatefulWidget {
       _CallRecordingsScreenState();
 }
 
-class _CallRecordingsScreenState extends ConsumerState<CallRecordingsScreen> {
+class _CallRecordingsScreenState extends ConsumerState<CallRecordingsScreen>
+    with WidgetsBindingObserver {
   StreamSubscription<void>? _sub;
   List<CallLogEntry> _recent = [];
   bool _busy = false;
   bool _allFilesAccess = true;
   bool _historyBusy = false;
   String? _historyProgress;
+  bool _needsBatteryHelp = false; // fabricant MIUI-like (app tuee en arriere-plan)
 
   CallRecordingsService get _svc => ref.read(callRecordingServiceProvider);
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _sub = _svc.changes.listen((_) {
       if (mounted) setState(() {});
     });
@@ -44,15 +48,56 @@ class _CallRecordingsScreenState extends ConsumerState<CallRecordingsScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _sub?.cancel();
     super.dispose();
   }
 
+  /// L'app revient au premier plan : envoyer ce qui est en attente
+  /// et rafraichir, sans aucune action de l'utilisateur.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _run(() async {
+        await _svc.processOnce();
+        await _loadRecent();
+        await _refreshAllFilesAccess();
+      });
+    }
+  }
+
   Future<void> _bootstrap() async {
     await _requestPermissions();
+    await _detectManufacturer();
+    await _requestBatteryExemption();
     await _refreshAllFilesAccess();
     await _svc.processOnce();
     await _loadRecent();
+  }
+
+  /// Fabricants qui tuent les apps en arriere-plan (demarrage auto desactive).
+  Future<void> _detectManufacturer() async {
+    try {
+      final info = await DeviceInfoPlugin().androidInfo;
+      const killers = {'xiaomi', 'redmi', 'poco', 'tecno', 'infinix', 'itel'};
+      final needs = killers.contains(info.manufacturer.toLowerCase());
+      if (mounted) setState(() => _needsBatteryHelp = needs);
+    } catch (_) {
+      // Indetermine : on affiche l'aide par precaution.
+      if (mounted) setState(() => _needsBatteryHelp = true);
+    }
+  }
+
+  /// Exemption d'optimisation batterie (dialogue systeme, une seule fois).
+  Future<void> _requestBatteryExemption() async {
+    try {
+      final status = await Permission.ignoreBatteryOptimizations.status;
+      if (!status.isGranted) {
+        await Permission.ignoreBatteryOptimizations.request();
+      }
+    } catch (_) {
+      // Refuse ou indisponible : le rappel visuel reste via la carte d'aide.
+    }
   }
 
   Future<void> _refreshAllFilesAccess() async {
@@ -212,6 +257,10 @@ class _CallRecordingsScreenState extends ConsumerState<CallRecordingsScreen> {
             _allFilesBanner(),
             const SizedBox(height: 12),
           ],
+          if (_needsBatteryHelp) ...[
+            _batteryHelpCard(),
+            const SizedBox(height: 12),
+          ],
           _watchCard(pending),
           const SizedBox(height: 20),
           _sectionTitle('Enregistrements détectés', entries.length),
@@ -312,6 +361,49 @@ class _CallRecordingsScreenState extends ConsumerState<CallRecordingsScreen> {
                 backgroundColor: AppColors.danger600,
                 foregroundColor: Colors.white,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Carte d'aide pliable pour les fabricants qui tuent les apps en
+  /// arriere-plan (Xiaomi/Redmi/Poco/Tecno/Infinix/Itel).
+  Widget _batteryHelpCard() {
+    const stepsStyle = TextStyle(fontSize: 12.5, color: AppColors.gray700, height: 1.45);
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: const BorderSide(color: AppColors.gray200),
+      ),
+      child: ExpansionTile(
+        leading: const Text('🔋', style: TextStyle(fontSize: 20)),
+        title: const Text(
+          'Pour que l\'envoi automatique marche même app fermée',
+          style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
+        ),
+        subtitle: const Text('Réglages recommandés sur ce téléphone',
+            style: TextStyle(fontSize: 11.5, color: AppColors.gray500)),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+        children: [
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '1. Paramètres → Applications → Gérer les applications → GS Appelant\n'
+              '2. Activer « Démarrage automatique »\n'
+              '3. Économiseur de batterie → choisir « Aucune restriction »',
+              style: stepsStyle,
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => openAppSettings(),
+              icon: const Icon(Icons.settings, size: 18),
+              label: const Text('Ouvrir les paramètres de l\'app'),
             ),
           ),
         ],
