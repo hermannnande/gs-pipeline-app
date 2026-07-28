@@ -58,6 +58,7 @@ export const LANDING_SLUGS = [
   'sac-louis-vuitton',
   'sangles-rotuliennes',
   'sangles-rotuliennes-tk',
+  'bandes-buccales-sommeil',
   'boutique',
 ] as const;
 
