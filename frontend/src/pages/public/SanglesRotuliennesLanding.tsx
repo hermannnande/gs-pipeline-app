@@ -18,7 +18,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'sangles-rotuliennes';
 const PRODUCT_CODE = 'SANGLE_ROTULIENNE';
 const CONTENT_NAME = 'Sangles Rotuliennes Réglables (paire)';
-const META_PIXEL_ID = ''; // Pixel Meta : le client le fournira plus tard (init conditionnée)
+const META_PIXEL_ID = '1896798985057430'; // Pixel Meta achat - page sangles rotuliennes (campagnes Meta)
 const THANK_YOU_URL = '/sangles-rotuliennes/merci';
 
 const PRICES: Record<number, number> = { 1: 9900, 2: 18900, 3: 26900 };

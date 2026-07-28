@@ -8,7 +8,7 @@ import axios from 'axios';
 import { orderTotal } from '../../utils/pricingHelpers';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
-const META_PIXEL_ID = ''; // Pixel Meta : le client le fournira plus tard (event: Purchase conditionné)
+const META_PIXEL_ID = '1896798985057430'; // Pixel Meta achat - page sangles rotuliennes (campagnes Meta)
 const SLUG = 'sangles-rotuliennes';
 const PRODUCT_CODE = 'SANGLE_ROTULIENNE';
 const PRICES: Record<number, number> = { 1: 9900, 2: 18900, 3: 26900 };
