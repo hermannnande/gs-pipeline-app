@@ -57,6 +57,7 @@ export const THANKYOU_COMPONENTS: Record<string, LazyThankYou> = {
   'support-telephone-flexible': lazy(() => import('./SupportTelephoneFlexibleThankYou')),
   'repulsif-ultrasons': lazy(() => import('./RepulsifUltrasonsThankYou')),
   'sac-louis-vuitton': lazy(() => import('./SacLouisVuittonThankYou')),
+  'sangles-rotuliennes': lazy(() => import('./SanglesRotuliennesThankYou')),
 };
 
 export const DEDICATED_THANKYOU_SLUGS = new Set(Object.keys(THANKYOU_COMPONENTS));

@@ -56,6 +56,7 @@ export const LANDING_SLUGS = [
   'support-telephone-flexible',
   'repulsif-ultrasons',
   'sac-louis-vuitton',
+  'sangles-rotuliennes',
   'boutique',
 ] as const;
 
