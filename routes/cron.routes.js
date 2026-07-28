@@ -5,6 +5,8 @@
  */
 import express from 'express';
 import { processOutbox } from '../utils/wasender.js';
+import { prisma } from '../utils/prisma.js';
+import { supabaseAdmin } from '../utils/supabaseAdmin.js';
 
 const router = express.Router();
 
@@ -24,6 +26,35 @@ router.get('/whatsapp-outbox', authorizeCron, async (req, res) => {
     res.json({ ok: true, ...result });
   } catch (e) {
     console.error('[cron] whatsapp-outbox erreur:', e?.message || e);
+    res.status(500).json({ ok: false, error: e?.message || 'Erreur' });
+  }
+});
+
+// GET /api/cron/call-recordings-cleanup — purge les enregistrements d'appels
+// de plus de 7 jours (fichier bucket + ligne DB) pour ne pas charger la base.
+const CALL_RECORDING_TTL_DAYS = 7;
+router.get('/call-recordings-cleanup', authorizeCron, async (req, res) => {
+  try {
+    const cutoff = new Date(Date.now() - CALL_RECORDING_TTL_DAYS * 24 * 60 * 60 * 1000);
+    const olds = await prisma.callRecording.findMany({
+      where: { createdAt: { lt: cutoff } },
+      select: { id: true, filePath: true },
+      take: 2000,
+    });
+    let storageRemoved = 0;
+    // Suppression storage par lots de 100 (limite API Supabase).
+    for (let i = 0; i < olds.length; i += 100) {
+      const batch = olds.slice(i, i + 100).map((r) => r.filePath);
+      const { error } = await supabaseAdmin.storage.from('call-recordings').remove(batch);
+      if (error) console.error('[cron] call-recordings-cleanup storage:', error.message);
+      else storageRemoved += batch.length;
+    }
+    const { count } = await prisma.callRecording.deleteMany({
+      where: { id: { in: olds.map((r) => r.id) } },
+    });
+    res.json({ ok: true, deleted: count, storageRemoved, cutoff });
+  } catch (e) {
+    console.error('[cron] call-recordings-cleanup erreur:', e?.message || e);
     res.status(500).json({ ok: false, error: e?.message || 'Erreur' });
   }
 });
