@@ -35,7 +35,7 @@ const QTY_OPTS = [
 
 const M = (n: string) => `/sangles-rotuliennes/${n}`;
 const MEDIA = {
-  hero: M('n5.webp'),              // packshot produit (silicone, ajustement)
+  hero: M('n1.webp'),              // avant/apres genou - demandee en hero par le client
   avantApresHomme: M('n1.webp'),   // avant/après homme assis
   avantApresFemme: M('n2.webp'),   // avant/après femme escaliers
   avantApresMarche: M('n3.webp'),  // avant/après marche extérieur
@@ -527,9 +527,6 @@ export default function SanglesRotuliennesTkLanding() {
           <h1 className="mt-5 text-[30px] font-black leading-[1.1] text-[#0B1E4B] sm:text-[38px]">
             Genoux fragiles ? <span className="sg-grad">Retrouvez un maintien ferme, dès aujourd'hui.</span>
           </h1>
-          <p className="mx-auto mt-3 max-w-[440px] text-[13.5px] leading-relaxed text-[#1D4ED8]/80 sm:text-[14.5px]">
-            La paire de sangles rotuliennes réglables qui soutient vos genoux au sport, à la marche et au travail — sans gêne, sans glisser.
-          </p>
 
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[11px] font-bold">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 ring-1 ring-[#F59E0B]/40">
