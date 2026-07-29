@@ -45,19 +45,19 @@ const TITLE = 'Faire pousser vos cheveux naturellement';
 const META_PIXEL_ID = '2061376097807745';
 
 // L'ecart de 1 000 F couvre l'impression et l'acheminement du livre.
-const PRICE_EBOOK = 8900;
-const PRICE_PHYSIQUE = 9900;
+const PRICE_EBOOK = 6900;
+const PRICE_PHYSIQUE = 7900;
 const OLD_PRICE_EBOOK = 15000;
 const OLD_PRICE_PHYSIQUE = 18000;
-// Prix d'appel affiche partout hors modal (le moins cher des deux formats).
-const PRICE = PRICE_EBOOK;
-const OLD_PRICE = OLD_PRICE_EBOOK;
+// Prix d'appel affiche partout hors modal : le LIVRE PHYSIQUE est la vedette (demande client).
+const PRICE = PRICE_PHYSIQUE;
+const OLD_PRICE = OLD_PRICE_PHYSIQUE;
 const PRICES: Record<number, number> = { 1: PRICE_EBOOK };
 const PRICES_PHYSIQUE: Record<number, number> = { 1: PRICE_PHYSIQUE };
 
 /** Remise arrondie, calculee (evite un pourcentage code en dur qui derive au 1er changement de prix). */
 const discountPct = (price: number, old: number) => Math.round((1 - price / old) * 100);
-const DISCOUNT = discountPct(PRICE_EBOOK, OLD_PRICE_EBOOK);
+const DISCOUNT = discountPct(PRICE_PHYSIQUE, OLD_PRICE_PHYSIQUE);
 
 // Visuels locaux (public/guide-pousse-naturelle/), optimises WebP ~100 Ko.
 const M = (n: string) => `/guide-pousse-naturelle/${n}`;
@@ -100,7 +100,7 @@ const FAQ = [
   { q: 'Le guide convient-il aux hommes et aux femmes ?', a: 'Oui : programmes distincts hommes (tempes, couronne), femmes (longueur, casse) et barbe.' },
   { q: 'Le guide garantit-il la guerison de la calvitie ?', a: "Non. C'est un guide educatif qui aide a construire une routine adaptee et a savoir quand consulter. Il ne remplace pas un avis medical." },
   { q: 'Comment vais-je recevoir le guide ?', a: "Comme vous voulez : en ebook (PDF) recu immediatement apres paiement, lisible sur telephone, tablette et ordinateur ; ou en livre imprime livre chez vous, que vous payez seulement a la reception." },
-  { q: 'Quelle difference entre l\'ebook et le livre imprime ?', a: "Le contenu est identique. L'ebook (8 900 F) arrive tout de suite et ne se perd pas. Le livre imprime (9 900 F) se lit sans ecran et s'annote a la main ; l'ecart couvre l'impression et la livraison." },
+  { q: 'Quelle difference entre l\'ebook et le livre imprime ?', a: "Le contenu est identique. L'ebook (6 900 F) arrive tout de suite et ne se perd pas. Le livre imprime (7 900 F) se lit sans ecran et s'annote a la main ; l'ecart couvre l'impression et la livraison." },
   { q: 'Quels moyens de paiement puis-je utiliser ?', a: 'Le paiement affiche automatiquement les solutions de votre pays : Mobile Money (Orange, Wave, MTN, Moov…) et cartes.' },
 ];
 
@@ -163,7 +163,7 @@ function GpnCTA({ onClick, children, big }: { onClick: () => void; children: Rea
     <button
       type="button"
       onClick={onClick}
-      className={`group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-[#0E7A3D] via-[#10B981] to-[#D4AF37] px-6 ${big ? 'py-5 text-[16px] sm:text-[18px]' : 'py-4 text-[14px] sm:text-[15px]'} font-black uppercase tracking-[0.1em] text-white shadow-[0_18px_44px_-12px_rgba(14,122,61,.55)] ring-2 ring-white/40 transition hover:scale-[1.02] hover:shadow-[0_22px_52px_-10px_rgba(212,175,55,.45)] active:scale-[0.99]`}
+      className={`gpn-cta-btn group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-[#0E7A3D] via-[#10B981] to-[#D4AF37] px-6 ${big ? 'py-5 text-[16px] sm:text-[18px]' : 'py-4 text-[14px] sm:text-[15px]'} font-black uppercase tracking-[0.1em] text-white shadow-[0_18px_44px_-12px_rgba(14,122,61,.55)] ring-2 ring-white/40 transition hover:scale-[1.02] hover:shadow-[0_22px_52px_-10px_rgba(212,175,55,.45)] active:scale-[0.99]`}
     >
       <span className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent" />
       <span className="relative z-10 flex items-center gap-2">{children}</span>
@@ -266,6 +266,7 @@ function MediaBlock({ img, alt, ratio = '1/1', bg, kicker, title, text, cta, onC
  */
 function HeroVideo() {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [soundOn, setSoundOn] = useState(false);
 
   useEffect(() => {
     const v = videoRef.current;
@@ -274,15 +275,18 @@ function HeroVideo() {
 
     // 1) Tente l'autoplay avec son ; sinon fallback muet pour lancer la lecture.
     v.muted = false;
-    v.play().catch(() => {
-      v.muted = true;
-      v.play().catch(() => { /* autoplay bloque : le poster reste affiche */ });
-    });
+    v.play()
+      .then(() => setSoundOn(true))
+      .catch(() => {
+        v.muted = true;
+        setSoundOn(false);
+        v.play().catch(() => { /* autoplay bloque : le poster reste affiche */ });
+      });
 
     // 2) Au moindre geste, on (re)active le son et on le garde.
     const enableSound = () => {
       const el = videoRef.current;
-      if (el && el.muted) { el.muted = false; el.volume = 1; el.play().catch(() => { /* noop */ }); }
+      if (el && el.muted) { el.muted = false; el.volume = 1; el.play().catch(() => { /* noop */ }); setSoundOn(true); }
     };
     const opts = { passive: true } as const;
     window.addEventListener('pointerdown', enableSound, opts);
@@ -300,6 +304,11 @@ function HeroVideo() {
     };
   }, []);
 
+  const forceSound = () => {
+    const el = videoRef.current;
+    if (el) { el.muted = false; el.volume = 1; el.play().catch(() => { /* noop */ }); setSoundOn(true); }
+  };
+
   return (
     <div className="relative mx-auto aspect-square w-full max-w-[440px] overflow-hidden rounded-[1.75rem] bg-black shadow-[0_20px_50px_-12px_rgba(6,42,22,.55)] ring-4 ring-[#D4AF37]/70">
       <video
@@ -312,6 +321,15 @@ function HeroVideo() {
         playsInline
         preload="metadata"
       />
+      {!soundOn && (
+        <button
+          type="button"
+          onClick={forceSound}
+          className="absolute inset-x-0 bottom-4 z-10 mx-auto w-max animate-pulse rounded-full bg-gradient-to-r from-[#F0D98C] via-[#D4AF37] to-[#B8902A] px-5 py-2.5 text-[13px] font-black uppercase tracking-wide text-[#3A2800] shadow-xl ring-2 ring-white/60"
+        >
+          🔊 Activer le son
+        </button>
+      )}
     </div>
   );
 }
@@ -455,7 +473,7 @@ function StickyCTA({ visible, onClick }: { visible: boolean; onClick: () => void
           <button
             type="button"
             onClick={onClick}
-            className="shrink-0 rounded-xl bg-gradient-to-r from-[#F0D98C] via-[#D4AF37] to-[#B8902A] px-5 py-2.5 text-[12.5px] font-black uppercase tracking-[0.08em] text-[#3A2800] shadow-lg transition hover:scale-[1.03] active:scale-[0.98]"
+            className="gpn-cta-btn shrink-0 rounded-xl bg-gradient-to-r from-[#F0D98C] via-[#D4AF37] to-[#B8902A] px-5 py-2.5 text-[12.5px] font-black uppercase tracking-[0.08em] text-[#3A2800] shadow-lg transition hover:scale-[1.03] active:scale-[0.98]"
           >
             Obtenir le guide 🌿
           </button>
@@ -587,7 +605,12 @@ export default function GuidePousseNaturelleLanding() {
         @keyframes gpn-marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
         .gpn-marquee { animation: gpn-marquee 26s linear infinite; }
         .gpn-grad { background: linear-gradient(120deg,#0E7A3D,#10B981 45%,#D4AF37); -webkit-background-clip:text; background-clip:text; color: transparent; }
-        @media (prefers-reduced-motion: reduce) { .gpn-marquee { animation: none; } }
+        /* Bouton CTA interieur des cartes de format : bounce + scintillement */
+        @keyframes gpn-bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+        @keyframes gpn-shine { 0%{left:-60%} 55%{left:120%} 100%{left:120%} }
+        .gpn-cta-btn { position:relative; overflow:hidden; animation: gpn-bounce 1.4s ease-in-out infinite; }
+        .gpn-cta-btn::after { content:''; position:absolute; top:0; left:-60%; height:100%; width:40%; transform:skewX(-20deg); background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent); animation:gpn-shine 1.8s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) { .gpn-marquee, .gpn-cta-btn, .gpn-cta-btn::after { animation: none; } }
       `}</style>
 
       {/* ==================== HERO ==================== */}
@@ -620,7 +643,7 @@ export default function GuidePousseNaturelleLanding() {
             <span className="text-[16px] font-bold text-neutral-400 line-through">{fmt(OLD_PRICE)}</span>
             <span className="gpn-grad text-[44px] font-black leading-none sm:text-[54px]">{fmt(PRICE)}</span>
           </div>
-          <p className="mt-1 text-[11px] font-black uppercase tracking-[0.18em] text-[#0E7A3D]">Ebook immediat · ou livre paye a la livraison 🔒</p>
+          <p className="mt-1 text-[11px] font-black uppercase tracking-[0.18em] text-[#0E7A3D]">Livre paye a la livraison · ou ebook immediat 🔒</p>
 
           <div className="relative mx-auto mt-6 max-w-[440px]">
             <div className="absolute -inset-3 rounded-[36px] bg-gradient-to-r from-[#0E7A3D]/20 via-[#10B981]/25 to-[#D4AF37]/25 blur-xl" />
@@ -703,7 +726,7 @@ export default function GuidePousseNaturelleLanding() {
         onCta={openModal}
       />
 
-      <Marquee dark items={['Programmes homme · femme · barbe', 'Defi 30 jours + journal de suivi', 'Ingredients naturels et economiques', 'Ebook 8 900 F · Livre 9 900 F']} />
+      <Marquee dark items={['Programmes homme · femme · barbe', 'Defi 30 jours + journal de suivi', 'Ingredients naturels et economiques', 'Livre 7 900 F · Ebook 6 900 F']} />
 
       {/* ==================== HOMMES ==================== */}
       <MediaBlock
@@ -770,7 +793,7 @@ export default function GuidePousseNaturelleLanding() {
               </div>
             ))}
           </div>
-          <p className="mt-4 text-center text-[12px] italic text-[#0E7A3D]/70">Le tout dans un seul guide, en ebook a {fmt(PRICE_EBOOK)} ou en livre imprime a {fmt(PRICE_PHYSIQUE)}.</p>
+          <p className="mt-4 text-center text-[12px] italic text-[#0E7A3D]/70">Le tout dans un seul guide, en livre imprime a {fmt(PRICE_PHYSIQUE)} ou en ebook a {fmt(PRICE_EBOOK)}.</p>
           <div className="mx-auto mt-6 max-w-sm"><GpnCTA onClick={openModal}>Je veux le guide complet</GpnCTA></div>
         </div>
       </section>
@@ -906,6 +929,34 @@ export default function GuidePousseNaturelleLanding() {
               <div className="space-y-3.5">
                 <p className="text-[12.5px] text-[#0E7A3D]/75">Le meme guide complet, dans le format qui vous convient.</p>
 
+                {/* LIVRE IMPRIME — dore brillant glossy (mis en avant, 1er choix) */}
+                <button
+                  type="button"
+                  onClick={() => { setFormErrPhy(''); trackOpenPhy(1); setStep('physique'); }}
+                  className="group relative w-full overflow-hidden rounded-[1.25rem] bg-gradient-to-br from-[#F0D98C] via-[#D4AF37] to-[#A0761B] p-[18px] text-left text-[#3A2800] shadow-[0_16px_40px_-10px_rgba(212,175,55,.55)] ring-1 ring-white/50 transition hover:scale-[1.015] hover:shadow-[0_20px_48px_-10px_rgba(176,118,27,.5)] active:scale-[0.99]"
+                >
+                  <span className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent" />
+                  <div className="relative flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[26px] leading-none" aria-hidden>📦</span>
+                        <span className="text-[19px] font-black tracking-wide">LIVRE IMPRIME</span>
+                        <span className="rounded-full bg-[#3A2800]/85 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-[#F0D98C]">Je paie a la livraison</span>
+                      </div>
+                      <p className="mt-2 text-[12px] font-bold text-[#3A2800]/90">Livre chez vous — vous ne payez rien maintenant</p>
+                      <p className="mt-1 text-[11px] text-[#3A2800]/70">Se lit sans ecran et s'annote a la main.</p>
+                      <span className="gpn-cta-btn mt-3 inline-flex items-center gap-2 rounded-xl bg-[#3A2800] px-4 py-2.5 text-[12px] font-black uppercase tracking-[0.06em] text-[#F0D98C] shadow-lg ring-1 ring-white/30">
+                        📦 Je choisis le livre <span aria-hidden>→</span>
+                      </span>
+                    </div>
+                    <div className="shrink-0 text-right leading-none">
+                      <div className="text-[22px] font-black">{fmt(PRICE_PHYSIQUE)}</div>
+                      <div className="mt-1 text-[11px] text-[#3A2800]/55 line-through">{fmt(OLD_PRICE_PHYSIQUE)}</div>
+                      <div className="mt-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#3A2800]/85 text-[16px] font-black text-[#F0D98C] transition group-hover:translate-x-0.5">→</div>
+                    </div>
+                  </div>
+                </button>
+
                 {/* EBOOK — emeraude brillant glossy */}
                 <button
                   type="button"
@@ -922,36 +973,14 @@ export default function GuidePousseNaturelleLanding() {
                       </div>
                       <p className="mt-2 text-[12px] font-semibold text-white/90">Paiement en ligne securise (Mobile Money, carte)</p>
                       <p className="mt-1 text-[11px] text-white/70">Telephone, tablette, ordinateur — il ne se perd pas.</p>
+                      <span className="gpn-cta-btn mt-3 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-[12px] font-black uppercase tracking-[0.06em] text-[#065F46] shadow-lg ring-1 ring-white/60">
+                        📱 Je choisis l'ebook <span aria-hidden>→</span>
+                      </span>
                     </div>
                     <div className="shrink-0 text-right leading-none">
                       <div className="text-[22px] font-black">{fmt(PRICE_EBOOK)}</div>
                       <div className="mt-1 text-[11px] text-white/60 line-through">{fmt(OLD_PRICE_EBOOK)}</div>
                       <div className="mt-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/25 text-[16px] font-black ring-1 ring-white/40 transition group-hover:translate-x-0.5">→</div>
-                    </div>
-                  </div>
-                </button>
-
-                {/* LIVRE IMPRIME — dore brillant glossy */}
-                <button
-                  type="button"
-                  onClick={() => { setFormErrPhy(''); trackOpenPhy(1); setStep('physique'); }}
-                  className="group relative w-full overflow-hidden rounded-[1.25rem] bg-gradient-to-br from-[#F0D98C] via-[#D4AF37] to-[#A0761B] p-[18px] text-left text-[#3A2800] shadow-[0_16px_40px_-10px_rgba(212,175,55,.55)] ring-1 ring-white/50 transition hover:scale-[1.015] hover:shadow-[0_20px_48px_-10px_rgba(176,118,27,.5)] active:scale-[0.99]"
-                >
-                  <span className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent" />
-                  <div className="relative flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[26px] leading-none" aria-hidden>📦</span>
-                        <span className="text-[19px] font-black tracking-wide">LIVRE IMPRIME</span>
-                        <span className="rounded-full bg-[#3A2800]/85 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-[#F0D98C]">Je paie a la livraison</span>
-                      </div>
-                      <p className="mt-2 text-[12px] font-bold text-[#3A2800]/90">Livre chez vous — vous ne payez rien maintenant</p>
-                      <p className="mt-1 text-[11px] text-[#3A2800]/70">Se lit sans ecran et s'annote a la main.</p>
-                    </div>
-                    <div className="shrink-0 text-right leading-none">
-                      <div className="text-[22px] font-black">{fmt(PRICE_PHYSIQUE)}</div>
-                      <div className="mt-1 text-[11px] text-[#3A2800]/55 line-through">{fmt(OLD_PRICE_PHYSIQUE)}</div>
-                      <div className="mt-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#3A2800]/85 text-[16px] font-black text-[#F0D98C] transition group-hover:translate-x-0.5">→</div>
                     </div>
                   </div>
                 </button>

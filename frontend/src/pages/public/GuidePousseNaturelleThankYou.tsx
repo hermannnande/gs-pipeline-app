@@ -22,8 +22,8 @@ const META_PIXEL_ID = '2061376097807745';
 const PRODUCT_CODE = 'GUIDE_POUSSE_NATURELLE';
 const PRODUCT_CODE_PHYSIQUE = 'GUIDE_POUSSE_NATURELLE_PHYSIQUE';
 // ⚠️ A garder aligne avec PRICE_EBOOK / PRICE_PHYSIQUE de la landing.
-const PRICE = 8900;
-const PRICE_PHYSIQUE = 9900;
+const PRICE = 6900;
+const PRICE_PHYSIQUE = 7900;
 
 // Numero WhatsApp support (a personnaliser).
 const WHATSAPP_NUMBER_RAW = '2250778030075';
