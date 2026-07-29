@@ -60,6 +60,7 @@ export const LANDING_SLUGS = [
   'sangles-rotuliennes-tk',
   'bandes-buccales-sommeil',
   'support-telephone-flexible-tk',
+  'bandes-buccales-sommeil-tk',
   'boutique',
 ] as const;
 
