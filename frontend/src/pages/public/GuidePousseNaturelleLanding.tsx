@@ -2,26 +2,31 @@
  * Landing — Guide « Faire pousser vos cheveux naturellement ».
  * ============================================================================
  *
- * DEUX FORMATS au choix, chacun avec son propre circuit de vente :
+ * ⚠️ EBOOK / PAIEMENT EN LIGNE CHARIOW = DESACTIVE (demande client, 2026-07-29).
+ *    Voir la constante EBOOK_ENABLED plus bas : tout le circuit Chariow (etape
+ *    "choix du format" + formulaire ebook) est conserve dans le code mais n'est
+ *    plus rendu. Un seul format est vendu : le LIVRE IMPRIME, paye a la livraison.
+ *    Pour reactiver l'ebook : EBOOK_ENABLED = true, puis remettre les mentions
+ *    "ebook" dans les textes (FAQ, garanties, marquees, footer, pixel ViewContent).
  *
- *   1. EBOOK (8 900 F) — produit DIGITAL paye via CHARIOW (Mobile Money / carte).
+ * DEUX FORMATS existent en base, chacun avec son propre circuit de vente :
+ *
+ *   1. LIVRE IMPRIME (7 900 F) — ACTIF. Produit PHYSIQUE, paiement A LA LIVRAISON.
+ *      Code produit GUIDE_POUSSE_NATURELLE_PHYSIQUE (obgestion id=130), volontairement
+ *      ABSENT de ISOLATED_PRODUCT_CODES : ses commandes suivent le pipeline standard
+ *      via POST /public/order — page "A appeler", validation, tournee.
+ *
+ *   2. EBOOK (6 900 F) — MASQUE. Produit DIGITAL paye via CHARIOW (Mobile Money / carte).
  *      Apres paiement, Chariow delivre le PDF (portail client) et le webhook
  *      /api/chariow/webhook enregistre la vente dans obgestion.
- *      Code produit GUIDE_POUSSE_NATURELLE, ISOLE (utils/isolatedProducts.js) :
- *      ces ventes n'apparaissent pas dans le pipeline "a appeler"/livraison,
- *      seulement dans la page admin dediee (/admin/ventes-digitales).
+ *      Code produit GUIDE_POUSSE_NATURELLE (obgestion id=126), ISOLE
+ *      (utils/isolatedProducts.js) : ces ventes n'apparaissent pas dans le pipeline
+ *      "a appeler"/livraison, seulement dans /admin/ventes-digitales.
  *
- *   2. LIVRE IMPRIME (9 900 F) — produit PHYSIQUE, paiement A LA LIVRAISON.
- *      Code produit GUIDE_POUSSE_NATURELLE_PHYSIQUE, volontairement ABSENT de
- *      ISOLATED_PRODUCT_CODES : ses commandes suivent le pipeline standard via
- *      POST /public/order — page "A appeler", validation, tournee.
- *
- * Flux d'achat :
- *   CTA -> modal ETAPE 1 : choix du format
- *     -> ebook    : nom, email, telephone -> useChariowCheckout -> Chariow
- *                   -> retour /guide-pousse-naturelle/merci?ref=<sale_id>
- *     -> imprime  : nom, ville, telephone -> useOrderSubmit -> POST /public/order
- *                   -> /guide-pousse-naturelle/merci?format=physique&ref=<ref>
+ * Flux d'achat actuel :
+ *   CTA -> modal (directement le formulaire LIVRE)
+ *     -> nom, ville, telephone -> useOrderSubmit -> POST /public/order
+ *     -> /guide-pousse-naturelle/merci?format=physique&ref=<ref>
  *
  * Design : emeraude #0E7A3D / #10B981, dore #D4AF37, creme #FBF7EE.
  * Formulations responsables : "aide a", "soutient", jamais "guerit".
@@ -43,6 +48,15 @@ const PRODUCT_CODE_PHYSIQUE = 'GUIDE_POUSSE_NATURELLE_PHYSIQUE';
 const TITLE = 'Faire pousser vos cheveux naturellement';
 // Meta Pixel ID de cette page.
 const META_PIXEL_ID = '2061376097807745';
+
+/**
+ * Interrupteur du circuit EBOOK / paiement en ligne Chariow.
+ * false = seul le livre imprime (paiement a la livraison) est propose : le modal
+ * s'ouvre directement sur le formulaire livre, l'etape "choix du format" et le
+ * formulaire ebook ne sont plus rendus. Typé `boolean` (et non `false`) pour que
+ * TypeScript ne reduise pas les blocs conditionnels a du code mort.
+ */
+const EBOOK_ENABLED: boolean = false;
 
 // L'ecart de 1 000 F couvre l'impression et l'acheminement du livre.
 const PRICE_EBOOK = 6900;
@@ -99,9 +113,9 @@ const TESTIMONIALS = [
 const FAQ = [
   { q: 'Le guide convient-il aux hommes et aux femmes ?', a: 'Oui : programmes distincts hommes (tempes, couronne), femmes (longueur, casse) et barbe.' },
   { q: 'Le guide garantit-il la guerison de la calvitie ?', a: "Non. C'est un guide educatif qui aide a construire une routine adaptee et a savoir quand consulter. Il ne remplace pas un avis medical." },
-  { q: 'Comment vais-je recevoir le guide ?', a: "Comme vous voulez : en ebook (PDF) recu immediatement apres paiement, lisible sur telephone, tablette et ordinateur ; ou en livre imprime livre chez vous, que vous payez seulement a la reception." },
-  { q: 'Quelle difference entre l\'ebook et le livre imprime ?', a: "Le contenu est identique. L'ebook (6 900 F) arrive tout de suite et ne se perd pas. Le livre imprime (7 900 F) se lit sans ecran et s'annote a la main ; l'ecart couvre l'impression et la livraison." },
-  { q: 'Quels moyens de paiement puis-je utiliser ?', a: 'Le paiement affiche automatiquement les solutions de votre pays : Mobile Money (Orange, Wave, MTN, Moov…) et cartes.' },
+  { q: 'Comment vais-je recevoir le guide ?', a: "En livre imprime, livre chez vous. Un conseiller vous appelle pour confirmer l'adresse et la date de livraison." },
+  { q: 'Quand est-ce que je paie ?', a: "A la reception, en main propre. Vous ne payez rien maintenant : ni carte, ni Mobile Money sur ce site. Vous reglez le livreur une fois le livre entre vos mains." },
+  { q: 'Combien coute le guide ?', a: "7 900 F le livre imprime, au lieu de 18 000 F. La livraison est a vos frais et se regle avec le livreur." },
 ];
 
 // Indicatifs pays (le client choisit le sien ; Chariow affiche ensuite les
@@ -338,15 +352,15 @@ function HeroVideo() {
 /* Notifications d'achat (popup bas-gauche, rotation ~12 s).           */
 /* ------------------------------------------------------------------ */
 const PURCHASE_NOTIFS = [
-  { n: 'Koffi', q: 'Abobo', p: 'Ebook PDF' },
+  { n: 'Koffi', q: 'Abobo', p: 'Livre imprime' },
   { n: 'Aminata', q: 'Yopougon', p: 'Livre imprime' },
-  { n: 'Yao', q: 'Cocody', p: 'Ebook PDF' },
+  { n: 'Yao', q: 'Cocody', p: 'Livre imprime' },
   { n: 'Fatou', q: 'Marcory', p: 'Livre imprime' },
-  { n: 'Ibrahim', q: 'Bouake', p: 'Ebook PDF' },
+  { n: 'Ibrahim', q: 'Bouake', p: 'Livre imprime' },
   { n: 'Awa', q: 'Angre', p: 'Livre imprime' },
-  { n: 'Moussa', q: 'Koumassi', p: 'Ebook PDF' },
+  { n: 'Moussa', q: 'Koumassi', p: 'Livre imprime' },
   { n: 'Adjoua', q: 'Treichville', p: 'Livre imprime' },
-  { n: 'Salimata', q: 'San-Pedro', p: 'Ebook PDF' },
+  { n: 'Salimata', q: 'San-Pedro', p: 'Livre imprime' },
   { n: 'Nadia', q: 'Riviera', p: 'Livre imprime' },
 ];
 
@@ -428,7 +442,7 @@ const WHATSAPP_REVIEWS = [
   { n: 'Aissata', v: 'Marcory', t: "Ma soeur m'a demande ce que j'avais mis dans mes cheveux 😂 C'est juste le macera du guide, fait dans ma cuisine 🌿 2 mois de defi, mes tempes repoussent doucement 🙏🏾", h: '09:42', stars: 5 },
   { n: 'Mamadou', v: 'Koumassi', t: "J'ai pris le livre imprime, paye a la livraison 👌🏾 Le programme tempes est serieux : massage + huile maison tous les soirs. Ca devient un rituel.", h: '12:15', stars: 5 },
   { n: 'Adjoua', v: 'Treichville', t: "Fini les cremes a 15 000 F chaque mois 😩🔥 Mes masques me coutent 3 fois rien et mes cheveux ne cassent plus au demelage.", h: '18:03', stars: 5 },
-  { n: 'Fatou', v: 'San-Pedro', t: "L'ebook recu en 2 minutes apres le paiement 📱 J'ai commence le defi 30 jours avec ma fille, on note tout dans le journal de suivi ❤️", h: '10:27', stars: 5 },
+  { n: 'Fatou', v: 'San-Pedro', t: "Livre recu a la maison, j'ai paye au livreur 📦 J'ai commence le defi 30 jours avec ma fille, on note tout dans le journal de suivi ❤️", h: '10:27', stars: 5 },
 ];
 
 function WhatsAppBubble({ r, i }: { r: (typeof WHATSAPP_REVIEWS)[number]; i: number }) {
@@ -526,17 +540,21 @@ export default function GuidePousseNaturelleLanding() {
   } = useOrderSubmit({ cfg: cfgPhy, product, setProduct, company });
 
   useEffect(() => {
-    document.title = `${TITLE} — Ebook ou livre imprime · -${DISCOUNT} %`;
+    document.title = EBOOK_ENABLED
+      ? `${TITLE} — Ebook ou livre imprime · -${DISCOUNT} %`
+      : `${TITLE} — Livre imprime paye a la livraison · -${DISCOUNT} %`;
     if (pixelFired.current) return;
     pixelFired.current = true;
     trackPageView(SLUG, company);
     if (META_PIXEL_ID) {
       initMetaPixel(META_PIXEL_ID);
+      // Le seul produit vendable est le livre imprime : le ViewContent doit porter
+      // son code et son prix, sinon Meta optimise sur un produit qu'on ne vend plus.
       window.fbq?.('track', 'ViewContent', {
         content_name: TITLE,
-        content_ids: [PRODUCT_CODE],
+        content_ids: [EBOOK_ENABLED ? PRODUCT_CODE : PRODUCT_CODE_PHYSIQUE],
         content_type: 'product',
-        value: PRICE_EBOOK,
+        value: EBOOK_ENABLED ? PRICE_EBOOK : PRICE_PHYSIQUE,
         currency: 'XOF',
       });
     }
@@ -560,12 +578,21 @@ export default function GuidePousseNaturelleLanding() {
     tick(); const id = setInterval(tick, 1000); return () => clearInterval(id);
   }, []);
 
+  // EBOOK_ENABLED = false -> ouverture directe du formulaire LIVRE (paiement a la
+  // livraison). L'etape 'choix' reste dans le code pour reactiver l'ebook plus tard.
   const openModal = useCallback(() => {
     setFormErr('');
     setFormErrPhy('');
-    setStep('choix');
+    if (EBOOK_ENABLED) {
+      setStep('choix');
+    } else {
+      // Pas d'etape intermediaire : on entre direct dans le tunnel livre, donc
+      // l'InitiateCheckout doit partir ici (sinon aucun event n'est envoye).
+      trackOpenPhy(1);
+      setStep('physique');
+    }
     setModal(true);
-  }, [setFormErr, setFormErrPhy]);
+  }, [setFormErr, setFormErrPhy, trackOpenPhy]);
 
   const busy = sending || sendingPhy;
   const closeModal = useCallback(() => { if (!busy) setModal(false); }, [busy]);
@@ -643,7 +670,7 @@ export default function GuidePousseNaturelleLanding() {
             <span className="text-[16px] font-bold text-neutral-400 line-through">{fmt(OLD_PRICE)}</span>
             <span className="gpn-grad text-[44px] font-black leading-none sm:text-[54px]">{fmt(PRICE)}</span>
           </div>
-          <p className="mt-1 text-[11px] font-black uppercase tracking-[0.18em] text-[#0E7A3D]">Livre paye a la livraison · ou ebook immediat 🔒</p>
+          <p className="mt-1 text-[11px] font-black uppercase tracking-[0.18em] text-[#0E7A3D]">Livre paye a la livraison 🔒</p>
 
           <div className="relative mx-auto mt-6 max-w-[440px]">
             <div className="absolute -inset-3 rounded-[36px] bg-gradient-to-r from-[#0E7A3D]/20 via-[#10B981]/25 to-[#D4AF37]/25 blur-xl" />
@@ -654,14 +681,14 @@ export default function GuidePousseNaturelleLanding() {
 
           <div className="mx-auto mt-6 max-w-sm"><GpnCTA big onClick={openModal}>Obtenir le guide maintenant</GpnCTA></div>
           <div className="mt-4 flex flex-wrap justify-center gap-2 text-[10.5px] font-bold text-[#0E7A3D]/85">
-            {['📱 Ebook recu en 2 min', '📦 Livre paye a la livraison', '🌿 Ingredients de cuisine', '📅 Defi 30 jours inclus'].map((b) => (
+            {['📦 Livre paye a la livraison', '🚚 Livraison rapide partout', '🌿 Ingredients de cuisine', '📅 Defi 30 jours inclus'].map((b) => (
               <span key={b} className="rounded-full bg-white/75 px-3 py-1 ring-1 ring-[#10B981]/25">{b}</span>
             ))}
           </div>
         </div>
       </section>
 
-      <Marquee items={['Ebook immediat ou livre chez vous', 'Paiement a la livraison pour le livre', 'Mobile Money accepte', 'Recettes 100 % naturelles', `-${DISCOUNT} % aujourd'hui`]} />
+      <Marquee items={['Livre imprime chez vous', 'Paiement a la livraison', 'Recettes 100 % naturelles', 'Defi 30 jours inclus', `-${DISCOUNT} % aujourd'hui`]} />
 
       {/* ==================== COMPTE A REBOURS ==================== */}
       <section className="bg-gradient-to-r from-[#062A16] via-[#0E7A3D] to-[#065F46] px-4 py-8">
@@ -726,7 +753,7 @@ export default function GuidePousseNaturelleLanding() {
         onCta={openModal}
       />
 
-      <Marquee dark items={['Programmes homme · femme · barbe', 'Defi 30 jours + journal de suivi', 'Ingredients naturels et economiques', 'Livre 7 900 F · Ebook 6 900 F']} />
+      <Marquee dark items={['Programmes homme · femme · barbe', 'Defi 30 jours + journal de suivi', 'Ingredients naturels et economiques', 'Livre 7 900 F · Paiement a la livraison']} />
 
       {/* ==================== HOMMES ==================== */}
       <MediaBlock
@@ -793,7 +820,7 @@ export default function GuidePousseNaturelleLanding() {
               </div>
             ))}
           </div>
-          <p className="mt-4 text-center text-[12px] italic text-[#0E7A3D]/70">Le tout dans un seul guide, en livre imprime a {fmt(PRICE_PHYSIQUE)} ou en ebook a {fmt(PRICE_EBOOK)}.</p>
+          <p className="mt-4 text-center text-[12px] italic text-[#0E7A3D]/70">Le tout dans un seul guide, en livre imprime a {fmt(PRICE_PHYSIQUE)}, paye a la livraison.</p>
           <div className="mx-auto mt-6 max-w-sm"><GpnCTA onClick={openModal}>Je veux le guide complet</GpnCTA></div>
         </div>
       </section>
@@ -843,7 +870,7 @@ export default function GuidePousseNaturelleLanding() {
           <div className="mt-6 space-y-3">
             {WHATSAPP_REVIEWS.map((r, i) => <WhatsAppBubble key={i} r={r} i={i} />)}
           </div>
-          <p className="mt-4 text-center text-[11px] font-bold text-[#0E7A3D]">🔒 Ebook recu immediatement · Livre paye seulement a la livraison</p>
+          <p className="mt-4 text-center text-[11px] font-bold text-[#0E7A3D]">🔒 Vous ne payez qu'a la reception du livre</p>
           <div className="mx-auto mt-5 max-w-sm"><GpnCTA onClick={openModal}>Commander en toute confiance</GpnCTA></div>
         </div>
       </section>
@@ -865,7 +892,7 @@ export default function GuidePousseNaturelleLanding() {
       <section className="bg-gradient-to-b from-[#FBF7EE] via-[#F5F0E1] to-[#EDF7F0] px-4 py-12">
         <div className="mx-auto max-w-[560px] text-center">
           <h2 className="text-[24px] font-black text-[#123B25] sm:text-[28px]">Arretez d'acheter. <span className="gpn-grad">Fabriquez enfin ce qui marche.</span></h2>
-          <p className="mx-auto mt-2 max-w-[420px] text-[13px] text-[#0E7A3D]/80">En ebook des maintenant, ou en livre imprime livre chez vous — paye a la reception.</p>
+          <p className="mx-auto mt-2 max-w-[420px] text-[13px] text-[#0E7A3D]/80">Le livre imprime est livre chez vous — vous le payez a la reception.</p>
           <div className="mx-auto mt-6 max-w-sm"><GpnCTA big onClick={openModal}>Obtenir le guide · {fmt(PRICE)}</GpnCTA></div>
         </div>
       </section>
@@ -874,9 +901,9 @@ export default function GuidePousseNaturelleLanding() {
       <section className="bg-gradient-to-b from-[#E9F7EF] to-[#FBF7EE] px-4 py-10">
         <div className="mx-auto grid max-w-[560px] grid-cols-1 gap-3 sm:grid-cols-3">
           {[
-            { icon: '📱', t: 'Ebook immediat', d: 'Recu en quelques minutes apres paiement, sur telephone, tablette ou ordinateur.' },
             { icon: '📦', t: 'Livre a la livraison', d: 'Livre chez vous : vous ne payez qu\'a la reception, en main propre.' },
-            { icon: '🔒', t: 'Paiement securise', d: 'Mobile Money et cartes via Chariow. Aucune donnee de carte sur ce site.' },
+            { icon: '📞', t: 'Confirmation par appel', d: 'Un conseiller vous rappelle pour valider l\'adresse et la date de livraison.' },
+            { icon: '🔒', t: 'Zero paiement en ligne', d: 'Aucune carte, aucun Mobile Money sur ce site. Vous reglez le livreur, c\'est tout.' },
           ].map((g) => (
             <div key={g.t} className="rounded-2xl bg-white/85 p-4 text-center ring-1 ring-[#10B981]/25">
               <span className="text-[24px]">{g.icon}</span>
@@ -905,7 +932,7 @@ export default function GuidePousseNaturelleLanding() {
       {/* ==================== FOOTER / DISCLAIMER ==================== */}
       <footer className="bg-gradient-to-b from-[#062A16] to-[#04180D] px-4 pb-8 pt-8 text-center text-[10.5px] text-white/60">
         <p className="mx-auto max-w-3xl leading-relaxed">Ce guide est educatif et ne remplace pas un diagnostic medical. Les resultats varient selon la cause de la chute, la regularite, la genetique et l'etat du follicule. Consultez un dermatologue en cas de chute brutale, de plaques rondes, de douleurs, de pus, de croutes ou de zones lisses et brillantes.</p>
-        <p className="mt-3 font-bold text-white/80">🌿 Guide Pousse Naturelle · Ebook & livre imprime</p>
+        <p className="mt-3 font-bold text-white/80">🌿 Guide Pousse Naturelle · Livre imprime, paye a la livraison</p>
         <p className="mt-1.5">© {new Date().getFullYear()} · Faire pousser vos cheveux naturellement</p>
       </footer>
 
@@ -919,13 +946,13 @@ export default function GuidePousseNaturelleLanding() {
           <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-[1.75rem] bg-gradient-to-b from-[#FBF7EE] to-[#F5F0E1] p-5 shadow-2xl ring-1 ring-[#D4AF37]/40 sm:rounded-[1.75rem]" onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-[17px] font-black text-[#123B25]">
-                {step === 'choix' ? 'Comment voulez-vous recevoir votre guide ?' : 'Finaliser ma commande'}
+                {EBOOK_ENABLED && step === 'choix' ? 'Comment voulez-vous recevoir votre guide ?' : 'Finaliser ma commande'}
               </h3>
               <button type="button" onClick={closeModal} className="text-2xl leading-none text-neutral-400 hover:text-neutral-600" aria-label="Fermer">×</button>
             </div>
 
-            {/* ETAPE 1 — les deux formats, gros CTA glossy */}
-            {step === 'choix' && (
+            {/* ETAPE 1 — les deux formats, gros CTA glossy (masquee : EBOOK_ENABLED = false) */}
+            {EBOOK_ENABLED && step === 'choix' && (
               <div className="space-y-3.5">
                 <p className="text-[12.5px] text-[#0E7A3D]/75">Le meme guide complet, dans le format qui vous convient.</p>
 
@@ -992,7 +1019,6 @@ export default function GuidePousseNaturelleLanding() {
             {/* ETAPE 2b — livre imprime : paiement a la livraison */}
             {step === 'physique' && (
               <>
-                <button type="button" onClick={() => setStep('choix')} className="mb-3 text-[12px] font-bold text-neutral-400 hover:text-neutral-600">← Changer de format</button>
                 <div className="mb-4 flex items-center justify-between rounded-xl bg-gradient-to-r from-[#F0D98C]/50 to-[#D4AF37]/30 px-4 py-3 ring-1 ring-[#D4AF37]/50">
                   <span className="text-sm font-bold text-[#3A2800]">📦 Livre imprime</span>
                   <span className="text-lg font-black text-[#A0761B]">{fmt(PRICE_PHYSIQUE)}</span>
@@ -1030,8 +1056,8 @@ export default function GuidePousseNaturelleLanding() {
               </>
             )}
 
-            {/* ETAPE 2a — ebook : paiement en ligne Chariow */}
-            {step === 'ebook' && (
+            {/* ETAPE 2a — ebook : paiement en ligne Chariow (masquee : EBOOK_ENABLED = false) */}
+            {EBOOK_ENABLED && step === 'ebook' && (
               <>
                 <button type="button" onClick={() => setStep('choix')} className="mb-3 text-[12px] font-bold text-neutral-400 hover:text-neutral-600">← Changer de format</button>
                 <div className="mb-4 flex items-center justify-between rounded-xl bg-gradient-to-r from-[#10B981]/20 to-[#0E7A3D]/15 px-4 py-3 ring-1 ring-[#10B981]/40">
