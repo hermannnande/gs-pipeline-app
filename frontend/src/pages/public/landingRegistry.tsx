@@ -71,6 +71,7 @@ export const LANDING_COMPONENTS: Record<string, LazyLanding> = {
   'sangles-rotuliennes': lazy(() => import('./SanglesRotuliennesLanding')),
   'sangles-rotuliennes-tk': lazy(() => import('./SanglesRotuliennesTkLanding')),
   'bandes-buccales-sommeil': lazy(() => import('./BandesBuccalesSommeilLanding')),
+  'support-telephone-flexible-tk': lazy(() => import('./SupportTelephoneFlexibleTkLanding')),
 };
 
 export const AUTONOMOUS_LANDING_SLUGS = new Set(Object.keys(LANDING_COMPONENTS));
