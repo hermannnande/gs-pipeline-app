@@ -255,6 +255,133 @@ router.get('/my-orders', authorize('LIVREUR'), async (req, res) => {
   }
 });
 
+// ========================================
+// BILAN DE JOURNÉE LIVREUR + DÉPÔT (commission 1500 F / livraison)
+// ========================================
+
+// Résumé calculé à la volée depuis orders : livraisons du jour (LIVREE +
+// LIVREE_PARTIELLE au prorata), commission au taux courant, net attendu.
+// Jamais de montant fourni par le client : tout est recalculé serveur.
+async function computeLivreurDaySummary(companyId, livreurId, dayStr) {
+  const gte = new Date(`${dayStr}T00:00:00.000Z`);
+  const lt = new Date(gte);
+  lt.setUTCDate(lt.getUTCDate() + 1);
+
+  const [orders, config] = await Promise.all([
+    prisma.order.findMany({
+      where: {
+        companyId,
+        delivererId: livreurId,
+        status: { in: ['LIVREE', 'LIVREE_PARTIELLE'] },
+        deliveredAt: { gte, lt },
+      },
+      select: { montant: true, quantite: true, quantiteLivree: true, status: true },
+    }),
+    prisma.accountingConfig.findUnique({ where: { companyId } }),
+  ]);
+
+  const commissionParLivraison = config?.commissionLivreurLocal || 1500;
+  const nbLivraisons = orders.length;
+  const nbPartielles = orders.filter((o) => o.status === 'LIVREE_PARTIELLE').length;
+  const montantCollecte = orders.reduce((s, o) => {
+    if (o.status === 'LIVREE_PARTIELLE') {
+      const qte = o.quantite || 1;
+      const livree = o.quantiteLivree ?? qte;
+      return s + (o.montant * livree) / qte;
+    }
+    return s + o.montant;
+  }, 0);
+  const totalCommission = nbLivraisons * commissionParLivraison;
+  const montantAttendu = montantCollecte - totalCommission;
+
+  return { nbLivraisons, nbPartielles, montantCollecte, commissionParLivraison, totalCommission, montantAttendu };
+}
+
+// GET /api/delivery/my-day-summary?date=YYYY-MM-DD - Bilan du jour du livreur (LIVREUR)
+router.get('/my-day-summary', authorize('LIVREUR'), async (req, res) => {
+  try {
+    const dayStr = /^\d{4}-\d{2}-\d{2}$/.test(req.query.date || '')
+      ? req.query.date
+      : new Date().toISOString().slice(0, 10); // Abidjan = UTC
+
+    const summary = await computeLivreurDaySummary(req.user.companyId, req.user.id, dayStr);
+
+    // Dépôt existant pour cette date (s'il existe)
+    const deposit = await prisma.livreurDeposit.findUnique({
+      where: {
+        company_livreur_date: {
+          companyId: req.user.companyId,
+          livreurId: req.user.id,
+          date: new Date(`${dayStr}T00:00:00.000Z`),
+        },
+      },
+    });
+
+    res.json({ ...summary, deposit: deposit || null });
+  } catch (error) {
+    console.error('Erreur bilan journée livreur:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération du bilan de journée.' });
+  }
+});
+
+// POST /api/delivery/my-deposit - Déclarer son dépôt de fin de journée (LIVREUR)
+router.post('/my-deposit', authorize('LIVREUR'), async (req, res) => {
+  try {
+    const { date, montantDepose } = req.body;
+
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ error: 'date (YYYY-MM-DD) requise.' });
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    if (date > today) {
+      return res.status(400).json({ error: 'La date ne peut pas être dans le futur.' });
+    }
+    const montant = parseFloat(montantDepose);
+    if (isNaN(montant) || montant < 0) {
+      return res.status(400).json({ error: 'montantDepose doit être un nombre ≥ 0.' });
+    }
+
+    const dayDate = new Date(`${date}T00:00:00.000Z`);
+    const uniqueWhere = {
+      companyId: req.user.companyId,
+      livreurId: req.user.id,
+      date: dayDate,
+    };
+
+    // Un dépôt déjà vérifié par l'admin est verrouillé
+    const existing = await prisma.livreurDeposit.findUnique({
+      where: { company_livreur_date: uniqueWhere },
+    });
+    if (existing?.statut === 'VERIFIE') {
+      return res.status(409).json({ error: 'Dépôt déjà vérifié : modification impossible.' });
+    }
+
+    // Résumé recalculé serveur (jamais de confiance au client pour les montants)
+    const summary = await computeLivreurDaySummary(req.user.companyId, req.user.id, date);
+    const data = {
+      nbLivraisons: summary.nbLivraisons,
+      montantCollecte: summary.montantCollecte,
+      commissionParLivraison: summary.commissionParLivraison,
+      totalCommission: summary.totalCommission,
+      montantAttendu: summary.montantAttendu,
+      montantDepose: montant,
+      ecart: montant - summary.montantAttendu,
+      statut: 'DECLARE',
+    };
+
+    const deposit = await prisma.livreurDeposit.upsert({
+      where: { company_livreur_date: uniqueWhere },
+      create: { ...uniqueWhere, ...data },
+      update: data,
+    });
+
+    res.status(201).json({ deposit, summary });
+  } catch (error) {
+    console.error('Erreur dépôt livreur:', error);
+    res.status(500).json({ error: 'Erreur lors de la déclaration du dépôt.' });
+  }
+});
+
 // GET /api/delivery/validated-orders - Commandes validées en attente d'assignation (Gestionnaire/Admin)
 router.get('/validated-orders', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
   try {

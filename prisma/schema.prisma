@@ -26,6 +26,8 @@ model Company {
   storeConfigs StoreConfig[]
   landingTemplates LandingTemplate[]
   pageViews    PageView[]
+  livreurDeposits LivreurDeposit[]
+  dailyExpenses DailyExpense[]
 
   @@map("companies")
 }
@@ -112,6 +114,13 @@ model User {
 
   // Enregistrements audio des appels passés par cet utilisateur
   callRecordings           CallRecording[]
+
+  // Dépôts de fin de journée (livreur) et vérifications (admin)
+  livreurDeposits          LivreurDeposit[] @relation("LivreurDeposits")
+  depositsVerified         LivreurDeposit[] @relation("DepositVerifier")
+
+  // Dépenses journalières saisies par cet utilisateur
+  dailyExpensesCreated     DailyExpense[]   @relation("DailyExpensesCreated")
 
   @@map("users")
 }
@@ -745,6 +754,54 @@ model AccountingConfig {
 
   @@unique([companyId])
   @@map("accounting_config")
+}
+
+// Dépôt de fin de journée du livreur : ce qu'il a collecté, sa commission,
+// le net attendu par l'entreprise et ce qu'il a réellement reversé.
+model LivreurDeposit {
+  id                    Int       @id @default(autoincrement())
+  companyId             Int
+  company               Company   @relation(fields: [companyId], references: [id])
+  livreurId             Int
+  livreur               User      @relation("LivreurDeposits", fields: [livreurId], references: [id])
+  date                  DateTime  @db.Date
+  nbLivraisons          Int       @default(0) // LIVREE + LIVREE_PARTIELLE du jour
+  montantCollecte       Float     @default(0) // Σ montants (partielles au prorata)
+  commissionParLivraison Float    @default(1500) // taux au moment du dépôt
+  totalCommission       Float     @default(0)
+  montantAttendu        Float     @default(0) // montantCollecte - totalCommission
+  montantDepose         Float     @default(0) // déclaré par le livreur
+  ecart                 Float     @default(0) // montantDepose - montantAttendu
+  statut                String    @default("DECLARE") // DECLARE | VERIFIE
+  verifiedById          Int?
+  verifiedBy            User?     @relation("DepositVerifier", fields: [verifiedById], references: [id])
+  verifiedAt            DateTime?
+  note                  String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([companyId, livreurId, date], name: "company_livreur_date")
+  @@index([companyId, date])
+  @@map("livreur_deposits")
+}
+
+// Dépenses journalières diverses (gestionnaire / admin) :
+// carburant, emballage, communication… rattachées au jour.
+model DailyExpense {
+  id          Int      @id @default(autoincrement())
+  companyId   Int
+  company     Company  @relation(fields: [companyId], references: [id])
+  date        DateTime @db.Date
+  libelle     String
+  montant     Float
+  categorie   String   @default("DIVERS") // TRANSPORT | CARBURANT | EMBALLAGE | COMMUNICATION | DIVERS
+  createdById Int
+  createdBy   User     @relation("DailyExpensesCreated", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId, date])
+  @@map("daily_expenses")
 }
 
 // ========================================

@@ -683,6 +683,7 @@ export default function Tournees() {
                 <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">Remis</th>
                 <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">Livrés</th>
                 <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">Restants</th>
+                <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">Commission</th>
                 <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">Durée</th>
                 <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">Statut</th>
                 <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
@@ -722,6 +723,14 @@ export default function Tournees() {
                     <span className={`font-semibold ${tournee.stats.colisRestants > 0 ? 'text-orange-600' : 'text-gray-400'}`}>
                       {tournee.stats.colisRestants}
                     </span>
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    <span className="font-semibold text-amber-600">
+                      {formatCurrency(tournee.stats.commissionLivreur ?? 0)}
+                    </span>
+                    <p className="text-[10px] text-gray-400">
+                      {(tournee.stats.colisLivres ?? ((tournee.stats.livrees ?? 0) + (tournee.stats.livreesPartielles ?? 0)))} × {formatCurrency(tournee.stats.commissionTaux ?? 1500)}
+                    </p>
                   </td>
                   <td className="px-3 py-3 text-center">
                     <div className="flex justify-center">
@@ -1423,45 +1432,52 @@ export default function Tournees() {
                 </div>
 
                 {/* Résumé financier */}
-                {tourneeDetail?.tournee?.orders && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="grid grid-cols-3 gap-4 text-center">
-                      <div>
-                        <p className="text-xs text-gray-600 mb-1">Montant total</p>
-                        <p className="text-lg font-bold text-blue-600">
-                          {formatCurrency(
-                            tourneeDetail.tournee.orders.reduce((sum: number, order: any) => sum + order.montant, 0)
-                          )}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-600 mb-1">Montant livré</p>
-                        <p className="text-lg font-bold text-green-600">
-                          {formatCurrency(
-                            tourneeDetail.tournee.orders.reduce((sum: number, order: any) => {
-                              if (order.status === 'LIVREE') return sum + order.montant;
-                              // Livraison partielle : on proratise le montant selon les unites prises
-                              if (order.status === 'LIVREE_PARTIELLE' && order.quantiteLivree && order.quantite > 0) {
-                                return sum + (order.montant * order.quantiteLivree / order.quantite);
-                              }
-                              return sum;
-                            }, 0)
-                          )}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-600 mb-1">Montant non livré</p>
-                        <p className="text-lg font-bold text-red-600">
-                          {formatCurrency(
-                            tourneeDetail.tournee.orders
-                              .filter((o: any) => ['REFUSEE', 'ANNULEE_LIVRAISON', 'ASSIGNEE'].includes(o.status))
-                              .reduce((sum: number, order: any) => sum + order.montant, 0)
-                          )}
-                        </p>
+                {tourneeDetail?.tournee?.orders && (() => {
+                  const orders = tourneeDetail.tournee.orders;
+                  const montantTotal = orders.reduce((sum: number, order: any) => sum + order.montant, 0);
+                  const montantLivre = orders.reduce((sum: number, order: any) => {
+                    if (order.status === 'LIVREE') return sum + order.montant;
+                    // Livraison partielle : on proratise le montant selon les unites prises
+                    if (order.status === 'LIVREE_PARTIELLE' && order.quantiteLivree && order.quantite > 0) {
+                      return sum + (order.montant * order.quantiteLivree / order.quantite);
+                    }
+                    return sum;
+                  }, 0);
+                  const montantNonLivre = orders
+                    .filter((o: any) => ['REFUSEE', 'ANNULEE_LIVRAISON', 'ASSIGNEE'].includes(o.status))
+                    .reduce((sum: number, order: any) => sum + order.montant, 0);
+                  const commission = tourneeDetail.stats?.commissionLivreur ?? 0;
+                  const taux = tourneeDetail.stats?.commissionTaux ?? 1500;
+                  const nbLivres = tourneeDetail.stats?.colisLivres ?? 0;
+                  return (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
+                        <div>
+                          <p className="text-xs text-gray-600 mb-1">Montant total</p>
+                          <p className="text-lg font-bold text-blue-600">{formatCurrency(montantTotal)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-600 mb-1">Montant livré</p>
+                          <p className="text-lg font-bold text-green-600">{formatCurrency(montantLivre)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-600 mb-1">Montant non livré</p>
+                          <p className="text-lg font-bold text-red-600">{formatCurrency(montantNonLivre)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-600 mb-1">Commission livreur</p>
+                          <p className="text-lg font-bold text-amber-600">{formatCurrency(commission)}</p>
+                          <p className="text-[11px] text-gray-500">{nbLivres} × {formatCurrency(taux)}</p>
+                        </div>
+                        <div className="col-span-2 md:col-span-1">
+                          <p className="text-xs text-gray-600 mb-1">Net entreprise</p>
+                          <p className="text-lg font-black text-emerald-700">{formatCurrency(montantLivre - commission)}</p>
+                          <p className="text-[11px] text-gray-500">Montant livré − commission</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </>
             )}
 

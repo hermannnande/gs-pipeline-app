@@ -26,6 +26,8 @@ import {
   Activity,
   Crosshair,
   CalendarClock,
+  Wallet,
+  Receipt,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -40,7 +42,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { accountingApi, productsApi } from '@/lib/api';
+import { accountingApi, productsApi, dailyExpensesApi } from '@/lib/api';
 import { formatCurrency } from '@/utils/statusHelpers';
 
 const COLORS = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4', '#84CC16'];
@@ -54,7 +56,7 @@ const PLATFORM_COLORS: Record<string, string> = {
   AUTRE: '#6B7280',
 };
 
-type TabId = 'dashboard' | 'pub' | 'achats' | 'config';
+type TabId = 'dashboard' | 'depots' | 'depenses' | 'pub' | 'achats' | 'config';
 
 export default function Accounting() {
   const queryClient = useQueryClient();
@@ -80,6 +82,8 @@ export default function Accounting() {
 
   const tabs: { id: TabId; label: string; icon: typeof DollarSign }[] = [
     { id: 'dashboard', label: 'Tableau de bord', icon: BarChart3 },
+    { id: 'depots', label: '💰 Dépôts Livreurs', icon: Wallet },
+    { id: 'depenses', label: '🧾 Dépenses', icon: Receipt },
     { id: 'pub', label: 'Depenses Pub', icon: Megaphone },
     { id: 'achats', label: 'Achats Fournisseur', icon: ShoppingCart },
     { id: 'config', label: 'Configuration', icon: Settings },
@@ -182,6 +186,12 @@ export default function Accounting() {
           {activeTab === 'dashboard' && (
             <DashboardTab stats={stats} />
           )}
+          {activeTab === 'depots' && (
+            <DepotsTab stats={stats} queryClient={queryClient} />
+          )}
+          {activeTab === 'depenses' && (
+            <DepensesTab stats={stats} queryClient={queryClient} />
+          )}
           {activeTab === 'pub' && (
             <PubTab
               stats={stats}
@@ -229,12 +239,13 @@ function DashboardTab({ stats }: { stats: any }) {
     { name: 'Publicite', value: stats.depenses.pub.total },
     { name: 'Achats Fournisseur', value: stats.depenses.achats.total },
     { name: 'Commissions Livreurs', value: stats.depenses.commissions.total },
+    { name: 'Dépenses journalières', value: stats.depenses.journalieres?.total || 0 },
   ].filter((d) => d.value > 0);
 
   return (
     <div className="space-y-6">
       {/* KPI principaux */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
           title="Chiffre d'Affaires"
           value={stats.revenus.chiffreAffaires}
@@ -252,7 +263,7 @@ function DashboardTab({ stats }: { stats: any }) {
         <KpiCard
           title="Total Depenses"
           value={stats.depenses.total}
-          subtitle="Pub + Achats + Commissions"
+          subtitle="Pub + Achats + Commissions + Dépenses"
           icon={TrendingDown}
           color="red"
         />
@@ -269,6 +280,20 @@ function DashboardTab({ stats }: { stats: any }) {
           subtitle={`${stats.depenses.commissions.nbLivraisons} x ${formatCurrency(stats.config.commissionLivreurLocal)}`}
           icon={Truck}
           color="amber"
+        />
+        <KpiCard
+          title="💰 Dépôts Livreurs"
+          value={stats.deposits?.totalDepose || 0}
+          subtitle={`attendu ${formatCurrency(stats.deposits?.totalAttendu || 0)} · écart ${formatCurrency(stats.deposits?.totalEcart || 0)}`}
+          icon={Wallet}
+          color="purple"
+        />
+        <KpiCard
+          title="🧾 Dépenses journalières"
+          value={stats.dailyExpenses?.total || 0}
+          subtitle={`${stats.dailyExpenses?.count || 0} dépense(s) sur la période`}
+          icon={Receipt}
+          color="red"
         />
       </div>
 
@@ -700,6 +725,9 @@ function DashboardTab({ stats }: { stats: any }) {
                   <th className="px-4 py-3 text-right text-sm font-semibold">Montant encaisse</th>
                   <th className="px-4 py-3 text-right text-sm font-semibold">Commission prelevee</th>
                   <th className="px-4 py-3 text-right text-sm font-semibold">Net pour vous</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold">Attendu (dépôts)</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold">Déposé</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold">Écart</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -713,6 +741,18 @@ function DashboardTab({ stats }: { stats: any }) {
                     <td className="px-4 py-3 text-right font-bold text-emerald-600">{formatCurrency(l.montant)}</td>
                     <td className="px-4 py-3 text-right text-red-600">{formatCurrency(l.commission)}</td>
                     <td className="px-4 py-3 text-right font-bold text-blue-700">{formatCurrency(l.montant - l.commission)}</td>
+                    {(() => {
+                      const dep = (stats.deposits?.byLivreur || []).find((d: any) => d.nom === l.nom);
+                      return (
+                        <>
+                          <td className="px-4 py-3 text-right text-gray-700">{dep ? formatCurrency(dep.montantAttendu) : '—'}</td>
+                          <td className="px-4 py-3 text-right font-semibold text-emerald-700">{dep ? formatCurrency(dep.montantDepose) : '—'}</td>
+                          <td className={`px-4 py-3 text-right font-semibold ${!dep ? 'text-gray-400' : dep.ecart < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                            {dep ? `${dep.ecart > 0 ? '+' : ''}${formatCurrency(dep.ecart)}` : '—'}
+                          </td>
+                        </>
+                      );
+                    })()}
                   </tr>
                 ))}
               </tbody>
@@ -728,6 +768,15 @@ function DashboardTab({ stats }: { stats: any }) {
                   </td>
                   <td className="px-4 py-3 text-right font-bold text-blue-700">
                     {formatCurrency(stats.topLivreurs.reduce((s: number, l: any) => s + (l.montant - l.commission), 0))}
+                  </td>
+                  <td className="px-4 py-3 text-right font-bold text-gray-800">
+                    {formatCurrency((stats.deposits?.byLivreur || []).reduce((s: number, d: any) => s + d.montantAttendu, 0))}
+                  </td>
+                  <td className="px-4 py-3 text-right font-bold text-emerald-700">
+                    {formatCurrency(stats.deposits?.totalDepose || 0)}
+                  </td>
+                  <td className="px-4 py-3 text-right font-bold">
+                    {formatCurrency(stats.deposits?.totalEcart || 0)}
                   </td>
                 </tr>
               </tfoot>
@@ -1184,6 +1233,271 @@ function ConfigTab({ stats, queryClient }: { stats: any; queryClient: any }) {
 
 // ========================================
 // KPI CARD
+// ========================================
+
+// ========================================
+// DÉPÔTS TAB - Dépôts de fin de journée des livreurs
+// ========================================
+
+function DepotsTab({ stats, queryClient }: { stats: any; queryClient: any }) {
+  const deposits = stats.deposits || { totalAttendu: 0, totalDepose: 0, totalEcart: 0, count: 0, nonVerifies: 0, byLivreur: [], recent: [] };
+
+  const verifyMutation = useMutation({
+    mutationFn: ({ id, statut }: { id: number; statut?: 'DECLARE' | 'VERIFIE' }) => accountingApi.verifyDeposit(id, statut),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['accounting-stats'] });
+    },
+  });
+
+  const ecartColor = (e: number) => (e < 0 ? 'text-red-600' : 'text-emerald-600');
+
+  return (
+    <div className="space-y-6">
+      {/* Résumé global */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="card bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+          <p className="text-sm text-gray-600">Total attendu entreprise</p>
+          <p className="text-2xl font-bold text-blue-700">{formatCurrency(deposits.totalAttendu)}</p>
+          <p className="text-xs text-gray-500 mt-1">{deposits.count} dépôt(s) sur la période</p>
+        </div>
+        <div className="card bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200">
+          <p className="text-sm text-gray-600">Total déposé par les livreurs</p>
+          <p className="text-2xl font-bold text-emerald-700">{formatCurrency(deposits.totalDepose)}</p>
+          <p className="text-xs text-gray-500 mt-1">{deposits.nonVerifies} non vérifié(s)</p>
+        </div>
+        <div className="card bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200">
+          <p className="text-sm text-gray-600">Écart global</p>
+          <p className={`text-2xl font-bold ${ecartColor(deposits.totalEcart)}`}>
+            {deposits.totalEcart > 0 ? '+' : ''}{formatCurrency(deposits.totalEcart)}
+          </p>
+          <p className="text-xs text-gray-500 mt-1">Négatif = manquant à récupérer</p>
+        </div>
+      </div>
+
+      {/* Par livreur */}
+      <div className="card">
+        <div className="flex items-center gap-2 mb-4">
+          <Truck className="text-emerald-600" size={20} />
+          <h2 className="text-lg font-semibold">Dépôts par livreur</h2>
+        </div>
+        {deposits.byLivreur.length === 0 ? (
+          <p className="text-center py-8 text-gray-500">Aucun dépôt déclaré sur la période</p>
+        ) : (
+          <div className="overflow-x-auto border border-gray-200 rounded-lg">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b-2 border-gray-200 bg-gray-50">
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Livreur</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold">Jours</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold">Livraisons</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold">Collecté</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold">Commission</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold">Attendu</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold">Déposé</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold">Écart</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {deposits.byLivreur.map((l: any) => (
+                  <tr key={l.livreurId} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 font-medium">{l.nom}</td>
+                    <td className="px-4 py-3 text-center">{l.nbJours}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-semibold text-sm">{l.nbLivraisons}</span>
+                    </td>
+                    <td className="px-4 py-3 text-right">{formatCurrency(l.montantCollecte)}</td>
+                    <td className="px-4 py-3 text-right text-red-600">{formatCurrency(l.totalCommission)}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-blue-700">{formatCurrency(l.montantAttendu)}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-emerald-700">{formatCurrency(l.montantDepose)}</td>
+                    <td className={`px-4 py-3 text-right font-bold ${ecartColor(l.ecart)}`}>
+                      {l.ecart > 0 ? '+' : ''}{formatCurrency(l.ecart)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Dépôts récents avec vérification ADMIN */}
+      <div className="card">
+        <div className="flex items-center gap-2 mb-4">
+          <CheckCircle className="text-emerald-600" size={20} />
+          <h2 className="text-lg font-semibold">Dépôts récents (vérification)</h2>
+        </div>
+        {deposits.recent.length === 0 ? (
+          <p className="text-center py-8 text-gray-500">Aucun dépôt sur la période</p>
+        ) : (
+          <div className="overflow-x-auto border border-gray-200 rounded-lg">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b-2 border-gray-200 bg-gray-50">
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Date</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Livreur</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold">Livr.</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold">Attendu</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold">Déposé</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold">Écart</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold">Statut</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {deposits.recent.map((d: any) => (
+                  <tr key={d.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm">{new Date(d.date).toLocaleDateString('fr-FR')}</td>
+                    <td className="px-4 py-3 font-medium">{d.livreur ? `${d.livreur.prenom} ${d.livreur.nom}` : `#${d.livreurId}`}</td>
+                    <td className="px-4 py-3 text-center">{d.nbLivraisons}</td>
+                    <td className="px-4 py-3 text-right text-blue-700">{formatCurrency(d.montantAttendu)}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-emerald-700">{formatCurrency(d.montantDepose)}</td>
+                    <td className={`px-4 py-3 text-right font-bold ${ecartColor(d.ecart)}`}>
+                      {d.ecart > 0 ? '+' : ''}{formatCurrency(d.ecart)}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`badge ${d.statut === 'VERIFIE' ? 'bg-emerald-100 text-emerald-800' : 'bg-orange-100 text-orange-800'}`}>
+                        {d.statut === 'VERIFIE' ? '✓ Vérifié' : 'Déclaré'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={() => verifyMutation.mutate({ id: d.id })}
+                        disabled={verifyMutation.isPending}
+                        className={`btn btn-sm ${d.statut === 'VERIFIE' ? 'btn-secondary' : 'btn-primary'}`}
+                      >
+                        {d.statut === 'VERIFIE' ? 'Déverrouiller' : 'Vérifier'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ========================================
+// DÉPENSES TAB - Dépenses journalières diverses
+// ========================================
+
+function DepensesTab({ stats, queryClient }: { stats: any; queryClient: any }) {
+  const CATEGORIES = ['TRANSPORT', 'CARBURANT', 'EMBALLAGE', 'COMMUNICATION', 'DIVERS'];
+  const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], libelle: '', montant: '', categorie: 'DIVERS' });
+
+  const list = stats.dailyExpenses?.list || [];
+
+  const createMutation = useMutation({
+    mutationFn: (payload: any) => dailyExpensesApi.create(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['accounting-stats'] });
+      setForm({ date: new Date().toISOString().split('T')[0], libelle: '', montant: '', categorie: 'DIVERS' });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => dailyExpensesApi.remove(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['accounting-stats'] });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const m = parseFloat(form.montant);
+    if (!form.libelle.trim() || isNaN(m) || m <= 0) return;
+    createMutation.mutate({ ...form, libelle: form.libelle.trim(), montant: m });
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Formulaire d'ajout */}
+      <div className="card">
+        <div className="flex items-center gap-2 mb-4">
+          <PlusCircle className="text-emerald-600" size={20} />
+          <h2 className="text-lg font-semibold">Ajouter une dépense</h2>
+        </div>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-5 gap-3">
+          <input
+            type="text"
+            value={form.libelle}
+            onChange={(e) => setForm({ ...form, libelle: e.target.value })}
+            placeholder="Libellé (ex. Carburant tournée, emballages…)"
+            required
+            className="input md:col-span-2"
+          />
+          <input
+            type="number"
+            min="1"
+            step="100"
+            value={form.montant}
+            onChange={(e) => setForm({ ...form, montant: e.target.value })}
+            placeholder="Montant (F)"
+            required
+            className="input"
+          />
+          <select value={form.categorie} onChange={(e) => setForm({ ...form, categorie: e.target.value })} className="input">
+            {CATEGORIES.map((c) => (
+              <option key={c} value={c}>{c.charAt(0) + c.slice(1).toLowerCase()}</option>
+            ))}
+          </select>
+          <div className="flex gap-2">
+            <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="input flex-1" />
+            <button type="submit" disabled={createMutation.isPending} className="btn btn-primary shrink-0">
+              Ajouter
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Liste de la période */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Receipt className="text-emerald-600" size={20} />
+            <h2 className="text-lg font-semibold">Dépenses de la période</h2>
+          </div>
+          <span className="text-sm font-bold text-red-600">
+            Total : {formatCurrency(stats.dailyExpenses?.total || 0)} ({stats.dailyExpenses?.count || 0})
+          </span>
+        </div>
+        {list.length === 0 ? (
+          <p className="text-center py-8 text-gray-500">Aucune dépense journalière sur la période</p>
+        ) : (
+          <div className="space-y-2">
+            {list.map((e: any) => (
+              <div key={e.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-gray-900 truncate">{e.libelle}</p>
+                  <p className="text-xs text-gray-500">
+                    {new Date(e.date).toLocaleDateString('fr-FR')} · <span className="badge bg-gray-200 text-gray-700">{e.categorie}</span>
+                    {e.createdBy && <span className="ml-2">par {e.createdBy.prenom} {e.createdBy.nom}</span>}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 ml-3">
+                  <span className="font-bold text-gray-900">{formatCurrency(e.montant)}</span>
+                  <button
+                    onClick={() => deleteMutation.mutate(e.id)}
+                    disabled={deleteMutation.isPending}
+                    title="Supprimer"
+                    className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ========================================
+// KPI CARD COMPONENT
 // ========================================
 
 function KpiCard({ title, value, subtitle, icon: Icon, color }: { title: string; value: number; subtitle: string; icon: any; color: string }) {

@@ -78,6 +78,10 @@ router.get('/tournees', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STOCK')
       orderBy: { createdAt: 'desc' } // Tri par date de création (les plus récentes en premier)
     });
 
+    // Taux de commission livreur (lu une fois pour toutes les tournées)
+    const config = await prisma.accountingConfig.findUnique({ where: { companyId: req.user.companyId } });
+    const commissionTaux = config?.commissionLivreurLocal || 1500;
+
     // Calculer les statistiques pour chaque tournée
     const now = new Date();
     const tourneesWithStats = deliveryLists.map(list => {
@@ -126,7 +130,9 @@ router.get('/tournees', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STOCK')
           dateRetour: list.tourneeStock?.colisRetourAt,
           joursChezLivreur,
           alerteRetard,
-          alerteCritique
+          alerteCritique,
+          commissionTaux,
+          commissionLivreur: colisLivres * commissionTaux
         }
       };
     });
@@ -202,8 +208,12 @@ router.get('/tournees/:id', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STO
     const colisRemis = deliveryList.tourneeStock?.colisRemis || deliveryList.orders.length;
     const colisLivres = countColisLivres(deliveryList.orders);
     const colisRestants = dateRetour ? 0 : (colisRemis - colisLivres);
-    
-    res.json({ 
+
+    // Commission livreur de la tournée (LIVREE + LIVREE_PARTIELLE × taux courant)
+    const config = await prisma.accountingConfig.findUnique({ where: { companyId: req.user.companyId } });
+    const commissionTaux = config?.commissionLivreurLocal || 1500;
+
+    res.json({
       tournee: deliveryList,
       produitsSummary: Object.values(produitsSummary),
       stats: {
@@ -215,7 +225,9 @@ router.get('/tournees/:id', authorize('ADMIN', 'GESTIONNAIRE', 'GESTIONNAIRE_STO
         dateRetour,
         joursChezLivreur,
         alerteRetard: joursChezLivreur > 2 && colisRestants > 0,
-        alerteCritique: joursChezLivreur > 5 && colisRestants > 0
+        alerteCritique: joursChezLivreur > 5 && colisRestants > 0,
+        commissionTaux,
+        commissionLivreur: colisLivres * commissionTaux
       }
     });
   } catch (error) {

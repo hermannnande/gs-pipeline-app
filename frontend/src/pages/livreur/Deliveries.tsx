@@ -31,11 +31,42 @@ export default function Deliveries() {
   // Mode "saisie quantite partielle" affiche dans la modal
   const [showPartialInput, setShowPartialInput] = useState(false);
   const queryClient = useQueryClient();
+  // Montant saisi pour le dépôt de fin de journée
+  const [depositAmount, setDepositAmount] = useState('');
 
   const { data: ordersData, isLoading } = useQuery({
     queryKey: ['livreur-deliveries', selectedDate],
     queryFn: () => deliveryApi.getMyOrders({ date: selectedDate }),
   });
+
+  // 💰 Bilan de journée : livraisons, collecté, commission, net attendu, dépôt.
+  // Suit la même date que la liste (selectedDate) et se rafraîchit à chaque livraison.
+  const { data: summary, isLoading: summaryLoading } = useQuery({
+    queryKey: ['livreur-day-summary', selectedDate],
+    queryFn: () => deliveryApi.getMyDaySummary(selectedDate),
+  });
+
+  const depositMutation = useMutation({
+    mutationFn: (montant: number) => deliveryApi.declareMyDeposit(selectedDate, montant),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['livreur-day-summary'] });
+      setDepositAmount('');
+      toast.success('Dépôt déclaré avec succès 💰');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Erreur lors de la déclaration du dépôt');
+    },
+  });
+
+  const handleDeposit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const montant = parseFloat(depositAmount);
+    if (isNaN(montant) || montant < 0) {
+      toast.error('Montant invalide (nombre ≥ 0 attendu).');
+      return;
+    }
+    depositMutation.mutate(montant);
+  };
 
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status, note, quantiteLivree }: { id: number; status: string; note?: string; quantiteLivree?: number }) =>
@@ -43,6 +74,8 @@ export default function Deliveries() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['livreur-deliveries'] });
       queryClient.invalidateQueries({ queryKey: ['livreur-my-stats'] });
+      // Le bilan (collecté, commission, net attendu) bouge à chaque livraison
+      queryClient.invalidateQueries({ queryKey: ['livreur-day-summary'] });
       setSelectedOrder(null);
       setNote('');
       setMotifError(false);
@@ -114,6 +147,97 @@ export default function Deliveries() {
           <p className="text-sm text-gray-600">Complétées</p>
           <p className="text-2xl font-bold text-green-600">{completedOrders.length}</p>
         </div>
+      </div>
+
+      {/* 💰 Bilan de ma journée */}
+      <div className="card border-2 border-emerald-200 bg-emerald-50/40">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">💰 Bilan de ma journée</h2>
+          <span className="text-xs font-medium text-gray-500">{new Date(selectedDate + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+        </div>
+
+        {summaryLoading ? (
+          <div className="flex justify-center py-6">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+          </div>
+        ) : summary && (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="rounded-xl bg-white p-3 ring-1 ring-gray-200">
+                <p className="text-xs text-gray-500">Livraisons</p>
+                <p className="text-xl font-bold text-gray-900">{summary.nbLivraisons}</p>
+                <p className="text-[11px] text-gray-500">
+                  {summary.nbLivraisons - summary.nbPartielles} livrée{(summary.nbLivraisons - summary.nbPartielles) > 1 ? 's' : ''}
+                  {summary.nbPartielles > 0 ? ` · ${summary.nbPartielles} partielle${summary.nbPartielles > 1 ? 's' : ''}` : ''}
+                </p>
+              </div>
+              <div className="rounded-xl bg-white p-3 ring-1 ring-gray-200">
+                <p className="text-xs text-gray-500">Montant collecté</p>
+                <p className="text-xl font-bold text-gray-900">{formatCurrency(summary.montantCollecte)}</p>
+              </div>
+              <div className="rounded-xl bg-white p-3 ring-1 ring-gray-200">
+                <p className="text-xs text-gray-500">Ma commission</p>
+                <p className="text-xl font-bold text-primary-600">{formatCurrency(summary.totalCommission)}</p>
+                <p className="text-[11px] text-gray-500">{summary.nbLivraisons} × {formatCurrency(summary.commissionParLivraison)}</p>
+              </div>
+              <div className="rounded-xl bg-emerald-100 p-3 ring-2 ring-emerald-500">
+                <p className="text-xs font-semibold text-emerald-800">Net à reverser à l'entreprise</p>
+                <p className="text-xl font-black text-emerald-700">{formatCurrency(summary.montantAttendu)}</p>
+              </div>
+            </div>
+
+            {/* Zone dépôt */}
+            {summary.deposit ? (
+              <div className="mt-4 rounded-xl bg-white p-4 ring-1 ring-gray-200">
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                  <div>
+                    <p className="text-xs text-gray-500">Montant déposé</p>
+                    <p className="text-lg font-bold text-gray-900">{formatCurrency(summary.deposit.montantDepose)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Écart</p>
+                    <p className={`text-lg font-bold ${summary.deposit.ecart < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                      {summary.deposit.ecart === 0
+                        ? '✓ Exact'
+                        : `${summary.deposit.ecart > 0 ? '+' : ''}${formatCurrency(summary.deposit.ecart)}${summary.deposit.ecart < 0 ? ' (manquant)' : ' (surplus)'}`}
+                    </p>
+                  </div>
+                  <span className={`ml-auto badge ${summary.deposit.statut === 'VERIFIE' ? 'bg-emerald-100 text-emerald-800' : 'bg-orange-100 text-orange-800'}`}>
+                    {summary.deposit.statut === 'VERIFIE' ? '✓ Vérifié par l\'admin' : 'Déclaré · en attente de vérification'}
+                  </span>
+                </div>
+                {summary.deposit.statut === 'VERIFIE' && (
+                  <p className="mt-2 text-[11px] text-gray-500">🔒 Dépôt vérifié : lecture seule.</p>
+                )}
+              </div>
+            ) : (
+              <form onSubmit={handleDeposit} className="mt-4 flex flex-col sm:flex-row sm:items-end gap-3">
+                <div className="flex-1">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Montant déposé ce soir <span className="font-normal text-gray-500">(attendu : {formatCurrency(summary.montantAttendu)})</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="100"
+                    required
+                    value={depositAmount}
+                    onChange={(e) => setDepositAmount(e.target.value)}
+                    placeholder="Ex. 15000"
+                    className="input"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={depositMutation.isPending}
+                  className="btn btn-primary shrink-0"
+                >
+                  {depositMutation.isPending ? 'Envoi…' : 'Confirmer mon dépôt'}
+                </button>
+              </form>
+            )}
+          </>
+        )}
       </div>
 
       {isLoading ? (

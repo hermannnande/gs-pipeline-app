@@ -13,6 +13,7 @@ import RDV from '../appelant/RDV';
 import Chat from '../common/Chat';
 import LiveraisonEnCours from '../stock/LiveraisonEnCours';
 import CallRecordings from '../admin/CallRecordings';
+import Depenses from './Depenses';
 
 export default function GestionnaireDashboard() {
   return (
@@ -29,6 +30,7 @@ export default function GestionnaireDashboard() {
       <Route path="users" element={<Users />} />
       <Route path="supervision" element={<CallerSupervision />} />
       <Route path="call-recordings" element={<CallRecordings />} />
+      <Route path="depenses" element={<Depenses />} />
       <Route path="stats" element={<Stats />} />
       <Route path="chat" element={<Chat />} />
     </Routes>

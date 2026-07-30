@@ -231,6 +231,36 @@ export const deliveryApi = {
     const { data } = await api.get('/delivery/my-orders', { params });
     return data;
   },
+
+  // Bilan de journée du livreur (livraisons, collecté, commission, net attendu, dépôt)
+  getMyDaySummary: async (date?: string) => {
+    const { data } = await api.get('/delivery/my-day-summary', { params: { date } });
+    return data;
+  },
+
+  // Déclarer son dépôt de fin de journée
+  declareMyDeposit: async (date: string, montantDepose: number) => {
+    const { data } = await api.post('/delivery/my-deposit', { date, montantDepose });
+    return data;
+  },
+};
+
+// Daily Expenses API (dépenses journalières gestionnaire/admin)
+export const dailyExpensesApi = {
+  list: async (params?: { from?: string; to?: string }) => {
+    const { data } = await api.get('/daily-expenses', { params });
+    return data;
+  },
+
+  create: async (payload: { date: string; libelle: string; montant: number; categorie?: string }) => {
+    const { data } = await api.post('/daily-expenses', payload);
+    return data;
+  },
+
+  remove: async (id: number) => {
+    const { data } = await api.delete(`/daily-expenses/${id}`);
+    return data;
+  },
 };
 
 // Stats API
@@ -400,6 +430,10 @@ export const accountingApi = {
   },
   updateConfig: async (payload: { commissionLivreurLocal: number }) => {
     const { data } = await api.put('/accounting/config', payload);
+    return data;
+  },
+  verifyDeposit: async (id: number, statut?: 'DECLARE' | 'VERIFIE') => {
+    const { data } = await api.patch(`/accounting/deposits/${id}/verify`, statut ? { statut } : {});
     return data;
   },
 };

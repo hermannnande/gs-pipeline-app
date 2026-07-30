@@ -110,7 +110,7 @@ router.get('/stats', async (req, res) => {
         where: {
           companyId,
           OR: [
-            { deliveryType: 'LOCAL', status: 'LIVREE', deliveredAt: { gte: startDate, lte: endDate } },
+            { deliveryType: 'LOCAL', status: { in: ['LIVREE', 'LIVREE_PARTIELLE'] }, deliveredAt: { gte: startDate, lte: endDate } },
             { deliveryType: 'EXPEDITION', status: 'EXPEDITION', expedieAt: { gte: startDate, lte: endDate } },
             { deliveryType: 'EXPRESS', status: 'EXPRESS', expedieAt: { gte: startDate, lte: endDate } },
             { deliveryType: 'EXPRESS', status: { in: ['EXPRESS_ARRIVE', 'EXPRESS_LIVRE'] }, arriveAt: { gte: startDate, lte: endDate } },
@@ -159,11 +159,20 @@ router.get('/stats', async (req, res) => {
     // REVENUS
     // CA = uniquement les livraisons confirmees par le livreur (clic "livré")
     const livraisonsLocales = commandes.filter((c) => c.deliveryType === 'LOCAL' && c.status === 'LIVREE');
+    // LIVREE_PARTIELLE : chargées pour la COMMISSION (1500 F/livraison compte aussi
+    // les partielles — règle métier). Le CA local reste sur les LIVREE complètes.
+    const livraisonsPartielles = commandes.filter((c) => c.deliveryType === 'LOCAL' && c.status === 'LIVREE_PARTIELLE');
     const expeditions = commandes.filter((c) => c.deliveryType === 'EXPEDITION' && c.status === 'EXPEDITION');
     const expressAvance = commandes.filter((c) => c.deliveryType === 'EXPRESS' && c.status === 'EXPRESS');
     const expressRetrait = commandes.filter((c) => c.deliveryType === 'EXPRESS' && ['EXPRESS_ARRIVE', 'EXPRESS_LIVRE'].includes(c.status));
 
     const revenuLocal = livraisonsLocales.reduce((s, c) => s + c.montant, 0);
+    // Collecté livreur = CA local + partielles au prorata (quantiteLivree/quantite)
+    const collectePartielles = livraisonsPartielles.reduce((s, c) => {
+      const qte = c.quantite || 1;
+      const livree = c.quantiteLivree ?? qte;
+      return s + (c.montant * livree) / qte;
+    }, 0);
     const revenuExpedition = expeditions.reduce((s, c) => s + c.montant, 0);
     const revenuExpressAv = expressAvance.reduce((s, c) => s + c.montant * 0.1, 0);
     const revenuExpressRet = expressRetrait.reduce((s, c) => s + c.montant * 0.9, 0);
@@ -178,8 +187,58 @@ router.get('/stats', async (req, res) => {
       computeDailyAdSpend(allAdBudgets, startDate, endDate);
 
     const totalAchats = purchases.reduce((s, p) => s + p.coutTotalRevient, 0);
-    const totalCommissionsLivreur = livraisonsLocales.length * commissionParLivraison;
-    const totalDepenses = totalPub + totalAchats + totalCommissionsLivreur;
+    // COMMISSION LIVREURS : LIVREE + LIVREE_PARTIELLE (règle métier — cohérente
+    // avec le bilan de journée affiché au livreur et les tournées)
+    const nbLivraisonsCommission = livraisonsLocales.length + livraisonsPartielles.length;
+    const totalCommissionsLivreur = nbLivraisonsCommission * commissionParLivraison;
+
+    // DÉPÔTS LIVREURS + DÉPENSES JOURNALIÈRES de la période
+    const [deposits, dailyExpensesList] = await Promise.all([
+      prisma.livreurDeposit.findMany({
+        where: { companyId, date: { gte: startDate, lte: endDate } },
+        include: { livreur: { select: { id: true, nom: true, prenom: true } } },
+        orderBy: { date: 'desc' },
+      }),
+      prisma.dailyExpense.findMany({
+        where: { companyId, date: { gte: startDate, lte: endDate } },
+        include: { createdBy: { select: { id: true, nom: true, prenom: true } } },
+        orderBy: { date: 'desc' },
+      }),
+    ]);
+    const totalDailyExpenses = dailyExpensesList.reduce((s, e) => s + e.montant, 0);
+    const totalDepenses = totalPub + totalAchats + totalCommissionsLivreur + totalDailyExpenses;
+
+    // Agrégation des dépôts : totaux, par livreur, 20 récents
+    const depositsByLivreur = {};
+    for (const d of deposits) {
+      const key = d.livreurId;
+      if (!depositsByLivreur[key]) {
+        depositsByLivreur[key] = {
+          livreurId: d.livreurId,
+          nom: d.livreur ? `${d.livreur.prenom} ${d.livreur.nom}` : `#${d.livreurId}`,
+          nbJours: 0, nbLivraisons: 0, montantCollecte: 0, totalCommission: 0,
+          montantAttendu: 0, montantDepose: 0, ecart: 0, statuts: [],
+        };
+      }
+      const b = depositsByLivreur[key];
+      b.nbJours++;
+      b.nbLivraisons += d.nbLivraisons;
+      b.montantCollecte += d.montantCollecte;
+      b.totalCommission += d.totalCommission;
+      b.montantAttendu += d.montantAttendu;
+      b.montantDepose += d.montantDepose;
+      b.ecart += d.ecart;
+      b.statuts.push(d.statut);
+    }
+    const depositsStats = {
+      totalAttendu: deposits.reduce((s, d) => s + d.montantAttendu, 0),
+      totalDepose: deposits.reduce((s, d) => s + d.montantDepose, 0),
+      totalEcart: deposits.reduce((s, d) => s + d.ecart, 0),
+      count: deposits.length,
+      nonVerifies: deposits.filter((d) => d.statut !== 'VERIFIE').length,
+      byLivreur: Object.values(depositsByLivreur).sort((a, b) => b.montantAttendu - a.montantAttendu),
+      recent: deposits.slice(0, 20),
+    };
 
     // MARGE (basee sur le total encaisse, pas seulement LOCAL)
     const margeNette = revenuTotal - totalDepenses;
@@ -197,6 +256,9 @@ router.get('/stats', async (req, res) => {
       }
       if (c.deliveryType === 'LOCAL' && c.status === 'LIVREE') {
         parProduit[pid].revenu += c.montant;
+        parProduit[pid].commissions += commissionParLivraison;
+      } else if (c.deliveryType === 'LOCAL' && c.status === 'LIVREE_PARTIELLE') {
+        // Partielle : commission comptée (pas de revenu, cohérent avec le CA local)
         parProduit[pid].commissions += commissionParLivraison;
       } else if (c.deliveryType === 'EXPEDITION') {
         parProduit[pid].revenu += c.montant;
@@ -241,7 +303,7 @@ router.get('/stats', async (req, res) => {
         + cJour.filter((c) => ['EXPRESS_ARRIVE', 'EXPRESS_LIVRE'].includes(c.status)).reduce((s, c) => s + c.montant * 0.9, 0);
 
       const pubJourMontant = pubParJour[dateStr] || 0;
-      const commJour = localJour.length * commissionParLivraison;
+      const commJour = (localJour.length + cJour.filter((c) => c.deliveryType === 'LOCAL' && c.status === 'LIVREE_PARTIELLE').length) * commissionParLivraison;
 
       evolutionJournaliere.push({
         date: dateStr,
@@ -254,16 +316,22 @@ router.get('/stats', async (req, res) => {
       currentDate.setUTCDate(currentDate.getUTCDate() + 1);
     }
 
-    // Top livreurs
+    // Top livreurs (LIVREE + LIVREE_PARTIELLE au prorata, commission sur les deux)
     const livreurStats = {};
-    livraisonsLocales.forEach((c) => {
+    const accumulateLivreur = (c, montantCredit) => {
       if (c.deliverer) {
         const key = `${c.deliverer.prenom} ${c.deliverer.nom}`;
         if (!livreurStats[key]) livreurStats[key] = { nom: key, montant: 0, nombre: 0, commission: 0 };
-        livreurStats[key].montant += c.montant;
+        livreurStats[key].montant += montantCredit;
         livreurStats[key].nombre++;
         livreurStats[key].commission += commissionParLivraison;
       }
+    };
+    livraisonsLocales.forEach((c) => accumulateLivreur(c, c.montant));
+    livraisonsPartielles.forEach((c) => {
+      const qte = c.quantite || 1;
+      const livree = c.quantiteLivree ?? qte;
+      accumulateLivreur(c, (c.montant * livree) / qte);
     });
     const topLivreurs = Object.values(livreurStats).sort((a, b) => b.montant - a.montant);
 
@@ -487,10 +555,13 @@ router.get('/stats', async (req, res) => {
           nbJours,
         },
         achats: { total: totalAchats, details: purchases },
-        commissions: { total: totalCommissionsLivreur, parLivraison: commissionParLivraison, nbLivraisons: livraisonsLocales.length },
+        commissions: { total: totalCommissionsLivreur, parLivraison: commissionParLivraison, nbLivraisons: nbLivraisonsCommission },
+        journalieres: { total: totalDailyExpenses, count: dailyExpensesList.length },
         total: totalDepenses,
       },
       marge: { nette: margeNette, pourcentage: parseFloat(margePourcent) },
+      deposits: depositsStats,
+      dailyExpenses: { total: totalDailyExpenses, count: dailyExpensesList.length, list: dailyExpensesList },
       parProduit: produits,
       evolutionJournaliere,
       topLivreurs,
@@ -696,6 +767,48 @@ router.put('/config', async (req, res) => {
   } catch (error) {
     console.error('Erreur update config:', error);
     res.status(500).json({ error: 'Erreur mise a jour config.' });
+  }
+});
+
+// ========================================
+// DÉPÔTS LIVREURS — vérification ADMIN
+// ========================================
+
+// PATCH /api/accounting/deposits/:id/verify { statut? } — bascule DECLARE ↔ VERIFIE.
+// Body vide ou statut absent = toggle. Pose verifiedById/verifiedAt (null si retour à DECLARE).
+router.patch('/deposits/:id/verify', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'id invalide.' });
+
+    const deposit = await prisma.livreurDeposit.findFirst({
+      where: { id, companyId: req.user.companyId },
+    });
+    if (!deposit) {
+      return res.status(404).json({ error: 'Dépôt non trouvé.' });
+    }
+
+    const target = ['DECLARE', 'VERIFIE'].includes(req.body?.statut)
+      ? req.body.statut
+      : (deposit.statut === 'VERIFIE' ? 'DECLARE' : 'VERIFIE');
+
+    const updated = await prisma.livreurDeposit.update({
+      where: { id: deposit.id },
+      data: {
+        statut: target,
+        verifiedById: target === 'VERIFIE' ? req.user.id : null,
+        verifiedAt: target === 'VERIFIE' ? new Date() : null,
+      },
+      include: {
+        livreur: { select: { id: true, nom: true, prenom: true } },
+        verifiedBy: { select: { id: true, nom: true, prenom: true } },
+      },
+    });
+
+    res.json({ deposit: updated });
+  } catch (error) {
+    console.error('Erreur vérification dépôt:', error);
+    res.status(500).json({ error: 'Erreur lors de la vérification du dépôt.' });
   }
 });
 

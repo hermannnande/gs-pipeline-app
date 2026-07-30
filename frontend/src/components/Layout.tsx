@@ -27,6 +27,7 @@ import {
   MessageCircle,
   FileText,
   Headphones,
+  Receipt,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { api, getActiveCompanyId, setActiveCompanyId } from '@/lib/api';
@@ -112,6 +113,7 @@ export default function Layout({ children }: LayoutProps) {
           { icon: Users, label: 'Utilisateurs', path: '/gestionnaire/users' },
           { icon: Eye, label: 'Supervision Appelants', path: '/gestionnaire/supervision' },
           { icon: Headphones, label: '🎧 Enregistrements', path: '/gestionnaire/call-recordings' },
+          { icon: Receipt, label: '🧾 Dépenses', path: '/gestionnaire/depenses' },
           { icon: BarChart3, label: 'Statistiques', path: '/gestionnaire/stats' },
         ];
       case 'GESTIONNAIRE_STOCK':

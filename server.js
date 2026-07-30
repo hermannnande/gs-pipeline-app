@@ -26,6 +26,7 @@ import templateRoutes from './routes/template.routes.js';
 import chariowRoutes from './routes/chariow.routes.js';
 import paystackRoutes from './routes/paystack.routes.js';
 import callRecordingRoutes from './routes/callrecordings.routes.js';
+import dailyExpenseRoutes from './routes/daily-expenses.routes.js';
 import { scheduleCleanupJob } from './jobs/cleanupPhotos.js';
 import { initializeChatSocket } from './utils/chatSocket.js';
 import { setSocketServers } from './utils/socket.js';
@@ -104,6 +105,7 @@ app.use('/api/templates', templateRoutes);
 app.use('/api/chariow', chariowRoutes);
 app.use('/api/paystack', paystackRoutes);
 app.use('/api/call-recordings', callRecordingRoutes);
+app.use('/api/daily-expenses', dailyExpenseRoutes);
 
 // Servir les fichiers uploadés
 app.use('/uploads', express.static('uploads'));
