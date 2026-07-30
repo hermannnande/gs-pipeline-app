@@ -34,11 +34,11 @@ const QTY_OPTS = [
 
 const M = (n: string) => `/ajusteur-ceinture/${n}`;
 const MEDIA = {
-  heroImg: M('a11.webp'),        // image hero sous le titre (avant/après « Ajustez. Confort. Élégance. »)
+  heroImg: M('a05.webp'),        // image hero sous le titre (jean qui baille au dos)
   // 4 images RÉSERVÉES au carrousel file d'attente (jamais utilisées ailleurs).
   carousel: [M('a01.webp'), M('a02.webp'), M('a03.webp'), M('a04.webp')],
   // 6 images seules + 3 vidéos = 9 blocs classiques.
-  dosBaille: M('a05.webp'),
+  dosBaille: M('a11.webp'),
   pertePoids: M('a06.webp'),
   invisible: M('a07.webp'),
   crochets: M('a08.webp'),
