@@ -34,6 +34,7 @@ const QTY_OPTS = [
 
 const M = (n: string) => `/ajusteur-ceinture/${n}`;
 const MEDIA = {
+  heroImg: M('a11.webp'),        // image hero sous le titre (avant/après « Ajustez. Confort. Élégance. »)
   // 4 images RÉSERVÉES au carrousel file d'attente (jamais utilisées ailleurs).
   carousel: [M('a01.webp'), M('a02.webp'), M('a03.webp'), M('a04.webp')],
   // 6 images seules + 3 vidéos = 9 blocs classiques.
@@ -555,7 +556,15 @@ export default function AjusteurCeintureLanding() {
           <h1 className="mt-6 text-[31px] font-black leading-[1.1] sm:text-[40px]">
             Pantalon trop large ? <span className="bg-gradient-to-r from-[#FCD34D] via-[#F59E0B] to-[#FCD34D] bg-clip-text text-transparent">Resserrez-le en 5 secondes, sans couture.</span>
           </h1>
-          <p className="mx-auto mt-3 max-w-[440px] text-[13.5px] leading-relaxed text-white/75 sm:text-[15px]">
+
+          <div className="relative mx-auto mt-6 max-w-[380px]">
+            <div className="absolute -inset-3 rounded-[34px] bg-gradient-to-br from-[#3B82F6]/30 via-[#6D28D9]/25 to-[#F59E0B]/30 blur-xl" />
+            <div className="relative overflow-hidden rounded-[28px] shadow-2xl ring-1 ring-white/30">
+              <LazyImg src={MEDIA.heroImg} alt="Avant après : pantalon trop large à la taille corrigé par l'ajusteur de ceinture élastique à crochets métalliques — ajustez, confort, élégance" aspect="960/1200" priority />
+            </div>
+          </div>
+
+          <p className="mx-auto mt-5 max-w-[440px] text-[13.5px] leading-relaxed text-white/75 sm:text-[15px]">
             L'ajusteur élastique à crochets métalliques qui rapproche les côtés de votre pantalon. Invisible, solide, sans couturier.
           </p>
 
