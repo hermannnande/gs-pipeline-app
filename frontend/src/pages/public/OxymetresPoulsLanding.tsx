@@ -25,7 +25,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'oxymetre-pouls';
 const PRODUCT_CODE = 'OXYMETRE_POULS';
 const CONTENT_NAME = 'Oxymètre de Pouls Digital';
-const META_PIXEL_ID = ''; // Pixel Meta : le client le fournira plus tard (init conditionnée)
+const META_PIXEL_ID = '1333239138939400'; // Pixel Meta achat - page oxymètre de pouls (campagnes Meta)
 const THANK_YOU_URL = '/oxymetre-pouls/merci';
 
 const PRICES: Record<number, number> = { 1: 8500, 2: 15900, 3: 22900 };

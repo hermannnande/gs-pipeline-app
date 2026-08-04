@@ -8,7 +8,7 @@ import axios from 'axios';
 import { orderTotal } from '../../utils/pricingHelpers';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
-const META_PIXEL_ID = ''; // Pixel Meta : le client le fournira plus tard (event: Purchase conditionné)
+const META_PIXEL_ID = '1333239138939400'; // Pixel Meta achat - page oxymètre de pouls (event: Purchase)
 const SLUG = 'oxymetre-pouls';
 const PRODUCT_CODE = 'OXYMETRE_POULS';
 const PRICES: Record<number, number> = { 1: 8500, 2: 15900, 3: 22900 };
