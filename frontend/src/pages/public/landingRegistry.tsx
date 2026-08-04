@@ -76,6 +76,7 @@ export const LANDING_COMPONENTS: Record<string, LazyLanding> = {
   'ajusteur-ceinture': lazy(() => import('./AjusteurCeintureLanding')),
   'ajusteur-ceinture-tk': lazy(() => import('./AjusteurCeintureTkLanding')),
   'oxymetre-pouls': lazy(() => import('./OxymetresPoulsLanding')),
+  'oxymetre-pouls-tk': lazy(() => import('./OxymetresPoulsTkLanding')),
 };
 
 export const AUTONOMOUS_LANDING_SLUGS = new Set(Object.keys(LANDING_COMPONENTS));

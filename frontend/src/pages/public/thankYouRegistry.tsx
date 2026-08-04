@@ -65,6 +65,7 @@ export const THANKYOU_COMPONENTS: Record<string, LazyThankYou> = {
   'ajusteur-ceinture': lazy(() => import('./AjusteurCeintureThankYou')),
   'ajusteur-ceinture-tk': lazy(() => import('./AjusteurCeintureTkThankYou')),
   'oxymetre-pouls': lazy(() => import('./OxymetresPoulsThankYou')),
+  'oxymetre-pouls-tk': lazy(() => import('./OxymetresPoulsTkThankYou')),
 };
 
 export const DEDICATED_THANKYOU_SLUGS = new Set(Object.keys(THANKYOU_COMPONENTS));
