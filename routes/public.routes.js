@@ -254,6 +254,20 @@ router.post('/product-orders/:id/note', async (req, res) => {
   }
 });
 
+// ============================================================
+// FRAIS DE LIVRAISON FORFAITAIRES : +1 500 F par commande.
+// Appliqués automatiquement à la création pour les produits listés
+// (Meta ET TikTok). INTERNE UNIQUEMENT : jamais affiché sur les pages
+// de vente (landing/merci) — l'info sert aux employés (commandes,
+// appels) et au livreur (tournées, livraisons) pour la collecte cash.
+// Le montant commande inclut donc les 1 500 F dans le CA (voulu :
+// c'est l'argent réellement encaissé). Pour étendre : ajouter le code.
+// ============================================================
+const DELIVERY_FEE_PRODUCTS = ['OXYMETRE_POULS', 'OXYMETRE_POULS_TK', 'SUPPORT_TELEPHONE_FLEXIBLE', 'SUPPORT_TELEPHONE_FLEXIBLE_TK'];
+const DELIVERY_FEE_AMOUNT = 1500;
+// Marqueur affiché dans noteLivreur (déjà visible : tournées, livraisons livreur, commandes).
+const DELIVERY_FEE_NOTE = '🚚 Livraison +1 500 F incluse — à collecter (info interne : employés/livreur)';
+
 // POST /api/public/order - Passer une commande (public, sans auth)
 router.post('/order', async (req, res) => {
   try {
@@ -276,7 +290,9 @@ router.post('/order', async (req, res) => {
     }
 
     const orderQuantity = Math.min(Math.max(parseInt(quantity) || 1, 1), 10);
-    const totalAmount = computePublicOrderTotal(product, orderQuantity);
+    // Forfait livraison +1 500 F (une seule fois par commande, quelle que soit la quantité).
+    const appliesDeliveryFee = DELIVERY_FEE_PRODUCTS.includes(String(product.code || '').toUpperCase());
+    const totalAmount = computePublicOrderTotal(product, orderQuantity) + (appliesDeliveryFee ? DELIVERY_FEE_AMOUNT : 0);
 
     const resolvedCity = String(customerCity || '').trim() || 'Non precisee';
 
@@ -293,6 +309,8 @@ router.post('/order', async (req, res) => {
       productId: product.id,
       quantite: orderQuantity,
       montant: totalAmount,
+      // Note interne frais de livraison (concat défensive si une note livreur arrive un jour du client).
+      noteLivreur: [req.body.noteLivreur, appliesDeliveryFee ? DELIVERY_FEE_NOTE : null].filter(Boolean).join(' · ') || null,
       sourceCampagne: product.code,
       sourcePage: 'FORMULAIRE_WEB',
       status: 'NOUVELLE',

@@ -1400,11 +1400,17 @@ export default function Tournees() {
                                         <span className="block italic text-red-600">⚠ Motif manquant</span>
                                       )
                                     )}
-                                    {/* Note livreur sur un colis livré (facultative) */}
+                                    {/* Note livreur sur un colis livré (facultative) — badge dédié pour le forfait livraison */}
                                     {!nonLivre && order.noteLivreur && (
-                                      <span className="block text-gray-700" title={order.noteLivreur}>
-                                        🚚 {order.noteLivreur}
-                                      </span>
+                                      order.noteLivreur.includes('Livraison +1 500 F incluse') ? (
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-800" title={order.noteLivreur}>
+                                          🚚 +1 500 F livraison à collecter
+                                        </span>
+                                      ) : (
+                                        <span className="block text-gray-700" title={order.noteLivreur}>
+                                          🚚 {order.noteLivreur}
+                                        </span>
+                                      )
                                     )}
                                     {/* Note de l'appelant */}
                                     {order.noteAppelant && (

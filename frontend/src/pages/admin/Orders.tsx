@@ -314,6 +314,11 @@ export default function Orders() {
                       <td className="py-3 px-4 text-sm">{order.produitNom}</td>
                       <td className="py-3 px-4 text-sm font-medium">{formatCurrency(order.montant)}</td>
                       <td className="py-3 px-4 text-sm max-w-xs">
+                        {order.noteLivreur?.includes('Livraison +1 500 F incluse') && (
+                          <span className="mb-1 inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-800" title={order.noteLivreur}>
+                            🚚 +1 500 F livraison à collecter
+                          </span>
+                        )}
                         {order.noteAppelant ? (
                           <div className="flex items-start gap-2">
                             <MessageSquare size={16} className="text-blue-500 flex-shrink-0 mt-0.5" />
