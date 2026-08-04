@@ -79,6 +79,8 @@ export interface OrderSubmitConfig {
   metaPixelId?: string;
   /** Pixel Meta additionnel (browser + CAPI) — ne remplace pas metaPixelId. */
   secondaryMetaPixelId?: string;
+  /** Pixels Meta supplementaires (CAPI) — s'ajoutent aux deux precedents. */
+  extraMetaPixelIds?: string[];
   thankYouUrl?: string;
 }
 
@@ -179,6 +181,7 @@ export function useOrderSubmit({ cfg, product, setProduct, company: companyParam
       sourceUrl: window.location.href,
       metaPixelId: cfg.metaPixelId || undefined,
       secondaryMetaPixelId: cfg.secondaryMetaPixelId || undefined,
+      extraMetaPixelIds: cfg.extraMetaPixelIds?.length ? cfg.extraMetaPixelIds : undefined,
     };
 
     try {

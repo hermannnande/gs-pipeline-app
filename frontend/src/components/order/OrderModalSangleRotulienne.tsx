@@ -1,7 +1,7 @@
 /**
- * Modal commande — Sangles Rotuliennes Réglables, vendues par paire (SANGLE_ROTULIENNE).
+ * Modal commande — Sangles Rotuliennes Réglables, vendues à l’unité (SANGLE_ROTULIENNE).
  * Base : OrderModalRepulsifUltrasons (logique metier useOrderSubmit 100% conservee).
- * Pas de selection de coloris : un seul produit, packs 1/2/3 paires.
+ * Pas de selection de coloris : un seul produit, packs 1/2/3 unites.
  *
  * Theme : bleu electrique #1D4ED8 / cyan #06B6D4 + accent orange #F97316.
  */
@@ -76,7 +76,7 @@ export default function OrderModalSangleRotulienne({ open, onClose, cfg, product
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1D4ED8]">Paiement à la livraison</p>
-              <h3 className="mt-0.5 text-[18px] font-black text-[#0B1E4B]">{cfg.title || 'Sangles Rotuliennes Réglables (paire)'}</h3>
+              <h3 className="mt-0.5 text-[18px] font-black text-[#0B1E4B]">{cfg.title || 'Sangle Rotulienne Réglable (à l’unité)'}</h3>
               <p className="mt-1 text-[11px] font-semibold tabular-nums text-[#EA580C]">⏱ {pad(cd.m)}:{pad(cd.s)} · offre -50 % ce soir</p>
             </div>
             <button type="button" onClick={() => !sending && onClose()} className="flex h-9 w-9 items-center justify-center rounded-full bg-[#93C5FD]/20 text-[#1D4ED8]">✕</button>

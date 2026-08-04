@@ -5,6 +5,208 @@ import { authenticate, authorize } from '../middlewares/auth.middleware.js';
 const router = express.Router();
 
 router.use(authenticate);
+
+// ========================================
+// DÉPÔTS LIVREURS — ADMIN + GESTIONNAIRE PRINCIPAL
+// ========================================
+// Déclarées AVANT le verrou `authorize('ADMIN')` plus bas (Express applique les
+// middlewares dans l'ordre d'enregistrement) : le gestionnaire principal vérifie
+// les dépôts de fin de journée des livreurs SANS accéder au reste de la
+// comptabilité (CA, marges, budgets pub, achats fournisseur, config).
+const depositsAccess = authorize('ADMIN', 'GESTIONNAIRE');
+
+// Période d'analyse. Défaut : du 1er du mois à aujourd'hui (UTC = Abidjan).
+function resolvePeriod({ dateDebut, dateFin } = {}) {
+  const now = new Date();
+  const startDate = dateDebut
+    ? new Date(`${dateDebut}T00:00:00.000Z`)
+    : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
+  const endDate = dateFin
+    ? new Date(`${dateFin}T23:59:59.999Z`)
+    : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999));
+  return { startDate, endDate };
+}
+
+// Agrégation partagée par /stats et /deposits : totaux, cumul par livreur, liste.
+// `listLimit = null` → toute la période (page dédiée), sinon les N plus récents.
+function aggregateDeposits(deposits, listLimit = 20) {
+  const byLivreur = {};
+  for (const d of deposits) {
+    const key = d.livreurId;
+    if (!byLivreur[key]) {
+      byLivreur[key] = {
+        livreurId: d.livreurId,
+        nom: d.livreur ? `${d.livreur.prenom} ${d.livreur.nom}` : `#${d.livreurId}`,
+        nbJours: 0, nbLivraisons: 0, montantCollecte: 0, totalCommission: 0,
+        montantAttendu: 0, montantDepose: 0, ecart: 0, statuts: [],
+      };
+    }
+    const b = byLivreur[key];
+    b.nbJours++;
+    b.nbLivraisons += d.nbLivraisons;
+    b.montantCollecte += d.montantCollecte;
+    b.totalCommission += d.totalCommission;
+    b.montantAttendu += d.montantAttendu;
+    b.montantDepose += d.montantDepose;
+    b.ecart += d.ecart;
+    b.statuts.push(d.statut);
+  }
+  return {
+    totalAttendu: deposits.reduce((s, d) => s + d.montantAttendu, 0),
+    totalDepose: deposits.reduce((s, d) => s + d.montantDepose, 0),
+    totalEcart: deposits.reduce((s, d) => s + d.ecart, 0),
+    count: deposits.length,
+    nonVerifies: deposits.filter((d) => d.statut !== 'VERIFIE').length,
+    byLivreur: Object.values(byLivreur).sort((a, b) => b.montantAttendu - a.montantAttendu),
+    recent: listLimit === null ? deposits : deposits.slice(0, listLimit),
+  };
+}
+
+// Montant réellement encaissé sur une commande : les LIVREE_PARTIELLE comptent
+// au prorata des unités effectivement prises par le client.
+function montantEncaisseOrder(o) {
+  if (o.status !== 'LIVREE_PARTIELLE') return o.montant;
+  const qte = o.quantite || 1;
+  const livree = o.quantiteLivree ?? qte;
+  return (o.montant * livree) / qte;
+}
+
+// GET /api/accounting/deposits?dateDebut&dateFin — dépôts de la période.
+// Ne renvoie QUE les données de dépôt (aucune donnée financière globale).
+router.get('/deposits', depositsAccess, async (req, res) => {
+  try {
+    const { startDate, endDate } = resolvePeriod(req.query);
+    const deposits = await prisma.livreurDeposit.findMany({
+      where: { companyId: req.user.companyId, date: { gte: startDate, lte: endDate } },
+      include: {
+        livreur: { select: { id: true, nom: true, prenom: true } },
+        verifiedBy: { select: { id: true, nom: true, prenom: true } },
+      },
+      orderBy: { date: 'desc' },
+    });
+
+    res.json({
+      periode: { debut: startDate.toISOString(), fin: endDate.toISOString() },
+      deposits: aggregateDeposits(deposits, null),
+    });
+  } catch (error) {
+    console.error('Erreur dépôts livreurs:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des dépôts.' });
+  }
+});
+
+// GET /api/accounting/deposits/:id/orders — détail client par client d'un dépôt.
+// C'est l'écran de vérification : chaque commande livrée du jour par ce livreur,
+// avec le montant encaissé, plus un recalcul serveur pour détecter un dépôt
+// devenu incohérent (statut de commande modifié après la déclaration).
+router.get('/deposits/:id/orders', depositsAccess, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'id invalide.' });
+
+    const deposit = await prisma.livreurDeposit.findFirst({
+      where: { id, companyId: req.user.companyId },
+      include: {
+        livreur: { select: { id: true, nom: true, prenom: true, telephone: true } },
+        verifiedBy: { select: { id: true, nom: true, prenom: true } },
+      },
+    });
+    if (!deposit) return res.status(404).json({ error: 'Dépôt non trouvé.' });
+
+    const dayStr = deposit.date.toISOString().slice(0, 10);
+    const gte = new Date(`${dayStr}T00:00:00.000Z`);
+    const lt = new Date(gte);
+    lt.setUTCDate(lt.getUTCDate() + 1);
+
+    const orders = await prisma.order.findMany({
+      where: {
+        companyId: req.user.companyId,
+        delivererId: deposit.livreurId,
+        status: { in: ['LIVREE', 'LIVREE_PARTIELLE'] },
+        deliveredAt: { gte, lt },
+      },
+      select: {
+        id: true, orderReference: true,
+        clientNom: true, clientTelephone: true, clientVille: true, clientCommune: true, clientAdresse: true,
+        produitNom: true, quantite: true, quantiteLivree: true, montant: true,
+        status: true, deliveredAt: true, noteLivreur: true,
+        product: { select: { id: true, nom: true } },
+      },
+      orderBy: { deliveredAt: 'asc' },
+    });
+
+    const lignes = orders.map((o) => ({
+      ...o,
+      montantEncaisse: montantEncaisseOrder(o),
+      commission: deposit.commissionParLivraison,
+    }));
+
+    // Recalcul serveur au taux figé du dépôt (jamais celui d'aujourd'hui).
+    const montantCollecte = lignes.reduce((s, l) => s + l.montantEncaisse, 0);
+    const totalCommission = lignes.length * deposit.commissionParLivraison;
+    const montantAttendu = montantCollecte - totalCommission;
+
+    res.json({
+      deposit,
+      orders: lignes,
+      recalcul: {
+        nbLivraisons: lignes.length,
+        nbPartielles: lignes.filter((l) => l.status === 'LIVREE_PARTIELLE').length,
+        montantCollecte,
+        totalCommission,
+        montantAttendu,
+        ecart: deposit.montantDepose - montantAttendu,
+        // false = le dépôt enregistré ne colle plus aux commandes du jour
+        coherent: Math.abs(montantAttendu - deposit.montantAttendu) < 1,
+      },
+    });
+  } catch (error) {
+    console.error('Erreur détail dépôt:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération du détail du dépôt.' });
+  }
+});
+
+// PATCH /api/accounting/deposits/:id/verify { statut? } — bascule DECLARE ↔ VERIFIE.
+// Body vide ou statut absent = toggle. Pose verifiedById/verifiedAt (null si retour à DECLARE).
+router.patch('/deposits/:id/verify', depositsAccess, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'id invalide.' });
+
+    const deposit = await prisma.livreurDeposit.findFirst({
+      where: { id, companyId: req.user.companyId },
+    });
+    if (!deposit) {
+      return res.status(404).json({ error: 'Dépôt non trouvé.' });
+    }
+
+    const target = ['DECLARE', 'VERIFIE'].includes(req.body?.statut)
+      ? req.body.statut
+      : (deposit.statut === 'VERIFIE' ? 'DECLARE' : 'VERIFIE');
+
+    const updated = await prisma.livreurDeposit.update({
+      where: { id: deposit.id },
+      data: {
+        statut: target,
+        verifiedById: target === 'VERIFIE' ? req.user.id : null,
+        verifiedAt: target === 'VERIFIE' ? new Date() : null,
+      },
+      include: {
+        livreur: { select: { id: true, nom: true, prenom: true } },
+        verifiedBy: { select: { id: true, nom: true, prenom: true } },
+      },
+    });
+
+    res.json({ deposit: updated });
+  } catch (error) {
+    console.error('Erreur vérification dépôt:', error);
+    res.status(500).json({ error: 'Erreur lors de la vérification du dépôt.' });
+  }
+});
+
+// ========================================
+// Tout ce qui suit : ADMIN uniquement.
+// ========================================
 router.use(authorize('ADMIN'));
 
 // ========================================
@@ -83,22 +285,8 @@ function computeDailyAdSpend(allBudgets, startDate, endDate) {
 
 router.get('/stats', async (req, res) => {
   try {
-    const { dateDebut, dateFin } = req.query;
     const companyId = req.user.companyId;
-
-    let startDate, endDate;
-    if (dateDebut) {
-      startDate = new Date(`${dateDebut}T00:00:00.000Z`);
-    } else {
-      const now = new Date();
-      startDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
-    }
-    if (dateFin) {
-      endDate = new Date(`${dateFin}T23:59:59.999Z`);
-    } else {
-      const now = new Date();
-      endDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999));
-    }
+    const { startDate, endDate } = resolvePeriod(req.query);
 
     const config = await prisma.accountingConfig.findUnique({ where: { companyId } });
     const commissionParLivraison = config?.commissionLivreurLocal || 1500;
@@ -209,36 +397,7 @@ router.get('/stats', async (req, res) => {
     const totalDepenses = totalPub + totalAchats + totalCommissionsLivreur + totalDailyExpenses;
 
     // Agrégation des dépôts : totaux, par livreur, 20 récents
-    const depositsByLivreur = {};
-    for (const d of deposits) {
-      const key = d.livreurId;
-      if (!depositsByLivreur[key]) {
-        depositsByLivreur[key] = {
-          livreurId: d.livreurId,
-          nom: d.livreur ? `${d.livreur.prenom} ${d.livreur.nom}` : `#${d.livreurId}`,
-          nbJours: 0, nbLivraisons: 0, montantCollecte: 0, totalCommission: 0,
-          montantAttendu: 0, montantDepose: 0, ecart: 0, statuts: [],
-        };
-      }
-      const b = depositsByLivreur[key];
-      b.nbJours++;
-      b.nbLivraisons += d.nbLivraisons;
-      b.montantCollecte += d.montantCollecte;
-      b.totalCommission += d.totalCommission;
-      b.montantAttendu += d.montantAttendu;
-      b.montantDepose += d.montantDepose;
-      b.ecart += d.ecart;
-      b.statuts.push(d.statut);
-    }
-    const depositsStats = {
-      totalAttendu: deposits.reduce((s, d) => s + d.montantAttendu, 0),
-      totalDepose: deposits.reduce((s, d) => s + d.montantDepose, 0),
-      totalEcart: deposits.reduce((s, d) => s + d.ecart, 0),
-      count: deposits.length,
-      nonVerifies: deposits.filter((d) => d.statut !== 'VERIFIE').length,
-      byLivreur: Object.values(depositsByLivreur).sort((a, b) => b.montantAttendu - a.montantAttendu),
-      recent: deposits.slice(0, 20),
-    };
+    const depositsStats = aggregateDeposits(deposits, 20);
 
     // MARGE (basee sur le total encaisse, pas seulement LOCAL)
     const margeNette = revenuTotal - totalDepenses;
@@ -767,48 +926,6 @@ router.put('/config', async (req, res) => {
   } catch (error) {
     console.error('Erreur update config:', error);
     res.status(500).json({ error: 'Erreur mise a jour config.' });
-  }
-});
-
-// ========================================
-// DÉPÔTS LIVREURS — vérification ADMIN
-// ========================================
-
-// PATCH /api/accounting/deposits/:id/verify { statut? } — bascule DECLARE ↔ VERIFIE.
-// Body vide ou statut absent = toggle. Pose verifiedById/verifiedAt (null si retour à DECLARE).
-router.patch('/deposits/:id/verify', async (req, res) => {
-  try {
-    const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) return res.status(400).json({ error: 'id invalide.' });
-
-    const deposit = await prisma.livreurDeposit.findFirst({
-      where: { id, companyId: req.user.companyId },
-    });
-    if (!deposit) {
-      return res.status(404).json({ error: 'Dépôt non trouvé.' });
-    }
-
-    const target = ['DECLARE', 'VERIFIE'].includes(req.body?.statut)
-      ? req.body.statut
-      : (deposit.statut === 'VERIFIE' ? 'DECLARE' : 'VERIFIE');
-
-    const updated = await prisma.livreurDeposit.update({
-      where: { id: deposit.id },
-      data: {
-        statut: target,
-        verifiedById: target === 'VERIFIE' ? req.user.id : null,
-        verifiedAt: target === 'VERIFIE' ? new Date() : null,
-      },
-      include: {
-        livreur: { select: { id: true, nom: true, prenom: true } },
-        verifiedBy: { select: { id: true, nom: true, prenom: true } },
-      },
-    });
-
-    res.json({ deposit: updated });
-  } catch (error) {
-    console.error('Erreur vérification dépôt:', error);
-    res.status(500).json({ error: 'Erreur lors de la vérification du dépôt.' });
   }
 });
 

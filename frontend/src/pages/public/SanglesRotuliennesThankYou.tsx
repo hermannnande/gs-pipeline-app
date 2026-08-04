@@ -1,5 +1,5 @@
 /**
- * Page merci — Sangles Rotuliennes Réglables, vendues par paire (slug sangles-rotuliennes).
+ * Page merci — Sangles Rotuliennes Réglables, vendues à l’unité (slug sangles-rotuliennes).
  * Pixel Meta : constante vide (le client la fournira) — tracking Purchase conditionné.
  */
 import { useEffect, useRef } from 'react';
@@ -8,7 +8,7 @@ import axios from 'axios';
 import { orderTotal } from '../../utils/pricingHelpers';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
-const META_PIXEL_ID = '1896798985057430'; // Pixel Meta achat - page sangles rotuliennes (campagnes Meta)
+const META_PIXEL_ID = '2246222732879581'; // Pixel Meta achat - page sangles rotuliennes (campagnes Meta)
 const SLUG = 'sangles-rotuliennes';
 const PRODUCT_CODE = 'SANGLE_ROTULIENNE';
 const PRICES: Record<number, number> = { 1: 8500, 2: 16100, 3: 22700 };
@@ -35,7 +35,7 @@ export default function SanglesRotuliennesThankYou() {
           const s = document.createElement('script'); s.src = 'https://connect.facebook.net/en_US/fbevents.js'; s.async = true; document.head.appendChild(s);
         }
         window.fbq('init', META_PIXEL_ID);
-        window.fbq('track', 'Purchase', { content_name: 'Sangles Rotuliennes Réglables (paire)', content_ids: [PRODUCT_CODE], value: orderTotal(PRICES, qty), currency: 'XOF', num_items: qty });
+        window.fbq('track', 'Purchase', { content_name: 'Sangle Rotulienne Réglable (à l’unité)', content_ids: [PRODUCT_CODE], value: orderTotal(PRICES, qty), currency: 'XOF', num_items: qty });
         if (sk) sessionStorage.setItem(sk, '1');
       };
       setTimeout(init, 500);
@@ -64,7 +64,7 @@ export default function SanglesRotuliennesThankYou() {
             <div className="flex items-center gap-3"><span className="text-xl">💵</span><span><strong>Paiement uniquement à la livraison</strong> — rien à payer en ligne.</span></div>
           </div>
           <p className="text-center text-[12px] text-neutral-500">
-            Gardez votre téléphone à portée de main : sans confirmation, la paire ne peut pas être expédiée.
+            Gardez votre téléphone à portée de main : sans confirmation, votre commande ne peut pas être expédiée.
           </p>
           <Link to="/sangles-rotuliennes" className="block rounded-full bg-gradient-to-r from-[#1D4ED8] via-[#06B6D4] to-[#F97316] py-3.5 text-center text-[12px] font-black uppercase tracking-[0.12em] text-white shadow-lg transition hover:brightness-110">
             Retour au produit

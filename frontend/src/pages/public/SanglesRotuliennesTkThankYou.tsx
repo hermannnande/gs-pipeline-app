@@ -36,13 +36,13 @@ export default function SanglesRotuliennesTkThankYou() {
           const s = document.createElement('script'); s.src = 'https://connect.facebook.net/en_US/fbevents.js'; s.async = true; document.head.appendChild(s);
         }
         window.fbq('init', META_PIXEL_ID);
-        window.fbq('track', 'Purchase', { content_name: 'Sangles Rotuliennes Réglables (paire)', content_ids: [PRODUCT_CODE], value: orderTotal(PRICES, qty), currency: 'XOF', num_items: qty });
+        window.fbq('track', 'Purchase', { content_name: 'Sangle Rotulienne Réglable (à l’unité)', content_ids: [PRODUCT_CODE], value: orderTotal(PRICES, qty), currency: 'XOF', num_items: qty });
         if (sk) sessionStorage.setItem(sk, '1');
       };
       setTimeout(init, 500);
     }
     if (TIKTOK_PIXEL_ID && window.ttq) {
-      window.ttq.track('CompletePayment', { content_name: 'Sangles Rotuliennes Réglables (paire)', content_id: PRODUCT_CODE, content_type: 'product', value: orderTotal(PRICES, qty), currency: 'XOF', quantity: qty });
+      window.ttq.track('CompletePayment', { content_name: 'Sangle Rotulienne Réglable (à l’unité)', content_id: PRODUCT_CODE, content_type: 'product', value: orderTotal(PRICES, qty), currency: 'XOF', quantity: qty });
       if (sk) sessionStorage.setItem(sk, '1');
     }
     if (ref) axios.post(`${API_URL}/public/track-purchase`, { ref, slug: SLUG, company, sourceUrl: window.location.href }).catch(() => {});
@@ -69,7 +69,7 @@ export default function SanglesRotuliennesTkThankYou() {
             <div className="flex items-center gap-3"><span className="text-xl">💵</span><span><strong>Paiement uniquement à la livraison</strong> — rien à payer en ligne.</span></div>
           </div>
           <p className="text-center text-[12px] text-neutral-500">
-            Gardez votre téléphone à portée de main : sans confirmation, la paire ne peut pas être expédiée.
+            Gardez votre téléphone à portée de main : sans confirmation, votre commande ne peut pas être expédiée.
           </p>
           <Link to="/sangles-rotuliennes-tk" className="block rounded-full bg-gradient-to-r from-[#1D4ED8] via-[#06B6D4] to-[#F97316] py-3.5 text-center text-[12px] font-black uppercase tracking-[0.12em] text-white shadow-lg transition hover:brightness-110">
             Retour au produit

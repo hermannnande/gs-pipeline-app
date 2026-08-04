@@ -44,6 +44,7 @@ import {
 } from 'recharts';
 import { accountingApi, productsApi, dailyExpensesApi } from '@/lib/api';
 import { formatCurrency } from '@/utils/statusHelpers';
+import DepotsPanel from '@/components/accounting/DepotsPanel';
 
 const COLORS = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4', '#84CC16'];
 const PLATFORM_OPTIONS = ['FACEBOOK', 'TIKTOK', 'GOOGLE', 'SNAPCHAT', 'INSTAGRAM', 'AUTRE'];
@@ -187,7 +188,7 @@ export default function Accounting() {
             <DashboardTab stats={stats} />
           )}
           {activeTab === 'depots' && (
-            <DepotsTab stats={stats} queryClient={queryClient} />
+            <DepotsPanel deposits={stats.deposits} />
           )}
           {activeTab === 'depenses' && (
             <DepensesTab stats={stats} queryClient={queryClient} />
@@ -1238,146 +1239,8 @@ function ConfigTab({ stats, queryClient }: { stats: any; queryClient: any }) {
 // ========================================
 // DÉPÔTS TAB - Dépôts de fin de journée des livreurs
 // ========================================
-
-function DepotsTab({ stats, queryClient }: { stats: any; queryClient: any }) {
-  const deposits = stats.deposits || { totalAttendu: 0, totalDepose: 0, totalEcart: 0, count: 0, nonVerifies: 0, byLivreur: [], recent: [] };
-
-  const verifyMutation = useMutation({
-    mutationFn: ({ id, statut }: { id: number; statut?: 'DECLARE' | 'VERIFIE' }) => accountingApi.verifyDeposit(id, statut),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['accounting-stats'] });
-    },
-  });
-
-  const ecartColor = (e: number) => (e < 0 ? 'text-red-600' : 'text-emerald-600');
-
-  return (
-    <div className="space-y-6">
-      {/* Résumé global */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="card bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-          <p className="text-sm text-gray-600">Total attendu entreprise</p>
-          <p className="text-2xl font-bold text-blue-700">{formatCurrency(deposits.totalAttendu)}</p>
-          <p className="text-xs text-gray-500 mt-1">{deposits.count} dépôt(s) sur la période</p>
-        </div>
-        <div className="card bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200">
-          <p className="text-sm text-gray-600">Total déposé par les livreurs</p>
-          <p className="text-2xl font-bold text-emerald-700">{formatCurrency(deposits.totalDepose)}</p>
-          <p className="text-xs text-gray-500 mt-1">{deposits.nonVerifies} non vérifié(s)</p>
-        </div>
-        <div className="card bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200">
-          <p className="text-sm text-gray-600">Écart global</p>
-          <p className={`text-2xl font-bold ${ecartColor(deposits.totalEcart)}`}>
-            {deposits.totalEcart > 0 ? '+' : ''}{formatCurrency(deposits.totalEcart)}
-          </p>
-          <p className="text-xs text-gray-500 mt-1">Négatif = manquant à récupérer</p>
-        </div>
-      </div>
-
-      {/* Par livreur */}
-      <div className="card">
-        <div className="flex items-center gap-2 mb-4">
-          <Truck className="text-emerald-600" size={20} />
-          <h2 className="text-lg font-semibold">Dépôts par livreur</h2>
-        </div>
-        {deposits.byLivreur.length === 0 ? (
-          <p className="text-center py-8 text-gray-500">Aucun dépôt déclaré sur la période</p>
-        ) : (
-          <div className="overflow-x-auto border border-gray-200 rounded-lg">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b-2 border-gray-200 bg-gray-50">
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Livreur</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold">Jours</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold">Livraisons</th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold">Collecté</th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold">Commission</th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold">Attendu</th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold">Déposé</th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold">Écart</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {deposits.byLivreur.map((l: any) => (
-                  <tr key={l.livreurId} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium">{l.nom}</td>
-                    <td className="px-4 py-3 text-center">{l.nbJours}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-semibold text-sm">{l.nbLivraisons}</span>
-                    </td>
-                    <td className="px-4 py-3 text-right">{formatCurrency(l.montantCollecte)}</td>
-                    <td className="px-4 py-3 text-right text-red-600">{formatCurrency(l.totalCommission)}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-blue-700">{formatCurrency(l.montantAttendu)}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-emerald-700">{formatCurrency(l.montantDepose)}</td>
-                    <td className={`px-4 py-3 text-right font-bold ${ecartColor(l.ecart)}`}>
-                      {l.ecart > 0 ? '+' : ''}{formatCurrency(l.ecart)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Dépôts récents avec vérification ADMIN */}
-      <div className="card">
-        <div className="flex items-center gap-2 mb-4">
-          <CheckCircle className="text-emerald-600" size={20} />
-          <h2 className="text-lg font-semibold">Dépôts récents (vérification)</h2>
-        </div>
-        {deposits.recent.length === 0 ? (
-          <p className="text-center py-8 text-gray-500">Aucun dépôt sur la période</p>
-        ) : (
-          <div className="overflow-x-auto border border-gray-200 rounded-lg">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b-2 border-gray-200 bg-gray-50">
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Date</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Livreur</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold">Livr.</th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold">Attendu</th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold">Déposé</th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold">Écart</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold">Statut</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {deposits.recent.map((d: any) => (
-                  <tr key={d.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm">{new Date(d.date).toLocaleDateString('fr-FR')}</td>
-                    <td className="px-4 py-3 font-medium">{d.livreur ? `${d.livreur.prenom} ${d.livreur.nom}` : `#${d.livreurId}`}</td>
-                    <td className="px-4 py-3 text-center">{d.nbLivraisons}</td>
-                    <td className="px-4 py-3 text-right text-blue-700">{formatCurrency(d.montantAttendu)}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-emerald-700">{formatCurrency(d.montantDepose)}</td>
-                    <td className={`px-4 py-3 text-right font-bold ${ecartColor(d.ecart)}`}>
-                      {d.ecart > 0 ? '+' : ''}{formatCurrency(d.ecart)}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`badge ${d.statut === 'VERIFIE' ? 'bg-emerald-100 text-emerald-800' : 'bg-orange-100 text-orange-800'}`}>
-                        {d.statut === 'VERIFIE' ? '✓ Vérifié' : 'Déclaré'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={() => verifyMutation.mutate({ id: d.id })}
-                        disabled={verifyMutation.isPending}
-                        className={`btn btn-sm ${d.statut === 'VERIFIE' ? 'btn-secondary' : 'btn-primary'}`}
-                      >
-                        {d.statut === 'VERIFIE' ? 'Déverrouiller' : 'Vérifier'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+// Rendu délégué à DepotsPanel, partagé avec la page /gestionnaire/depots-livreurs
+// du gestionnaire principal : un seul écran de vérification pour les deux rôles.
 
 // ========================================
 // DÉPENSES TAB - Dépenses journalières diverses

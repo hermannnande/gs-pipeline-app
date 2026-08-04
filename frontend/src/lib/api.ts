@@ -436,6 +436,16 @@ export const accountingApi = {
     const { data } = await api.patch(`/accounting/deposits/${id}/verify`, statut ? { statut } : {});
     return data;
   },
+  // Dépôts livreurs seuls (ADMIN + GESTIONNAIRE principal) : aucune donnée
+  // financière globale, contrairement a /accounting/stats reserve a l'ADMIN.
+  getDeposits: async (params?: { dateDebut?: string; dateFin?: string }) => {
+    const { data } = await api.get('/accounting/deposits', { params });
+    return data;
+  },
+  getDepositOrders: async (id: number) => {
+    const { data } = await api.get(`/accounting/deposits/${id}/orders`);
+    return data;
+  },
 };
 
 // WhatsApp API

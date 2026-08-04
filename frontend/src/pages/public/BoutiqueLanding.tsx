@@ -147,7 +147,7 @@ const PRODUCTS: Product[] = [
     hero: '/serum-yeux/hero.webp',
     badge: 'Premium',
     badgeColor: 'amber',
-    price: '7 000 F',
+    price: '9 900 F',
     oldPrice: '15 000 F',
     category: 'Beaute · Visage',
   },
@@ -265,8 +265,8 @@ const PRODUCTS: Product[] = [
     hero: optimImg('https://obrille.com/wp-content/uploads/2026/05/ChatGPT-Image-23-mai-2026-22_27_26.png', 700),
     badge: 'Tendance',
     badgeColor: 'amber',
-    price: '9 900 F',
-    oldPrice: '15 000 F',
+    price: '11 900 F',
+    oldPrice: '18 000 F',
     category: 'Mode femme',
   },
   {
@@ -347,9 +347,12 @@ const PRODUCTS: Product[] = [
     name: 'Guide Pousse Naturelle',
     tagline: 'Methode complete cheveux longs',
     hero: guidePosterImg,
-    badge: 'E-book',
+    // L'ebook n'est plus vendu (cf. EBOOK_ENABLED dans GuidePousseNaturelleLanding) :
+    // seul le livre imprime a 7 900 F, paye a la livraison.
+    badge: 'Livre',
     badgeColor: 'emerald',
-    price: '4 500 F',
+    price: '7 900 F',
+    oldPrice: '18 000 F',
     category: 'Beaute · Cheveux',
   },
 ];

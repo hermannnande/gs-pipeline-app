@@ -83,6 +83,47 @@ Le gestionnaire principal peut :
 
 ---
 
+---
+
+### **3️⃣ DÉPÔTS LIVREURS** 💰
+
+Le gestionnaire principal vérifie les dépôts de fin de journée des livreurs, au même titre que l'admin.
+
+| Action | Permission | Route API |
+|--------|-----------|-----------|
+| ✅ **Voir les dépôts de la période** | Oui | `GET /api/accounting/deposits` |
+| ✅ **Voir le détail client par client** | Oui | `GET /api/accounting/deposits/:id/orders` |
+| ✅ **Vérifier / déverrouiller un dépôt** | Oui | `PATCH /api/accounting/deposits/:id/verify` |
+| ❌ **Reste de la comptabilité** | Non (ADMIN uniquement) | `/stats`, `/ad-expenses`, `/purchases`, `/config` |
+
+⚠️ **Cloisonnement** : ces trois routes sont déclarées **avant** le `router.use(authorize('ADMIN'))` dans [routes/accounting.routes.js](routes/accounting.routes.js). Le gestionnaire ne voit donc **ni le CA, ni les marges, ni les budgets pub, ni les achats fournisseur, ni la config comptable** — l'API ne les lui renvoie pas.
+
+**Workflow VÉRIFICATION DES DÉPÔTS** :
+
+```
+1️⃣ ACCÉDER AUX DÉPÔTS
+   └─> Menu latéral > "💰 Dépôts livreurs" (/gestionnaire/depots-livreurs)
+   └─> Choisit la période (Aujourd'hui / Ce mois / dates libres)
+
+2️⃣ OUVRIR UN DÉPÔT
+   └─> Clique sur la ligne du dépôt
+   └─> Voit les clients livrés ce jour-là : nom, téléphone, ville,
+       produit, quantité (partielles au prorata), montant encaissé, heure
+
+3️⃣ CONTRÔLER
+   └─> Encaissé − commission (taux figé du dépôt) = attendu en caisse
+   └─> Alerte si les commandes du jour ont changé depuis la déclaration
+
+4️⃣ VALIDER
+   └─> "✓ Valider ce dépôt" → statut DECLARE → VERIFIE
+   └─> Le livreur ne peut plus modifier son dépôt ✅
+   └─> Le nom du vérificateur et l'horodatage sont enregistrés
+```
+
+L'écran est le composant partagé `DepotsPanel` : l'admin voit exactement le même dans **Comptabilité > 💰 Dépôts Livreurs**.
+
+---
+
 ## 🆚 COMPARAISON DES RÔLES
 
 ### **GESTIONNAIRE vs APPELANT**
@@ -132,6 +173,18 @@ Le gestionnaire principal peut :
 | `POST /:id/express/notifier` | ✅ | ✅ | ✅ | ❌ | ❌ |
 | `POST /:id/express/finaliser` | ✅ | ✅ | ✅ | ❌ | ❌ |
 | `GET /api/orders` | ✅ | ✅ | ✅ (filtré) | ✅ (filtré) | ✅ (filtré) |
+
+### **Routes API COMPTABILITÉ**
+
+| Route | ADMIN | GESTIONNAIRE | APPELANT | STOCK | LIVREUR |
+|-------|-------|--------------|----------|-------|---------|
+| `GET /api/accounting/deposits` | ✅ | ✅ | ❌ | ❌ | ❌ |
+| `GET /api/accounting/deposits/:id/orders` | ✅ | ✅ | ❌ | ❌ | ❌ |
+| `PATCH /api/accounting/deposits/:id/verify` | ✅ | ✅ | ❌ | ❌ | ❌ |
+| `GET /api/accounting/stats` | ✅ | ❌ | ❌ | ❌ | ❌ |
+| `GET|POST /api/accounting/ad-expenses` | ✅ | ❌ | ❌ | ❌ | ❌ |
+| `GET|POST /api/accounting/purchases` | ✅ | ❌ | ❌ | ❌ | ❌ |
+| `GET|PUT /api/accounting/config` | ✅ | ❌ | ❌ | ❌ | ❌ |
 
 ---
 

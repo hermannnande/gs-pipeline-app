@@ -1,30 +1,32 @@
 /**
  * Page de remerciement dediee Creme Lipome TK3 (CREME_LIPOME_TK3).
  *
- * Role principal : declencher l'evenement Meta Pixel "Purchase" (avec value
- * et currency XOF) au chargement, pour permettre l'optimisation de la
- * campagne FB Ads.
+ * Role principal : declencher l'evenement de conversion (avec value et
+ * currency XOF) au chargement, pour permettre l'optimisation de la campagne.
  *
- * Pixel : 1857129471642967 (dedie a la campagne Creme anti-lipome).
+ * Canal TikTok : evenement "CompletePayment" sur le pixel TikTok.
+ * Pixel Meta desactive (evite de polluer les stats des campagnes Facebook) —
+ * renseigner META_PIXEL_ID uniquement si la page reprend du trafic FB.
  *
  * Securite anti-double-fire :
- *   - eventID base sur orderReference (?ref=) -> permet a Meta de dedupliquer
- *     entre le pixel browser et l'event server-side CAPI.
+ *   - eventID / event_id base sur orderReference (?ref=) -> permet de
+ *     dedupliquer entre le pixel browser et un event server-side.
  *   - sessionStorage marque le ref comme deja track pour eviter un re-fire
  *     en cas de rechargement.
  */
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
-const META_PIXEL_ID = '1857129471642967';
+const META_PIXEL_ID = ''; // Variante TikTok : pas de pixel Meta
+const TIKTOK_PIXEL_ID = ''; // <- renseigner l'ID pixel TikTok quand dispo (doit matcher la landing)
 
-const PRICES: Record<number, number> = { 1: 8500, 2: 14100, 3: 20700 };
+const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
 
 const PRODUCT_CODE = 'CREME_LIPOME_TK3';
 const CONTENT_NAME = 'Creme Lipome TK3';
 
 declare global {
-  interface Window { fbq?: (...args: any[]) => void }
+  interface Window { fbq?: (...args: any[]) => void; ttq?: any }
 }
 
 function initMetaPixel(pixelId: string): void {
@@ -38,6 +40,22 @@ function initMetaPixel(pixelId: string): void {
   const noscript = document.createElement('noscript');
   noscript.innerHTML = `<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1"/>`;
   document.body.appendChild(noscript);
+}
+
+function initTiktokPixel(id: string): void {
+  if (!id || window.ttq) return;
+  const t: any = (window.ttq = window.ttq || []);
+  t.methods = ['track', 'page', 'identify', 'instances', 'debug', 'on', 'off', 'once', 'ready', 'alias', 'group', 'enableCookie', 'disableCookie'];
+  t.setAndDefer = (obj: any, method: string) => { obj[method] = (...args: any[]) => { obj.push([method, ...args]); }; };
+  for (const m of t.methods) t.setAndDefer(t, m);
+  t.load = (pixelId: string) => {
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = `https://analytics.tiktok.com/i18n/pixel/events.js?sdkid=${pixelId}&lib=ttq`;
+    document.head.appendChild(s);
+  };
+  t.load(id);
+  t.page();
 }
 
 export default function CremeLipomeTk3ThankYou() {
@@ -54,7 +72,8 @@ export default function CremeLipomeTk3ThankYou() {
   }, []);
 
   useEffect(() => {
-    initMetaPixel(META_PIXEL_ID);
+    if (META_PIXEL_ID) initMetaPixel(META_PIXEL_ID);
+    if (TIKTOK_PIXEL_ID) initTiktokPixel(TIKTOK_PIXEL_ID);
 
     const sessionKey = ref ? `cal_purchase_${ref}` : '';
     if (sessionKey && sessionStorage.getItem(sessionKey)) return;
@@ -73,13 +92,21 @@ export default function CremeLipomeTk3ThankYou() {
           contents: [{ id: PRODUCT_CODE, quantity: qty }],
           order_id: ref || undefined,
         }, ref ? { eventID: ref } : undefined);
+        window.ttq?.track('CompletePayment', {
+          content_name: CONTENT_NAME,
+          content_id: PRODUCT_CODE,
+          content_type: 'product',
+          quantity: qty,
+          value,
+          currency: 'XOF',
+        }, ref ? { event_id: ref } : undefined);
         if (sessionKey) sessionStorage.setItem(sessionKey, '1');
       } catch (err) {
-        console.warn('[thankyou] Meta Pixel Purchase non bloquant:', err);
+        console.warn('[thankyou] Pixel conversion non bloquant:', err);
       }
     };
 
-    if (window.fbq) fire();
+    if (window.fbq || window.ttq) fire();
     else setTimeout(fire, 800);
 
     const t = setInterval(() => setNow(new Date()), 1000);

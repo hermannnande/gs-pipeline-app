@@ -1,18 +1,22 @@
 /**
- * Met a jour les prix du produit SERUM_CERNE en base (via l'API admin).
+ * Aligne les prix du produit CREME_LIPOME_TK3 (variante TikTok) sur ceux de la
+ * page mere creme-anti-lipome.
  *
- * Prix standard :
- *   1 flacon  = 9 900 F
- *   2 flacons = 16 900 F
- *   3 flacons = 24 900 F
- * Usage : node scripts/update-serum-cerne-prices.mjs
+ *   1 tube  = 9 900 F   (avant : 8 500 F)
+ *   2 tubes = 16 900 F  (avant : 14 100 F)
+ *   3 tubes = 24 900 F  (avant : 20 700 F)
+ *
+ * Les memes montants sont codes en dur dans CremeLipomeTk3Landing.tsx (PRICES)
+ * et CremeLipomeTk3ThankYou.tsx — les trois doivent rester alignes.
+ *
+ * Usage : node scripts/update-creme-lipome-tk3-prices.mjs
  */
 
 const API_URL = process.env.API_URL || 'https://gs-pipeline-app-2.vercel.app/api';
 const EMAIL = process.env.ADMIN_EMAIL || 'admin@gs-pipeline.com';
 const PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
-const PRODUCT_CODE = 'SERUM_CERNE';
+const PRODUCT_CODE = 'CREME_LIPOME_TK3';
 const NEW_PRICES = { prixUnitaire: 9900, prix2Unites: 16900, prix3Unites: 24900 };
 
 async function login() {
@@ -28,7 +32,7 @@ async function login() {
 }
 
 async function findProduct(token) {
-  const res = await fetch(`${API_URL}/products?search=SERUM`, {
+  const res = await fetch(`${API_URL}/products?search=LIPOME`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(`GET /products echoue (${res.status}) : ${await res.text()}`);

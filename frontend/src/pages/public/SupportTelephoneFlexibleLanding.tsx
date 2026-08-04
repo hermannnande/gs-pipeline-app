@@ -169,7 +169,7 @@ function FlexCTA({ onClick, children, big }: { onClick: () => void; children: Re
     <button
       type="button"
       onClick={onClick}
-      className={`cta-attract group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-[#06B6D4] via-[#3B82F6] to-[#8B5CF6] px-6 ${big ? 'py-5 text-[16px] sm:text-[18px]' : 'py-4 text-[14px] sm:text-[15px]'} font-black uppercase tracking-[0.12em] text-white shadow-[0_18px_44px_-12px_rgba(59,130,246,.55)] ring-2 ring-white/30 transition hover:scale-[1.02] hover:shadow-[0_22px_52px_-10px_rgba(139,92,246,.5)] active:scale-[0.99]`}
+      className={`st-cta-btn cta-attract group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-[#06B6D4] via-[#3B82F6] to-[#8B5CF6] px-6 ${big ? 'py-5 text-[16px] sm:text-[18px]' : 'py-4 text-[14px] sm:text-[15px]'} font-black uppercase tracking-[0.12em] text-white shadow-[0_18px_44px_-12px_rgba(59,130,246,.55)] ring-2 ring-white/30 transition hover:scale-[1.02] hover:shadow-[0_22px_52px_-10px_rgba(139,92,246,.5)] active:scale-[0.99]`}
     >
       <span className="relative z-10 flex items-center gap-2">{children}</span>
     </button>
@@ -196,7 +196,7 @@ function StickyCTA({ visible, onClick }: { visible: boolean; onClick: () => void
           <button
             type="button"
             onClick={onClick}
-            className="shrink-0 rounded-xl bg-white px-5 py-2.5 text-[12.5px] font-black uppercase tracking-[0.1em] text-[#1D4ED8] shadow-lg transition hover:scale-[1.03] active:scale-[0.98]"
+            className="st-cta-btn shrink-0 rounded-xl bg-white px-5 py-2.5 text-[12.5px] font-black uppercase tracking-[0.1em] text-[#1D4ED8] shadow-lg transition hover:scale-[1.03] active:scale-[0.98]"
           >
             Commander 📱
           </button>
@@ -473,7 +473,11 @@ export default function SupportTelephoneFlexibleLanding() {
         @keyframes st-marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
         .st-marquee { animation: st-marquee 26s linear infinite; }
         .st-grad { background: linear-gradient(120deg,#06B6D4,#3B82F6 55%,#8B5CF6); -webkit-background-clip:text; background-clip:text; color: transparent; }
-        @media (prefers-reduced-motion: reduce) { .st-marquee { animation: none; } }
+        @keyframes st-bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+        @keyframes st-shine { 0%{left:-60%} 55%{left:120%} 100%{left:120%} }
+        .st-cta-btn { position:relative; overflow:hidden; animation: st-bounce 1.4s ease-in-out infinite; }
+        .st-cta-btn::after { content:''; position:absolute; top:0; left:-60%; height:100%; width:40%; transform:skewX(-20deg); background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent); animation:st-shine 1.8s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) { .st-marquee, .st-cta-btn, .st-cta-btn::after { animation: none; } }
       `}</style>
 
       {/* ==================== HERO ==================== */}

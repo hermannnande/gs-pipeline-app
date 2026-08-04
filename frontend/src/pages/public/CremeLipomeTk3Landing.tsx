@@ -2,6 +2,9 @@
  * Tunnel de vente — Crème Anti-Lipome TK3 (CREME_LIPOME_TK3)
  * Slug: creme-lipome-tk3 — duplication campagne TikTok (clone creme-anti-lipome).
  *
+ * Pixel Meta desactive (evite de polluer les stats des campagnes Facebook).
+ * Pixel TikTok : renseigner TIKTOK_PIXEL_ID ci-dessous quand l'ID est dispo.
+ *
  * Médias compressés : n1..n16.webp + w1/w2.mp4 + posters w1p/w2p.webp
  *   n1..n9   visuels produit / lifestyle
  *   n10..n16 avant/après de marque (voir scripts/download-lipome-extra-images.mjs)
@@ -19,10 +22,12 @@ import { orderTotal, packLabel } from '../../utils/pricingHelpers';
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'creme-lipome-tk3';
 const PRODUCT_CODE = 'CREME_LIPOME_TK3';
-const META_PIXEL_ID = '1857129471642967';
+const META_PIXEL_ID = ''; // Variante TikTok : pas de pixel Meta
+const TIKTOK_PIXEL_ID = ''; // <- renseigner l'ID pixel TikTok quand dispo (init conditionnee)
+const CONTENT_NAME = 'Crème Anti-Lipome';
 const THANK_YOU_URL = '/creme-lipome-tk3/merci';
 
-const PRICES: Record<number, number> = { 1: 8500, 2: 14100, 3: 20700 };
+const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
 const OLD_UNIT = 15000;
 const DISCOUNT = Math.round((1 - PRICES[1] / OLD_UNIT) * 100);
 const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/ |,/g, ' ');
@@ -41,7 +46,7 @@ const POSTER = (n: number) => `/lipome/w${n}p.webp`;
 
 interface Product { id: number; code: string; nom: string; prixUnitaire: number }
 
-declare global { interface Window { fbq: any; _fbq: any } }
+declare global { interface Window { fbq: any; _fbq: any; ttq?: any } }
 
 function initMetaPixel(pixelId: string) {
   if (!pixelId || window.fbq) return;
@@ -55,6 +60,33 @@ function initMetaPixel(pixelId: string) {
   document.head.appendChild(s);
   window.fbq('init', pixelId);
   window.fbq('track', 'PageView');
+}
+
+function initTiktokPixel(id: string) {
+  if (!id || window.ttq) return;
+  const t: any = (window.ttq = window.ttq || []);
+  t.methods = ['track', 'page', 'identify', 'instances', 'debug', 'on', 'off', 'once', 'ready', 'alias', 'group', 'enableCookie', 'disableCookie'];
+  t.setAndDefer = (obj: any, method: string) => { obj[method] = (...args: any[]) => { obj.push([method, ...args]); }; };
+  for (const m of t.methods) t.setAndDefer(t, m);
+  t.load = (pixelId: string) => {
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = `https://analytics.tiktok.com/i18n/pixel/events.js?sdkid=${pixelId}&lib=ttq`;
+    document.head.appendChild(s);
+  };
+  t.load(id);
+  t.page();
+}
+
+/** Relaie un evenement vers les pixels actifs (TikTok en principal, Meta si un jour reactive). */
+function track(event: 'ViewContent' | 'InitiateCheckout' | 'AddToCart', value: number) {
+  try {
+    const meta = { content_name: CONTENT_NAME, content_ids: [PRODUCT_CODE], content_type: 'product', value, currency: 'XOF' };
+    if (typeof window.fbq === 'function') window.fbq('track', event, meta);
+    if (window.ttq) {
+      window.ttq.track(event, { content_name: CONTENT_NAME, content_id: PRODUCT_CODE, content_type: 'product', value, currency: 'XOF' });
+    }
+  } catch { /* noop */ }
 }
 
 const co = () => new URLSearchParams(window.location.search).get('company') || 'ci';
@@ -238,8 +270,10 @@ export default function CremeLipomeTk3Landing() {
   const pixelFired = useRef(false);
 
   const openModal = useCallback((q?: number) => {
-    setQty(q || 1);
+    const n = q || 1;
+    setQty(n);
     setModal(true);
+    track('InitiateCheckout', orderTotal(PRICES, n));
   }, []);
 
   useEffect(() => {
@@ -253,16 +287,9 @@ export default function CremeLipomeTk3Landing() {
     if (pixelFired.current) return;
     pixelFired.current = true;
     trackPageView(SLUG, company);
-    if (META_PIXEL_ID) {
-      initMetaPixel(META_PIXEL_ID);
-      window.fbq?.('track', 'ViewContent', {
-        content_name: 'Crème Anti-Lipome',
-        content_ids: [PRODUCT_CODE],
-        content_type: 'product',
-        value: orderTotal(PRICES, 1),
-        currency: 'XOF',
-      });
-    }
+    if (META_PIXEL_ID) initMetaPixel(META_PIXEL_ID);
+    if (TIKTOK_PIXEL_ID) initTiktokPixel(TIKTOK_PIXEL_ID);
+    track('ViewContent', orderTotal(PRICES, 1));
   }, [company]);
 
   useEffect(() => {
@@ -761,7 +788,7 @@ export default function CremeLipomeTk3Landing() {
           title: 'Crème Anti-Lipome',
           prices: PRICES,
           thankYouUrl: THANK_YOU_URL,
-          metaPixelId: META_PIXEL_ID,
+          ...(META_PIXEL_ID ? { metaPixelId: META_PIXEL_ID } : {}),
           slug: SLUG,
           company,
           navigate,

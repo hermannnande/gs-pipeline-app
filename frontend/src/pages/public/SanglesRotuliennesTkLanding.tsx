@@ -18,7 +18,7 @@ const OrderModalSangleRotulienne = lazy(() => import('../../components/order/Ord
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'sangles-rotuliennes-tk';
 const PRODUCT_CODE = 'SANGLE_ROTULIENNE_TK'; // Produit dedie : commandes TikTok separees dans obgestion
-const CONTENT_NAME = 'Sangles Rotuliennes Réglables (paire)';
+const CONTENT_NAME = 'Sangle Rotulienne Réglable (à l’unité)';
 const META_PIXEL_ID = ''; // Variante TikTok : pas de pixel Meta (evite de polluer les stats Meta)
 const TIKTOK_PIXEL_ID = ''; // <- renseigner l'ID pixel TikTok quand dispo (init conditionnée)
 const THANK_YOU_URL = '/sangles-rotuliennes-tk/merci';
@@ -28,9 +28,9 @@ const OLD_UNIT = 17000; // prix barré cohérent avec l'offre -50 %
 const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/ |,/g, ' ');
 const fmtN = (n: number) => n.toLocaleString('fr-FR').replace(/ |,/g, ' ');
 const QTY_OPTS = [
-  { v: 1, label: '1 paire', sub: packLabel(PRICES, 1, 'F'), save: '' },
-  { v: 2, label: '2 paires', sub: packLabel(PRICES, 2, 'F'), tag: 'Populaire', save: 'Économisez 900 F' },
-  { v: 3, label: '3 paires', sub: packLabel(PRICES, 3, 'F'), tag: 'Meilleure offre', save: 'Économisez 2 800 F' },
+  { v: 1, label: '1 unité', sub: packLabel(PRICES, 1, 'F'), save: '' },
+  { v: 2, label: '2 unités', sub: packLabel(PRICES, 2, 'F'), tag: 'Populaire', save: 'Économisez 900 F' },
+  { v: 3, label: '3 unités', sub: packLabel(PRICES, 3, 'F'), tag: 'Meilleure offre', save: 'Économisez 2 800 F' },
 ];
 
 const M = (n: string) => `/sangles-rotuliennes/${n}`;
@@ -319,16 +319,16 @@ function MediaBlock({ media, bg, kicker, title, text, cta, onCta, variant, dark,
 /* Notifications d'achat (popup bas-gauche, rotation ~12 s).           */
 /* ------------------------------------------------------------------ */
 const PURCHASE_NOTIFS = [
-  { n: 'Koffi', q: 'Abobo', p: '1 paire' },
-  { n: 'Aminata', q: 'Yopougon', p: '2 paires' },
-  { n: 'Yao', q: 'Cocody', p: '1 paire' },
-  { n: 'Fatou', q: 'Marcory', p: '3 paires' },
-  { n: 'Ibrahim', q: 'Bouaké', p: '2 paires' },
-  { n: 'Awa', q: 'Angré', p: '1 paire' },
-  { n: 'Moussa', q: 'Koumassi', p: '2 paires' },
-  { n: 'Adjoua', q: 'Treichville', p: '1 paire' },
-  { n: 'Salimata', q: 'San-Pédro', p: '3 paires' },
-  { n: 'Nadia', q: 'Riviera', p: '2 paires' },
+  { n: 'Koffi', q: 'Abobo', p: '1 unité' },
+  { n: 'Aminata', q: 'Yopougon', p: '2 unités' },
+  { n: 'Yao', q: 'Cocody', p: '1 unité' },
+  { n: 'Fatou', q: 'Marcory', p: '3 unités' },
+  { n: 'Ibrahim', q: 'Bouaké', p: '2 unités' },
+  { n: 'Awa', q: 'Angré', p: '1 unité' },
+  { n: 'Moussa', q: 'Koumassi', p: '2 unités' },
+  { n: 'Adjoua', q: 'Treichville', p: '1 unité' },
+  { n: 'Salimata', q: 'San-Pédro', p: '3 unités' },
+  { n: 'Nadia', q: 'Riviera', p: '2 unités' },
 ];
 
 function PurchaseNotifs() {
@@ -381,7 +381,7 @@ function PurchaseNotifs() {
 const TESTIMONIALS = [
   { n: 'Koffi', v: 'Abobo', stars: 5, t: "Maçon, je suis debout toute la journée. Depuis que je porte les sangles, mes genoux ne crient plus le soir. Réglage facile, ça tient bien 🙏🏾" },
   { n: 'Aminata', v: 'Yopougon', stars: 5, t: "Je faisais mes escaliers en grimaçant. Là, je monte sans m'arrêter. Le silicone ne pique pas et ne glisse pas, même quand il fait chaud." },
-  { n: 'Ibrahim', v: 'Bouaké', stars: 4, t: "Je les mets pour le foot du dimanche : le genou est bien maintenu, j'ose enfin les appuis. Une paire pour moi, une pour mon frère." },
+  { n: 'Ibrahim', v: 'Bouaké', stars: 4, t: "Je les mets pour le foot du dimanche : le genou est bien maintenu, j'ose enfin les appuis. Une sangle pour moi, une pour mon frère." },
   { n: 'Nadia', v: 'Cocody', stars: 5, t: "Randonnée de 3 heures sans douleur, alors qu'avant je tenais 40 minutes. Légères, on les oublie. Je recommande 😍" },
 ];
 
@@ -416,7 +416,7 @@ const WHATSAPP_REVIEWS = [
   { n: 'Aïssata', v: 'Marcory', t: "Sis les sangles sont top 🙏🏾 Je fais le marché à pied tous les jours, mes genoux ne me lâchent plus. Et ça ne glisse pas du tout 😍", h: '09:42', stars: 5 },
   { n: 'Mamadou', v: 'Koumassi', t: "Reçu hier, payé à la livraison 👌🏾 Mis ce matin pour le chantier : le genou est bien calé, je sens la différence en fin de journée 😩🔥", h: '12:15', stars: 5 },
   { n: 'Adjoua', v: 'Treichville', t: "Commandé lundi, reçu mercredi. Je les mets pour mes marches du matin à Treichville : fini la douleur sous la rotule au réveil.", h: '18:03', stars: 5 },
-  { n: 'Fatou', v: 'San-Pédro', t: "J'en ai pris 3 paires : une pour moi, une pour maman, une pour tata 🏠 Toute la famille marche mieux maintenant ❤️", h: '10:27', stars: 5 },
+  { n: 'Fatou', v: 'San-Pédro', t: "J'en ai pris 3 sangles : une pour moi, une pour maman, une pour tata 🏠 Toute la famille marche mieux maintenant ❤️", h: '10:27', stars: 5 },
 ];
 
 function WhatsAppBubble({ r, i }: { r: (typeof WHATSAPP_REVIEWS)[number]; i: number }) {
@@ -455,7 +455,7 @@ export default function SanglesRotuliennesTkLanding() {
   const pixelFired = useRef(false);
 
   const openModal = useCallback((q?: number) => {
-    // Sans quantité explicite, on ouvre toujours sur 1 paire (CTA collant,
+    // Sans quantité explicite, on ouvre toujours sur 1 unité (CTA collant,
     // hero, blocs). Seul le sélecteur de pack passe selectedPack en explicite.
     const pack = q || 1;
     setQty(pack); setModal(true);
@@ -541,7 +541,7 @@ export default function SanglesRotuliennesTkLanding() {
             <span className="text-[16px] font-bold text-neutral-400 line-through">{fmtN(OLD_UNIT)} F</span>
             <span className="sg-grad text-[44px] font-black leading-none sm:text-[54px]">{fmtTotal(1)} F</span>
           </div>
-          <p className="mt-1 text-[11px] font-black uppercase tracking-[0.18em] text-[#EA580C]">La paire · Paiement à la livraison 🔒</p>
+          <p className="mt-1 text-[11px] font-black uppercase tracking-[0.18em] text-[#EA580C]">L’unité · Paiement à la livraison 🔒</p>
 
           <div className="relative mx-auto mt-6 max-w-[440px]">
             <div className="absolute -inset-3 rounded-[36px] bg-gradient-to-r from-[#1D4ED8]/20 via-[#06B6D4]/25 to-[#F97316]/20 blur-xl" />
@@ -559,14 +559,14 @@ export default function SanglesRotuliennesTkLanding() {
         </div>
       </section>
 
-      <Marquee items={['Paiement à la livraison', 'Sport · randonnée · travail debout', "-50 % aujourd'hui", 'Silicone souple & respirant', 'Vendu par paire réglable']} />
+      <Marquee items={['Paiement à la livraison', 'Sport · randonnée · travail debout', "-50 % aujourd'hui", 'Silicone souple & respirant', 'Sangle réglable vendue à l’unité']} />
 
       {/* ==================== COMPTE À REBOURS ==================== */}
       <section className="bg-gradient-to-r from-[#0B1E4B] via-[#1D4ED8] to-[#0E7490] px-4 py-8">
         <div className="mx-auto max-w-[560px] text-center">
           <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#FDBA74]">⚡ Offre -50 % expire ce soir</p>
           <div className="mt-4"><Countdown h={countdown.h} m={countdown.m} s={countdown.s} /></div>
-          <p className="mt-3 text-[11px] font-semibold text-[#BFDBFE]">À minuit, la paire repasse à {fmtN(OLD_UNIT)} F. Après, il sera trop tard.</p>
+          <p className="mt-3 text-[11px] font-semibold text-[#BFDBFE]">À minuit, l’unité repasse à {fmtN(OLD_UNIT)} F. Après, il sera trop tard.</p>
         </div>
       </section>
 
@@ -601,8 +601,8 @@ export default function SanglesRotuliennesTkLanding() {
         bg="bg-gradient-to-b from-[#ECFDF5] to-[#A7F3D0]/40"
         kicker="Au quotidien"
         title={<>Monter les escaliers <span className="text-[#059669]">sans grimacer</span></>}
-        text="Escaliers, marché, ménage : les gestes de tous les jours redeviennent simples quand le genou est bien soutenu. Vendue par paire : une pour chaque genou."
-        cta="Commander ma paire"
+        text="Escaliers, marché, ménage : les gestes de tous les jours redeviennent simples quand le genou est bien soutenu. Vendue à l’unité : prenez-en 2 pour équiper les deux genoux."
+        cta="Commander ma sangle"
         onCta={() => openModal()}
         variant="emerald"
         ratio="864/1080"
@@ -731,7 +731,7 @@ export default function SanglesRotuliennesTkLanding() {
           <div className="mt-6 space-y-3">
             {WHATSAPP_REVIEWS.map((r, i) => <WhatsAppBubble key={i} r={r} i={i} />)}
           </div>
-          <p className="mt-4 text-center text-[11px] font-bold text-[#1D4ED8]">🔒 Paiement à la livraison · Vous ne payez qu'à la réception de votre paire</p>
+          <p className="mt-4 text-center text-[11px] font-bold text-[#1D4ED8]">🔒 Paiement à la livraison · Vous ne payez qu'à la réception de votre sangle</p>
           <div className="mx-auto mt-5 max-w-sm"><SgCTA variant="emerald" onClick={() => openModal()}>Commander en toute confiance</SgCTA></div>
         </div>
       </section>
@@ -753,7 +753,7 @@ export default function SanglesRotuliennesTkLanding() {
       <section className="bg-gradient-to-b from-[#EFF6FF] via-[#ECFEFF] to-[#FED7AA]/40 px-4 py-12">
         <div className="mx-auto max-w-[560px]">
           <h2 className="text-center text-[24px] font-black text-[#0B1E4B] sm:text-[28px]">Choisissez votre <span className="sg-grad">pack</span></h2>
-          <p className="mt-2 text-center text-[13px] text-[#1D4ED8]/75">1 paire pour essayer · 2 pour vous + un proche · 3 pour toute la famille.</p>
+          <p className="mt-2 text-center text-[13px] text-[#1D4ED8]/75">1 unité pour essayer · 2 pour les deux genoux · 3 pour toute la famille.</p>
           <div className="mt-6 space-y-3">
             {QTY_OPTS.map((o) => {
               const active = selectedPack === o.v;
@@ -787,7 +787,7 @@ export default function SanglesRotuliennesTkLanding() {
       <section className="bg-gradient-to-b from-[#E9F7EF] to-[#ECFEFF] px-4 py-10">
         <div className="mx-auto grid max-w-[560px] grid-cols-1 gap-3 sm:grid-cols-3">
           {[
-            { icon: '💵', t: 'Paiement à la livraison', d: 'Vous payez uniquement à la réception de votre paire.' },
+            { icon: '💵', t: 'Paiement à la livraison', d: 'Vous payez uniquement à la réception de votre sangle.' },
             { icon: '🚚', t: 'Livraison rapide', d: "Abidjan et toutes les grandes villes de Côte d'Ivoire." },
             { icon: '📞', t: 'Confirmation par appel', d: 'Un conseiller vous appelle avant toute expédition.' },
           ].map((g) => (

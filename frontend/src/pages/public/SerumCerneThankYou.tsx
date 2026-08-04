@@ -1,8 +1,10 @@
 /**
  * Page merci — serum-cerne (navy / or / corail).
- * Pixels Meta (double tracking) :
+ * Pixels Meta (quadruple tracking sur serum-cerne) :
  *   - 26809431761984777 (principal)
  *   - 1313100454309806 (campagne — Purchase explicite via trackSingle)
+ *   - 2511991909304152 (campagne additionnelle, aout 2026)
+ *   - 1973354584052136 (pixel achat additionnel — ne jamais retirer les precedents)
  * Purchase browser + CAPI dedup (eventID purchase_<ref>).
  */
 import { useEffect, useRef } from 'react';
@@ -14,12 +16,16 @@ import { useLandingSlug } from '../../hooks/useLandingSlug';
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const META_PIXEL_ID = '26809431761984777';
 const META_PIXEL_ID_CAMPAIGN = '1313100454309806';
+/** Pixel campagne additionnel (aout 2026) — s'ajoute aux deux precedents. */
+const META_PIXEL_ID_CAMPAIGN_2 = '2511991909304152';
+/** Pixel achat additionnel — s'ajoute aux precedents, ne les remplace jamais. */
+const META_PIXEL_ID_CAMPAIGN_3 = '1973354584052136';
 /** Campagne en premier pour garantir l'optimisation Purchase sur 1313100454309806. */
 const META_PIXEL_IDS = [META_PIXEL_ID_CAMPAIGN, META_PIXEL_ID];
 const PRODUCT_CODE = 'SERUM_CERNE';
 const PRODUCT_NAME = 'Serum Anti-Cernes Premium';
 const PRICES_BY_SLUG: Record<string, Record<number, number>> = {
-  'serum-cerne': { 1: 8500, 2: 14100, 3: 20700 },
+  'serum-cerne': { 1: 9900, 2: 16900, 3: 24900 },
   'serum-cerne-tiktok': { 1: 8500, 2: 14100, 3: 20700 },
   'serum-cerne-tk': { 1: 9900, 2: 16900, 3: 24900 },
 };
@@ -29,7 +35,7 @@ const PRODUCT_CODE_BY_SLUG: Record<string, string> = {
   'serum-cerne-tk': 'SERUM_CERNE_TK',
 };
 const META_PIXEL_IDS_BY_SLUG: Record<string, string[]> = {
-  'serum-cerne': [META_PIXEL_ID_CAMPAIGN, META_PIXEL_ID],
+  'serum-cerne': [META_PIXEL_ID_CAMPAIGN, META_PIXEL_ID, META_PIXEL_ID_CAMPAIGN_2, META_PIXEL_ID_CAMPAIGN_3],
   'serum-cerne-tiktok': [],
   'serum-cerne-tk': [META_PIXEL_ID_CAMPAIGN, META_PIXEL_ID],
 };

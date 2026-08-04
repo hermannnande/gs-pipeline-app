@@ -14,6 +14,7 @@ import Chat from '../common/Chat';
 import LiveraisonEnCours from '../stock/LiveraisonEnCours';
 import CallRecordings from '../admin/CallRecordings';
 import Depenses from './Depenses';
+import DepotsLivreurs from '../common/DepotsLivreurs';
 
 export default function GestionnaireDashboard() {
   return (
@@ -31,6 +32,7 @@ export default function GestionnaireDashboard() {
       <Route path="supervision" element={<CallerSupervision />} />
       <Route path="call-recordings" element={<CallRecordings />} />
       <Route path="depenses" element={<Depenses />} />
+      <Route path="depots-livreurs" element={<DepotsLivreurs />} />
       <Route path="stats" element={<Stats />} />
       <Route path="chat" element={<Chat />} />
     </Routes>

@@ -180,7 +180,7 @@ function SacCTA({ onClick, children, big }: { onClick: () => void; children: Rea
     <button
       type="button"
       onClick={onClick}
-      className={`cta-attract group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-[#7B4B2A] via-[#E8739E] to-[#A855F7] px-6 ${big ? 'py-5 text-[16px] sm:text-[18px]' : 'py-4 text-[14px] sm:text-[15px]'} font-black uppercase tracking-[0.12em] text-white shadow-[0_18px_44px_-12px_rgba(232,115,158,.55)] ring-2 ring-white/30 transition hover:scale-[1.02] hover:shadow-[0_22px_52px_-10px_rgba(168,85,247,.5)] active:scale-[0.99]`}
+      className={`msb-cta-btn cta-attract group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-[#7B4B2A] via-[#E8739E] to-[#A855F7] px-6 ${big ? 'py-5 text-[16px] sm:text-[18px]' : 'py-4 text-[14px] sm:text-[15px]'} font-black uppercase tracking-[0.12em] text-white shadow-[0_18px_44px_-12px_rgba(232,115,158,.55)] ring-2 ring-white/30 transition hover:scale-[1.02] hover:shadow-[0_22px_52px_-10px_rgba(168,85,247,.5)] active:scale-[0.99]`}
     >
       <span className="relative z-10 flex items-center gap-2">{children}</span>
     </button>
@@ -207,7 +207,7 @@ function StickyCTA({ visible, onClick }: { visible: boolean; onClick: () => void
           <button
             type="button"
             onClick={onClick}
-            className="shrink-0 rounded-xl bg-white px-5 py-2.5 text-[12.5px] font-black uppercase tracking-[0.1em] text-[#7B4B2A] shadow-lg transition hover:scale-[1.03] active:scale-[0.98]"
+            className="msb-cta-btn shrink-0 rounded-xl bg-white px-5 py-2.5 text-[12.5px] font-black uppercase tracking-[0.1em] text-[#7B4B2A] shadow-lg transition hover:scale-[1.03] active:scale-[0.98]"
           >
             Commander 🛍️
           </button>
@@ -452,7 +452,11 @@ export default function MiniSacBandouliereLanding() {
         @keyframes msb-marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
         .msb-marquee { animation: msb-marquee 26s linear infinite; }
         .msb-grad { background: linear-gradient(120deg,#7B4B2A,#E8739E 55%,#A855F7); -webkit-background-clip:text; background-clip:text; color: transparent; }
-        @media (prefers-reduced-motion: reduce) { .msb-marquee { animation: none; } }
+        @keyframes msb-bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+        @keyframes msb-shine { 0%{left:-60%} 55%{left:120%} 100%{left:120%} }
+        .msb-cta-btn { position:relative; overflow:hidden; animation: msb-bounce 1.4s ease-in-out infinite; }
+        .msb-cta-btn::after { content:''; position:absolute; top:0; left:-60%; height:100%; width:40%; transform:skewX(-20deg); background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent); animation:msb-shine 1.8s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) { .msb-marquee, .msb-cta-btn, .msb-cta-btn::after { animation: none; } }
       `}</style>
 
       {/* ==================== HERO ==================== */}

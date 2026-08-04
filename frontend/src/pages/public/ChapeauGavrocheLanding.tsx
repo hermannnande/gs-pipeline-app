@@ -29,12 +29,12 @@ const PRODUCT_CODE = 'CHAPEAU_GAVROCHE';
 const META_PIXEL_ID = '1613380123108753';
 const THANK_YOU_URL = '/chapeau-gavroche/merci';
 
-const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const PRICES: Record<number, number> = { 1: 11900, 2: 20900, 3: 30900 };
 const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 const QTY_OPTS = [
   { v: 1, label: '1 chapeau',  sub: packLabel(PRICES, 1, 'F') },
-  { v: 2, label: '2 chapeaux', sub: packLabel(PRICES, 2, 'F'), tag: 'Le + choisi',     save: 'Économisez 1 900 F' },
-  { v: 3, label: '3 chapeaux', sub: packLabel(PRICES, 3, 'F'), tag: 'Meilleure valeur', save: 'Économisez 5 800 F + livraison express' },
+  { v: 2, label: '2 chapeaux', sub: packLabel(PRICES, 2, 'F'), tag: 'Le + choisi',     save: 'Économisez 2 900 F' },
+  { v: 3, label: '3 chapeaux', sub: packLabel(PRICES, 3, 'F'), tag: 'Meilleure valeur', save: 'Économisez 4 800 F + livraison express' },
 ];
 
 const WP = (n: string) => optimImg(`https://obrille.com/wp-content/uploads/2026/05/${n}`, 1000);

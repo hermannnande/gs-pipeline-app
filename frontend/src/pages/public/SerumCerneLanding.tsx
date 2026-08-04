@@ -39,6 +39,8 @@ export interface SerumCerneLandingConfig {
   thankYouUrl: string;
   metaPixelIdCampaign: string;
   metaPixelId: string;
+  /** Pixels Meta supplementaires (s'ajoutent aux deux precedents, ne les remplacent pas). */
+  extraMetaPixelIds?: string[];
   prices: Record<number, number>;
   oldPriceUnit: number;
 }
@@ -49,7 +51,9 @@ export const SERUM_CERNE_FB_CONFIG: SerumCerneLandingConfig = {
   thankYouUrl: '/serum-cerne/merci',
   metaPixelIdCampaign: '1313100454309806',
   metaPixelId: '26809431761984777',
-  prices: { 1: 8500, 2: 14100, 3: 20700 },
+  // Pixels campagne additionnels — quadruple tracking sur serum-cerne (ne jamais retirer).
+  extraMetaPixelIds: ['2511991909304152', '1973354584052136'],
+  prices: { 1: 9900, 2: 16900, 3: 24900 },
   oldPriceUnit: 15000,
 };
 
@@ -290,7 +294,11 @@ export function SerumCerneLandingPage({ config }: { config: SerumCerneLandingCon
   const THANK_YOU_URL = config.thankYouUrl;
   const META_PIXEL_ID_CAMPAIGN = config.metaPixelIdCampaign;
   const META_PIXEL_ID = config.metaPixelId;
-  const META_PIXEL_IDS = [META_PIXEL_ID_CAMPAIGN, META_PIXEL_ID].filter(Boolean);
+  const EXTRA_META_PIXEL_IDS = config.extraMetaPixelIds;
+  const META_PIXEL_IDS = useMemo(
+    () => [...new Set([META_PIXEL_ID_CAMPAIGN, META_PIXEL_ID, ...(EXTRA_META_PIXEL_IDS || [])].filter(Boolean))],
+    [META_PIXEL_ID_CAMPAIGN, META_PIXEL_ID, EXTRA_META_PIXEL_IDS],
+  );
   const PRICES = config.prices;
   const OLD_PRICE_UNIT = config.oldPriceUnit;
   const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
@@ -1462,6 +1470,7 @@ export function SerumCerneLandingPage({ config }: { config: SerumCerneLandingCon
           thankYouUrl: THANK_YOU_URL,
           metaPixelId: META_PIXEL_ID_CAMPAIGN,
           secondaryMetaPixelId: META_PIXEL_ID,
+          extraMetaPixelIds: EXTRA_META_PIXEL_IDS,
           slug: SLUG,
           company,
           navigate,

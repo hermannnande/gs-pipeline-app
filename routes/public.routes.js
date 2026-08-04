@@ -335,7 +335,11 @@ router.post('/order', async (req, res) => {
       const fbp = req.body.fbp || null;
       const sourceUrl = req.body.sourceUrl || null;
       const capiPixels = [...new Set(
-        [req.body.metaPixelId, req.body.secondaryMetaPixelId].filter(Boolean).map(String),
+        [
+          req.body.metaPixelId,
+          req.body.secondaryMetaPixelId,
+          ...(Array.isArray(req.body.extraMetaPixelIds) ? req.body.extraMetaPixelIds : []),
+        ].filter(Boolean).map(String),
       )];
       const capiBase = {
         orderId: order.id,
