@@ -63,6 +63,7 @@ export const LANDING_SLUGS = [
   'bandes-buccales-sommeil-tk',
   'ajusteur-ceinture',
   'ajusteur-ceinture-tk',
+  'oxymetre-pouls',
   'boutique',
 ] as const;
 
