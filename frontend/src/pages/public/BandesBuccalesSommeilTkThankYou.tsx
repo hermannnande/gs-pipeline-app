@@ -13,7 +13,7 @@ const META_PIXEL_ID = ''; // Variante TikTok : pas de pixel Meta
 const TIKTOK_PIXEL_ID = ''; // <- renseigner l'ID pixel TikTok quand dispo
 const SLUG = 'bandes-buccales-sommeil-tk';
 const PRODUCT_CODE = 'BANDES_BUCCALES_SOMMEIL_TK'; // Produit dedie (meme mapping que la landing -tk)
-const PRICES: Record<number, number> = { 1: 9900, 2: 18900, 3: 26900 };
+const PRICES: Record<number, number> = { 1: 8500, 2: 15900, 3: 22900 };
 
 declare global { interface Window { fbq?: (...args: any[]) => void; _fbq?: any; ttq?: any } }
 

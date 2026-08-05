@@ -1,6 +1,6 @@
 /**
  * Landing « NUIT PREMIUM » — Bandes Buccales pour le Sommeil, variante TIKTOK (BANDES_BUCCALES_SOMMEIL_TK).
- * Slug : bandes-buccales-sommeil-tk · Prix : 9 900 / 18 900 / 26 900 F (-50 % affiché)
+ * Slug : bandes-buccales-sommeil-tk · Prix : 8 500 / 15 900 / 22 900 F (-50 % affiché)
  * Variante TikTok (meme design nuit allege noir/or, stats separees, produit dedie).
  * Pixel Meta desactive — Pixel TikTok : renseigner TIKTOK_PIXEL_ID.
  *
@@ -23,14 +23,14 @@ const META_PIXEL_ID = ''; // Variante TikTok : pas de pixel Meta (evite de pollu
 const TIKTOK_PIXEL_ID = ''; // <- renseigner l'ID pixel TikTok quand dispo (init conditionnée)
 const THANK_YOU_URL = '/bandes-buccales-sommeil-tk/merci';
 
-const PRICES: Record<number, number> = { 1: 9900, 2: 18900, 3: 26900 };
-const OLD_UNIT = 19800; // prix barré cohérent avec l'offre -50 %
+const PRICES: Record<number, number> = { 1: 8500, 2: 15900, 3: 22900 };
+const OLD_UNIT = 17000; // prix barré cohérent avec l'offre -50 %
 const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/ |,/g, ' ');
 const fmtN = (n: number) => n.toLocaleString('fr-FR').replace(/ |,/g, ' ');
 const QTY_OPTS = [
   { v: 1, label: '1 paquet · 30 nuits', sub: packLabel(PRICES, 1, 'F'), save: '' },
-  { v: 2, label: '2 paquets · 60 nuits', sub: packLabel(PRICES, 2, 'F'), tag: 'Populaire', save: 'Économisez 900 F' },
-  { v: 3, label: '3 paquets · 90 nuits', sub: packLabel(PRICES, 3, 'F'), tag: 'Meilleure offre', save: 'Économisez 2 800 F' },
+  { v: 2, label: '2 paquets · 60 nuits', sub: packLabel(PRICES, 2, 'F'), tag: 'Populaire', save: 'Économisez 1 100 F' },
+  { v: 3, label: '3 paquets · 90 nuits', sub: packLabel(PRICES, 3, 'F'), tag: 'Meilleure offre', save: 'Économisez 2 600 F' },
 ];
 
 const M = (n: string) => `/bandes-buccales-sommeil/${n}`;

@@ -263,7 +263,7 @@ router.post('/product-orders/:id/note', async (req, res) => {
 // Le montant commande inclut donc les 1 500 F dans le CA (voulu :
 // c'est l'argent réellement encaissé). Pour étendre : ajouter le code.
 // ============================================================
-const DELIVERY_FEE_PRODUCTS = ['OXYMETRE_POULS', 'OXYMETRE_POULS_TK', 'SUPPORT_TELEPHONE_FLEXIBLE', 'SUPPORT_TELEPHONE_FLEXIBLE_TK'];
+const DELIVERY_FEE_PRODUCTS = ['OXYMETRE_POULS', 'OXYMETRE_POULS_TK', 'SUPPORT_TELEPHONE_FLEXIBLE', 'SUPPORT_TELEPHONE_FLEXIBLE_TK', 'BANDES_BUCCALES_SOMMEIL', 'BANDES_BUCCALES_SOMMEIL_TK'];
 const DELIVERY_FEE_AMOUNT = 1500;
 // Marqueur affiché dans noteLivreur (déjà visible : tournées, livraisons livreur, commandes).
 const DELIVERY_FEE_NOTE = '🚚 Livraison +1 500 F incluse — à collecter (info interne : employés/livreur)';

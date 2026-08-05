@@ -12,7 +12,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 const META_PIXEL_ID = ''; // Pixel Meta : le client le fournira plus tard (event: Purchase conditionné)
 const SLUG = 'bandes-buccales-sommeil';
 const PRODUCT_CODE = 'BANDES_BUCCALES_SOMMEIL';
-const PRICES: Record<number, number> = { 1: 9900, 2: 18900, 3: 26900 };
+const PRICES: Record<number, number> = { 1: 8500, 2: 15900, 3: 22900 };
 
 declare global { interface Window { fbq?: (...args: any[]) => void; _fbq?: any } }
 
