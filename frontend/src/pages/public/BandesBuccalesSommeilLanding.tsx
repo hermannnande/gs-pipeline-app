@@ -23,7 +23,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'bandes-buccales-sommeil';
 const PRODUCT_CODE = 'BANDES_BUCCALES_SOMMEIL';
 const CONTENT_NAME = 'Bandes Buccales pour le Sommeil (paquet de 30)';
-const META_PIXEL_ID = ''; // Pixel Meta : le client le fournira plus tard (init conditionnée)
+const META_PIXEL_ID = '1144138588792205'; // Pixel Meta achat - page bandes buccales sommeil (campagnes Meta)
 const THANK_YOU_URL = '/bandes-buccales-sommeil/merci';
 
 const PRICES: Record<number, number> = { 1: 8500, 2: 15900, 3: 22900 };
