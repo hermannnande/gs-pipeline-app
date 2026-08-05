@@ -41,6 +41,7 @@ const QTY_OPTS = [
 const IMG = (n: number) => `/lipome/n${n}.webp`;
 const VID = (n: number) => `/lipome/w${n}.mp4`;
 const POSTER = (n: number) => `/lipome/w${n}p.webp`;
+const NEWIMG = (n: number) => `/lipome/r${n}.webp`;
 
 interface Product { id: number; code: string; nom: string; prixUnitaire: number }
 
@@ -247,7 +248,7 @@ export default function CremeAntiLipomeLanding() {
 
   useEffect(() => {
     const l = document.createElement('link');
-    l.rel = 'preload'; l.as = 'image'; l.href = IMG(1);
+    l.rel = 'preload'; l.as = 'image'; l.href = NEWIMG(1);
     document.head.appendChild(l);
     return () => { try { document.head.removeChild(l); } catch { /* noop */ } };
   }, []);
@@ -400,7 +401,7 @@ export default function CremeAntiLipomeLanding() {
           <div className="relative mt-7 cal-fade-up" style={{ animationDelay: '.12s' }}>
             <div className="pointer-events-none absolute -inset-5 rounded-[2.5rem] bg-gradient-to-br from-[#60a5fa]/40 via-white/20 to-[#f87171]/25 blur-2xl" />
             <div className="relative mx-auto max-w-[380px] overflow-hidden rounded-[1.75rem] bg-white shadow-[0_28px_70px_-20px_rgba(37,99,235,.4)] ring-1 ring-[#2563eb]/20">
-              <LazyImg src={IMG(1)} alt="Crème ciblée contre les lipomes" aspect="4/5" priority />
+              <LazyImg src={NEWIMG(1)} alt="Crème ciblée contre les lipomes" aspect="4/5" priority />
             </div>
             <div className="absolute -left-2 top-8 rotate-[-6deg] rounded-lg bg-[#0a1e3d] px-3 py-2 shadow-xl">
               <p className="text-[8px] font-black uppercase tracking-wider text-[#bfdbfe]">Premiers signes</p>
@@ -483,7 +484,7 @@ export default function CremeAntiLipomeLanding() {
         qty={1}
         onOrder={openModal}
         variant="light"
-        media={<LazyImg src={IMG(2)} alt="Soin ciblé contre les lipomes" aspect="1/1" />}
+        media={<LazyImg src={NEWIMG(2)} alt="Soin ciblé contre les lipomes" aspect="1/1" />}
       />
 
       {/* Bannière pleine largeur */}
@@ -529,7 +530,7 @@ export default function CremeAntiLipomeLanding() {
         qty={2}
         onOrder={openModal}
         variant="dark"
-        media={<LazyImg src={IMG(11)} alt="Avant après : lipome au front" aspect="1/1" />}
+        media={<LazyImg src={NEWIMG(3)} alt="Avant après : lipome au front" aspect="1/1" />}
       />
 
       <Fiche
@@ -581,7 +582,7 @@ export default function CremeAntiLipomeLanding() {
         qty={2}
         onOrder={openModal}
         variant="light"
-        media={<LazyImg src={IMG(13)} alt="Avant après : lipome sur le front" aspect="1/1" />}
+        media={<LazyImg src={NEWIMG(4)} alt="Avant après : lipome sur le front" aspect="1/1" />}
       />
 
       {/* WhatsApp */}
@@ -621,7 +622,7 @@ export default function CremeAntiLipomeLanding() {
         onOrder={openModal}
         variant="soft"
         shape="tilt"
-        media={<LazyImg src={IMG(12)} alt="Avant après : lipome sur le visage" aspect="1/1" />}
+        media={<LazyImg src={NEWIMG(5)} alt="Avant après : lipome sur le visage" aspect="1/1" />}
       />
 
       {/* Packs */}
@@ -668,7 +669,7 @@ export default function CremeAntiLipomeLanding() {
         qty={1}
         onOrder={openModal}
         variant="dark"
-        media={<LazyImg src={IMG(16)} alt="Avant après et packaging du soin ciblé" aspect="1/1" />}
+        media={<LazyImg src={NEWIMG(6)} alt="Avant après et packaging du soin ciblé" aspect="1/1" />}
       />
 
       {/* Garantie */}
@@ -768,7 +769,7 @@ export default function CremeAntiLipomeLanding() {
           slug: SLUG,
           company,
           navigate,
-          images: { hero: IMG(1), avant: IMG(4), apres: IMG(5) },
+          images: { hero: NEWIMG(1), avant: IMG(4), apres: IMG(5) },
         }}
         product={product}
         setProduct={setProduct}
