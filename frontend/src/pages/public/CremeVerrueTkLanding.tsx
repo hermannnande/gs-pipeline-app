@@ -26,6 +26,7 @@ import { orderTotal, packAmount, packLabel, DELIVERY_FEE_CI } from '../../utils/
 const SLUG = 'creme-verrue-tk';
 const PRODUCT_CODE = 'CREME_ANTI_VERRUES';
 const META_PIXEL_ID = '1417398840151713';
+const SECONDARY_META_PIXEL_ID = '2940141539712461'; // 2e pixel Meta ajouté le 06/08 — les DEUX pixels restent actifs
 const THANK_YOU_URL = '/creme-verrue-tk/merci';
 
 // Prix faciles a modifier
@@ -342,6 +343,7 @@ export default function CremeVerrueTkLanding() {
     if (!pixelFired.current && META_PIXEL_ID) {
       pixelFired.current = true;
       initMetaPixel(META_PIXEL_ID);
+      if (SECONDARY_META_PIXEL_ID) initMetaPixel(SECONDARY_META_PIXEL_ID);
       window.fbq?.('track', 'ViewContent', {
         content_name: 'Crème Anti-Verrues TK',
         content_ids: [PRODUCT_CODE], content_type: 'product',
@@ -354,6 +356,7 @@ export default function CremeVerrueTkLanding() {
   const orderCfg = {
     slug: SLUG, productCode: PRODUCT_CODE, title: 'Crème Anti-Verrues TK',
     prices: PRICES, metaPixelId: META_PIXEL_ID || undefined,
+    secondaryMetaPixelId: SECONDARY_META_PIXEL_ID || undefined,
     thankYouUrl: THANK_YOU_URL,
     images: { hero: MEDIA.hero, avant: MEDIA.avant, apres: MEDIA.apres },
   };

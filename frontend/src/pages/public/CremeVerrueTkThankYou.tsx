@@ -14,6 +14,7 @@ import { useLandingSlug } from '../../hooks/useLandingSlug';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const META_PIXEL_ID = '1417398840151713';
+const SECONDARY_META_PIXEL_ID = '2940141539712461'; // 2e pixel Meta ajouté le 06/08 — les DEUX pixels restent actifs
 const PRODUCT_NAME = 'Creme Anti-Verrues TK';
 const PRICES_BY_SLUG: Record<string, Record<number, number>> = {
   'creme-verrue-tk': { 1: 9900, 2: 16900, 3: 24900 },
@@ -74,6 +75,7 @@ export default function CremeVerrueTkThankYou() {
     const firePurchase = () => {
       try {
         initPixelForPage(META_PIXEL_ID);
+        if (SECONDARY_META_PIXEL_ID) initPixelForPage(SECONDARY_META_PIXEL_ID);
         window.fbq?.('track', 'Purchase', {
           content_name: PRODUCT_NAME,
           content_ids: [productCode],
