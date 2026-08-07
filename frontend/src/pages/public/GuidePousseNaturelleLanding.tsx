@@ -47,7 +47,7 @@ const PRODUCT_CODE = 'GUIDE_POUSSE_NATURELLE';
 const PRODUCT_CODE_PHYSIQUE = 'GUIDE_POUSSE_NATURELLE_PHYSIQUE';
 const TITLE = 'Faire pousser vos cheveux naturellement';
 // Meta Pixel ID de cette page.
-const META_PIXEL_ID = '2061376097807745';
+const META_PIXEL_ID = '1040079061899334';
 
 /**
  * Interrupteur du circuit EBOOK / paiement en ligne Chariow.

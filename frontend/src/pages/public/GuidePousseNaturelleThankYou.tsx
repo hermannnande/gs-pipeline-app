@@ -18,7 +18,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 // ⚠️ Doit correspondre au META_PIXEL_ID de la landing.
-const META_PIXEL_ID = '2061376097807745';
+const META_PIXEL_ID = '1040079061899334';
 const PRODUCT_CODE = 'GUIDE_POUSSE_NATURELLE';
 const PRODUCT_CODE_PHYSIQUE = 'GUIDE_POUSSE_NATURELLE_PHYSIQUE';
 // ⚠️ A garder aligne avec PRICE_EBOOK / PRICE_PHYSIQUE de la landing.
