@@ -542,3 +542,27 @@ export const wasenderApi = {
     return data;
   },
 };
+
+// SMS — notifications clients (SMSenvoie)
+export const smsApi = {
+  logs: async (params?: { status?: string; type?: string; search?: string; page?: number; limit?: number }) => {
+    const { data } = await api.get('/sms/logs', { params });
+    return data;
+  },
+  retry: async (id: string) => {
+    const { data } = await api.post(`/sms/${id}/retry`);
+    return data;
+  },
+  getConfig: async () => {
+    const { data } = await api.get('/sms/config');
+    return data;
+  },
+  updateConfig: async (payload: { apiKey?: string; enabled?: boolean; quietStart?: number; quietEnd?: number; maxPerPhonePerDay?: number }) => {
+    const { data } = await api.put('/sms/config', payload);
+    return data;
+  },
+  providerStatus: async () => {
+    const { data } = await api.get('/sms/provider-status');
+    return data;
+  },
+};

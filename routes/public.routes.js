@@ -3,6 +3,7 @@ import { prisma } from '../utils/prisma.js';
 import { computePublicOrderTotal } from '../utils/pricing.js';
 import { notifyNewOrder } from '../utils/notifications.js';
 import { enqueueOrderConfirmation } from '../utils/wasender.js';
+import { queueSms, renderSmsMessage } from '../utils/smsEnvoie.js';
 import { sendPurchaseEvent } from '../utils/metaCapi.js';
 import { randomUUID } from 'crypto';
 import { ISOLATED_PRODUCT_CODES } from '../utils/isolatedProducts.js';
@@ -344,6 +345,25 @@ router.post('/order', async (req, res) => {
       await enqueueOrderConfirmation(order);
     } catch (waError) {
       console.error('Erreur file WhatsApp (non bloquante):', waError);
+    }
+
+    // SMS client (SMSenvoie) : 1) confirmation immédiate 2) préparation à +15 min.
+    // Mise en file uniquement — l'envoi et les règles intelligentes sont au cron.
+    // NON bloquant : la commande ne doit jamais échouer à cause du SMS.
+    try {
+      const smsCtx = { order };
+      await queueSms({
+        companyId, orderId: order.id, to: order.clientTelephone,
+        message: renderSmsMessage('CONFIRMATION', smsCtx),
+        type: 'CONFIRMATION', scheduledAt: new Date(),
+      });
+      await queueSms({
+        companyId, orderId: order.id, to: order.clientTelephone,
+        message: renderSmsMessage('PREPARATION', smsCtx),
+        type: 'PREPARATION', scheduledAt: new Date(Date.now() + 15 * 60 * 1000),
+      });
+    } catch (smsError) {
+      console.error('Erreur file SMS (non bloquante):', smsError);
     }
 
     try {

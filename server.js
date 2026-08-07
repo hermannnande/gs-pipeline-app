@@ -27,6 +27,8 @@ import chariowRoutes from './routes/chariow.routes.js';
 import paystackRoutes from './routes/paystack.routes.js';
 import callRecordingRoutes from './routes/callrecordings.routes.js';
 import dailyExpenseRoutes from './routes/daily-expenses.routes.js';
+import smsRoutes from './routes/sms.routes.js';
+import cronRoutes from './routes/cron.routes.js';
 import { scheduleCleanupJob } from './jobs/cleanupPhotos.js';
 import { initializeChatSocket } from './utils/chatSocket.js';
 import { setSocketServers } from './utils/socket.js';
@@ -106,6 +108,8 @@ app.use('/api/chariow', chariowRoutes);
 app.use('/api/paystack', paystackRoutes);
 app.use('/api/call-recordings', callRecordingRoutes);
 app.use('/api/daily-expenses', dailyExpenseRoutes);
+app.use('/api/sms', smsRoutes);
+app.use('/api/cron', cronRoutes);
 
 // Servir les fichiers uploadés
 app.use('/uploads', express.static('uploads'));

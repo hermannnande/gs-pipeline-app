@@ -27,6 +27,7 @@ import templateRoutes from './routes/template.routes.js';
 import chariowRoutes from './routes/chariow.routes.js';
 import paystackRoutes from './routes/paystack.routes.js';
 import wasenderRoutes from './routes/wasender.routes.js';
+import smsRoutes from './routes/sms.routes.js';
 import cronRoutes from './routes/cron.routes.js';
 import { prisma, prismaInitError } from './utils/prisma.js';
 
@@ -110,6 +111,7 @@ export function createApp() {
   app.use('/api/chariow', chariowRoutes);
   app.use('/api/paystack', paystackRoutes);
   app.use('/api/wasender', wasenderRoutes);
+  app.use('/api/sms', smsRoutes);
   app.use('/api/cron', cronRoutes);
 
   // Routes de test

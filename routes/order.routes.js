@@ -7,6 +7,7 @@ import { notifyOrderValidated, notifyOrderDelivered, notifyOrderRefused } from '
 import { computeTotalAmount } from '../utils/pricing.js';
 import { prisma } from '../utils/prisma.js';
 import { excludeIsolatedProductsFilter, ISOLATED_PRODUCT_CODES } from '../utils/isolatedProducts.js';
+import { cancelPendingSmsForOrder } from '../utils/smsEnvoie.js';
 
 const router = express.Router();
 
@@ -1416,6 +1417,17 @@ router.put('/:id/status', async (req, res) => {
     } catch (notifError) {
       console.error('⚠️ Erreur envoi notification:', notifError);
       // Ne pas bloquer la mise à jour si la notification échoue
+    }
+
+    // 📱 SMS : commande annulée ou cliente injoignable → on annule les SMS
+    // encore en attente (confirmation déjà partie ou pas, préparation, remise).
+    // NON bloquant : le changement de statut ne doit jamais échouer pour ça.
+    if (['ANNULEE', 'INJOIGNABLE'].includes(status)) {
+      try {
+        await cancelPendingSmsForOrder(order.id);
+      } catch (smsError) {
+        console.error('⚠️ Erreur annulation SMS (non bloquante):', smsError);
+      }
     }
 
     logAudit(req, {

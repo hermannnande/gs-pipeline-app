@@ -5,6 +5,7 @@
  */
 import express from 'express';
 import { processOutbox } from '../utils/wasender.js';
+import { processSmsOutbox } from '../utils/smsEnvoie.js';
 import { prisma } from '../utils/prisma.js';
 import { supabaseAdmin } from '../utils/supabaseAdmin.js';
 
@@ -26,6 +27,19 @@ router.get('/whatsapp-outbox', authorizeCron, async (req, res) => {
     res.json({ ok: true, ...result });
   } catch (e) {
     console.error('[cron] whatsapp-outbox erreur:', e?.message || e);
+    res.status(500).json({ ok: false, error: e?.message || 'Erreur' });
+  }
+});
+
+// GET /api/cron/sms-worker — draine la file SMS (SMSenvoie) : règles
+// intelligentes appliquées dans processSmsOutbox (statut commande, heures
+// silencieuses, cap/jour/numéro). Planifié toutes les 5 min via vercel.json.
+router.get('/sms-worker', authorizeCron, async (req, res) => {
+  try {
+    const result = await processSmsOutbox({ max: 30 });
+    res.json({ ok: true, ...result });
+  } catch (e) {
+    console.error('[cron] sms-worker erreur:', e?.message || e);
     res.status(500).json({ ok: false, error: e?.message || 'Erreur' });
   }
 });

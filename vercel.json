@@ -11,6 +11,10 @@
       "schedule": "* * * * *"
     },
     {
+      "path": "/api/cron/sms-worker",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "path": "/api/cron/call-recordings-cleanup",
       "schedule": "17 3 * * *"
     }

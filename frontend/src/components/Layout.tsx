@@ -25,6 +25,7 @@ import {
   PieChart,
   MapPin,
   MessageCircle,
+  Smartphone,
   FileText,
   Headphones,
   Receipt,
@@ -96,6 +97,7 @@ export default function Layout({ children }: LayoutProps) {
           { icon: Eye, label: 'Audit & Sécurité', path: '/admin/audit' },
           { icon: MessageCircle, label: 'WhatsApp Agent', path: '/admin/whatsapp' },
           { icon: MessageCircle, label: 'Confirmation WhatsApp', path: '/admin/whatsapp-confirmation' },
+          { icon: Smartphone, label: '📱 SMS', path: '/admin/sms' },
           { icon: FileText, label: 'Pages de vente', path: '/admin/templates' },
           { icon: TrendingUp, label: 'Analytics Landing', path: '/admin/landing-analytics' },
         ];

@@ -240,6 +240,9 @@ model Order {
   // Enregistrements audio liés à cette commande
   callRecordings CallRecording[]
 
+  // SMS de notification client (confirmation / préparation / remise livreur)
+  smsOutbox SmsOutbox[]
+
   @@index([status])
   @@index([clientTelephone])
   @@index([clientVille])
@@ -1091,4 +1094,46 @@ model WhatsappOutbox {
 
   @@index([status, createdAt])
   @@map("whatsapp_outbox")
+}
+
+// ── Notifications SMS intelligentes (SMSenvoie) ────────────────────────────
+// File d'attente : 1 SMS de chaque type par commande (anti-doublon).
+// statut : PENDING | SENT | FAILED | CANCELLED | SKIPPED
+// type   : CONFIRMATION | PREPARATION | REMISE_LIVREUR
+model SmsOutbox {
+  id          String   @id @default(uuid())
+  companyId   Int      @default(1)
+  orderId     Int
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  toPhone     String
+  message     String
+  type        String
+  statut      String   @default("PENDING")
+  attempts    Int      @default(0)
+  scheduledAt DateTime @default(now())
+  sentAt      DateTime?
+  providerId  String?
+  error       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([orderId, type])
+  @@index([statut, scheduledAt])
+  @@index([companyId, createdAt])
+  @@map("sms_outbox")
+}
+
+// Config SMS par société : clé API SMSenvoie (serveur uniquement), heures
+// silencieuses et cap anti-spam éditables depuis l'admin.
+model SmsConfig {
+  id               Int      @id @default(autoincrement())
+  companyId        Int      @unique
+  apiKey           String?
+  enabled          Boolean  @default(true)
+  quietStart       Int      @default(21)
+  quietEnd         Int      @default(7)
+  maxPerPhonePerDay Int     @default(6)
+  updatedAt        DateTime @updatedAt
+
+  @@map("sms_config")
 }

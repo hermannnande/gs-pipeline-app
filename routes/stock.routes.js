@@ -3,6 +3,7 @@ import { prisma } from '../utils/prisma.js';
 import { body, validationResult } from 'express-validator';
 import { authenticate, authorize } from '../middlewares/auth.middleware.js';
 import { notifyRemiseConfirmed, notifyRetourConfirmed, notifyLowStock } from '../utils/notifications.js';
+import { queueSms, renderSmsMessage } from '../utils/smsEnvoie.js';
 
 const router = express.Router();
 
@@ -357,8 +358,9 @@ router.post('/tournees/:id/confirm-remise', authorize('ADMIN', 'GESTIONNAIRE', '
     });
 
     // 🔔 Envoyer la notification de remise confirmée
+    let deliverer = null;
     try {
-      const deliverer = await prisma.user.findUnique({
+      deliverer = await prisma.user.findUnique({
         where: { id: deliveryList.delivererId }
       });
       if (deliverer) {
@@ -366,6 +368,27 @@ router.post('/tournees/:id/confirm-remise', authorize('ADMIN', 'GESTIONNAIRE', '
       }
     } catch (notifError) {
       console.error('⚠️ Erreur envoi notification:', notifError);
+    }
+
+    // 📱 SMS REMISE_LIVREUR : prévient chaque client que son colis est chez le
+    // livreur (prénom + téléphone du livreur pour le suivi). Uniquement les
+    // commandes encore actives (pas livrées/refusées/annulées/retournées).
+    // NON bloquant : la remise ne doit jamais échouer à cause du SMS.
+    try {
+      const STATUTS_SMS_EXCLUS = ['LIVREE', 'LIVREE_PARTIELLE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE', 'ANNULEE', 'INJOIGNABLE'];
+      for (const order of deliveryList.orders) {
+        if (STATUTS_SMS_EXCLUS.includes(order.status)) continue;
+        await queueSms({
+          companyId: req.user.companyId,
+          orderId: order.id,
+          to: order.clientTelephone,
+          message: renderSmsMessage('REMISE_LIVREUR', { order, deliverer }),
+          type: 'REMISE_LIVREUR',
+          scheduledAt: new Date(),
+        });
+      }
+    } catch (smsError) {
+      console.error('⚠️ Erreur file SMS remise livreur (non bloquante):', smsError);
     }
 
     res.json({ 

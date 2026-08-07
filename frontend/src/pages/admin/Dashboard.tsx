@@ -29,6 +29,7 @@ const WhatsAppInbox = lazy(() => import('./WhatsAppInbox'));
 const LandingTemplates = lazy(() => import('./LandingTemplates'));
 const LandingAnalytics = lazy(() => import('./LandingAnalytics'));
 const WhatsAppSettings = lazy(() => import('./WhatsAppSettings'));
+const SmsNotifications = lazy(() => import('./SmsNotifications'));
 const DigitalSales = lazy(() => import('./DigitalSales'));
 const CallRecordings = lazy(() => import('./CallRecordings'));
 
@@ -69,6 +70,7 @@ export default function AdminDashboard() {
         <Route path="audit" element={<Audit />} />
         <Route path="whatsapp" element={<WhatsAppInbox />} />
         <Route path="whatsapp-confirmation" element={<WhatsAppSettings />} />
+        <Route path="sms" element={<SmsNotifications />} />
         <Route path="ventes-digitales" element={<DigitalSales />} />
         <Route path="templates" element={<LandingTemplates />} />
         <Route path="landing-analytics" element={<LandingAnalytics />} />
