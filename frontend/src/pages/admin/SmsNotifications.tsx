@@ -52,6 +52,9 @@ const TYPE_META: Record<string, { label: string; cls: string }> = {
   CONFIRMATION: { label: 'Confirmation', cls: 'bg-blue-100 text-blue-700' },
   PREPARATION: { label: 'Préparation', cls: 'bg-violet-100 text-violet-700' },
   REMISE_LIVREUR: { label: 'Remise livreur', cls: 'bg-cyan-100 text-cyan-700' },
+  WEEKEND_INFO: { label: 'Info week-end', cls: 'bg-amber-100 text-amber-700' },
+  WEEKEND_DIMANCHE: { label: 'Dimanche', cls: 'bg-orange-100 text-orange-700' },
+  WEEKEND_LUNDI: { label: 'Lundi matin', cls: 'bg-emerald-100 text-emerald-700' },
 };
 
 const fmtDate = (s: string | null) => {

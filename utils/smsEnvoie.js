@@ -14,7 +14,7 @@ import { prisma } from './prisma.js';
 const SMSENVOIE_BASE = 'https://smsenvoie.com/api/v1';
 export const SMS_TZ = 'Africa/Abidjan'; // UTC+0, pas d'heure d'été
 
-export const SMS_TYPES = ['CONFIRMATION', 'PREPARATION', 'REMISE_LIVREUR'];
+export const SMS_TYPES = ['CONFIRMATION', 'PREPARATION', 'REMISE_LIVREUR', 'WEEKEND_INFO', 'WEEKEND_DIMANCHE', 'WEEKEND_LUNDI'];
 
 // Statuts « terminaux » : plus aucun SMS ne doit partir pour ces commandes.
 const TERMINAL_STATUSES = ['ANNULEE', 'INJOIGNABLE', 'LIVREE', 'LIVREE_PARTIELLE', 'REFUSEE', 'ANNULEE_LIVRAISON', 'RETOURNE'];
@@ -58,7 +58,55 @@ export function renderSmsMessage(type, { order, deliverer } = {}) {
     const tel = normalizePhoneCI(deliverer?.telephone);
     return tel ? `${base} Joignable au ${tel} pour suivre votre livraison.` : base;
   }
+  if (type === 'WEEKEND_INFO') {
+    return `${prenom}, merci pour votre commande ✅ Nos équipes sont en repos ce week-end : votre livraison est prévue LUNDI. Gardez votre téléphone à portée de main, nous pensons à vous 📦`;
+  }
+  if (type === 'WEEKEND_DIMANCHE') {
+    return `Bon dimanche ${prenom} 🌞 Votre colis est prêt et vous attend : livraison demain LUNDI. Le livreur vous appellera avant de passer. Bon week-end !`;
+  }
+  if (type === 'WEEKEND_LUNDI') {
+    return `Bonjour ${prenom} ✅ Bonne semaine ! Votre commande est en préparation ce matin : notre livreur vous appellera AUJOURD'HUI pour la livraison. Restez près de votre téléphone 📦`;
+  }
   return null;
+}
+
+/**
+ * SÉQUENCE WEEK-END — commandes créées du samedi 12h00 au lundi 07h00
+ * (heure d'Abidjan = UTC+0). Remplace le SMS PREPARATION (qui promettrait
+ * un livreur « bientôt » un samedi après-midi — faux).
+ *
+ * Fonction PURE et testable : prend la date courante en paramètre.
+ * Retourne la liste des SMS à programmer [{ type, scheduledAt }] —
+ * vide hors fenêtre week-end (= flux normal PREPARATION +15 min).
+ *
+ *  - WEEKEND_INFO      : +30 min après la commande
+ *  - WEEKEND_DIMANCHE  : dimanche 10:00 locale (jamais si dimanche déjà > 10h,
+ *                        ni le lundi — déjà passé)
+ *  - WEEKEND_LUNDI     : lundi 07:05 locale (le jour même si déjà lundi < 07h)
+ */
+export function getWeekendSchedule(now = new Date()) {
+  const d = new Date(now);
+  const day = d.getUTCDay(); // 0=dimanche … 6=samedi (Abidjan = UTC toute l'année)
+  const hour = d.getUTCHours() + d.getUTCMinutes() / 60;
+  const inWeekend = (day === 6 && hour >= 12) || day === 0 || (day === 1 && hour < 7);
+  if (!inWeekend) return [];
+
+  const out = [{ type: 'WEEKEND_INFO', scheduledAt: new Date(d.getTime() + 30 * 60 * 1000) }];
+
+  if (day !== 1) {
+    const sunday = new Date(d);
+    if (day === 6) sunday.setUTCDate(sunday.getUTCDate() + 1); // samedi → dimanche
+    sunday.setUTCHours(10, 0, 0, 0);
+    if (sunday > d) out.push({ type: 'WEEKEND_DIMANCHE', scheduledAt: sunday });
+  }
+
+  const monday = new Date(d);
+  if (day === 6) monday.setUTCDate(monday.getUTCDate() + 2);
+  else if (day === 0) monday.setUTCDate(monday.getUTCDate() + 1);
+  monday.setUTCHours(7, 5, 0, 0);
+  if (monday > d) out.push({ type: 'WEEKEND_LUNDI', scheduledAt: monday });
+
+  return out;
 }
 
 /** Lit la config SMS d'une société. Cache court (30 s). */
