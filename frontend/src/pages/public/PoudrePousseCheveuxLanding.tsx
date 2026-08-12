@@ -43,7 +43,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SLUG = 'poudre-pousse-cheveux';
 const PRODUCT_CODE = 'POUDRE_CHEVEUX';
 // Pixel Meta dedie a la campagne Poudre Pousse Cheveux (Purchase + CAPI dedup via eventID = orderReference)
-const META_PIXEL_ID = '1985154128771811';
+const META_PIXEL_ID = '2339361260137358';
 const THANK_YOU_URL = '/poudre-pousse-cheveux/merci';
 
 const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
