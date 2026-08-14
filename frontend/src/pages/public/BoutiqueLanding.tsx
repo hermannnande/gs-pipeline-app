@@ -193,7 +193,7 @@ const PRODUCTS: Product[] = [
     name: 'Creme Minceur Premium',
     tagline: 'Affinez votre silhouette',
     hero: '/creme-minceur/hero.webp',
-    price: '9 900 F',
+    price: '6 500 F',
     oldPrice: '15 000 F',
     category: 'Minceur · Corps',
   },

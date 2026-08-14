@@ -20,12 +20,12 @@ const META_PIXEL_ID_2 = '1313100454309806';
 const META_PIXEL_IDS = [META_PIXEL_ID, META_PIXEL_ID_2];
 const THANK_YOU_URL = '/crememinceurfb/merci';
 
-const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const PRICES: Record<number, number> = { 1: 6500, 2: 11900, 3: 16900 };
 const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 const QTY_OPTS = [
   { v: 1, label: '1 pot', sub: packLabel(PRICES, 1, 'F'), save: '' },
-  { v: 2, label: '2 pots', sub: packLabel(PRICES, 2, 'F'), tag: 'Le + pris', save: 'Économisez 3 000 F' },
-  { v: 3, label: '3 pots', sub: packLabel(PRICES, 3, 'F'), tag: 'Ultra pack', save: 'Économisez 5 100 F' },
+  { v: 2, label: '2 pots', sub: packLabel(PRICES, 2, 'F'), tag: 'Le + pris', save: 'Économisez 1 100 F' },
+  { v: 3, label: '3 pots', sub: packLabel(PRICES, 3, 'F'), tag: 'Ultra pack', save: 'Économisez 2 600 F' },
 ];
 
 const M = (n: string) => `/creme-minceur-fb/${n}`;

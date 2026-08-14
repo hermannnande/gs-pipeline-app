@@ -18,7 +18,7 @@ const META_PIXEL_IDS = [META_PIXEL_ID_2, META_PIXEL_ID];
 const TEMPLATE_SLUG = 'crememinceurfb';
 const PRODUCT_CODE = 'CREME_MINCEUR';
 const PRODUCT_NAME = 'Crème Minceur Brûle Graisse';
-const PRICES: Record<number, number> = { 1: 9900, 2: 16900, 3: 24900 };
+const PRICES: Record<number, number> = { 1: 6500, 2: 11900, 3: 16900 };
 const fmtTotal = (qty: number) => orderTotal(PRICES, qty).toLocaleString('fr-FR').replace(/\u202f|,/g, ' ');
 
 declare global { interface Window { fbq?: (...args: any[]) => void; _fbq?: any } }
