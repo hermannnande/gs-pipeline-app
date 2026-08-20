@@ -69,6 +69,7 @@ const CUSTOM_SLUGS = [
   'chaussette-homme',
   'chaussette-premium-homme',
   'creme-anti-cerne',
+  'creme-anti-cerne-offre',
   'serum-cerne',
   'serum-cerne-tiktok',
   'serum-cerne-tk',
@@ -163,6 +164,7 @@ function renderModal(slug: string, rest: Omit<Props, 'slug'>) {
     case 'chaussette-premium-homme':
       return <OrderModalChaussetteHomme {...rest} />;
     case 'creme-anti-cerne':
+    case 'creme-anti-cerne-offre':
       return <OrderModalCremeAntiCerne {...rest} />;
     case 'serum-cerne':
     case 'serum-cerne-tiktok':
