@@ -31,6 +31,7 @@ export const LANDING_SLUGS = [
   'creme-anti-lipome',
   'creme-anti-lipome-tk',
   'creme-lipome-tk3',
+  'creme-lipome-offre',
   'creme-eczema',
   'chaussette-homme',
   'chaussette-premium-homme',

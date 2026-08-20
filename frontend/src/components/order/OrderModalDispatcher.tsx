@@ -64,6 +64,7 @@ const CUSTOM_SLUGS = [
   'creme-anti-lipome',
   'creme-anti-lipome-tk',
   'creme-lipome-tk3',
+  'creme-lipome-offre',
   'creme-eczema',
   'chaussette-homme',
   'chaussette-premium-homme',
@@ -152,6 +153,7 @@ function renderModal(slug: string, rest: Omit<Props, 'slug'>) {
       return <OrderModalSprayLipome {...rest} />;
     case 'creme-anti-lipome':
     case 'creme-lipome-tk3':
+    case 'creme-lipome-offre':
       return <OrderModalCremeAntiLipome {...rest} />;
     case 'creme-eczema':
       return <OrderModalCremeEczema {...rest} />;

@@ -31,6 +31,7 @@ export const LANDING_COMPONENTS: Record<string, LazyLanding> = {
   'creme-anti-lipome': lazy(() => import('./CremeAntiLipomeLanding')),
   'creme-anti-lipome-tk': lazy(() => import('./CremeAntiLipomeTkLanding')),
   'creme-lipome-tk3': lazy(() => import('./CremeLipomeTk3Landing')),
+  'creme-lipome-offre': lazy(() => import('./CremeLipomeOffreLanding')),
   'creme-eczema': lazy(() => import('./CremeEczemaLanding')),
   'chaussette-homme': lazy(() => import('./ChaussetteHommeLanding')),
   'chaussette-premium-homme': lazy(() => import('./ChaussettePremiumLanding')),
