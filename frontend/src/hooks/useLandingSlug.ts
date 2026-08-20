@@ -65,6 +65,7 @@ export const LANDING_SLUGS = [
   'ajusteur-ceinture-tk',
   'oxymetre-pouls',
   'oxymetre-pouls-tk',
+  'serum-cerne-offre',
   'boutique',
 ] as const;
 

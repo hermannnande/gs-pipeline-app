@@ -17,6 +17,7 @@ export const THANKYOU_COMPONENTS: Record<string, LazyThankYou> = {
   'serum-cerne': lazy(() => import('./SerumCerneThankYou')),
   'serum-cerne-tiktok': lazy(() => import('./SerumCerneThankYou')),
   'serum-cerne-tk': lazy(() => import('./SerumCerneThankYou')),
+  'serum-cerne-offre': lazy(() => import('./SerumCerneOffreThankYou')),
   'anti-age': lazy(() => import('./SerumCerneSmsThankYou')),
   'creme-anti-verrue': lazy(() => import('./CremeAntiVerrueThankYou')),
   'creme-anti-verrue-bleu': lazy(() => import('./CremeAntiVerrueBleuThankYou')),

@@ -71,6 +71,7 @@ const CUSTOM_SLUGS = [
   'serum-cerne',
   'serum-cerne-tiktok',
   'serum-cerne-tk',
+  'serum-cerne-offre',
   'serum-cerne-paye',
   'anti-age',
   'poudre-pousse-cheveux',
@@ -165,6 +166,7 @@ function renderModal(slug: string, rest: Omit<Props, 'slug'>) {
     case 'serum-cerne-tiktok':
       return <OrderModalSerumCerne {...rest} />;
     case 'serum-cerne-tk':
+    case 'serum-cerne-offre':
       return <OrderModalSerumCerneTk {...rest} />;
     case 'anti-age':
       return <OrderModalSerumCerne {...rest} />;

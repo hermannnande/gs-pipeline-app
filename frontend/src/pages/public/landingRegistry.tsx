@@ -39,6 +39,7 @@ export const LANDING_COMPONENTS: Record<string, LazyLanding> = {
   'serum-cerne': lazy(() => import('./SerumCerneLanding')),
   'serum-cerne-tiktok': lazy(() => import('./SerumCerneTiktokLanding')),
   'serum-cerne-tk': lazy(() => import('./SerumCerneTkLanding')),
+  'serum-cerne-offre': lazy(() => import('./SerumCerneOffreLanding')),
   'serum-cerne-paye': lazy(() => import('./SerumCernePayeLanding')),
   'anti-age': lazy(() => import('./SerumCerneSmsLanding')),
   'poudre-pousse-cheveux': lazy(() => import('./PoudrePousseCheveuxLanding')),
