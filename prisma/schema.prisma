@@ -187,6 +187,13 @@ model Order {
   raisonRetour String? // Raison du retour (client absent, refuse, adresse incorrecte, etc.)
   retourneAt   DateTime? // Date du retour
 
+  // Preuve GPS livreur — OBLIGATOIRE pour marquer REFUSEE (anti-fraude :
+  // prouve que le livreur etait bien sur place quand le client a refuse).
+  refusGpsLat      Float?
+  refusGpsLng      Float?
+  refusGpsAccuracy Float?   // precision GPS en metres
+  refusGpsAt       DateTime? // horodatage de la capture GPS
+
   // Gestion EXPEDITION - Code de suivi
   codeExpedition                String? // Code d'expédition/tracking fourni par le livreur
   photoRecuExpedition           String? // Photo du reçu d'expédition (base64 ou URL)

@@ -26,6 +26,8 @@ export default function Deliveries() {
   const [note, setNote] = useState('');
   // Erreur affichee quand le livreur tente "non livre" sans motif
   const [motifError, setMotifError] = useState(false);
+  // Capture GPS en cours (obligatoire pour marquer REFUSEE — preuve de présence)
+  const [gpsLoading, setGpsLoading] = useState(false);
   // Pour la livraison partielle : nombre d'unites prises par le client
   const [partialQty, setPartialQty] = useState<number>(1);
   // Mode "saisie quantite partielle" affiche dans la modal
@@ -69,8 +71,8 @@ export default function Deliveries() {
   };
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status, note, quantiteLivree }: { id: number; status: string; note?: string; quantiteLivree?: number }) =>
-      ordersApi.updateStatus(id, status, note, quantiteLivree),
+    mutationFn: ({ id, status, note, quantiteLivree, gps }: { id: number; status: string; note?: string; quantiteLivree?: number; gps?: { lat: number; lng: number; accuracy?: number | null } }) =>
+      ordersApi.updateStatus(id, status, note, quantiteLivree, gps),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['livreur-deliveries'] });
       queryClient.invalidateQueries({ queryKey: ['livreur-my-stats'] });
@@ -88,7 +90,18 @@ export default function Deliveries() {
     },
   });
 
-  const handleUpdateStatus = (status: string, quantiteLivree?: number) => {
+  // Capture la position GPS du livreur (preuve de présence exigée pour un refus).
+  const captureGps = (): Promise<{ lat: number; lng: number; accuracy?: number | null }> =>
+    new Promise((resolve, reject) => {
+      if (!('geolocation' in navigator)) return reject(new Error('unsupported'));
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy ?? null }),
+        (err) => reject(err),
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      );
+    });
+
+  const handleUpdateStatus = async (status: string, quantiteLivree?: number) => {
     if (!selectedOrder) return;
 
     // Colis non livré (refusé / annulé) → motif obligatoire.
@@ -98,11 +111,27 @@ export default function Deliveries() {
       return;
     }
 
+    // 📍 REFUSEE = « j'étais sur place et le client a refusé » → la preuve GPS
+    // est OBLIGATOIRE avant l'envoi (anti-fraude livreur).
+    let gps: { lat: number; lng: number; accuracy?: number | null } | undefined;
+    if (status === 'REFUSEE') {
+      setGpsLoading(true);
+      try {
+        gps = await captureGps();
+      } catch {
+        setGpsLoading(false);
+        toast.error('📍 Localisation obligatoire : activez le GPS et autorisez la localisation pour marquer un colis comme refusé.');
+        return;
+      }
+      setGpsLoading(false);
+    }
+
     updateStatusMutation.mutate({
       id: selectedOrder.id,
       status,
       note: note.trim() || undefined,
       quantiteLivree,
+      gps,
     });
   };
 
@@ -579,14 +608,17 @@ export default function Deliveries() {
               <button
                 onClick={() => handleUpdateStatus('REFUSEE')}
                 className="btn btn-danger w-full"
-                disabled={updateStatusMutation.isPending}
+                disabled={updateStatusMutation.isPending || gpsLoading}
               >
-                ✕ Refusée par le client
+                {gpsLoading ? '📍 Localisation GPS en cours…' : '✕ Refusée par le client'}
               </button>
+              <p className="text-[11px] text-gray-500 -mt-1 text-center">
+                📍 En cas de refus, votre position GPS est jointe automatiquement comme preuve de présence à destination.
+              </p>
               <button
                 onClick={() => handleUpdateStatus('ANNULEE_LIVRAISON')}
                 className="btn btn-secondary w-full"
-                disabled={updateStatusMutation.isPending}
+                disabled={updateStatusMutation.isPending || gpsLoading}
               >
                 🚫 Annulée (absent, mauvaise adresse...)
               </button>

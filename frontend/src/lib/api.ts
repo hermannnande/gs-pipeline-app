@@ -105,10 +105,16 @@ export const ordersApi = {
     return data;
   },
 
-  updateStatus: async (id: number, status: string, note?: string, quantiteLivree?: number) => {
+  updateStatus: async (id: number, status: string, note?: string, quantiteLivree?: number, gps?: { lat: number; lng: number; accuracy?: number | null }) => {
     const payload: Record<string, unknown> = { status, note };
     // Pour LIVREE_PARTIELLE, le livreur saisit la quantite effectivement prise
     if (typeof quantiteLivree === 'number') payload.quantiteLivree = quantiteLivree;
+    // Preuve GPS du refus (obligatoire pour REFUSEE — anti-fraude)
+    if (gps) {
+      payload.gpsLat = gps.lat;
+      payload.gpsLng = gps.lng;
+      if (gps.accuracy != null) payload.gpsAccuracy = gps.accuracy;
+    }
     const { data } = await api.put(`/orders/${id}/status`, payload);
     return data;
   },

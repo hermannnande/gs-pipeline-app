@@ -33,6 +33,30 @@ async function repairOrdersIdSequenceIfNeeded(error) {
   }
 }
 
+// Colonnes de preuve GPS du refus (anti-fraude). Migration paresseuse idempotente :
+// exécutée une seule fois par instance, au premier changement de statut.
+let refusGpsColumnsReady = false;
+async function ensureRefusGpsColumns() {
+  if (refusGpsColumnsReady) return;
+  try {
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "orders"
+        ADD COLUMN IF NOT EXISTS "refusGpsLat" DOUBLE PRECISION,
+        ADD COLUMN IF NOT EXISTS "refusGpsLng" DOUBLE PRECISION,
+        ADD COLUMN IF NOT EXISTS "refusGpsAccuracy" DOUBLE PRECISION,
+        ADD COLUMN IF NOT EXISTS "refusGpsAt" TIMESTAMP(3);
+    `);
+    refusGpsColumnsReady = true;
+    console.log('✅ Colonnes refusGps* prêtes sur orders.');
+  } catch (e) {
+    console.error('❌ ensureRefusGpsColumns:', e?.message || e);
+  }
+}
+
+// Exécution au démarrage (cold start serverless) : les colonnes existent avant le
+// premier trafic, donc les lectures Prisma (SELECT *) ne cassent jamais.
+void ensureRefusGpsColumns();
+
 // Toutes les routes nécessitent authentification
 router.use(authenticate);
 
@@ -1041,8 +1065,11 @@ router.post('/:id/toggle-priorite', authorize('ADMIN', 'GESTIONNAIRE', 'APPELANT
 router.put('/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, note, raisonRetour, quantiteLivree: bodyQtyLivree } = req.body;
+    const { status, note, raisonRetour, quantiteLivree: bodyQtyLivree, gpsLat, gpsLng, gpsAccuracy } = req.body;
     const user = req.user;
+
+    // Garantit l'existence des colonnes de preuve GPS avant tout usage.
+    await ensureRefusGpsColumns();
 
     const order = await prisma.order.findFirst({
       where: { id: parseInt(id), companyId: req.user.companyId }
@@ -1084,6 +1111,19 @@ router.put('/:id/status', async (req, res) => {
         return res.status(400).json({
           error: 'Motif obligatoire : indiquez pourquoi le colis n\'a pas ete livre.',
         });
+      }
+
+      // 📍 ANTI-FRAUDE : marquer REFUSEE signifie « j'etais sur place et le client a
+      // refuse ». La preuve GPS est donc OBLIGATOIRE — sans coordonnees valides,
+      // impossible de prouver la presence du livreur : on refuse le changement.
+      if (status === 'REFUSEE') {
+        const lat = Number(gpsLat);
+        const lng = Number(gpsLng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng) || (lat === 0 && lng === 0) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+          return res.status(400).json({
+            error: 'Localisation GPS obligatoire : activez la localisation de votre telephone pour prouver votre presence avant de marquer le colis comme refuse.',
+          });
+        }
       }
 
       // Validation specifique livraison partielle : 1 <= quantiteLivree < order.quantite
@@ -1158,7 +1198,15 @@ router.put('/:id/status', async (req, res) => {
           //   - autre → on remet a null (cas correction <24h)
           quantiteLivree: qtyLivreeEffective,
           raisonRetour: status === 'RETOURNE' && raisonRetour ? raisonRetour : order.raisonRetour,
-          retourneAt: status === 'RETOURNE' ? new Date() : order.retourneAt
+          retourneAt: status === 'RETOURNE' ? new Date() : order.retourneAt,
+          // Preuve GPS du refus : position + precision + horodatage, figes au moment
+          // du marquage. Conservee meme si le statut est corrige ensuite (tracabilite).
+          ...(status === 'REFUSEE' ? {
+            refusGpsLat: Number(gpsLat),
+            refusGpsLng: Number(gpsLng),
+            refusGpsAccuracy: Number.isFinite(Number(gpsAccuracy)) ? Number(gpsAccuracy) : null,
+            refusGpsAt: new Date(),
+          } : {})
         },
         include: {
           caller: {

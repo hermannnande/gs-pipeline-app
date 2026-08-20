@@ -63,6 +63,11 @@ export interface Order {
   };
   noteAppelant?: string;
   noteLivreur?: string;
+  // Preuve GPS du refus (anti-fraude) — remplis quand le livreur marque REFUSEE
+  refusGpsLat?: number | null;
+  refusGpsLng?: number | null;
+  refusGpsAccuracy?: number | null;
+  refusGpsAt?: string | null;
   noteGestionnaire?: string;
   calledAt?: string;
   nombreAppels?: number; // Nombre de tentatives d'appel
