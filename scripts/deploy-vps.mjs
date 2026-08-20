@@ -174,7 +174,7 @@ function packageBuild() {
 
   const candidates = ['index.html', 'robots.txt', '.htaccess', 'assets'];
   // Landings récentes : médias servis same-origin (perf PageSpeed).
-  for (const d of ['bouilloire-intelligente', 'creme-anti-verrue-bleu']) {
+  for (const d of ['bouilloire-intelligente', 'creme-anti-verrue-bleu', 'serum-cerne-offre']) {
     if (existsSync(join(distDir, d))) candidates.push(d);
   }
   if (FLAGS.withImages) {
@@ -242,7 +242,7 @@ if [ -d assets ]; then
 fi
 
 WEB_ROOT=$(dirname "$APP_DIR")
-for img_dir in bouilloire-intelligente creme-anti-verrue-bleu verrue-tk creme-anti-verrue spray-douleur spray-lipome lipome creme-eczema serum-yeux serum-cerne-media creme-minceur creme-minceur-fb patch-douleur-tk poudre-pousse-cheveux chaussettes-homme chaussette-premium-homme chaussette-compression chaussette-compression-v2 chaussette detoxminceur bande-sport-minceur patch-minceur-glp lunette-de-nuit creme-anti-cerne coffret-boxer-homme coffret-boxer-luxe-v3 chapeau-dame spray-vitiligo creme-verrue-tk-v2 ongle-incarne-v2 mini-sac-bandouliere serum-rajeunissant support-telephone-flexible repulsif-ultrasons sac-louis-vuitton guide-pousse-naturelle sangles-rotuliennes bandes-buccales-sommeil ajusteur-ceinture oxymetre-pouls; do
+for img_dir in bouilloire-intelligente creme-anti-verrue-bleu verrue-tk creme-anti-verrue spray-douleur spray-lipome lipome creme-eczema serum-yeux serum-cerne-media serum-cerne-offre creme-minceur creme-minceur-fb patch-douleur-tk poudre-pousse-cheveux chaussettes-homme chaussette-premium-homme chaussette-compression chaussette-compression-v2 chaussette detoxminceur bande-sport-minceur patch-minceur-glp lunette-de-nuit creme-anti-cerne coffret-boxer-homme coffret-boxer-luxe-v3 chapeau-dame spray-vitiligo creme-verrue-tk-v2 ongle-incarne-v2 mini-sac-bandouliere serum-rajeunissant support-telephone-flexible repulsif-ultrasons sac-louis-vuitton guide-pousse-naturelle sangles-rotuliennes bandes-buccales-sommeil ajusteur-ceinture oxymetre-pouls; do
   if [ -d "$img_dir" ]; then
     rm -rf "$WEB_ROOT/$img_dir"
     mv "$img_dir" "$WEB_ROOT/$img_dir"
