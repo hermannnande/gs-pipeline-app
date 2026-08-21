@@ -302,7 +302,7 @@ export default function CremeAntiCerneLanding() {
   // Preload hero
   useEffect(() => {
     const l = document.createElement('link');
-    l.rel = 'preload'; l.as = 'image'; l.href = M('m1.webp');
+    l.rel = 'preload'; l.as = 'image'; l.href = M('rtv-av1.webp');
     document.head.appendChild(l);
     return () => { try { document.head.removeChild(l); } catch { /* noop */ } };
   }, []);
@@ -390,7 +390,7 @@ export default function CremeAntiCerneLanding() {
     { name: 'Sandrine', city: 'Abobo', txt: 'J\'ai commandé pour les cernes, et franchement le contour de mes yeux paraît plus lumineux.', stars: 5, t: '18:09' },
   ];
 
-  const galleryImgs = ['m3.webp', 'm4.webp', 'm6.webp', 'm8.webp', 'm13.webp'];
+  const galleryImgs = ['rtv-av1.webp', 'rtv-av2.webp', 'm4.webp', 'm14.webp', 'm13.webp'];
 
   return (
     <div className="min-h-screen bg-white text-neutral-900" style={{ fontFamily: 'system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif' }}>
@@ -475,7 +475,7 @@ export default function CremeAntiCerneLanding() {
           <div className="relative mt-5 cac-fade-up" style={{ animationDelay: '.05s' }}>
             <div className="pointer-events-none absolute -inset-6 rounded-[3rem] bg-gradient-to-br from-fuchsia-300/40 via-rose-200/30 to-fuchsia-300/40 blur-3xl" />
             <div className="relative mx-auto max-w-md overflow-hidden rounded-[2.2rem] bg-white shadow-[0_30px_80px_-20px_rgba(244,63,94,.3)] ring-2 ring-fuchsia-200 cac-bob">
-              <LazyImg src={M('m1.webp')} alt="Crème contour des yeux anti-cernes premium" aspect="4/5" priority cover />
+              <LazyImg src={M('rtv-av1.webp')} alt="Avant après crème contour des yeux anti-cernes" aspect="4/5" priority cover />
             </div>
 
             <div className="absolute -left-3 top-10 rotate-[-7deg] rounded-md bg-rose-700 px-3 py-2 text-center shadow-xl">
@@ -586,17 +586,6 @@ export default function CremeAntiCerneLanding() {
           </div>
         </div>
       </section>
-
-      {/* FICHE 1 — m3 avant/après */}
-      <Fiche
-        kicker="Avant / Après"
-        hook={<>Avant : regard <Hot>fatigué</Hot>. Après : regard <Hot>plus frais</Hot>.</>}
-        cta="Commander ma crème"
-        qty={1}
-        onOrder={openModal}
-        variant="white"
-        media={<LazyImg src={M('rtv-av1.webp')} alt="Avant après cernes" />}
-      />
 
       {/* FICHE 2 — m4 */}
       <Fiche
@@ -779,17 +768,6 @@ export default function CremeAntiCerneLanding() {
         </div>
       </section>
 
-      {/* FICHE 6 — m8 avant/après traitement */}
-      <Fiche
-        kicker="Avant / Après réel"
-        hook={<>Un contour des yeux <Hot>plus lisse</Hot>. Un regard <Hot>plus jeune</Hot>.</>}
-        cta="Je veux ce résultat"
-        qty={2}
-        onOrder={openModal}
-        variant="beige"
-        media={<LazyImg src={M('m8.webp')} alt="Avant après traitement" />}
-      />
-
       {/* MODE D'EMPLOI */}
       <section className="bg-stone-50 py-12 sm:py-14">
         <div className="mx-auto max-w-xl px-4">
@@ -820,17 +798,6 @@ export default function CremeAntiCerneLanding() {
           </div>
         </div>
       </section>
-
-      {/* FICHE 7 — m9 résultat */}
-      <Fiche
-        kicker="Regard transformé"
-        hook={<>La <Hot>beauté</Hot> commence par le regard.</>}
-        cta="Profiter de l'offre"
-        qty={2}
-        onOrder={openModal}
-        variant="white"
-        media={<LazyImg src={M('m9.webp')} alt="Regard transformé" />}
-      />
 
       {/* SECTION BUNDLES */}
       <section className="bg-white py-12 sm:py-14">
@@ -901,17 +868,6 @@ export default function CremeAntiCerneLanding() {
         onOrder={openModal}
         variant="beige"
         media={<LoopVideo src={M('rtv-5.mp4')} poster={M('rtv-5p.webp')} />}
-      />
-
-      {/* FICHE 9 — m11 carnation */}
-      <Fiche
-        kicker="Universelle"
-        hook={<>Adaptée à <Hot>toutes les carnations</Hot>. Adoptée par des milliers de femmes.</>}
-        cta="Je veux ce soin"
-        qty={2}
-        onOrder={openModal}
-        variant="white"
-        media={<LazyImg src={M('m11.webp')} alt="Crème universelle toutes carnations" />}
       />
 
       {/* FICHE 10 — m12 routine */}
@@ -1085,7 +1041,7 @@ export default function CremeAntiCerneLanding() {
           slug: SLUG,
           company,
           navigate,
-          images: { hero: M('m1.webp') },
+          images: { hero: M('rtv-av1.webp') },
         }}
         product={product}
         setProduct={setProduct}
