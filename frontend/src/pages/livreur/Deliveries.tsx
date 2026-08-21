@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MapPin, Phone, Navigation, Edit2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -35,6 +35,18 @@ export default function Deliveries() {
   const queryClient = useQueryClient();
   // Montant saisi pour le dépôt de fin de journée
   const [depositAmount, setDepositAmount] = useState('');
+  // Popup unique d'avertissement GPS (anti-fraude refus/absence) — affiché une
+  // seule fois par appareil, tant que le livreur n'a pas cliqué « J'ai compris ».
+  const [showGpsNotice, setShowGpsNotice] = useState(false);
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem('livreur_gps_notice_v1')) setShowGpsNotice(true);
+    } catch { setShowGpsNotice(true); }
+  }, []);
+  const acceptGpsNotice = () => {
+    try { localStorage.setItem('livreur_gps_notice_v1', '1'); } catch { /* noop */ }
+    setShowGpsNotice(false);
+  };
 
   const { data: ordersData, isLoading } = useQuery({
     queryKey: ['livreur-deliveries', selectedDate],
@@ -638,6 +650,40 @@ export default function Deliveries() {
             >
               Fermer
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Popup UNIQUE — règle anti-fraude GPS (refus / absence au rendez-vous) */}
+      {showGpsNotice && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-[70]">
+          <div className="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl">
+            <div className="bg-gradient-to-r from-red-600 to-red-700 px-5 py-4 text-white text-center">
+              <p className="text-3xl">📍</p>
+              <h2 className="mt-1 text-lg font-black uppercase tracking-wide">Règle importante — Preuve de présence</h2>
+            </div>
+            <div className="p-5 space-y-3 text-[14px] leading-relaxed text-gray-800">
+              <p>
+                Pour les motifs <strong>« Client a refusé le colis »</strong> et <strong>« Client absent au rendez-vous »</strong>,
+                votre <strong>position GPS est automatiquement enregistrée</strong> au moment du marquage.
+              </p>
+              <p className="rounded-xl bg-amber-50 border border-amber-300 p-3 font-semibold text-amber-900">
+                Vous devez IMPÉRATIVEMENT vous trouver sur les lieux exacts de la livraison (chez le client)
+                <strong> avant</strong> de marquer l'un de ces deux motifs — cela garantit un meilleur suivi des livraisons.
+              </p>
+              <p className="rounded-xl bg-red-50 border border-red-300 p-3 font-bold text-red-800">
+                ⛔ Si la position enregistrée montre que vous n'étiez PAS sur les lieux du client,
+                la livraison concernée <u>ne sera pas payée</u> (commission non versée).
+              </p>
+            </div>
+            <div className="px-5 pb-5">
+              <button
+                onClick={acceptGpsNotice}
+                className="w-full rounded-xl bg-gradient-to-r from-red-600 to-red-700 py-3.5 text-[15px] font-black uppercase tracking-wide text-white shadow-lg transition hover:brightness-110 active:scale-[0.99]"
+              >
+                ✓ J'ai compris et j'accepte
+              </button>
+            </div>
           </div>
         </div>
       )}
