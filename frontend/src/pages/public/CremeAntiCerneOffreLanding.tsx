@@ -138,6 +138,29 @@ function LazyImg({ src, alt, aspect, priority, className = '', cover = false }: 
   );
 }
 
+/** Video en boucle (muette, autoPlay, lazy via IntersectionObserver) — slots retargeting. */
+function LoopVideo({ src, poster, aspect = '4/5' }: { src: string; poster?: string; aspect?: string }) {
+  const { ref, visible } = useOnScreen('320px');
+  return (
+    <div ref={ref} className="overflow-hidden" style={{ aspectRatio: aspect }}>
+      {visible ? (
+        <video
+          src={src}
+          poster={poster}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="metadata"
+          className="block h-full w-full object-cover"
+        />
+      ) : (
+        <div className="h-full w-full animate-pulse bg-fuchsia-50" />
+      )}
+    </div>
+  );
+}
+
 const Arrow = () => (
   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.6}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -526,7 +549,7 @@ export default function CremeAntiCerneLanding() {
             ))}
           </ul>
           <div className="mx-auto mt-6 max-w-[420px] overflow-hidden rounded-[2rem] ring-1 ring-fuchsia-200 shadow-xl">
-            <LazyImg src={M('m2.webp')} alt="Regard fatigué cernes poches ridules" />
+            <LoopVideo src={M('rtv-1.mp4')} poster={M('rtv-1p.webp')} />
           </div>
           <div className="mx-auto mt-6 max-w-sm">
             <FluidCTA onClick={() => openModal(1)}>Je veux corriger mon regard <Arrow/></FluidCTA>
@@ -572,7 +595,7 @@ export default function CremeAntiCerneLanding() {
         qty={1}
         onOrder={openModal}
         variant="white"
-        media={<LazyImg src={M('m3.webp')} alt="Avant après cernes" />}
+        media={<LazyImg src={M('rtv-av1.webp')} alt="Avant après cernes" />}
       />
 
       {/* FICHE 2 — m4 */}
@@ -594,7 +617,7 @@ export default function CremeAntiCerneLanding() {
         qty={1}
         onOrder={openModal}
         variant="white"
-        media={<LazyImg src={M('m5.webp')} alt="Application de la crème" />}
+        media={<LoopVideo src={M('rtv-2.mp4')} poster={M('rtv-2p.webp')} />}
       />
 
       {/* SECTION : VU PAR LES CLIENTES (sans fausses sources) */}
@@ -719,7 +742,7 @@ export default function CremeAntiCerneLanding() {
         qty={1}
         onOrder={openModal}
         variant="white"
-        media={<LazyImg src={M('m6.webp')} alt="Avant après carnation africaine" />}
+        media={<LazyImg src={M('rtv-av2.webp')} alt="Avant après carnation africaine" />}
       />
 
       {/* FICHE 5 — m7 produit */}
@@ -730,7 +753,7 @@ export default function CremeAntiCerneLanding() {
         qty={1}
         onOrder={openModal}
         variant="beige"
-        media={<LazyImg src={M('m7.webp')} alt="Crème packaging premium" />}
+        media={<LoopVideo src={M('rtv-4.mp4')} poster={M('rtv-4p.webp')} />}
       />
 
       {/* SECTION EXPERT / RASSURANCE */}
@@ -877,7 +900,7 @@ export default function CremeAntiCerneLanding() {
         qty={1}
         onOrder={openModal}
         variant="beige"
-        media={<LazyImg src={M('m10.webp')} alt="Application crème geste simple" />}
+        media={<LoopVideo src={M('rtv-5.mp4')} poster={M('rtv-5p.webp')} />}
       />
 
       {/* FICHE 9 — m11 carnation */}
@@ -899,7 +922,7 @@ export default function CremeAntiCerneLanding() {
         qty={1}
         onOrder={openModal}
         variant="beige"
-        media={<LazyImg src={M('m12.webp')} alt="Routine quotidienne contour des yeux" />}
+        media={<LoopVideo src={M('rtv-3.mp4')} poster={M('rtv-3p.webp')} />}
       />
 
       {/* FICHE 11 — m14 hommes aussi */}

@@ -174,7 +174,7 @@ function packageBuild() {
 
   const candidates = ['index.html', 'robots.txt', '.htaccess', 'assets'];
   // Landings récentes : médias servis same-origin (perf PageSpeed).
-  for (const d of ['bouilloire-intelligente', 'creme-anti-verrue-bleu', 'serum-cerne-offre']) {
+  for (const d of ['bouilloire-intelligente', 'creme-anti-verrue-bleu', 'serum-cerne-offre', 'creme-anti-cerne']) {
     if (existsSync(join(distDir, d))) candidates.push(d);
   }
   if (FLAGS.withImages) {
