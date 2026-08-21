@@ -1445,6 +1445,17 @@ export default function Tournees() {
                               <span className={`px-2 py-1 text-xs rounded ${getStatusColor(order.status)}`}>
                                 {getStatusLabel(order.status)}
                               </span>
+                              {['REFUSEE', 'ANNULEE_LIVRAISON'].includes(order.status) && order.refusGpsLat != null && order.refusGpsLng != null && (
+                                <a
+                                  href={`https://www.google.com/maps?q=${order.refusGpsLat},${order.refusGpsLng}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="mt-1 inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-800 hover:bg-blue-200"
+                                  title={`Position du livreur au moment du marquage${order.refusGpsAt ? ' — ' + new Date(order.refusGpsAt).toLocaleString('fr-FR') : ''}${order.refusGpsAccuracy ? ` (précision ±${Math.round(order.refusGpsAccuracy)} m)` : ''}`}
+                                >
+                                  📍 Voir position
+                                </a>
+                              )}
                             </td>
                           </tr>
                         ))}
