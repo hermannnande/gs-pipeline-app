@@ -111,16 +111,18 @@ export default function Deliveries() {
       return;
     }
 
-    // 📍 REFUSEE = « j'étais sur place et le client a refusé » → la preuve GPS
-    // est OBLIGATOIRE avant l'envoi (anti-fraude livreur).
+    // 📍 Preuve GPS OBLIGATOIRE pour tout statut affirmant « j'étais sur place » :
+    //    - REFUSEE (« le client a refusé »)
+    //    - ANNULEE_LIVRAISON avec motif « absent au rendez-vous »
     let gps: { lat: number; lng: number; accuracy?: number | null } | undefined;
-    if (status === 'REFUSEE') {
+    const gpsObligatoire = status === 'REFUSEE' || (status === 'ANNULEE_LIVRAISON' && /absent/i.test(note));
+    if (gpsObligatoire) {
       setGpsLoading(true);
       try {
         gps = await captureGps();
       } catch {
         setGpsLoading(false);
-        toast.error('📍 Localisation obligatoire : activez le GPS et autorisez la localisation pour marquer un colis comme refusé.');
+        toast.error('📍 Localisation obligatoire : activez le GPS et autorisez la localisation pour prouver votre présence sur place.');
         return;
       }
       setGpsLoading(false);
@@ -613,14 +615,14 @@ export default function Deliveries() {
                 {gpsLoading ? '📍 Localisation GPS en cours…' : '✕ Refusée par le client'}
               </button>
               <p className="text-[11px] text-gray-500 -mt-1 text-center">
-                📍 En cas de refus, votre position GPS est jointe automatiquement comme preuve de présence à destination.
+                📍 En cas de refus ou d'absence du client au rendez-vous, votre position GPS est jointe automatiquement comme preuve de présence à destination.
               </p>
               <button
                 onClick={() => handleUpdateStatus('ANNULEE_LIVRAISON')}
                 className="btn btn-secondary w-full"
                 disabled={updateStatusMutation.isPending || gpsLoading}
               >
-                🚫 Annulée (absent, mauvaise adresse...)
+                {gpsLoading ? '📍 Localisation GPS en cours…' : '🚫 Annulée (absent, mauvaise adresse...)'}
               </button>
             </div>
 

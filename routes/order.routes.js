@@ -1113,15 +1113,21 @@ router.put('/:id/status', async (req, res) => {
         });
       }
 
-      // 📍 ANTI-FRAUDE : marquer REFUSEE signifie « j'etais sur place et le client a
-      // refuse ». La preuve GPS est donc OBLIGATOIRE — sans coordonnees valides,
-      // impossible de prouver la presence du livreur : on refuse le changement.
-      if (status === 'REFUSEE') {
+      // 📍 ANTI-FRAUDE : GPS OBLIGATOIRE pour tout statut qui affirme « j'etais
+      // sur place » :
+      //   - REFUSEE (« le client a refuse le colis »)
+      //   - ANNULEE_LIVRAISON avec motif « absent au rendez-vous »
+      // Sans coordonnees valides, impossible de prouver la presence du livreur :
+      // on refuse le changement.
+      const motifTexte = String(note || '');
+      const gpsObligatoire = status === 'REFUSEE'
+        || (status === 'ANNULEE_LIVRAISON' && /absent/i.test(motifTexte));
+      if (gpsObligatoire) {
         const lat = Number(gpsLat);
         const lng = Number(gpsLng);
         if (!Number.isFinite(lat) || !Number.isFinite(lng) || (lat === 0 && lng === 0) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
           return res.status(400).json({
-            error: 'Localisation GPS obligatoire : activez la localisation de votre telephone pour prouver votre presence avant de marquer le colis comme refuse.',
+            error: 'Localisation GPS obligatoire : activez la localisation de votre telephone pour prouver votre presence sur place avant d\'utiliser ce motif.',
           });
         }
       }
@@ -1199,9 +1205,9 @@ router.put('/:id/status', async (req, res) => {
           quantiteLivree: qtyLivreeEffective,
           raisonRetour: status === 'RETOURNE' && raisonRetour ? raisonRetour : order.raisonRetour,
           retourneAt: status === 'RETOURNE' ? new Date() : order.retourneAt,
-          // Preuve GPS du refus : position + precision + horodatage, figes au moment
-          // du marquage. Conservee meme si le statut est corrige ensuite (tracabilite).
-          ...(status === 'REFUSEE' ? {
+          // Preuve GPS (refus ou absence au rendez-vous) : position + precision +
+          // horodatage, figes au moment du marquage. Conservee meme en cas de correction.
+          ...((status === 'REFUSEE' || (status === 'ANNULEE_LIVRAISON' && /absent/i.test(String(note || '')))) ? {
             refusGpsLat: Number(gpsLat),
             refusGpsLng: Number(gpsLng),
             refusGpsAccuracy: Number.isFinite(Number(gpsAccuracy)) ? Number(gpsAccuracy) : null,

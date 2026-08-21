@@ -334,7 +334,7 @@ export default function Orders() {
                         <span className={`badge ${getStatusColor(order.status)}`}>
                           {getStatusLabel(order.status)}
                         </span>
-                        {order.status === 'REFUSEE' && order.refusGpsLat != null && order.refusGpsLng != null && (
+                        {['REFUSEE', 'ANNULEE_LIVRAISON'].includes(order.status) && order.refusGpsLat != null && order.refusGpsLng != null && (
                           <a
                             href={`https://www.google.com/maps?q=${order.refusGpsLat},${order.refusGpsLng}`}
                             target="_blank"
@@ -345,7 +345,7 @@ export default function Orders() {
                             📍 Preuve GPS ✓
                           </a>
                         )}
-                        {order.status === 'REFUSEE' && (order.refusGpsLat == null || order.refusGpsLng == null) && (
+                        {(order.status === 'REFUSEE' || (order.status === 'ANNULEE_LIVRAISON' && /absent/i.test(order.noteLivreur || ''))) && (order.refusGpsLat == null || order.refusGpsLng == null) && (
                           <span
                             className="mt-1 inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-700"
                             title="Refus marqué sans preuve GPS (avant la règle anti-fraude)"
