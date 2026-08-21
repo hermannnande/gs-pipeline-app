@@ -32,6 +32,7 @@ const WhatsAppSettings = lazy(() => import('./WhatsAppSettings'));
 const SmsNotifications = lazy(() => import('./SmsNotifications'));
 const DigitalSales = lazy(() => import('./DigitalSales'));
 const CallRecordings = lazy(() => import('./CallRecordings'));
+const GpsFraudReport = lazy(() => import('./GpsFraudReport'));
 
 function ContentSpinner() {
   return (
@@ -62,6 +63,7 @@ export default function AdminDashboard() {
         <Route path="supervision" element={<CallerSupervision />} />
         <Route path="call-recordings" element={<CallRecordings />} />
         <Route path="presences" element={<Attendances />} />
+        <Route path="fraudes-gps" element={<GpsFraudReport />} />
         <Route path="stats" element={<Stats />} />
         <Route path="accounting" element={<Accounting />} />
         <Route path="chat" element={<Chat />} />

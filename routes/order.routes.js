@@ -882,6 +882,88 @@ router.get('/full-export-by-product', authorize('ADMIN'), async (req, res) => {
   }
 });
 
+// GET /api/orders/gps-fraud-report - Rapport anti-fraude GPS (ADMIN / GESTIONNAIRE).
+// Liste les marquages « refusé » / « absent au rendez-vous » avec la preuve GPS du
+// livreur et la distance estimée livreur <-> adresse client (géocodage communal).
+// ⚠️ DOIT rester AVANT router.get('/:id').
+router.get('/gps-fraud-report', authorize('ADMIN', 'GESTIONNAIRE'), async (req, res) => {
+  try {
+    const days = Math.min(Math.max(parseInt(String(req.query.days || '30'), 10) || 30, 1), 90);
+    const since = new Date(Date.now() - days * 86400000);
+
+    const orders = await prisma.order.findMany({
+      where: {
+        companyId: req.user.companyId,
+        updatedAt: { gte: since },
+        OR: [
+          { status: 'REFUSEE' },
+          { status: 'ANNULEE_LIVRAISON', noteLivreur: { contains: 'absent', mode: 'insensitive' } },
+        ],
+      },
+      select: {
+        id: true,
+        orderReference: true,
+        clientNom: true,
+        clientVille: true,
+        clientCommune: true,
+        clientAdresse: true,
+        status: true,
+        noteLivreur: true,
+        refusGpsLat: true,
+        refusGpsLng: true,
+        refusGpsAccuracy: true,
+        refusGpsAt: true,
+        updatedAt: true,
+        deliverer: { select: { id: true, nom: true, prenom: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 500,
+    });
+
+    const { evaluerMarquage } = await import('../utils/geoFraud.js');
+
+    const rows = orders.map((o) => {
+      const ev = evaluerMarquage(o);
+      return {
+        id: o.id,
+        orderReference: o.orderReference,
+        clientNom: o.clientNom,
+        clientVille: o.clientVille,
+        clientCommune: o.clientCommune,
+        clientAdresse: o.clientAdresse,
+        status: o.status,
+        noteLivreur: o.noteLivreur,
+        gpsLat: o.refusGpsLat,
+        gpsLng: o.refusGpsLng,
+        gpsAccuracy: o.refusGpsAccuracy,
+        gpsAt: o.refusGpsAt,
+        dateMarquage: o.refusGpsAt || o.updatedAt,
+        livreur: o.deliverer ? `${o.deliverer.prenom || ''} ${o.deliverer.nom || ''}`.trim() : '—',
+        livreurId: o.deliverer?.id ?? null,
+        flag: ev.flag,
+        distanceKm: ev.distanceKm,
+        zone: ev.zone,
+      };
+    });
+
+    // Résumé global + par livreur
+    const summary = { total: rows.length, OK: 0, A_VERIFIER: 0, SUSPECT: 0, SANS_PREUVE: 0, NON_GEOCODE: 0 };
+    const parLivreur = {};
+    for (const r of rows) {
+      summary[r.flag] = (summary[r.flag] || 0) + 1;
+      const key = r.livreurId ?? 'inconnu';
+      if (!parLivreur[key]) parLivreur[key] = { livreur: r.livreur, total: 0, OK: 0, A_VERIFIER: 0, SUSPECT: 0, SANS_PREUVE: 0, NON_GEOCODE: 0 };
+      parLivreur[key].total += 1;
+      parLivreur[key][r.flag] = (parLivreur[key][r.flag] || 0) + 1;
+    }
+
+    res.json({ days, summary, parLivreur: Object.values(parLivreur).sort((a, b) => (b.SUSPECT + b.SANS_PREUVE) - (a.SUSPECT + a.SANS_PREUVE)), rows });
+  } catch (error) {
+    console.error('Erreur gps-fraud-report:', error);
+    res.status(500).json({ error: 'Erreur lors de la génération du rapport anti-fraude.' });
+  }
+});
+
 // GET /api/orders/:id - Détails d'une commande
 router.get('/:id', async (req, res) => {
   try {

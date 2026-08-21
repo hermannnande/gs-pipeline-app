@@ -30,6 +30,7 @@ import {
   Headphones,
   Receipt,
   Wallet,
+  ShieldAlert,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { api, getActiveCompanyId, setActiveCompanyId } from '@/lib/api';
@@ -81,6 +82,7 @@ export default function Layout({ children }: LayoutProps) {
           { icon: Bell, label: 'EXPRESS - En agence', path: '/admin/express-agence' },
           { icon: Users, label: 'Utilisateurs', path: '/admin/users' },
           { icon: MapPin, label: 'Présences (GPS)', path: '/admin/presences' },
+          { icon: ShieldAlert, label: '🚨 Fraudes GPS', path: '/admin/fraudes-gps' },
           { icon: Truck, label: 'Gestion des Tournées', path: '/admin/tournees' },
           { icon: TrendingUp, label: 'Listes de livraison', path: '/admin/deliveries' },
           { icon: Package, label: 'Gestion des Produits', path: '/admin/products' },

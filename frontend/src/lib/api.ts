@@ -124,6 +124,11 @@ export const ordersApi = {
     return data;
   },
 
+  gpsFraudReport: async (days = 30) => {
+    const { data } = await api.get('/orders/gps-fraud-report', { params: { days } });
+    return data;
+  },
+
   marquerAppel: async (id: number) => {
     const { data } = await api.post(`/orders/${id}/marquer-appel`);
     return data;
